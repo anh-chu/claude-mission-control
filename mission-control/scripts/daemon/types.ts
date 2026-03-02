@@ -24,6 +24,12 @@ export interface DaemonConfig {
     allowedTools: string[];
     agentTeams: boolean;
     claudeBinaryPath: string | null;
+    maxTaskContinuations: number;
+  };
+  inbox: {
+    maxContinuations: number;
+    maxTurnsPerSession: number;
+    timeoutPerSessionMinutes: number;
   };
 }
 
@@ -55,6 +61,9 @@ export interface SessionHistoryEntry {
   error: string | null;
   durationMinutes: number;
   retryCount: number;
+  costUsd: number | null;
+  numTurns: number | null;
+  usage: ClaudeUsage | null;
 }
 
 // ─── Daemon Status ───────────────────────────────────────────────────────────
@@ -66,6 +75,11 @@ export interface DaemonStats {
   tasksCompleted: number;
   tasksFailed: number;
   uptimeMinutes: number;
+  totalCostUsd: number;
+  totalInputTokens: number;
+  totalOutputTokens: number;
+  totalCacheReadTokens: number;
+  totalCacheCreationTokens: number;
 }
 
 export interface DaemonStatus {
@@ -89,6 +103,7 @@ export interface SpawnOptions {
   allowedTools?: string[];
   agentTeams?: boolean;
   cwd: string;
+  onSpawned?: (pid: number) => void;
 }
 
 export interface SpawnResult {
@@ -136,6 +151,52 @@ export interface MissionRun {
 
 export interface MissionsFile {
   missions: MissionRun[];
+}
+
+// ─── Claude Code Output Metadata ────────────────────────────────────────────
+
+/** Token usage breakdown from Claude Code JSON output */
+export interface ClaudeUsage {
+  inputTokens: number;
+  outputTokens: number;
+  cacheReadInputTokens: number;
+  cacheCreationInputTokens: number;
+}
+
+/** Parsed metadata from Claude Code's --output-format json stdout */
+export interface ClaudeOutputMeta {
+  totalCostUsd: number | null;
+  numTurns: number | null;
+  subtype: string | null;    // "success" | "error_max_turns" | "error_timeout"
+  sessionId: string | null;
+  isError: boolean;
+  usage: ClaudeUsage | null;
+}
+
+// ─── Respond Run Tracking (inbox auto-respond chains) ───────────────────────
+
+export type RespondRunStatus = "running" | "completed" | "failed" | "stopped";
+
+export interface RespondRunEntry {
+  id: string;
+  messageId: string;
+  agentId: string;
+  threadSubject: string;
+  pid: number;
+  status: RespondRunStatus;
+  continuationIndex: number;
+  maxContinuations: number;
+  stopped: boolean;          // stop signal — prevents next continuation
+  startedAt: string;
+  completedAt: string | null;
+  costUsd: number | null;
+  numTurns: number | null;
+  usage: ClaudeUsage | null;
+  error: string | null;
+}
+
+export interface RespondRunsFile {
+  runs: RespondRunEntry[];
 }
 
 // ─── Log Levels ──────────────────────────────────────────────────────────────

@@ -2,7 +2,7 @@ import { readFileSync, writeFileSync, existsSync, renameSync } from "fs";
 import path from "path";
 import { logger } from "./logger";
 import { scrubCredentials } from "./security";
-import type { AgentSession, SessionHistoryEntry, DaemonStatus, DaemonStats } from "./types";
+import type { AgentSession, SessionHistoryEntry, DaemonStatus, DaemonStats, ClaudeUsage } from "./types";
 
 const DATA_DIR = path.resolve(__dirname, "../../data");
 const STATUS_FILE = path.join(DATA_DIR, "daemon-status.json");
@@ -28,6 +28,11 @@ export class HealthMonitor {
     tasksCompleted: 0,
     tasksFailed: 0,
     uptimeMinutes: 0,
+    totalCostUsd: 0,
+    totalInputTokens: 0,
+    totalOutputTokens: 0,
+    totalCacheReadTokens: 0,
+    totalCacheCreationTokens: 0,
   };
   private startedAt: string;
   private lastPollAt: string | null = null;
@@ -70,7 +75,15 @@ export class HealthMonitor {
     }
   }
 
-  endSession(sessionId: string, exitCode: number | null, error: string | null, timedOut: boolean): void {
+  endSession(
+    sessionId: string,
+    exitCode: number | null,
+    error: string | null,
+    timedOut: boolean,
+    costUsd?: number | null,
+    numTurns?: number | null,
+    usage?: ClaudeUsage | null,
+  ): void {
     const session = this.activeSessions.get(sessionId);
     if (!session) {
       logger.warn("health", `Attempted to end unknown session: ${sessionId}`);
@@ -92,6 +105,9 @@ export class HealthMonitor {
       exitCode,
       error: error ? scrubCredentials(error).slice(0, 500) : null,
       durationMinutes,
+      costUsd: costUsd ?? null,
+      numTurns: numTurns ?? null,
+      usage: usage ?? null,
     };
 
     this.history.unshift(historyEntry);
@@ -99,9 +115,21 @@ export class HealthMonitor {
       this.history = this.history.slice(0, MAX_HISTORY);
     }
 
+    // Accumulate cost and usage stats
+    if (costUsd != null && costUsd > 0) {
+      this.stats.totalCostUsd += costUsd;
+    }
+    if (usage) {
+      this.stats.totalInputTokens += usage.inputTokens || 0;
+      this.stats.totalOutputTokens += usage.outputTokens || 0;
+      this.stats.totalCacheReadTokens += usage.cacheReadInputTokens || 0;
+      this.stats.totalCacheCreationTokens += usage.cacheCreationInputTokens || 0;
+    }
+
     if (status === "completed") {
       this.stats.tasksCompleted++;
-      logger.info("health", `Session completed: ${sessionId} (${durationMinutes}min)`);
+      const costStr = costUsd != null ? ` · $${costUsd.toFixed(4)}` : "";
+      logger.info("health", `Session completed: ${sessionId} (${durationMinutes}min${costStr})`);
     } else {
       this.stats.tasksFailed++;
       logger.error("health", `Session ${status}: ${sessionId} (exit=${exitCode}, error=${error?.slice(0, 100) || "none"})`);
@@ -189,6 +217,11 @@ export class HealthMonitor {
         this.stats.tasksDispatched = data.stats.tasksDispatched || 0;
         this.stats.tasksCompleted = data.stats.tasksCompleted || 0;
         this.stats.tasksFailed = data.stats.tasksFailed || 0;
+        this.stats.totalCostUsd = data.stats.totalCostUsd || 0;
+        this.stats.totalInputTokens = data.stats.totalInputTokens || 0;
+        this.stats.totalOutputTokens = data.stats.totalOutputTokens || 0;
+        this.stats.totalCacheReadTokens = data.stats.totalCacheReadTokens || 0;
+        this.stats.totalCacheCreationTokens = data.stats.totalCacheCreationTokens || 0;
       }
       if (data.history) {
         this.history = data.history.slice(0, MAX_HISTORY);

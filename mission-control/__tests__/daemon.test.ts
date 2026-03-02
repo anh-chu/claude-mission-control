@@ -332,12 +332,19 @@ describe("daemon types", () => {
         allowedTools: ["Edit", "Write"],
         agentTeams: false,
         claudeBinaryPath: null,
+        maxTaskContinuations: 2,
+      },
+      inbox: {
+        maxContinuations: 2,
+        maxTurnsPerSession: 25,
+        timeoutPerSessionMinutes: 15,
       },
     };
     expect(config.polling.enabled).toBe(true);
     expect(config.concurrency.maxParallelAgents).toBe(3);
     expect(config.execution.skipPermissions).toBe(false);
     expect(config.execution.allowedTools).toEqual(["Edit", "Write"]);
+    expect(config.inbox.maxContinuations).toBe(2);
   });
 
   it("DaemonStatus has all required fields", () => {
@@ -347,7 +354,7 @@ describe("daemon types", () => {
       startedAt: null,
       activeSessions: [],
       history: [],
-      stats: { tasksDispatched: 0, tasksCompleted: 0, tasksFailed: 0, uptimeMinutes: 0 },
+      stats: { tasksDispatched: 0, tasksCompleted: 0, tasksFailed: 0, uptimeMinutes: 0, totalCostUsd: 0, totalInputTokens: 0, totalOutputTokens: 0, totalCacheReadTokens: 0, totalCacheCreationTokens: 0 },
       lastPollAt: null,
       nextScheduledRuns: {},
     };
@@ -385,6 +392,9 @@ describe("daemon types", () => {
       error: null,
       durationMinutes: 5,
       retryCount: 0,
+      costUsd: null,
+      numTurns: null,
+      usage: null,
     };
     expect(entry.exitCode).toBe(0);
     expect(entry.durationMinutes).toBe(5);

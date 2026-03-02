@@ -4,7 +4,7 @@ import path from "path";
 import { logger } from "./logger";
 import { loadConfig } from "./config";
 import { validateBinary, buildSafeEnv, scrubCredentials } from "./security";
-import type { SpawnOptions, SpawnResult } from "./types";
+import type { SpawnOptions, SpawnResult, ClaudeOutputMeta, ClaudeUsage } from "./types";
 
 // tree-kill for killing process trees on Windows
 import treeKill from "tree-kill";
@@ -164,6 +164,52 @@ function findClaudeBinary(): ResolvedBinary {
   return { bin: "claude", prefixArgs: [], originalPath: "claude" };
 }
 
+// ─── Claude Code Output Parser ───────────────────────────────────────────────
+
+/**
+ * Parse Claude Code's JSON stdout (--output-format json) into structured metadata.
+ * Returns null-safe fields for every property. Handles non-JSON gracefully.
+ */
+export function parseClaudeOutput(stdout: string): ClaudeOutputMeta {
+  const empty: ClaudeOutputMeta = {
+    totalCostUsd: null,
+    numTurns: null,
+    subtype: null,
+    sessionId: null,
+    isError: false,
+    usage: null,
+  };
+
+  try {
+    const parsed = JSON.parse(stdout) as Record<string, unknown>;
+
+    const meta: ClaudeOutputMeta = {
+      totalCostUsd: typeof parsed.total_cost_usd === "number" ? parsed.total_cost_usd : null,
+      numTurns: typeof parsed.num_turns === "number" ? parsed.num_turns : null,
+      subtype: typeof parsed.subtype === "string" ? parsed.subtype : null,
+      sessionId: typeof parsed.session_id === "string" ? parsed.session_id : null,
+      isError: parsed.is_error === true,
+      usage: null,
+    };
+
+    // Parse nested usage object
+    if (parsed.usage && typeof parsed.usage === "object") {
+      const u = parsed.usage as Record<string, unknown>;
+      const usage: ClaudeUsage = {
+        inputTokens: typeof u.input_tokens === "number" ? u.input_tokens : 0,
+        outputTokens: typeof u.output_tokens === "number" ? u.output_tokens : 0,
+        cacheReadInputTokens: typeof u.cache_read_input_tokens === "number" ? u.cache_read_input_tokens : 0,
+        cacheCreationInputTokens: typeof u.cache_creation_input_tokens === "number" ? u.cache_creation_input_tokens : 0,
+      };
+      meta.usage = usage;
+    }
+
+    return meta;
+  } catch {
+    return empty;
+  }
+}
+
 // ─── Agent Runner ────────────────────────────────────────────────────────────
 
 export class AgentRunner {
@@ -215,6 +261,10 @@ export class AgentRunner {
       });
 
       const pid = child.pid ?? 0;
+
+      // Notify caller of PID immediately after spawn (for tracking in respond-runs, etc.)
+      opts.onSpawned?.(pid);
+
       let stdout = "";
       let stderr = "";
       let timedOut = false;

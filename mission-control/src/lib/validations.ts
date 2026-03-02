@@ -20,6 +20,7 @@ const eventTypeEnum = z.enum([
   "task_updated",
   "task_completed",
   "task_delegated",
+  "task_failed",
   "message_sent",
   "decision_requested",
   "decision_answered",
@@ -336,6 +337,12 @@ export const daemonConfigUpdateSchema = z.object({
     allowedTools: z.array(z.string().min(1).max(100)).max(50),
     agentTeams: z.boolean(),
     claudeBinaryPath: z.string().nullable(),
+    maxTaskContinuations: z.number().int().min(0).max(5).optional(),
+  }).optional(),
+  inbox: z.object({
+    maxContinuations: z.number().int().min(0).max(5),
+    maxTurnsPerSession: z.number().int().min(5).max(100),
+    timeoutPerSessionMinutes: z.number().int().min(5).max(60),
   }).optional(),
 }).strict();
 

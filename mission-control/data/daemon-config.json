@@ -40,6 +40,12 @@
       "WebFetch"
     ],
     "agentTeams": false,
-    "claudeBinaryPath": null
+    "claudeBinaryPath": null,
+    "maxTaskContinuations": 2
+  },
+  "inbox": {
+    "maxContinuations": 2,
+    "maxTurnsPerSession": 25,
+    "timeoutPerSessionMinutes": 15
   }
 }

@@ -31,6 +31,12 @@ const DEFAULT_CONFIG: DaemonConfig = {
     allowedTools: ["Edit", "Write"],
     agentTeams: false,
     claudeBinaryPath: null,
+    maxTaskContinuations: 2,
+  },
+  inbox: {
+    maxContinuations: 2,
+    maxTurnsPerSession: 25,
+    timeoutPerSessionMinutes: 15,
   },
 };
 
@@ -105,6 +111,23 @@ function validateConfig(config: unknown): DaemonConfig {
       result.execution.claudeBinaryPath = ex.claudeBinaryPath;
     } else if (ex.claudeBinaryPath === null) {
       result.execution.claudeBinaryPath = null;
+    }
+    if (typeof ex.maxTaskContinuations === "number" && ex.maxTaskContinuations >= 0 && ex.maxTaskContinuations <= 5) {
+      result.execution.maxTaskContinuations = ex.maxTaskContinuations;
+    }
+  }
+
+  // Merge inbox
+  if (c.inbox && typeof c.inbox === "object") {
+    const inbox = c.inbox as Record<string, unknown>;
+    if (typeof inbox.maxContinuations === "number" && inbox.maxContinuations >= 0 && inbox.maxContinuations <= 5) {
+      result.inbox.maxContinuations = inbox.maxContinuations;
+    }
+    if (typeof inbox.maxTurnsPerSession === "number" && inbox.maxTurnsPerSession >= 5 && inbox.maxTurnsPerSession <= 100) {
+      result.inbox.maxTurnsPerSession = inbox.maxTurnsPerSession;
+    }
+    if (typeof inbox.timeoutPerSessionMinutes === "number" && inbox.timeoutPerSessionMinutes >= 5 && inbox.timeoutPerSessionMinutes <= 60) {
+      result.inbox.timeoutPerSessionMinutes = inbox.timeoutPerSessionMinutes;
     }
   }
 

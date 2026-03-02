@@ -90,6 +90,7 @@ export default function LaunchPage() {
         allowedTools: config.execution.allowedTools,
         agentTeams: config.execution.agentTeams,
         claudeBinaryPath: config.execution.claudeBinaryPath,
+        maxTaskContinuations: config.execution.maxTaskContinuations,
       },
       polling: { enabled: config.polling.enabled, intervalMinutes: pollingInterval },
     });
@@ -221,7 +222,7 @@ export default function LaunchPage() {
       </p>
 
       {/* Stats Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+      <div className="grid grid-cols-1 md:grid-cols-5 gap-4">
         <Card>
           <CardHeader className="pb-2">
             <CardDescription>Uptime</CardDescription>
@@ -274,6 +275,27 @@ export default function LaunchPage() {
             {status.lastPollAt && (
               <p className="text-xs text-muted-foreground mt-1">
                 Last poll: {formatRelativeTime(status.lastPollAt)}
+              </p>
+            )}
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader className="pb-2">
+            <CardDescription>Total Spend</CardDescription>
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold">
+              ${status.stats.totalCostUsd?.toFixed(2) ?? "0.00"}
+            </div>
+            {status.stats.tasksCompleted > 0 && (
+              <p className="text-xs text-muted-foreground mt-1">
+                ~${(status.stats.totalCostUsd / status.stats.tasksCompleted).toFixed(2)} per task
+              </p>
+            )}
+            {(status.stats.totalInputTokens > 0 || status.stats.totalOutputTokens > 0) && (
+              <p className="text-xs text-muted-foreground mt-0.5">
+                {((status.stats.totalInputTokens + status.stats.totalOutputTokens) / 1000).toFixed(0)}k tokens
               </p>
             )}
           </CardContent>
@@ -634,6 +656,7 @@ export default function LaunchPage() {
                       </p>
                       <p className="text-xs text-muted-foreground">
                         Agent: {entry.agentId} &middot; {formatDuration(entry.durationMinutes)}
+                        {entry.costUsd != null && entry.costUsd > 0 && ` · $${entry.costUsd.toFixed(4)}`}
                         {entry.error && ` \u2014 ${entry.error.slice(0, 80)}`}
                       </p>
                     </div>

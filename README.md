@@ -1,7 +1,7 @@
 <p align="center">
   <a href="https://github.com/MeisnerDan/mission-control/stargazers"><img src="https://img.shields.io/github/stars/MeisnerDan/mission-control?style=social" alt="GitHub Stars" /></a>&nbsp;
   <img src="https://img.shields.io/github/license/MeisnerDan/mission-control" alt="License" />&nbsp;
-  <img src="https://img.shields.io/badge/version-0.9.0-blue" alt="Version" />&nbsp;
+  <img src="https://img.shields.io/badge/version-0.9.1-blue" alt="Version" />&nbsp;
   <a href="https://github.com/MeisnerDan/mission-control/actions"><img src="https://img.shields.io/github/actions/workflow/status/MeisnerDan/mission-control/ci.yml?label=build" alt="Build Status" /></a>
 </p>
 
@@ -68,6 +68,10 @@ Dashboard, inbox, decisions queue. See every agent's workload, read their report
 - **Orchestrator** — Run `/orchestrate` to spawn all agents on pending work simultaneously
 - **Autonomous Daemon** — Background process that automatically polls tasks, spawns Claude Code sessions, enforces concurrency, and provides a real-time dashboard
 - **One-Click Execution** — Press play on any task card to spawn a Claude Code session; live status indicators, success/failure toasts, and automatic completion (task → done, inbox report, activity log)
+- **Session Resilience** — Agents that timeout or hit max turns automatically re-spawn continuation sessions, preserving progress in task notes and subtasks. Configurable max continuations per task and per inbox response
+- **Cost & Usage Tracking** — Captures cost and full token usage (input, output, cache read, cache creation) from every Claude Code session; displayed on the Autopilot dashboard with per-task cost breakdown and running totals
+- **Failure Logging** — Failed tasks generate `task_failed` activity events with error details, session count, and agent info. Failure reports are automatically posted to your inbox
+- **Inbox Stop Button** — Stop an agent mid-response with a single click; kills the process tree and prevents continuation chains from spawning
 - **Continuous Missions** — Run an entire project with one click; tasks auto-dispatch as others complete, respect dependency chains, and skip decision-blocked work. Real-time progress bar with stop button
 - **Loop Detection** — Auto-detects agents stuck in failure loops; after 3 attempts, escalates to a user decision with options to retry differently, skip, or stop
 - **Token-Optimized API** — Filtered queries, sparse field selection, 92% context compression (~50 tokens vs ~5,400)
@@ -201,6 +205,12 @@ GET /api/runs
 
 # Get mission status (with auto-reconciliation of stuck missions)
 GET /api/missions
+
+# Check status of inbox auto-respond sessions
+GET /api/inbox/respond/status?messageId=msg_123
+
+# Stop an active inbox auto-respond chain
+POST /api/inbox/respond/stop
 ```
 
 All write endpoints use **Zod validation** (malformed data returns field-level errors) and **async-mutex locking** (concurrent writes from multiple agents queue safely, never corrupt data).
@@ -274,6 +284,7 @@ mission-control/data/          JSON data files (the shared source of truth)
   daemon-status.json           Daemon runtime state (sessions, history, stats)
   missions.json                Continuous mission state (progress, history, loop detection)
   active-runs.json             Live task execution tracking (status, PIDs, errors)
+  respond-runs.json            Inbox auto-respond chain tracking (status, PIDs, cost)
 mission-control/scripts/daemon/ Autonomous agent daemon (node-cron + claude -p)
 mission-control/__tests__/     Automated tests (validation, data, integration, daemon)
 .claude/commands/              Auto-generated slash commands per agent
@@ -320,6 +331,8 @@ Mission Control runs locally and integrates with AI coding tools through the fil
 - [x] One-click task execution with live status
 - [x] Continuous Missions (run entire projects)
 - [x] Loop detection with automatic escalation
+- [x] Session resilience (auto-continuing agents)
+- [x] Cost & usage tracking
 - [ ] Cloud sync + hosted daemon (access from anywhere, always-on agent execution)
 - [ ] Docker support for one-command setup
 - [ ] GitHub Issues sync (import issues as MC tasks)

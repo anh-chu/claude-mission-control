@@ -247,6 +247,7 @@ export type EventType =
   | "task_updated"
   | "task_completed"
   | "task_delegated"
+  | "task_failed"
   | "message_sent"
   | "decision_requested"
   | "decision_answered"
@@ -327,6 +328,9 @@ export interface ActiveRun {
   completedAt: string | null;
   exitCode: number | null;
   error: string | null;
+  costUsd: number | null;
+  numTurns: number | null;
+  continuationIndex: number;
 }
 
 export interface ActiveRunsFile {

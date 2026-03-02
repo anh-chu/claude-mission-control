@@ -1,7 +1,7 @@
 "use client";
 
-import { useState, useCallback, useMemo, useEffect, useRef } from "react";
-import { Inbox, Send, User, Search, Code, Megaphone, BarChart3, Mail, MailOpen, Archive, Plus, Reply, MessageSquare, ChevronRight, ChevronDown, Loader2, Bot } from "lucide-react";
+import { useState, useCallback, useMemo, useEffect } from "react";
+import { Inbox, Send, User, Search, Code, Megaphone, BarChart3, Mail, MailOpen, Archive, Plus, Reply, MessageSquare, ChevronRight, ChevronDown, Loader2, Bot, Square } from "lucide-react";
 import { Card, CardContent } from "@/components/ui/card";
 import { EmptyState } from "@/components/empty-state";
 import { Badge } from "@/components/ui/badge";
@@ -138,43 +138,43 @@ export default function InboxPage() {
   const [composeBody, setComposeBody] = useState("");
   const [composeTaskId, setComposeTaskId] = useState<string>("none");
 
-  // Track which threads have pending agent responses
-  const [respondingThreads, setRespondingThreads] = useState<Map<string, { agent: string; since: number }>>(new Map());
-  const prevMessageCountRef = useRef(messages.length);
+  // Track which threads have pending agent responses (server-polled)
+  interface RespondingInfo { runId: string; agent: string; since: number; sessionIndex: number }
+  const [respondingThreads, setRespondingThreads] = useState<Map<string, RespondingInfo>>(new Map());
 
-  // Auto-clear responding indicator when a reply arrives or after 5-minute timeout
+  // Poll /api/inbox/respond/status every 3 seconds to track active runs
   useEffect(() => {
     if (respondingThreads.size === 0) return;
 
-    // Check if new messages arrived (reply from agent)
-    if (messages.length > prevMessageCountRef.current) {
-      setRespondingThreads((prev) => {
-        const next = new Map(prev);
-        for (const [threadKey, info] of prev) {
-          // Check if there's now a message from the agent in this thread
-          const hasReply = messages.some(
-            (m) => normalizeSubject(m.subject) === threadKey && m.from !== "me" && new Date(m.createdAt).getTime() > info.since
-          );
-          if (hasReply) next.delete(threadKey);
-        }
-        return next;
-      });
-    }
-    prevMessageCountRef.current = messages.length;
+    const poll = async () => {
+      try {
+        const res = await fetch("/api/inbox/respond/status");
+        if (!res.ok) return;
+        const data = await res.json() as { runs: Array<{ id: string; messageId: string; agentId: string; continuationIndex: number; status: string }> };
 
-    // Safety net: auto-clear after 5 minutes
-    const timer = setTimeout(() => {
-      setRespondingThreads((prev) => {
-        const now = Date.now();
-        const next = new Map(prev);
-        for (const [key, info] of prev) {
-          if (now - info.since > 5 * 60 * 1000) next.delete(key);
-        }
-        return next.size === prev.size ? prev : next;
-      });
-    }, 60_000);
-    return () => clearTimeout(timer);
-  }, [messages, respondingThreads]);
+        setRespondingThreads((prev) => {
+          const next = new Map(prev);
+          // Check each tracked thread against server state
+          for (const [threadKey, info] of prev) {
+            const serverRun = data.runs.find((r) => r.id === info.runId);
+            if (!serverRun) {
+              // Run no longer active — clear it
+              next.delete(threadKey);
+            } else {
+              // Update session index
+              if (serverRun.continuationIndex !== info.sessionIndex) {
+                next.set(threadKey, { ...info, sessionIndex: serverRun.continuationIndex });
+              }
+            }
+          }
+          return next;
+        });
+      } catch { /* ignore poll errors */ }
+    };
+
+    const interval = setInterval(poll, 3000);
+    return () => clearInterval(interval);
+  }, [respondingThreads.size]); // Only depend on size to avoid excessive re-renders
 
   // Filter messages first, then group into threads
   const threads = useMemo(() => {
@@ -228,11 +228,12 @@ export default function InboxPage() {
         body: JSON.stringify({ messageId }),
       });
       if (res.ok) {
+        const data = await res.json() as { runId?: string; messageId: string };
         showInfo(`${agentName} is composing a reply...`);
-        if (threadKey) {
+        if (threadKey && data.runId) {
           setRespondingThreads((prev) => {
             const next = new Map(prev);
-            next.set(threadKey, { agent: agentName, since: Date.now() });
+            next.set(threadKey, { runId: data.runId!, agent: agentName, since: Date.now(), sessionIndex: 0 });
             return next;
           });
         }
@@ -244,6 +245,28 @@ export default function InboxPage() {
       showErrorToast("Failed to trigger auto-respond — is the agent available?");
     }
   }, []);
+
+  const handleStopRespond = useCallback(async (threadKey: string) => {
+    const info = respondingThreads.get(threadKey);
+    if (!info) return;
+    try {
+      const res = await fetch("/api/inbox/respond/stop", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ runId: info.runId }),
+      });
+      if (res.ok) {
+        setRespondingThreads((prev) => {
+          const next = new Map(prev);
+          next.delete(threadKey);
+          return next;
+        });
+        showInfo(`Stopped ${info.agent}'s response`);
+      }
+    } catch {
+      showErrorToast("Failed to stop agent response");
+    }
+  }, [respondingThreads]);
 
   const handleSend = useCallback(async () => {
     const created = await createMessage({
@@ -415,13 +438,27 @@ export default function InboxPage() {
                         {thread.unreadCount}
                       </Badge>
                     )}
-                    {/* Responding indicator */}
-                    {respondingThreads.has(thread.key) && (
-                      <span className="text-xs text-muted-foreground flex items-center gap-1">
-                        <Loader2 className="h-3 w-3 animate-spin" />
-                        <span className="hidden sm:inline">{respondingThreads.get(thread.key)!.agent} composing…</span>
-                      </span>
-                    )}
+                    {/* Responding indicator with stop button */}
+                    {respondingThreads.has(thread.key) && (() => {
+                      const rInfo = respondingThreads.get(thread.key)!;
+                      const sessionLabel = rInfo.sessionIndex > 0 ? ` (session ${rInfo.sessionIndex + 1})` : "";
+                      return (
+                        <span className="text-xs text-muted-foreground flex items-center gap-1">
+                          <Loader2 className="h-3 w-3 animate-spin" />
+                          <span className="hidden sm:inline">{rInfo.agent} composing{sessionLabel}…</span>
+                          <button
+                            className="ml-0.5 p-0.5 rounded hover:bg-destructive/20 hover:text-destructive transition-colors"
+                            title="Stop agent response"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              handleStopRespond(thread.key);
+                            }}
+                          >
+                            <Square className="h-2.5 w-2.5 fill-current" />
+                          </button>
+                        </span>
+                      );
+                    })()}
                     <span className="text-xs text-muted-foreground">{formatDate(thread.latest.createdAt)}</span>
                   </div>
                 </div>

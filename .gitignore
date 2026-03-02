@@ -25,6 +25,7 @@ mission-control/data/ai-context.md
 mission-control/data/daemon.pid
 mission-control/data/daemon-status.json
 mission-control/data/active-runs.json
+mission-control/data/respond-runs.json
 
 # Checkpoint data (user checkpoints not pushed to repo, demo included)
 mission-control/data/checkpoints/*.json

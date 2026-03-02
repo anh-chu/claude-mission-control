@@ -70,7 +70,10 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: `Agent '${message.to}' not found` }, { status: 404 });
     }
 
-    // 4. Spawn the inbox-respond runner as a detached process
+    // 4. Generate a run ID so the script creates a tracked respond-run
+    const runId = `rr_${Date.now()}`;
+
+    // 5. Spawn the inbox-respond runner as a detached process
     const cwd = process.cwd();
     const scriptPath = path.resolve(cwd, "scripts", "daemon", "run-inbox-respond.ts");
 
@@ -79,6 +82,7 @@ export async function POST(request: Request) {
         "--import", "tsx",
         scriptPath,
         messageId,
+        "--run-id", runId,
       ], {
         cwd,
         detached: true,
@@ -91,6 +95,7 @@ export async function POST(request: Request) {
       return NextResponse.json({
         messageId,
         agentId: message.to,
+        runId,
         pid: child.pid ?? 0,
         message: `Auto-respond triggered for agent '${message.to}'`,
       });

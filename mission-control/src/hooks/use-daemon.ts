@@ -18,6 +18,9 @@ interface SessionHistoryEntry extends AgentSession {
   exitCode: number | null;
   error: string | null;
   durationMinutes: number;
+  costUsd: number | null;
+  numTurns: number | null;
+  usage: { inputTokens: number; outputTokens: number; cacheReadInputTokens: number; cacheCreationInputTokens: number } | null;
 }
 
 interface DaemonStats {
@@ -25,6 +28,11 @@ interface DaemonStats {
   tasksCompleted: number;
   tasksFailed: number;
   uptimeMinutes: number;
+  totalCostUsd: number;
+  totalInputTokens: number;
+  totalOutputTokens: number;
+  totalCacheReadTokens: number;
+  totalCacheCreationTokens: number;
 }
 
 interface DaemonStatus {
@@ -51,6 +59,12 @@ interface DaemonConfig {
     allowedTools: string[];
     agentTeams: boolean;
     claudeBinaryPath: string | null;
+    maxTaskContinuations: number;
+  };
+  inbox: {
+    maxContinuations: number;
+    maxTurnsPerSession: number;
+    timeoutPerSessionMinutes: number;
   };
 }
 
@@ -75,7 +89,7 @@ export function useDaemon(): DaemonData {
     startedAt: null,
     activeSessions: [],
     history: [],
-    stats: { tasksDispatched: 0, tasksCompleted: 0, tasksFailed: 0, uptimeMinutes: 0 },
+    stats: { tasksDispatched: 0, tasksCompleted: 0, tasksFailed: 0, uptimeMinutes: 0, totalCostUsd: 0, totalInputTokens: 0, totalOutputTokens: 0, totalCacheReadTokens: 0, totalCacheCreationTokens: 0 },
     lastPollAt: null,
     nextScheduledRuns: {},
   });
@@ -83,7 +97,8 @@ export function useDaemon(): DaemonData {
     polling: { enabled: true, intervalMinutes: 5 },
     concurrency: { maxParallelAgents: 3 },
     schedule: {},
-    execution: { maxTurns: 25, timeoutMinutes: 30, retries: 1, retryDelayMinutes: 5, skipPermissions: false, allowedTools: ["Edit", "Write"], agentTeams: false, claudeBinaryPath: null },
+    execution: { maxTurns: 25, timeoutMinutes: 30, retries: 1, retryDelayMinutes: 5, skipPermissions: false, allowedTools: ["Edit", "Write"], agentTeams: false, claudeBinaryPath: null, maxTaskContinuations: 2 },
+    inbox: { maxContinuations: 2, maxTurnsPerSession: 25, timeoutPerSessionMinutes: 15 },
   });
   const [isRunning, setIsRunning] = useState(false);
   const [isLoading, setIsLoading] = useState(true);

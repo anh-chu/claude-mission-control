@@ -2,22 +2,24 @@
  * run-task.ts — Standalone script to execute a single task via Claude Code.
  *
  * Usage:
- *   node --import tsx scripts/daemon/run-task.ts <taskId> [--source manual|project-run|mission-chain] [--agent-teams] [--mission <missionId>]
+ *   node --import tsx scripts/daemon/run-task.ts <taskId> [--source manual|project-run|mission-chain] [--agent-teams] [--mission <missionId>] [--continuation N] [--run-id ID]
  *
  * This script:
  *   1. Validates the task (exists, has agent, not done, not already running, not blocked)
  *   2. Writes a "running" entry to active-runs.json
  *   3. Builds the prompt via buildTaskPrompt()
  *   4. Spawns Claude Code via AgentRunner.spawnAgent()
- *   5. Updates active-runs.json with the final status
- *   6. If part of a mission, chains dispatch to the next batch of tasks
- *   7. Prunes completed runs older than 1 hour
+ *   5. Updates active-runs.json with the final status (including cost/usage)
+ *   6. If the agent timed out or hit max turns, spawns a continuation session
+ *   7. If all continuations exhausted, logs task_failed and posts failure report
+ *   8. If part of a mission, chains dispatch to the next batch of tasks
+ *   9. Prunes completed runs older than 1 hour
  */
 
 import { readFileSync, writeFileSync, existsSync } from "fs";
 import { execSync, spawn } from "child_process";
 import path from "path";
-import { AgentRunner } from "./runner";
+import { AgentRunner, parseClaudeOutput } from "./runner";
 import { buildTaskPrompt, getTask, isTaskUnblocked, hasPendingDecision } from "./prompt-builder";
 import { loadConfig } from "./config";
 import { logger } from "./logger";
@@ -48,6 +50,9 @@ interface ActiveRunEntry {
   completedAt: string | null;
   exitCode: number | null;
   error: string | null;
+  costUsd: number | null;
+  numTurns: number | null;
+  continuationIndex: number;
 }
 
 interface ActiveRunsData {
@@ -221,6 +226,146 @@ function handleTaskCompletion(taskId: string, agentId: string, stdout: string): 
     logger.info("run-task", `Regenerated ai-context.md after task ${taskId}`);
   } catch (err) {
     logger.error("run-task", `Failed to regenerate ai-context.md: ${err instanceof Error ? err.message : String(err)}`);
+  }
+}
+
+/**
+ * Log a task_failed event to activity-log.json.
+ * Called when all continuation attempts are exhausted and the task still failed.
+ */
+function handleTaskFailure(taskId: string, agentId: string, errorMsg: string, continuationIndex: number): void {
+  const now = new Date().toISOString();
+
+  // 1. Log activity event
+  try {
+    const logRaw = existsSync(ACTIVITY_LOG_FILE)
+      ? readFileSync(ACTIVITY_LOG_FILE, "utf-8")
+      : '{"events":[]}';
+    const logData = JSON.parse(logRaw) as { events: Array<Record<string, unknown>> };
+
+    // Get task title
+    let taskTitle = taskId;
+    try {
+      const tasksRaw = readFileSync(TASKS_FILE, "utf-8");
+      const tasksData = JSON.parse(tasksRaw) as { tasks: Array<Record<string, unknown>> };
+      const task = tasksData.tasks.find((t) => t.id === taskId);
+      if (task && typeof task.title === "string") taskTitle = task.title;
+    } catch { /* use taskId */ }
+
+    logData.events.push({
+      id: `evt_${Date.now()}`,
+      type: "task_failed",
+      actor: agentId,
+      taskId,
+      summary: `Task failed: ${taskTitle}`,
+      details: `Agent "${agentId}" failed after ${continuationIndex + 1} session(s). Error: ${errorMsg.slice(0, 300)}`,
+      timestamp: now,
+    });
+
+    writeFileSync(ACTIVITY_LOG_FILE, JSON.stringify(logData, null, 2), "utf-8");
+    logger.info("run-task", `Logged task_failed event for task ${taskId}`);
+  } catch (err) {
+    logger.error("run-task", `Failed to log task_failed activity for ${taskId}: ${err instanceof Error ? err.message : String(err)}`);
+  }
+
+  // 2. Post failure report to inbox
+  try {
+    const inboxRaw = existsSync(INBOX_FILE)
+      ? readFileSync(INBOX_FILE, "utf-8")
+      : '{"messages":[]}';
+    const inboxData = JSON.parse(inboxRaw) as { messages: Array<Record<string, unknown>> };
+
+    let taskTitle = taskId;
+    try {
+      const tasksRaw = readFileSync(TASKS_FILE, "utf-8");
+      const tasksData = JSON.parse(tasksRaw) as { tasks: Array<Record<string, unknown>> };
+      const task = tasksData.tasks.find((t) => t.id === taskId);
+      if (task && typeof task.title === "string") taskTitle = task.title;
+    } catch { /* use taskId */ }
+
+    inboxData.messages.push({
+      id: `msg_${Date.now()}`,
+      from: agentId,
+      to: "me",
+      type: "report",
+      taskId,
+      subject: `Failed: ${taskTitle}`,
+      body: `Task execution failed after ${continuationIndex + 1} session(s).\n\nError: ${errorMsg.slice(0, 500)}`,
+      status: "unread",
+      createdAt: now,
+      readAt: null,
+    });
+
+    writeFileSync(INBOX_FILE, JSON.stringify(inboxData, null, 2), "utf-8");
+    logger.info("run-task", `Posted failure report for task ${taskId}`);
+  } catch (err) {
+    logger.error("run-task", `Failed to post failure inbox message for ${taskId}: ${err instanceof Error ? err.message : String(err)}`);
+  }
+}
+
+/**
+ * Append progress notes to a task and update subtask completion status.
+ * Used between continuation sessions so the next session knows what was done.
+ */
+function appendTaskProgress(taskId: string, sessionIndex: number, summary: string): void {
+  try {
+    const tasksRaw = readFileSync(TASKS_FILE, "utf-8");
+    const tasksData = JSON.parse(tasksRaw) as { tasks: Array<Record<string, unknown>> };
+    const task = tasksData.tasks.find((t) => t.id === taskId);
+    if (!task) return;
+
+    const timestamp = new Date().toISOString().slice(0, 19).replace("T", " ");
+    const progressNote = `[${timestamp}] Session ${sessionIndex + 1}: ${summary.slice(0, 300)}`;
+
+    // Append to notes
+    const existingNotes = typeof task.notes === "string" ? task.notes : "";
+    task.notes = existingNotes
+      ? `${existingNotes}\n\n${progressNote}`
+      : progressNote;
+    task.updatedAt = new Date().toISOString();
+
+    writeFileSync(TASKS_FILE, JSON.stringify(tasksData, null, 2), "utf-8");
+    logger.info("run-task", `Appended progress note to task ${taskId} (session ${sessionIndex + 1})`);
+  } catch (err) {
+    logger.error("run-task", `Failed to append progress to task ${taskId}: ${err instanceof Error ? err.message : String(err)}`);
+  }
+}
+
+/**
+ * Spawn a continuation session for the same task.
+ * Returns immediately — the continuation runs as a detached child process.
+ */
+function spawnContinuation(
+  taskId: string,
+  nextIndex: number,
+  runId: string,
+  source: string,
+  agentTeams: boolean,
+  missionId: string | null
+): void {
+  const scriptPath = path.resolve(__dirname, "run-task.ts");
+  const args = [
+    "--import", "tsx",
+    scriptPath,
+    taskId,
+    "--source", source,
+    "--continuation", String(nextIndex),
+    "--run-id", runId,
+  ];
+  if (agentTeams) args.push("--agent-teams");
+  if (missionId) args.push("--mission", missionId);
+
+  try {
+    const child = spawn(process.execPath, args, {
+      cwd: WORKSPACE_ROOT,
+      detached: true,
+      stdio: "ignore",
+      shell: false,
+    });
+    child.unref();
+    logger.info("run-task", `Spawned continuation ${nextIndex} for task ${taskId} (pid: ${child.pid})`);
+  } catch (err) {
+    logger.error("run-task", `Failed to spawn continuation for task ${taskId}: ${err instanceof Error ? err.message : String(err)}`);
   }
 }
 
@@ -585,18 +730,27 @@ function handleMissionContinuation(
 
 // ─── CLI Argument Parsing ───────────────────────────────────────────────────
 
-function parseArgs(): { taskId: string; source: string; agentTeams: boolean; missionId: string | null } {
+function parseArgs(): {
+  taskId: string;
+  source: string;
+  agentTeams: boolean;
+  missionId: string | null;
+  continuationIndex: number;
+  runId: string | null;
+} {
   const args = process.argv.slice(2);
   const taskId = args[0];
 
   if (!taskId) {
-    console.error("Usage: run-task.ts <taskId> [--source manual|project-run|mission-chain] [--agent-teams] [--mission <missionId>]");
+    console.error("Usage: run-task.ts <taskId> [--source manual|project-run|mission-chain] [--agent-teams] [--mission <missionId>] [--continuation N] [--run-id ID]");
     process.exit(1);
   }
 
   let source = "manual";
   let agentTeams = false;
   let missionId: string | null = null;
+  let continuationIndex = 0;
+  let runId: string | null = null;
 
   for (let i = 1; i < args.length; i++) {
     if (args[i] === "--source" && args[i + 1]) {
@@ -610,17 +764,26 @@ function parseArgs(): { taskId: string; source: string; agentTeams: boolean; mis
       missionId = args[i + 1];
       i++;
     }
+    if (args[i] === "--continuation" && args[i + 1]) {
+      continuationIndex = parseInt(args[i + 1], 10) || 0;
+      i++;
+    }
+    if (args[i] === "--run-id" && args[i + 1]) {
+      runId = args[i + 1];
+      i++;
+    }
   }
 
-  return { taskId, source, agentTeams, missionId };
+  return { taskId, source, agentTeams, missionId, continuationIndex, runId };
 }
 
 // ─── Main ───────────────────────────────────────────────────────────────────
 
 async function main() {
-  const { taskId, source, agentTeams, missionId } = parseArgs();
+  const { taskId, source, agentTeams, missionId, continuationIndex, runId: existingRunId } = parseArgs();
+  const isContinuation = continuationIndex > 0;
 
-  logger.info("run-task", `Starting task ${taskId} (source: ${source}, agentTeams: ${agentTeams}, mission: ${missionId ?? "none"})`);
+  logger.info("run-task", `Starting task ${taskId} (source: ${source}, agentTeams: ${agentTeams}, mission: ${missionId ?? "none"}, continuation: ${continuationIndex}${existingRunId ? `, runId: ${existingRunId}` : ""})`);
 
   // 1. Validate task exists
   const task = getTask(taskId);
@@ -641,73 +804,127 @@ async function main() {
     process.exit(1);
   }
 
-  // 4. Check not already running
-  const currentRuns = readActiveRuns();
-  const alreadyRunning = currentRuns.runs.find(
-    (r) => r.taskId === taskId && r.status === "running"
-  );
-  if (alreadyRunning) {
-    logger.error("run-task", `Task ${taskId} is already running (pid: ${alreadyRunning.pid})`);
-    process.exit(1);
+  // 4. Check not already running (skip for continuations — previous session just ended)
+  if (!isContinuation) {
+    const currentRuns = readActiveRuns();
+    const alreadyRunning = currentRuns.runs.find(
+      (r) => r.taskId === taskId && r.status === "running"
+    );
+    if (alreadyRunning) {
+      logger.error("run-task", `Task ${taskId} is already running (pid: ${alreadyRunning.pid})`);
+      process.exit(1);
+    }
   }
 
-  // 5. Check if task is blocked
-  const taskWithBlocked = task as typeof task & { blockedBy: string[] };
-  if (taskWithBlocked.blockedBy && !isTaskUnblocked(taskWithBlocked)) {
-    logger.error("run-task", `Task ${taskId} is blocked by unfinished dependencies`);
-    process.exit(1);
+  // 5. Check if task is blocked (skip for continuations)
+  if (!isContinuation) {
+    const taskWithBlocked = task as typeof task & { blockedBy: string[] };
+    if (taskWithBlocked.blockedBy && !isTaskUnblocked(taskWithBlocked)) {
+      logger.error("run-task", `Task ${taskId} is blocked by unfinished dependencies`);
+      process.exit(1);
+    }
   }
 
-  // 6. Check for pending decisions
-  if (hasPendingDecision(taskId)) {
-    logger.error("run-task", `Task ${taskId} has a pending decision — cannot execute`);
-    process.exit(1);
+  // 6. Check for pending decisions (skip for continuations)
+  if (!isContinuation) {
+    if (hasPendingDecision(taskId)) {
+      logger.error("run-task", `Task ${taskId} has a pending decision — cannot execute`);
+      process.exit(1);
+    }
   }
 
   // 7. Load execution config
   const config = loadConfig();
   const { maxTurns, timeoutMinutes, skipPermissions, allowedTools } = config.execution;
+  const maxTaskContinuations = config.execution.maxTaskContinuations ?? 2;
   const useAgentTeams = agentTeams || config.execution.agentTeams;
 
   // 8. Write "running" entry
-  const runId = `run_${Date.now()}`;
-  const runEntry: ActiveRunEntry = {
-    id: runId,
-    taskId,
-    agentId: task.assignedTo,
-    projectId: task.projectId ?? null,
-    missionId,
-    pid: 0, // Will be updated after spawn
-    status: "running",
-    startedAt: new Date().toISOString(),
-    completedAt: null,
-    exitCode: null,
-    error: null,
-  };
+  const runId = existingRunId ?? `run_${Date.now()}`;
+  const currentRuns = readActiveRuns();
 
-  currentRuns.runs.push(runEntry);
+  if (!isContinuation) {
+    const runEntry: ActiveRunEntry = {
+      id: runId,
+      taskId,
+      agentId: task.assignedTo,
+      projectId: task.projectId ?? null,
+      missionId,
+      pid: 0, // Will be updated after spawn via onSpawned
+      status: "running",
+      startedAt: new Date().toISOString(),
+      completedAt: null,
+      exitCode: null,
+      error: null,
+      costUsd: null,
+      numTurns: null,
+      continuationIndex,
+    };
+    currentRuns.runs.push(runEntry);
+  } else {
+    // For continuations, create a new run entry linked by the same runId prefix
+    const contRunId = `${runId}_c${continuationIndex}`;
+    const runEntry: ActiveRunEntry = {
+      id: contRunId,
+      taskId,
+      agentId: task.assignedTo,
+      projectId: task.projectId ?? null,
+      missionId,
+      pid: 0,
+      status: "running",
+      startedAt: new Date().toISOString(),
+      completedAt: null,
+      exitCode: null,
+      error: null,
+      costUsd: null,
+      numTurns: null,
+      continuationIndex,
+    };
+    currentRuns.runs.push(runEntry);
+  }
   writeActiveRuns(pruneOldRuns(currentRuns));
 
-  logger.info("run-task", `Run ${runId} created for task ${taskId} (agent: ${task.assignedTo})`);
+  const activeRunId = isContinuation ? `${runId}_c${continuationIndex}` : runId;
+  logger.info("run-task", `Run ${activeRunId} created for task ${taskId} (agent: ${task.assignedTo}, session ${continuationIndex + 1})`);
 
   // 8.5. Mark task as "in-progress" (daemon handles this instead of the agent)
-  try {
-    const tasksRaw = readFileSync(TASKS_FILE, "utf-8");
-    const tasksData = JSON.parse(tasksRaw) as { tasks: Array<Record<string, unknown>> };
-    const taskToUpdate = tasksData.tasks.find((t) => t.id === taskId);
-    if (taskToUpdate && taskToUpdate.kanban !== "in-progress" && taskToUpdate.kanban !== "done") {
-      taskToUpdate.kanban = "in-progress";
-      taskToUpdate.updatedAt = new Date().toISOString();
-      writeFileSync(TASKS_FILE, JSON.stringify(tasksData, null, 2), "utf-8");
-      logger.info("run-task", `Marked task ${taskId} as in-progress`);
+  if (!isContinuation) {
+    try {
+      const tasksRaw = readFileSync(TASKS_FILE, "utf-8");
+      const tasksData = JSON.parse(tasksRaw) as { tasks: Array<Record<string, unknown>> };
+      const taskToUpdate = tasksData.tasks.find((t) => t.id === taskId);
+      if (taskToUpdate && taskToUpdate.kanban !== "in-progress" && taskToUpdate.kanban !== "done") {
+        taskToUpdate.kanban = "in-progress";
+        taskToUpdate.updatedAt = new Date().toISOString();
+        writeFileSync(TASKS_FILE, JSON.stringify(tasksData, null, 2), "utf-8");
+        logger.info("run-task", `Marked task ${taskId} as in-progress`);
+      }
+    } catch (err) {
+      logger.error("run-task", `Failed to mark task ${taskId} as in-progress: ${err instanceof Error ? err.message : String(err)}`);
+      // Non-fatal — continue with execution
     }
-  } catch (err) {
-    logger.error("run-task", `Failed to mark task ${taskId} as in-progress: ${err instanceof Error ? err.message : String(err)}`);
-    // Non-fatal — continue with execution
   }
 
   // 9. Build prompt (pass missionId for restart context)
-  const prompt = buildTaskPrompt(task.assignedTo, task, missionId ?? undefined);
+  let prompt = buildTaskPrompt(task.assignedTo, task, missionId ?? undefined);
+
+  // 9.5. Add continuation header if resuming from a previous session
+  if (isContinuation) {
+    const contHeader = `## ⚡ CONTINUATION SESSION
+
+This is session ${continuationIndex + 1}. Previous session(s) ran out of turns or time before finishing.
+
+**Important:**
+- Check the task's notes field above — your prior progress summaries are there.
+- Check the task's subtasks — some may already be marked done.
+- Continue where you left off. Do NOT redo completed work.
+- Focus on the remaining uncompleted items.
+
+---
+
+`;
+    prompt = contHeader + prompt;
+  }
 
   // 10. Spawn Claude Code
   const runner = new AgentRunner(WORKSPACE_ROOT);
@@ -720,27 +937,53 @@ async function main() {
       allowedTools,
       agentTeams: useAgentTeams,
       cwd: WORKSPACE_ROOT,
+      onSpawned: (pid) => {
+        // Update the PID in active-runs immediately after spawn
+        try {
+          const runs = readActiveRuns();
+          const run = runs.runs.find((r) => r.id === activeRunId);
+          if (run) {
+            run.pid = pid;
+            writeActiveRuns(runs);
+          }
+        } catch { /* non-fatal */ }
+      },
     });
 
-    // Update run entry with PID (already resolved at this point)
+    // Parse cost/usage metadata from Claude Code JSON output
+    const meta = parseClaudeOutput(result.stdout);
+
+    // Update run entry with final status + cost
     const runs = readActiveRuns();
-    const run = runs.runs.find((r) => r.id === runId);
+    const run = runs.runs.find((r) => r.id === activeRunId);
     let finalStatus: "completed" | "failed" | "timeout" = "failed";
     let errorMsg = "";
 
+    // Detect if we should continue (timeout or max_turns exceeded)
+    const hitMaxTurns = meta.subtype === "error_max_turns";
+    const hitTimeout = result.timedOut || meta.subtype === "error_timeout";
+    const shouldContinue = (hitMaxTurns || hitTimeout) && continuationIndex < maxTaskContinuations;
+
     if (run) {
       run.pid = result.pid;
+      run.costUsd = meta.totalCostUsd;
+      run.numTurns = meta.numTurns;
 
-      if (result.timedOut) {
+      if (shouldContinue) {
+        // Session exhausted but we have continuations remaining — mark as completed (this session)
+        run.status = "completed";
+        run.error = hitTimeout
+          ? `Session ${continuationIndex + 1} timed out — continuing`
+          : `Session ${continuationIndex + 1} hit max turns — continuing`;
+        finalStatus = "completed"; // This session is done, continuation takes over
+      } else if (result.timedOut) {
         run.status = "timeout";
-        run.error = `Timed out after ${timeoutMinutes} minutes`;
+        run.error = `Timed out after ${timeoutMinutes} minutes (all ${continuationIndex + 1} session(s) exhausted)`;
         finalStatus = "timeout";
         errorMsg = run.error;
       } else if (result.exitCode === 0) {
         run.status = "completed";
         finalStatus = "completed";
-        // Run post-completion side effects (mark done, inbox report, activity log)
-        handleTaskCompletion(taskId, task.assignedTo, result.stdout);
       } else {
         run.status = "failed";
         finalStatus = "failed";
@@ -765,10 +1008,32 @@ async function main() {
       writeActiveRuns(pruneOldRuns(runs));
     }
 
+    const costStr = meta.totalCostUsd != null ? ` · $${meta.totalCostUsd.toFixed(4)}` : "";
     logger.info(
       "run-task",
-      `Run ${runId} finished: status=${run?.status ?? "unknown"}, exitCode=${result.exitCode}, timedOut=${result.timedOut}`
+      `Run ${activeRunId} finished: status=${run?.status ?? "unknown"}, exitCode=${result.exitCode}, timedOut=${result.timedOut}${costStr}`
     );
+
+    // ── Continuation path: spawn next session instead of completing/failing ──
+    if (shouldContinue) {
+      const summary = extractSummary(result.stdout);
+      appendTaskProgress(taskId, continuationIndex, summary);
+
+      logger.info("run-task", `Spawning continuation ${continuationIndex + 1} for task ${taskId}`);
+      spawnContinuation(taskId, continuationIndex + 1, runId, source, agentTeams, missionId);
+      // Exit — the continuation process takes over
+      return;
+    }
+
+    // ── Normal completion path ──
+    if (finalStatus === "completed" && result.exitCode === 0) {
+      handleTaskCompletion(taskId, task.assignedTo, result.stdout);
+    }
+
+    // ── Failure path: all continuations exhausted ──
+    if (finalStatus === "failed" || finalStatus === "timeout") {
+      handleTaskFailure(taskId, task.assignedTo, errorMsg, continuationIndex);
+    }
 
     // Chain dispatch: if this task is part of a mission, continue to next batch
     if (missionId) {
@@ -787,7 +1052,7 @@ async function main() {
   } catch (err) {
     // Update run as failed
     const runs = readActiveRuns();
-    const run = runs.runs.find((r) => r.id === runId);
+    const run = runs.runs.find((r) => r.id === activeRunId);
     if (run) {
       run.status = "failed";
       run.error = err instanceof Error ? err.message : String(err);
@@ -795,7 +1060,10 @@ async function main() {
       writeActiveRuns(pruneOldRuns(runs));
     }
 
-    logger.error("run-task", `Run ${runId} failed: ${err instanceof Error ? err.message : String(err)}`);
+    logger.error("run-task", `Run ${activeRunId} failed: ${err instanceof Error ? err.message : String(err)}`);
+
+    // Log task_failed event
+    handleTaskFailure(taskId, task.assignedTo, err instanceof Error ? err.message : String(err), continuationIndex);
 
     // Still try mission continuation on failure
     if (missionId) {
