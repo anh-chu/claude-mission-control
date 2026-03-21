@@ -81,6 +81,26 @@ export function FieldTaskFormDialog({
   const [cryptoTo, setCryptoTo] = useState("");
   const [cryptoAmount, setCryptoAmount] = useState("");
 
+  // Social post fields
+  const [postText, setPostText] = useState("");
+  const [postSubreddit, setPostSubreddit] = useState("");
+
+  // Email campaign fields
+  const [emailSubject, setEmailSubject] = useState("");
+  const [emailBody, setEmailBody] = useState("");
+
+  // Ad campaign fields
+  const [adHeadline, setAdHeadline] = useState("");
+  const [adBody, setAdBody] = useState("");
+
+  // Publish fields
+  const [publishTitle, setPublishTitle] = useState("");
+  const [publishContent, setPublishContent] = useState("");
+  const [publishUrl, setPublishUrl] = useState("");
+
+  // Design fields
+  const [designPrompt, setDesignPrompt] = useState("");
+
   // Reset form when dialog opens
   useEffect(() => {
     if (open) {
@@ -89,10 +109,21 @@ export function FieldTaskFormDialog({
       setType(task?.type ?? "social-post");
       setServiceId(task?.serviceId ?? null);
       setApprovalOverride(task?.approvalRequired ?? false);
-      // Crypto fields
-      setCryptoOperation((task?.payload?.operation as "send-usdc" | "send-eth") ?? "send-usdc");
-      setCryptoTo((task?.payload?.to as string) ?? "");
-      setCryptoAmount(task?.payload?.amount ? String(task.payload.amount) : "");
+      // Payload fields — load from existing task
+      const p = task?.payload;
+      setCryptoOperation((p?.operation as "send-usdc" | "send-eth") ?? "send-usdc");
+      setCryptoTo((p?.to as string) ?? "");
+      setCryptoAmount(p?.amount ? String(p.amount) : "");
+      setPostText((p?.text as string) ?? "");
+      setPostSubreddit((p?.subreddit as string) ?? "");
+      setEmailSubject((p?.subject as string) ?? "");
+      setEmailBody((p?.body as string) ?? "");
+      setAdHeadline((p?.headline as string) ?? "");
+      setAdBody((p?.body as string) ?? "");
+      setPublishTitle((p?.title as string) ?? "");
+      setPublishContent((p?.content as string) ?? "");
+      setPublishUrl((p?.url as string) ?? "");
+      setDesignPrompt((p?.prompt as string) ?? "");
     }
   }, [open, task]);
 
@@ -105,7 +136,7 @@ export function FieldTaskFormDialog({
 
   // Filter to usable services (saved or connected)
   const availableServices = services.filter(
-    (s) => s.status === "saved" || s.status === "connected",
+    (s) => s.status === "saved" || s.status === "connected" || s.id === serviceId,
   );
 
   async function handleSubmit(e: React.FormEvent) {
@@ -115,12 +146,26 @@ export function FieldTaskFormDialog({
     try {
       // Build payload based on task type
       let payload: Record<string, unknown> = {};
-      if (type === "crypto-transfer") {
-        payload = {
-          operation: cryptoOperation,
-          to: cryptoTo.trim(),
-          amount: cryptoAmount.trim(),
-        };
+      switch (type) {
+        case "social-post":
+          payload = { text: postText.trim() };
+          if (postSubreddit.trim()) payload.subreddit = postSubreddit.trim();
+          break;
+        case "email-campaign":
+          payload = { subject: emailSubject.trim(), body: emailBody.trim() };
+          break;
+        case "ad-campaign":
+          payload = { headline: adHeadline.trim(), body: adBody.trim() };
+          break;
+        case "crypto-transfer":
+          payload = { operation: cryptoOperation, to: cryptoTo.trim(), amount: cryptoAmount.trim() };
+          break;
+        case "publish":
+          payload = { title: publishTitle.trim(), content: publishContent.trim(), url: publishUrl.trim() };
+          break;
+        case "design":
+          payload = { prompt: designPrompt.trim() };
+          break;
       }
 
       await onSubmit({
@@ -142,7 +187,7 @@ export function FieldTaskFormDialog({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-[500px]">
+      <DialogContent className="sm:max-w-[560px]">
         <form onSubmit={handleSubmit}>
           <DialogHeader>
             <DialogTitle>{isEdit ? "Edit Task" : "Add Task"}</DialogTitle>
@@ -202,7 +247,9 @@ export function FieldTaskFormDialog({
               {risk === "high" && (
                 <div className="flex items-center gap-1.5 text-xs text-red-400">
                   <AlertTriangle className="h-3 w-3" />
-                  This task type has financial impact and will always require approval.
+                  {type === "payment" || type === "crypto-transfer"
+                    ? "This task type has financial impact and will always require approval."
+                    : "This is a high-risk task and will always require approval."}
                 </div>
               )}
             </div>
@@ -227,6 +274,149 @@ export function FieldTaskFormDialog({
                 </SelectContent>
               </Select>
             </div>
+
+            {/* Social post content fields */}
+            {type === "social-post" && (
+              <div className="space-y-3 rounded-md border border-blue-500/20 bg-blue-500/5 p-3">
+                <Label className="text-xs font-medium text-blue-400">Post Content</Label>
+
+                <div className="space-y-1.5">
+                  <Label htmlFor="post-text" className="text-xs">Content</Label>
+                  <Textarea
+                    id="post-text"
+                    value={postText}
+                    onChange={(e) => setPostText(e.target.value)}
+                    placeholder="What do you want to post?"
+                    rows={4}
+                  />
+                </div>
+
+                <div className="space-y-1.5">
+                  <Label htmlFor="post-subreddit" className="text-xs">Subreddit (Reddit only)</Label>
+                  <Input
+                    id="post-subreddit"
+                    value={postSubreddit}
+                    onChange={(e) => setPostSubreddit(e.target.value)}
+                    placeholder="e.g., SideProject"
+                  />
+                  <p className="text-[10px] text-muted-foreground">
+                    Leave blank for Twitter/LinkedIn posts
+                  </p>
+                </div>
+              </div>
+            )}
+
+            {/* Email campaign content fields */}
+            {type === "email-campaign" && (
+              <div className="space-y-3 rounded-md border border-purple-500/20 bg-purple-500/5 p-3">
+                <Label className="text-xs font-medium text-purple-400">Email Content</Label>
+
+                <div className="space-y-1.5">
+                  <Label htmlFor="email-subject" className="text-xs">Subject</Label>
+                  <Input
+                    id="email-subject"
+                    value={emailSubject}
+                    onChange={(e) => setEmailSubject(e.target.value)}
+                    placeholder="Email subject line"
+                  />
+                </div>
+
+                <div className="space-y-1.5">
+                  <Label htmlFor="email-body" className="text-xs">Body</Label>
+                  <Textarea
+                    id="email-body"
+                    value={emailBody}
+                    onChange={(e) => setEmailBody(e.target.value)}
+                    placeholder="Email body content"
+                    rows={4}
+                  />
+                </div>
+              </div>
+            )}
+
+            {/* Ad campaign content fields */}
+            {type === "ad-campaign" && (
+              <div className="space-y-3 rounded-md border border-orange-500/20 bg-orange-500/5 p-3">
+                <Label className="text-xs font-medium text-orange-400">Ad Content</Label>
+
+                <div className="space-y-1.5">
+                  <Label htmlFor="ad-headline" className="text-xs">Headline</Label>
+                  <Input
+                    id="ad-headline"
+                    value={adHeadline}
+                    onChange={(e) => setAdHeadline(e.target.value)}
+                    placeholder="Ad headline"
+                  />
+                </div>
+
+                <div className="space-y-1.5">
+                  <Label htmlFor="ad-body" className="text-xs">Body</Label>
+                  <Textarea
+                    id="ad-body"
+                    value={adBody}
+                    onChange={(e) => setAdBody(e.target.value)}
+                    placeholder="Ad body copy"
+                    rows={3}
+                  />
+                </div>
+              </div>
+            )}
+
+            {/* Publish content fields */}
+            {type === "publish" && (
+              <div className="space-y-3 rounded-md border border-teal-500/20 bg-teal-500/5 p-3">
+                <Label className="text-xs font-medium text-teal-400">Publish Content</Label>
+
+                <div className="space-y-1.5">
+                  <Label htmlFor="publish-title" className="text-xs">Title</Label>
+                  <Input
+                    id="publish-title"
+                    value={publishTitle}
+                    onChange={(e) => setPublishTitle(e.target.value)}
+                    placeholder="Post or article title"
+                  />
+                </div>
+
+                <div className="space-y-1.5">
+                  <Label htmlFor="publish-content" className="text-xs">Content</Label>
+                  <Textarea
+                    id="publish-content"
+                    value={publishContent}
+                    onChange={(e) => setPublishContent(e.target.value)}
+                    placeholder="Content to publish"
+                    rows={4}
+                  />
+                </div>
+
+                <div className="space-y-1.5">
+                  <Label htmlFor="publish-url" className="text-xs">URL (optional)</Label>
+                  <Input
+                    id="publish-url"
+                    value={publishUrl}
+                    onChange={(e) => setPublishUrl(e.target.value)}
+                    placeholder="https://..."
+                  />
+                </div>
+              </div>
+            )}
+
+            {/* Design prompt fields */}
+            {type === "design" && (
+              <div className="space-y-3 rounded-md border border-pink-500/20 bg-pink-500/5 p-3">
+                <Label className="text-xs font-medium text-pink-400">Design Prompt</Label>
+
+                <div className="space-y-1.5">
+                  <Label htmlFor="design-prompt" className="text-xs">Prompt</Label>
+                  <Textarea
+                    id="design-prompt"
+                    value={designPrompt}
+                    onChange={(e) => setDesignPrompt(e.target.value)}
+                    placeholder="Describe the design you want"
+                    rows={3}
+                  />
+                </div>
+              </div>
+            )}
 
             {/* Crypto-transfer payload fields */}
             {type === "crypto-transfer" && (

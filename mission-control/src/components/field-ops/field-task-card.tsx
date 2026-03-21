@@ -22,6 +22,7 @@ import {
   Wallet,
   Link2,
   FlaskConical,
+  FileText,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -115,6 +116,178 @@ export function FieldTaskCard({
   const hasResult = Object.keys(task.result ?? {}).length > 0;
   const isTerminal = task.status === "completed" || task.status === "failed";
 
+  // ─── Payload preview ────────────────────────────────────────────────────
+  function renderPayloadPreview() {
+    const p = task.payload;
+    if (!p || Object.keys(p).length === 0) return null;
+
+    const MAX_LEN = 480;
+
+    const truncate = (s: string) =>
+      s.length > MAX_LEN ? s.slice(0, MAX_LEN) + "\u2026" : s;
+
+    let content: React.ReactNode = null;
+
+    switch (task.type) {
+      case "social-post": {
+        const text = typeof p.text === "string" ? p.text : null;
+        const subreddit = typeof p.subreddit === "string" ? p.subreddit : null;
+        const mediaUrls = Array.isArray(p.mediaUrls) ? p.mediaUrls : [];
+        if (!text) return null;
+        content = (
+          <>
+            <p className="whitespace-pre-wrap text-sm text-foreground/80 leading-relaxed">
+              {truncate(text)}
+            </p>
+            {(subreddit || mediaUrls.length > 0) && (
+              <div className="flex items-center gap-2 mt-1.5 text-[11px] text-muted-foreground">
+                {subreddit && (
+                  <span className="bg-muted rounded px-1.5 py-0.5 font-medium">
+                    r/{subreddit}
+                  </span>
+                )}
+                {mediaUrls.length > 0 && (
+                  <span>{mediaUrls.length} media file{mediaUrls.length > 1 ? "s" : ""} attached</span>
+                )}
+              </div>
+            )}
+          </>
+        );
+        break;
+      }
+      case "email-campaign": {
+        const subject = typeof p.subject === "string" ? p.subject : null;
+        const body = typeof p.body === "string" ? p.body : null;
+        const recipients = Array.isArray(p.recipients) ? p.recipients : [];
+        if (!subject && !body) return null;
+        content = (
+          <>
+            {subject && (
+              <p className="text-xs font-medium text-foreground/70 mb-1">
+                Subject: {subject}
+              </p>
+            )}
+            {body && (
+              <p className="whitespace-pre-wrap text-sm text-foreground/80 leading-relaxed">
+                {truncate(body)}
+              </p>
+            )}
+            {recipients.length > 0 && (
+              <p className="text-[11px] text-muted-foreground mt-1.5">
+                {recipients.length} recipient{recipients.length > 1 ? "s" : ""}
+              </p>
+            )}
+          </>
+        );
+        break;
+      }
+      case "ad-campaign": {
+        const headline = typeof p.headline === "string" ? p.headline : null;
+        const body = typeof p.body === "string" ? p.body : null;
+        if (!headline && !body) return null;
+        content = (
+          <>
+            {headline && (
+              <p className="text-sm font-medium text-foreground/80">{headline}</p>
+            )}
+            {body && (
+              <p className="whitespace-pre-wrap text-sm text-foreground/70 leading-relaxed mt-0.5">
+                {truncate(body)}
+              </p>
+            )}
+          </>
+        );
+        break;
+      }
+      case "payment":
+      case "crypto-transfer": {
+        const amount = p.amount;
+        const currency = typeof p.currency === "string" ? p.currency : "";
+        const recipient = typeof p.recipient === "string" ? p.recipient : null;
+        const toAddress = typeof p.toAddress === "string" ? p.toAddress : null;
+        const target = recipient ?? toAddress;
+        if (amount == null && !target) return null;
+        content = (
+          <div className="flex flex-col gap-0.5 text-sm">
+            {amount != null && (
+              <span className="text-foreground/80 font-medium">
+                {String(amount)} {currency}
+              </span>
+            )}
+            {target && (
+              <span className="text-muted-foreground text-xs font-mono truncate">
+                To: {target.length > 42 ? target.slice(0, 20) + "\u2026" + target.slice(-8) : target}
+              </span>
+            )}
+          </div>
+        );
+        break;
+      }
+      case "publish": {
+        const title = typeof p.title === "string" ? p.title : null;
+        const bodyContent = typeof p.content === "string" ? p.content : null;
+        const url = typeof p.url === "string" ? p.url : null;
+        if (!title && !bodyContent) return null;
+        content = (
+          <>
+            {title && (
+              <p className="text-sm font-medium text-foreground/80">{title}</p>
+            )}
+            {bodyContent && (
+              <p className="whitespace-pre-wrap text-sm text-foreground/70 leading-relaxed mt-0.5">
+                {truncate(bodyContent)}
+              </p>
+            )}
+            {url && (
+              <p className="text-[11px] text-muted-foreground mt-1.5 font-mono truncate">
+                {url}
+              </p>
+            )}
+          </>
+        );
+        break;
+      }
+      case "design": {
+        const prompt = typeof p.prompt === "string" ? p.prompt : null;
+        if (!prompt) return null;
+        content = (
+          <p className="whitespace-pre-wrap text-sm text-foreground/80 leading-relaxed">
+            {truncate(prompt)}
+          </p>
+        );
+        break;
+      }
+      default: {
+        // Custom / unknown — show first few string fields
+        const entries = Object.entries(p)
+          .filter((e): e is [string, string] => typeof e[1] === "string")
+          .slice(0, 3);
+        if (entries.length === 0) return null;
+        content = (
+          <div className="flex flex-col gap-0.5 text-sm">
+            {entries.map(([key, val]) => (
+              <div key={key}>
+                <span className="text-muted-foreground text-xs">{key}: </span>
+                <span className="text-foreground/80">{truncate(val)}</span>
+              </div>
+            ))}
+          </div>
+        );
+        break;
+      }
+    }
+
+    return (
+      <div className="rounded-md border border-border/50 bg-muted/30 p-3 space-y-1">
+        <div className="flex items-center gap-1.5 text-[11px] text-muted-foreground font-medium mb-1">
+          <FileText className="h-3 w-3" />
+          Content Preview
+        </div>
+        {content}
+      </div>
+    );
+  }
+
   return (
     <Card className={cn(
       "transition-all",
@@ -183,6 +356,9 @@ export function FieldTaskCard({
             </>
           )}
         </div>
+
+        {/* Payload content preview */}
+        {renderPayloadPreview()}
 
         {/* Approval context panel for pending tasks */}
         {isPending && (

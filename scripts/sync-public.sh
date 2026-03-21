@@ -37,6 +37,7 @@ INCLUDE_PATHS=(
 EXCLUDE_FILES=(
   "mission-control/docs/logo.png"
   "mission-control/docs/logo.svg"
+  ".claude/launch.json"
 )
 
 # Personal data files — restored from public-launch HEAD after overlay (empty schemas)

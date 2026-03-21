@@ -190,6 +190,11 @@ export function OnboardingDialog() {
                 Sample tasks, projects, goals, and Field Ops missions are ready
                 to explore.
               </p>
+              <p className="text-xs text-muted-foreground/70 pt-1">
+                When you&apos;re done exploring, go to{" "}
+                <span className="font-medium text-muted-foreground">Checkpoints &rarr; New Workspace</span>{" "}
+                to start fresh.
+              </p>
             </div>
           );
         }
@@ -207,8 +212,8 @@ export function OnboardingDialog() {
                 <span className="font-semibold text-foreground">4</span> Goals
               </div>
               <div className="rounded-md bg-muted/50 p-2">
-                <span className="font-semibold text-foreground">2</span> Field
-                Ops Missions
+                <span className="font-semibold text-foreground">1</span> Field
+                Ops Mission
               </div>
             </div>
             <div className="flex gap-2">
@@ -322,6 +327,20 @@ export function OnboardingDialog() {
               <span className="text-primary mt-1 shrink-0">&bull;</span>
               <span>
                 Ctrl+Click tasks to multi-select for bulk actions
+              </span>
+            </li>
+            <li className="flex items-start gap-2 text-sm text-muted-foreground">
+              <span className="text-primary mt-1 shrink-0">&bull;</span>
+              <span>
+                Ready to clear demo data?{" "}
+                <Link
+                  href="/checkpoints"
+                  className="text-primary hover:underline"
+                  onClick={handleClose}
+                >
+                  Checkpoints
+                </Link>{" "}
+                &rarr; New Workspace
               </span>
             </li>
           </ul>

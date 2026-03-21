@@ -307,6 +307,7 @@ export default function MissionDetailPage() {
   const [rejectingTask, setRejectingTask] = useState<FieldTask | null>(null);
   const [vaultUnlockOpen, setVaultUnlockOpen] = useState(false);
   const [pendingExecuteTask, setPendingExecuteTask] = useState<FieldTask | null>(null);
+  const [pendingAction, setPendingAction] = useState<{ taskId: string; status: string; feedback?: string } | null>(null);
 
   const vaultSession = useVaultSession();
   const { execute: executeTask, executingTaskId, dryRunTaskId } = useExecuteTask();
@@ -400,6 +401,12 @@ export default function MissionDetailPage() {
   }
 
   async function handleStatusChange(taskId: string, status: string) {
+    // Approve requires vault authentication
+    if (status === "approved" && !vaultSession.active) {
+      setPendingAction({ taskId, status });
+      setVaultUnlockOpen(true);
+      return;
+    }
     try {
       await updateTask(taskId, { status } as Partial<FieldTask>);
     } catch {
@@ -409,6 +416,11 @@ export default function MissionDetailPage() {
 
   async function handleRejectTask(feedback: string) {
     if (!rejectingTask) return;
+    if (!vaultSession.active) {
+      setPendingAction({ taskId: rejectingTask.id, status: "rejected", feedback });
+      setVaultUnlockOpen(true);
+      return;
+    }
     try {
       await updateTask(rejectingTask.id, {
         status: "rejected",
@@ -438,15 +450,37 @@ export default function MissionDetailPage() {
 
   async function handleVaultUnlock(password: string): Promise<boolean> {
     const success = await vaultSession.unlock(password);
-    if (success && pendingExecuteTask) {
-      // Vault unlocked — now execute the pending task
-      const taskToExecute = pendingExecuteTask;
-      setPendingExecuteTask(null);
-      // Small delay to allow dialog to close
-      setTimeout(async () => {
-        await executeTask(taskToExecute.id);
-        await refetchTasks();
-      }, 100);
+    if (success) {
+      if (pendingExecuteTask) {
+        // Vault unlocked — now execute the pending task
+        const taskToExecute = pendingExecuteTask;
+        setPendingExecuteTask(null);
+        // Small delay to allow dialog to close
+        setTimeout(async () => {
+          await executeTask(taskToExecute.id);
+          await refetchTasks();
+        }, 100);
+      }
+      if (pendingAction) {
+        // Vault unlocked — now approve/reject the pending task
+        const action = pendingAction;
+        setPendingAction(null);
+        setTimeout(async () => {
+          try {
+            const updates: Partial<FieldTask> = { status: action.status } as Partial<FieldTask>;
+            if (action.feedback) {
+              (updates as Record<string, unknown>).rejectionFeedback = action.feedback;
+            }
+            await updateTask(action.taskId, updates);
+            if (action.status === "rejected") {
+              showSuccess("Task rejected with feedback");
+              setRejectingTask(null);
+            }
+          } catch {
+            showError("Failed to update task status");
+          }
+        }, 100);
+      }
     }
     return success;
   }
@@ -754,10 +788,18 @@ export default function MissionDetailPage() {
         open={vaultUnlockOpen}
         onOpenChange={(open) => {
           setVaultUnlockOpen(open);
-          if (!open) setPendingExecuteTask(null);
+          if (!open) {
+            setPendingExecuteTask(null);
+            setPendingAction(null);
+          }
         }}
         onUnlock={handleVaultUnlock}
-        context={pendingExecuteTask ? `Executing: ${pendingExecuteTask.title}` : undefined}
+        context={
+          pendingExecuteTask ? `Executing: ${pendingExecuteTask.title}` :
+          pendingAction?.status === "approved" ? "Approving task" :
+          pendingAction?.status === "rejected" ? "Rejecting task" :
+          undefined
+        }
       />
     </div>
   );

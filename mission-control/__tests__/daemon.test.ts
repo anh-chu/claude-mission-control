@@ -166,6 +166,8 @@ describe("buildSafeEnv", () => {
       "SystemRoot", "SYSTEMROOT", "WINDIR", "COMSPEC", "PATHEXT",
       // Agent Teams flag
       "CLAUDE_CODE_EXPERIMENTAL_AGENT_TEAMS",
+      // OAuth token (passed through for child agent auth)
+      "CLAUDE_CODE_OAUTH_TOKEN",
     ];
     for (const key of keys) {
       expect(allowedKeys).toContain(key);

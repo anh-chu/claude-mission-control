@@ -688,7 +688,209 @@ const tasksArchive = {
   tasks: [],
 };
 
+// ─── Field Ops: Missions ────────────────────────────────────────────────────
+
+const fieldMissions = {
+  missions: [
+    {
+      id: "fmission_demo_1",
+      title: "First Mission: Share Your Stack",
+      description: "Your first Field Ops mission. These are pre-loaded posts about Mission Control — yes, we know. Edit them, rewrite them, or use them as-is. The point is to walk through the workflow: approve a task, connect a service, hit execute. If you happen to tell someone about MC along the way... we won't complain.",
+      status: "active",
+      autonomyLevel: "approve-high-risk",
+      linkedProjectId: null,
+      tasks: ["ftask_demo_1", "ftask_demo_2", "ftask_demo_3", "ftask_demo_4", "ftask_demo_5", "ftask_demo_6"],
+      createdAt: daysAgo(3),
+      updatedAt: daysAgo(1),
+      completedAt: null,
+    },
+  ],
+};
+
+// ─── Field Ops: Tasks ───────────────────────────────────────────────────────
+
+const fieldTasks = {
+  tasks: [
+    {
+      id: "ftask_demo_1",
+      missionId: "fmission_demo_1",
+      title: "Post on X: Discovery",
+      description: "A short post about discovering Mission Control. Edit the text to match your voice before approving.",
+      type: "social-post",
+      serviceId: "twitter",
+      assignedTo: null,
+      status: "pending-approval",
+      approvalRequired: true,
+      payload: { operation: "create-post", text: "found an open-source tool that gives my AI agents actual structure — task queues, inboxes, reporting. been running Claude Code agents through it and I can finally see what they're all doing. github.com/MeisnerDan/mission-control", media: [] },
+      result: {},
+      attachments: [],
+      linkedTaskId: null,
+      blockedBy: [],
+      rejectionFeedback: null,
+      approvedBy: null,
+      rejectedBy: null,
+      createdAt: daysAgo(2),
+      updatedAt: daysAgo(2),
+      executedAt: null,
+      completedAt: null,
+    },
+    {
+      id: "ftask_demo_2",
+      missionId: "fmission_demo_1",
+      title: "Post on X: Why it matters",
+      description: "A post about the core problem MC solves. Rewrite in your voice or skip it.",
+      type: "social-post",
+      serviceId: "twitter",
+      assignedTo: null,
+      status: "draft",
+      approvalRequired: true,
+      payload: { operation: "create-post", text: "the problem with AI agent swarms isn't that they're slow. it's that you have no idea what they're doing. Mission Control gives you visibility without killing their autonomy. been the missing piece for me.", media: [] },
+      result: {},
+      attachments: [],
+      linkedTaskId: null,
+      blockedBy: [],
+      rejectionFeedback: null,
+      approvedBy: null,
+      rejectedBy: null,
+      createdAt: daysAgo(2),
+      updatedAt: daysAgo(2),
+      executedAt: null,
+      completedAt: null,
+    },
+    {
+      id: "ftask_demo_3",
+      missionId: "fmission_demo_1",
+      title: "LinkedIn: Managing AI agents",
+      description: "A LinkedIn post about managing AI agents. Edit freely — LinkedIn rewards your authentic voice.",
+      type: "social-post",
+      serviceId: "linkedin",
+      assignedTo: null,
+      status: "draft",
+      approvalRequired: true,
+      payload: { operation: "create-post", text: "Been experimenting with autonomous AI agents for my projects. The biggest challenge isn't getting them to work — it's knowing what they're working on.\n\nI started using Mission Control, an open-source tool that gives AI agents roles, task queues, and reporting workflows. Think of it as a project manager for your agent swarm.\n\nEarly days, but the visibility alone has been worth it. Runs entirely locally — no cloud dependency.\n\ngithub.com/MeisnerDan/mission-control" },
+      result: {},
+      attachments: [],
+      linkedTaskId: null,
+      blockedBy: [],
+      rejectionFeedback: null,
+      approvedBy: null,
+      rejectedBy: null,
+      createdAt: daysAgo(1),
+      updatedAt: daysAgo(1),
+      executedAt: null,
+      completedAt: null,
+    },
+    {
+      id: "ftask_demo_4",
+      missionId: "fmission_demo_1",
+      title: "Reddit: r/SideProject share",
+      description: "A sideproject share. Edit to tell your own story — Reddit values authenticity.",
+      type: "social-post",
+      serviceId: "reddit",
+      assignedTo: null,
+      status: "draft",
+      approvalRequired: true,
+      payload: { operation: "submit-post", subreddit: "SideProject", title: "I built an open-source command center for managing AI agents", text: "I'm a solo founder with way too many ideas and not enough hours. I've been using Claude Code agents to handle research, development, and marketing tasks — but managing the agents themselves became its own full-time job.\n\nSo I built Mission Control: Eisenhower matrix for prioritization, Kanban boards, agent inboxes, and a Field Ops system that lets agents execute real actions (social posts, payments, API calls) with approval workflows.\n\nRuns locally, no cloud, no accounts. AGPL-3.0 licensed.\n\ngithub.com/MeisnerDan/mission-control" },
+      result: {},
+      attachments: [],
+      linkedTaskId: null,
+      blockedBy: [],
+      rejectionFeedback: null,
+      approvedBy: null,
+      rejectedBy: null,
+      createdAt: daysAgo(1),
+      updatedAt: daysAgo(1),
+      executedAt: null,
+      completedAt: null,
+    },
+    {
+      id: "ftask_demo_5",
+      missionId: "fmission_demo_1",
+      title: "Reddit: r/ClaudeAI share",
+      description: "A post for the Claude community. Edit to match how you actually use Claude.",
+      type: "social-post",
+      serviceId: "reddit",
+      assignedTo: null,
+      status: "draft",
+      approvalRequired: true,
+      payload: { operation: "submit-post", subreddit: "ClaudeAI", title: "Built a local task manager that orchestrates Claude Code agents", text: "If you're running multiple Claude Code sessions with claude -p, you know the pain — no central view of what's running, what finished, what failed.\n\nMission Control gives each agent a role, an inbox, and reporting protocols. There's a daemon that polls for tasks and spawns Claude Code sessions automatically. Agents check in, post completion reports, and escalate decisions to you.\n\nAll JSON-based, runs locally, open source.\n\ngithub.com/MeisnerDan/mission-control" },
+      result: {},
+      attachments: [],
+      linkedTaskId: null,
+      blockedBy: [],
+      rejectionFeedback: null,
+      approvedBy: null,
+      rejectedBy: null,
+      createdAt: daysAgo(1),
+      updatedAt: daysAgo(1),
+      executedAt: null,
+      completedAt: null,
+    },
+    {
+      id: "ftask_demo_6",
+      missionId: "fmission_demo_1",
+      title: "Post on X: Casual follow-up",
+      description: "A casual follow-up post. Works best after you've used MC for a bit — edit with your real experience.",
+      type: "social-post",
+      serviceId: "twitter",
+      assignedTo: null,
+      status: "draft",
+      approvalRequired: true,
+      payload: { operation: "create-post", text: "the part where AI agents report back to your inbox with what they actually did? that's the feature I didn't know I needed. github.com/MeisnerDan/mission-control", media: [] },
+      result: {},
+      attachments: [],
+      linkedTaskId: null,
+      blockedBy: [],
+      rejectionFeedback: null,
+      approvedBy: null,
+      rejectedBy: null,
+      createdAt: daysAgo(1),
+      updatedAt: daysAgo(1),
+      executedAt: null,
+      completedAt: null,
+    },
+  ],
+};
+
+// ─── Field Ops: Activity Log ────────────────────────────────────────────────
+
+const fieldActivityLog = {
+  events: [
+    {
+      id: "fev_demo_1",
+      type: "field_task_created",
+      actor: "system",
+      taskId: "ftask_demo_1",
+      serviceId: "twitter",
+      missionId: "fmission_demo_1",
+      credentialId: null,
+      metadata: null,
+      summary: "Mission created: First Mission: Share Your Stack",
+      details: "6 field tasks queued across X, LinkedIn, and Reddit",
+      timestamp: daysAgo(2),
+    },
+    {
+      id: "fev_demo_2",
+      type: "field_task_created",
+      actor: "system",
+      taskId: "ftask_demo_1",
+      serviceId: "twitter",
+      missionId: "fmission_demo_1",
+      credentialId: null,
+      metadata: null,
+      summary: "Task awaiting approval: Post on X — Discovery",
+      details: "Connect X and approve to execute",
+      timestamp: daysAgo(2),
+    },
+  ],
+};
+
 // ─── Write all files ─────────────────────────────────────────────────────────
+
+const fieldOpsDir = join(dataDir, "field-ops");
+if (!existsSync(fieldOpsDir)) {
+  mkdirSync(fieldOpsDir, { recursive: true });
+}
 
 const files: Record<string, unknown> = {
   "agents.json": agents,
@@ -703,10 +905,22 @@ const files: Record<string, unknown> = {
   "decisions.json": decisions,
 };
 
+const fieldOpsFiles: Record<string, unknown> = {
+  "missions.json": fieldMissions,
+  "tasks.json": fieldTasks,
+  "activity-log.json": fieldActivityLog,
+};
+
 for (const [filename, data] of Object.entries(files)) {
   const filePath = join(dataDir, filename);
   writeFileSync(filePath, JSON.stringify(data, null, 2), "utf-8");
   console.log(`  \u2713 ${filename}`);
+}
+
+for (const [filename, data] of Object.entries(fieldOpsFiles)) {
+  const filePath = join(fieldOpsDir, filename);
+  writeFileSync(filePath, JSON.stringify(data, null, 2), "utf-8");
+  console.log(`  \u2713 field-ops/${filename}`);
 }
 
 console.log("\n\uD83D\uDE80 Demo data seeded successfully!");
