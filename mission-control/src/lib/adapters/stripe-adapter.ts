@@ -66,10 +66,14 @@ const stripeAdapter: ServiceAdapter = {
     const creds = parseCredentials(credentials);
 
     if (!creds) {
+      const has = {
+        secretKey: typeof credentials.secretKey === "string" && (credentials.secretKey as string).length > 0,
+        mode: typeof credentials.mode === "string" && (credentials.mode as string).length > 0,
+      };
       return {
         ok: false,
         latencyMs: Date.now() - start,
-        message: "Invalid credentials. Expected: { secretKey }",
+        message: `Invalid Stripe credentials. Found: secretKey=${has.secretKey}, mode=${has.mode}`,
       };
     }
 

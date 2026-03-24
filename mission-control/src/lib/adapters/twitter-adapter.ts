@@ -335,12 +335,19 @@ const twitterAdapter: ServiceAdapter = {
   },
 
   async execute(ctx: AdapterContext): Promise<AdapterResult> {
-    const oauthCreds = parseCredentials(ctx.credentials);
+    const merged = { ...ctx.service.config, ...ctx.credentials };
+    const oauthCreds = parseCredentials(merged as Record<string, unknown>) ?? parseCredentials(ctx.credentials);
     if (!oauthCreds) {
+      const has = {
+        apiKey: typeof merged.apiKey === "string" && (merged.apiKey as string).length > 0,
+        apiSecret: typeof merged.apiSecret === "string" && (merged.apiSecret as string).length > 0,
+        accessToken: typeof merged.accessToken === "string" && (merged.accessToken as string).length > 0,
+        accessTokenSecret: typeof merged.accessTokenSecret === "string" && (merged.accessTokenSecret as string).length > 0,
+      };
       return {
         success: false,
         data: {},
-        error: "Invalid Twitter credentials. Expected: { apiKey, apiSecret, accessToken, accessTokenSecret }",
+        error: `Invalid Twitter credentials. Found: apiKey=${has.apiKey}, apiSecret=${has.apiSecret}, accessToken=${has.accessToken}, accessTokenSecret=${has.accessTokenSecret}`,
       };
     }
 

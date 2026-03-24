@@ -3,6 +3,7 @@
 import { useState, useEffect, useCallback } from "react";
 import {
   Lock,
+  Unlock,
   Plus,
   Trash2,
   X,
@@ -13,6 +14,8 @@ import {
   EyeOff,
   Info,
   RotateCcw,
+  Loader2,
+  Timer,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -32,6 +35,7 @@ import { VaultSetupWizard, VaultSecurityDetails } from "@/components/vault-setup
 import { apiFetch } from "@/lib/api-client";
 import { showSuccess, showError } from "@/lib/toast";
 import { cn } from "@/lib/utils";
+import { useVaultSession } from "@/hooks/use-field-ops";
 
 // ─── Types (metadata only — secrets never returned from API) ────────────────
 
@@ -153,6 +157,119 @@ function HealthBadge({ health }: { health: VaultHealth | null }) {
     <Badge className="text-xs bg-yellow-500/20 text-yellow-400 border-yellow-500/30">
       Migration Needed
     </Badge>
+  );
+}
+
+// ─── Vault Session Card ────────────────────────────────────────────────────
+
+function VaultSessionCard() {
+  const vaultSession = useVaultSession();
+  const [password, setPassword] = useState("");
+  const [unlocking, setUnlocking] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const [displayMs, setDisplayMs] = useState(vaultSession.remainingMs);
+
+  // Update countdown every 10 seconds
+  useEffect(() => {
+    if (!vaultSession.active) {
+      setDisplayMs(0);
+      return;
+    }
+    setDisplayMs(vaultSession.remainingMs);
+    const interval = setInterval(() => {
+      setDisplayMs((prev) => Math.max(0, prev - 10_000));
+    }, 10_000);
+    return () => clearInterval(interval);
+  }, [vaultSession.active, vaultSession.remainingMs]);
+
+  const minutes = Math.ceil(displayMs / 60_000);
+
+  async function handleUnlock(e: React.FormEvent) {
+    e.preventDefault();
+    if (!password.trim()) return;
+    setUnlocking(true);
+    setError(null);
+    try {
+      const success = await vaultSession.unlock(password);
+      if (success) {
+        showSuccess("Vault session unlocked (30 min)");
+        setPassword("");
+      } else {
+        setError("Invalid master password");
+      }
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Failed to unlock");
+    } finally {
+      setUnlocking(false);
+    }
+  }
+
+  async function handleLock() {
+    await vaultSession.lock();
+    showSuccess("Vault session locked");
+  }
+
+  if (vaultSession.active) {
+    return (
+      <Card className="border-green-500/30 bg-green-500/5">
+        <CardContent className="flex items-center justify-between py-4">
+          <div className="flex items-center gap-3">
+            <Unlock className="h-5 w-5 text-green-400" />
+            <div>
+              <p className="text-sm font-medium text-green-300">Vault Session Active</p>
+              <p className="text-xs text-green-400/70 flex items-center gap-1">
+                <Timer className="h-3 w-3" />
+                {minutes > 0 ? `${minutes}m remaining` : "Expiring soon"} — credentials auto-decrypted for task execution
+              </p>
+            </div>
+          </div>
+          <Button
+            variant="ghost"
+            size="sm"
+            className="gap-1.5 text-green-400 hover:text-red-300 hover:bg-red-500/10"
+            onClick={handleLock}
+          >
+            <Lock className="h-3.5 w-3.5" /> Lock Now
+          </Button>
+        </CardContent>
+      </Card>
+    );
+  }
+
+  return (
+    <Card>
+      <CardContent className="py-4">
+        <form onSubmit={handleUnlock} className="flex items-end gap-3">
+          <div className="flex items-center gap-3 flex-1">
+            <Lock className="h-5 w-5 text-muted-foreground shrink-0" />
+            <div className="flex-1 space-y-1">
+              <p className="text-sm font-medium">Vault Locked</p>
+              <Input
+                type="password"
+                placeholder="Enter master password to unlock"
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                disabled={unlocking}
+                className="h-8 text-sm"
+              />
+              {error && (
+                <p className="text-xs text-red-400">{error}</p>
+              )}
+            </div>
+          </div>
+          <Button type="submit" size="sm" disabled={unlocking || !password.trim()} className="gap-1.5">
+            {unlocking ? (
+              <><Loader2 className="h-3.5 w-3.5 animate-spin" /> Unlocking...</>
+            ) : (
+              <><Unlock className="h-3.5 w-3.5" /> Unlock</>
+            )}
+          </Button>
+        </form>
+        <p className="text-[11px] text-muted-foreground/60 mt-2 ml-8">
+          Unlocking caches your password in memory for 30 minutes. Never stored on disk.
+        </p>
+      </CardContent>
+    </Card>
   );
 }
 
@@ -338,6 +455,11 @@ export default function VaultPage() {
 
       {/* Dynamic security banner */}
       <SecurityBanner health={health} />
+
+      {/* Vault session unlock/lock controls */}
+      {!loading && health?.masterKeyFormat !== "none" && (
+        <VaultSessionCard />
+      )}
 
       {/* Inline Add Form */}
       {showForm && (

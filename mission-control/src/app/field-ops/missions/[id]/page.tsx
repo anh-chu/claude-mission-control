@@ -307,6 +307,7 @@ export default function MissionDetailPage() {
   const [rejectingTask, setRejectingTask] = useState<FieldTask | null>(null);
   const [vaultUnlockOpen, setVaultUnlockOpen] = useState(false);
   const [pendingExecuteTask, setPendingExecuteTask] = useState<FieldTask | null>(null);
+  const [pendingDryRun, setPendingDryRun] = useState(false);
   const [pendingAction, setPendingAction] = useState<{ taskId: string; status: string; feedback?: string } | null>(null);
 
   const vaultSession = useVaultSession();
@@ -436,15 +437,32 @@ export default function MissionDetailPage() {
   // ── Execute flow ─────────────────────────────────────────────────────────
 
   async function handleExecute(task: FieldTask) {
-    // Check if vault session is active — if not, show unlock dialog
-    if (!vaultSession.active) {
+    // Auto-reset failed tasks for re-execution (saves the "Resubmit as Draft" → re-approve dance)
+    if (task.status === "failed") {
+      try {
+        await updateTask(task.id, { status: "approved" } as Partial<FieldTask>);
+        await refetchTasks();
+      } catch {
+        showError("Could not reset task. Use 'Resubmit as Draft' first.");
+        return;
+      }
+    }
+    // Always try client-side cached password first — resilient to server restarts
+    const pw = vaultSession.getCachedPassword();
+    if (!vaultSession.active && !pw) {
       setPendingExecuteTask(task);
+      setPendingDryRun(false);
       setVaultUnlockOpen(true);
       return;
     }
-    // Vault is unlocked — execute directly
-    await executeTask(task.id);
-    // Refetch tasks to get updated status
+    const result = await executeTask(task.id, pw ?? undefined);
+    // Auto-retry: if vault was locked (server lost session), show unlock dialog
+    if (!result.success && result.error?.includes("Vault is locked")) {
+      setPendingExecuteTask(task);
+      setPendingDryRun(false);
+      setVaultUnlockOpen(true);
+      return;
+    }
     await refetchTasks();
   }
 
@@ -452,12 +470,14 @@ export default function MissionDetailPage() {
     const success = await vaultSession.unlock(password);
     if (success) {
       if (pendingExecuteTask) {
-        // Vault unlocked — now execute the pending task
+        // Vault unlocked — now execute the pending task with the password
         const taskToExecute = pendingExecuteTask;
+        const isDryRun = pendingDryRun;
         setPendingExecuteTask(null);
+        setPendingDryRun(false);
         // Small delay to allow dialog to close
         setTimeout(async () => {
-          await executeTask(taskToExecute.id);
+          await executeTask(taskToExecute.id, password, isDryRun);
           await refetchTasks();
         }, 100);
       }
@@ -486,13 +506,30 @@ export default function MissionDetailPage() {
   }
 
   async function handleDryRun(task: FieldTask) {
-    // Dry run also needs vault session (same unlock flow)
-    if (!vaultSession.active) {
+    // Auto-reset failed tasks for dry-run re-testing
+    if (task.status === "failed") {
+      try {
+        await updateTask(task.id, { status: "approved" } as Partial<FieldTask>);
+        await refetchTasks();
+      } catch {
+        showError("Could not reset task. Use 'Resubmit as Draft' first.");
+        return;
+      }
+    }
+    const pw = vaultSession.getCachedPassword();
+    if (!vaultSession.active && !pw) {
       setPendingExecuteTask(task);
+      setPendingDryRun(true);
       setVaultUnlockOpen(true);
       return;
     }
-    await executeTask(task.id, undefined, true);
+    const result = await executeTask(task.id, pw ?? undefined, true);
+    // Auto-retry: if vault was locked, show unlock dialog
+    if (!result.success && result.error?.includes("Vault is locked")) {
+      setPendingExecuteTask(task);
+      setPendingDryRun(true);
+      setVaultUnlockOpen(true);
+    }
   }
 
   // ── Loading / Not Found ───────────────────────────────────────────────────

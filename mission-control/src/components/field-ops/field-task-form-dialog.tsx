@@ -86,6 +86,7 @@ export function FieldTaskFormDialog({
   const [postSubreddit, setPostSubreddit] = useState("");
 
   // Email campaign fields
+  const [emailTo, setEmailTo] = useState("");
   const [emailSubject, setEmailSubject] = useState("");
   const [emailBody, setEmailBody] = useState("");
 
@@ -116,6 +117,7 @@ export function FieldTaskFormDialog({
       setCryptoAmount(p?.amount ? String(p.amount) : "");
       setPostText((p?.text as string) ?? "");
       setPostSubreddit((p?.subreddit as string) ?? "");
+      setEmailTo((p?.to as string) ?? "");
       setEmailSubject((p?.subject as string) ?? "");
       setEmailBody((p?.body as string) ?? "");
       setAdHeadline((p?.headline as string) ?? "");
@@ -152,7 +154,7 @@ export function FieldTaskFormDialog({
           if (postSubreddit.trim()) payload.subreddit = postSubreddit.trim();
           break;
         case "email-campaign":
-          payload = { subject: emailSubject.trim(), body: emailBody.trim() };
+          payload = { to: emailTo.trim(), subject: emailSubject.trim(), body: emailBody.trim() };
           break;
         case "ad-campaign":
           payload = { headline: adHeadline.trim(), body: adBody.trim() };
@@ -310,6 +312,17 @@ export function FieldTaskFormDialog({
             {type === "email-campaign" && (
               <div className="space-y-3 rounded-md border border-purple-500/20 bg-purple-500/5 p-3">
                 <Label className="text-xs font-medium text-purple-400">Email Content</Label>
+
+                <div className="space-y-1.5">
+                  <Label htmlFor="email-to" className="text-xs">To</Label>
+                  <Input
+                    id="email-to"
+                    type="email"
+                    value={emailTo}
+                    onChange={(e) => setEmailTo(e.target.value)}
+                    placeholder="recipient@example.com"
+                  />
+                </div>
 
                 <div className="space-y-1.5">
                   <Label htmlFor="email-subject" className="text-xs">Subject</Label>

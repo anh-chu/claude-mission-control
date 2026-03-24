@@ -127,6 +127,41 @@ function useFieldOpsResource<T extends { id: string }>(
   return { items, loading, error, create, update, remove, refetch };
 }
 
+// ─── Client-Side Password Cache (module-level singleton) ─────────────────────
+//
+// Mirrors the server-side vault-session.ts pattern but in browser memory.
+// Survives server restarts / HMR — the password is always available to send
+// in execute request bodies, even if the server lost its in-memory cache.
+//
+// Security posture: same as server-side — volatile, in-memory, auto-clears
+// after 30 minutes. Never persisted to disk, localStorage, or cookies.
+
+const PW_TTL_MS = 30 * 60 * 1000; // 30 minutes — matches server TTL
+let _cachedPw: string | null = null;
+let _pwTimer: ReturnType<typeof setTimeout> | null = null;
+
+function cachePw(pw: string): void {
+  _cachedPw = pw;
+  if (_pwTimer) clearTimeout(_pwTimer);
+  _pwTimer = setTimeout(() => {
+    _cachedPw = null;
+    _pwTimer = null;
+  }, PW_TTL_MS);
+}
+
+function clearPw(): void {
+  _cachedPw = null;
+  if (_pwTimer) {
+    clearTimeout(_pwTimer);
+    _pwTimer = null;
+  }
+}
+
+/** Retrieve the client-side cached master password (or null if expired/absent). */
+export function getCachedVaultPassword(): string | null {
+  return _cachedPw;
+}
+
 // ─── Vault Session Hook ─────────────────────────────────────────────────────
 
 interface VaultSessionState {
@@ -175,6 +210,8 @@ export function useVaultSession() {
       if (res.ok) {
         const data = await res.json();
         setSession(data);
+        // Cache password client-side — resilient to server restarts
+        cachePw(password);
         return true;
       }
       const err = await res.json().catch(() => ({}));
@@ -194,6 +231,7 @@ export function useVaultSession() {
     try {
       await apiFetch("/api/field-ops/vault/session", { method: "DELETE" });
       setSession({ active: false, remainingMs: 0, ttlMs: 0 });
+      clearPw();
     } catch {
       // Silently fail
     }
@@ -206,6 +244,8 @@ export function useVaultSession() {
     unlock,
     lock,
     checkSession,
+    /** Get the client-side cached password for use in execute requests. */
+    getCachedPassword: getCachedVaultPassword,
   };
 }
 

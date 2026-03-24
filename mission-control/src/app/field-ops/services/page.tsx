@@ -13,6 +13,8 @@ import {
   Wifi,
   WifiOff,
   AlertTriangle,
+  Info,
+  KeyRound,
   Bookmark,
   Search,
   Library,
@@ -145,6 +147,7 @@ export default function ServicesPage() {
   const [guideService, setGuideService] = useState<CatalogService | null>(null);
   const [activateService, setActivateService] = useState<FieldOpsService | null>(null);
   const [activateCatalogEntry, setActivateCatalogEntry] = useState<CatalogService | null>(null);
+  const [updateCredentialsMode, setUpdateCredentialsMode] = useState(false);
 
   // Test connection state
   const [testingServiceId, setTestingServiceId] = useState<string | null>(null);
@@ -321,10 +324,19 @@ export default function ServicesPage() {
     const catalogEntry = catalog.find((c) => c.id === svc.catalogId || c.id === svc.id) ?? null;
     setActivateService(svc);
     setActivateCatalogEntry(catalogEntry);
+    setUpdateCredentialsMode(false);
+  }
+
+  function handleUpdateCredentialsClick(svc: FieldOpsService) {
+    const catalogEntry = catalog.find((c) => c.id === svc.catalogId || c.id === svc.id) ?? null;
+    setActivateService(svc);
+    setActivateCatalogEntry(catalogEntry);
+    setUpdateCredentialsMode(true);
   }
 
   async function handleActivated() {
-    showSuccess("Service activated!");
+    showSuccess(updateCredentialsMode ? "Credentials updated!" : "Service activated!");
+    setUpdateCredentialsMode(false);
     await Promise.all([fetchServices(), fetchCatalog()]);
   }
 
@@ -708,8 +720,23 @@ export default function ServicesPage() {
                     {/* Actions */}
                     <Separator />
                     <div className="flex items-center justify-between gap-2">
-                      {/* Test button — only when credentials are stored */}
-                      <div className="flex items-center">
+                      {/* Left: Setup Guide + Test */}
+                      <div className="flex items-center gap-1">
+                        {/* Setup Guide — show for non-connected services with a catalog entry */}
+                        {svc.status !== "connected" && (() => {
+                          const entry = catalog.find((c) => c.id === svc.catalogId);
+                          return entry ? (
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              className="h-7 text-xs gap-1"
+                              onClick={() => setGuideService(entry)}
+                            >
+                              <Info className="h-3 w-3" /> Setup Guide
+                            </Button>
+                          ) : null;
+                        })()}
+                        {/* Test button — only when credentials are stored */}
                         {svc.credentialId && (
                           <Button
                             variant="ghost"
@@ -746,6 +773,16 @@ export default function ServicesPage() {
                             onClick={() => handleActivateClick(svc)}
                           >
                             <Settings className="h-3 w-3" /> Reconnect
+                          </Button>
+                        )}
+                        {svc.status === "connected" && (
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            className="h-7 text-xs gap-1"
+                            onClick={() => handleUpdateCredentialsClick(svc)}
+                          >
+                            <KeyRound className="h-3 w-3" /> Update Credentials
                           </Button>
                         )}
                         <Button
@@ -875,9 +912,11 @@ export default function ServicesPage() {
             if (!open) {
               setActivateService(null);
               setActivateCatalogEntry(null);
+              setUpdateCredentialsMode(false);
             }
           }}
           onActivated={handleActivated}
+          updateMode={updateCredentialsMode}
         />
       )}
     </div>

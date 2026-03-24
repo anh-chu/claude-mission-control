@@ -73,9 +73,9 @@ EMPTY_SCHEMAS=(
   ["mission-control/data/tasks-archive.json"]='{ "tasks": [] }'
   ["mission-control/data/respond-runs.json"]='{ "runs": [] }'
   ["mission-control/data/field-ops/activity-log.json"]='{ "events": [] }'
-  ["mission-control/data/field-ops/missions.json"]='{ "missions": [] }'
-  ["mission-control/data/field-ops/services.json"]='{ "services": [] }'
-  ["mission-control/data/field-ops/tasks.json"]='{ "tasks": [] }'
+  ["mission-control/data/field-ops/missions.json"]='{ "missions": [{"id":"fmission_gmail_test","title":"Gmail Integration Test","description":"Quick test to verify the Gmail service connection works end-to-end. One test email to enteryouremail@youremail.com.","status":"active","autonomyLevel":"approve-all","linkedProjectId":null,"tasks":["ftask_gmail_01"],"createdAt":"2026-03-24T00:00:00.000Z","updatedAt":"2026-03-24T00:00:00.000Z","completedAt":null}] }'
+  ["mission-control/data/field-ops/services.json"]='{ "services": [{"id":"gmail","name":"Gmail","mcpPackage":"gmail-mcp","status":"saved","authType":"oauth2","credentialId":null,"riskLevel":"medium","capabilities":["send-email","read-email","manage-labels","attachments","search"],"allowedAgents":["marketer","developer"],"config":{},"catalogId":"gmail","installedAt":"2026-03-24T00:00:00.000Z","lastUsed":null}] }'
+  ["mission-control/data/field-ops/tasks.json"]='{ "tasks": [{"id":"ftask_gmail_01","missionId":"fmission_gmail_test","title":"Test email: Gmail integration check","description":"Send a test email to verify the Gmail service connection works end-to-end through Field Ops.","type":"email-campaign","serviceId":"gmail","assignedTo":null,"status":"draft","approvalRequired":true,"payload":{"to":"enteryouremail@youremail.com","subject":"Mission Control — Gmail Integration Test","body":"This email was sent by Mission Control Field Ops system.\n\nIf you are reading this, the Gmail integration is working. This email was queued as a field task, approved by a human, and executed through the Field Ops pipeline.\n\n— Mission Control v0.10"},"result":{},"attachments":[],"linkedTaskId":null,"blockedBy":[],"rejectionFeedback":null,"approvedBy":null,"rejectedBy":null,"createdAt":"2026-03-24T00:00:00.000Z","updatedAt":"2026-03-24T00:00:00.000Z","executedAt":null,"completedAt":null}] }'
 )
 
 # Config/template data files that SHOULD sync from main (not personal)

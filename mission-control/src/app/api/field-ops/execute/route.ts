@@ -53,6 +53,7 @@ import "@/lib/adapters/ethereum-adapter";
 import "@/lib/adapters/reddit-adapter";
 import "@/lib/adapters/linkedin-adapter";
 import "@/lib/adapters/stripe-adapter";
+import "@/lib/adapters/gmail-adapter";
 
 /** Strip sensitive fields from result data before logging */
 function sanitizeForLog(data: Record<string, unknown>): Record<string, unknown> {
@@ -419,7 +420,7 @@ export async function POST(request: Request) {
   const result = await resolvedAdapter.execute({
     task,
     service: service!,
-    credentials,
+    credentials: { ...service!.config, ...credentials },
     dryRun,
   });
 

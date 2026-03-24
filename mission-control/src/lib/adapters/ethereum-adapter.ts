@@ -581,7 +581,7 @@ const ethereumAdapter: ServiceAdapter = {
           return {
             success: false,
             data: {},
-            error: "No wallet address found in credentials. Provide 'address' or 'privateKey'.",
+            error: `No wallet address found in credentials. Found: address=${!!creds.address}, privateKey=${!!creds.privateKey}. Provide 'address' or 'privateKey'.`,
           };
         }
         return readBalance(address, network, rpcUrl);
@@ -644,7 +644,7 @@ const ethereumAdapter: ServiceAdapter = {
       return {
         ok: false,
         latencyMs: Date.now() - start,
-        message: "No wallet address found in credentials.",
+        message: `No wallet address found in credentials. Found: address=${!!creds.address}, privateKey=${!!creds.privateKey}`,
       };
     }
 

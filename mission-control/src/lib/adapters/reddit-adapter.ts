@@ -73,10 +73,11 @@ async function acquireToken(creds: RedditCredentials): Promise<string> {
   });
 
   if (!response.ok) {
-    const errorData = await response.json().catch(() => ({}));
+    const errorData = (await response.json().catch(() => ({}))) as Record<string, unknown>;
+    const code = (errorData.error as string) ?? "unknown";
+    const desc = (errorData.error_description as string) ?? "";
     throw new Error(
-      (errorData as Record<string, unknown>)?.error as string
-        ?? `Token request failed: ${response.status}`,
+      `Reddit OAuth failed (HTTP ${response.status}): ${code}${desc ? ` — ${desc}` : ""}`,
     );
   }
 
@@ -138,10 +139,13 @@ async function submitPost(
     const responseData = (await response.json()) as Record<string, unknown>;
 
     if (!response.ok) {
+      const errMsg = (responseData.message as string)
+        ?? (responseData.error as string)
+        ?? `Reddit API error (HTTP ${response.status})`;
       return {
         success: false,
         data: responseData,
-        error: `Reddit API error: ${response.status}`,
+        error: errMsg,
         apiResponseCode: response.status,
         executionMs,
       };
@@ -220,10 +224,13 @@ async function postComment(
     const responseData = (await response.json()) as Record<string, unknown>;
 
     if (!response.ok) {
+      const errMsg = (responseData.message as string)
+        ?? (responseData.error as string)
+        ?? `Reddit API error (HTTP ${response.status})`;
       return {
         success: false,
         data: responseData,
-        error: `Reddit API error: ${response.status}`,
+        error: errMsg,
         apiResponseCode: response.status,
         executionMs,
       };
@@ -295,11 +302,14 @@ async function deleteThing(
     const executionMs = Date.now() - start;
 
     if (!response.ok) {
-      const responseData = await response.json().catch(() => ({}));
+      const responseData = (await response.json().catch(() => ({}))) as Record<string, unknown>;
+      const errMsg = (responseData.message as string)
+        ?? (responseData.error as string)
+        ?? `Reddit API error (HTTP ${response.status})`;
       return {
         success: false,
-        data: responseData as Record<string, unknown>,
-        error: `Reddit API error: ${response.status}`,
+        data: responseData,
+        error: errMsg,
         apiResponseCode: response.status,
         executionMs,
       };
@@ -499,10 +509,18 @@ const redditAdapter: ServiceAdapter = {
   async execute(ctx: AdapterContext): Promise<AdapterResult> {
     const redditCreds = parseCredentials(ctx.credentials);
     if (!redditCreds) {
+      const merged = ctx.credentials as Record<string, unknown>;
+      const has = {
+        clientId: typeof merged.clientId === "string" && (merged.clientId as string).length > 0,
+        clientSecret: typeof merged.clientSecret === "string" && (merged.clientSecret as string).length > 0,
+        username: typeof merged.username === "string" && (merged.username as string).length > 0,
+        password: typeof merged.password === "string" && (merged.password as string).length > 0,
+        userAgent: typeof merged.userAgent === "string" && (merged.userAgent as string).length > 0,
+      };
       return {
         success: false,
         data: {},
-        error: "Invalid Reddit credentials. Expected: { clientId, clientSecret, username, password, userAgent }",
+        error: `Invalid Reddit credentials. Found: clientId=${has.clientId}, clientSecret=${has.clientSecret}, username=${has.username}, password=${has.password}, userAgent=${has.userAgent}`,
       };
     }
 

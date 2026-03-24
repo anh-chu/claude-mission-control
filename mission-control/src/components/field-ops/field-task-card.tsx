@@ -436,8 +436,8 @@ export function FieldTaskCard({
             </Button>
           )}
 
-          {/* Approved → Test (dry run) */}
-          {task.status === "approved" && onDryRun && (
+          {/* Approved/Failed → Test (dry run) */}
+          {(task.status === "approved" || task.status === "failed") && onDryRun && (
             <Button
               size="sm"
               variant="ghost"
@@ -459,8 +459,8 @@ export function FieldTaskCard({
             </Button>
           )}
 
-          {/* Approved → Execute (via adapter) or Start (manual fallback) */}
-          {task.status === "approved" && (
+          {/* Approved/Failed → Execute (via adapter) or Start (manual fallback) */}
+          {(task.status === "approved" || task.status === "failed") && (
             <Button
               size="sm"
               variant="outline"

@@ -155,6 +155,75 @@ commands/                     — Plugin commands (Cowork + Claude Code)
 | answeredAt | ISO 8601 \| null | When answered |
 | createdAt | ISO 8601 | When requested |
 
+### field-ops/missions.json — `{ "missions": FieldMission[] }`
+| Field | Type | Description |
+|-------|------|-------------|
+| id | string | `"fmission_{name}"` |
+| title | string | Mission name |
+| description | string | What this mission does |
+| status | `"active"` \| `"paused"` \| `"completed"` | Mission lifecycle |
+| autonomyLevel | AutonomyLevel | `"approve-all"` \| `"approve-high-risk"` \| `"auto"` |
+| linkedProjectId | string \| null | Links to project |
+| tasks | string[] | Field task IDs in this mission |
+| createdAt | ISO 8601 | When created |
+| updatedAt | ISO 8601 | Last modification |
+| completedAt | ISO 8601 \| null | When completed |
+
+### field-ops/tasks.json — `{ "tasks": FieldTask[] }`
+| Field | Type | Description |
+|-------|------|-------------|
+| id | string | `"ftask_{name}"` |
+| missionId | string \| null | Parent mission ID |
+| title | string | Task name |
+| description | string | What this task does |
+| **type** | **FieldTaskType** | **`"social-post"` \| `"email-campaign"` \| `"ad-campaign"` \| `"payment"` \| `"publish"` \| `"design"` \| `"crypto-transfer"` \| `"custom"`** |
+| serviceId | string \| null | Which service executes this |
+| assignedTo | AgentRole \| null | Agent assignment |
+| status | FieldTaskStatus | `"draft"` \| `"pending-approval"` \| `"approved"` \| `"executing"` \| `"awaiting-signature"` \| `"completed"` \| `"failed"` \| `"rejected"` |
+| approvalRequired | boolean | Needs human approval? |
+| payload | object | Service-specific data — see payload formats below |
+| result | object | Execution result (populated after execution) |
+| attachments | FieldTaskAttachment[] | File attachments |
+| linkedTaskId | string \| null | Links to a regular task ID |
+| blockedBy | string[] | Field task IDs this depends on |
+| rejectionFeedback | string \| null | Why it was rejected |
+| approvedBy | string \| null | Who approved |
+| rejectedBy | string \| null | Who rejected |
+| createdAt | ISO 8601 | When created |
+| updatedAt | ISO 8601 | Last modification |
+| executedAt | ISO 8601 \| null | When executed |
+| completedAt | ISO 8601 \| null | When completed |
+
+**IMPORTANT — Valid FieldTaskType values:** `"social-post"` | `"email-campaign"` | `"ad-campaign"` | `"payment"` | `"publish"` | `"design"` | `"crypto-transfer"` | `"custom"`. Do NOT invent types (e.g. `"email"` is invalid — use `"email-campaign"`).
+
+**Payload formats by type:**
+| Type | Payload Fields |
+|------|---------------|
+| `social-post` | `{ operation: "create-post", text, media? }` or `{ operation: "submit-post", subreddit, title, text }` |
+| `email-campaign` | `{ to, subject, body }` |
+| `crypto-transfer` | `{ operation: "send-usdc"\|"send-eth", to, amount }` |
+| `ad-campaign` | `{ headline, body }` |
+| `publish` | `{ title, content, url? }` |
+| `design` | `{ prompt }` |
+| `custom` | Any JSON object |
+
+### field-ops/services.json — `{ "services": FieldOpsService[] }`
+| Field | Type | Description |
+|-------|------|-------------|
+| id | string | URL-safe slug (e.g. `"twitter"`, `"gmail"`) |
+| name | string | Display name |
+| mcpPackage | string | MCP package name (empty string if none) |
+| status | `"saved"` \| `"connected"` \| `"disconnected"` \| `"error"` | Connection state |
+| authType | `"oauth2"` \| `"api-key"` \| `"none"` | Authentication method |
+| credentialId | string \| null | Links to encrypted credential in vault |
+| riskLevel | `"high"` \| `"medium"` \| `"low"` | Risk classification |
+| capabilities | string[] | What this service can do |
+| allowedAgents | string[] | Which agents can use this service |
+| config | object | Service configuration (credentials, settings) |
+| catalogId | string \| null | Links to service-catalog.json entry |
+| installedAt | ISO 8601 | When added |
+| lastUsed | ISO 8601 \| null | Last execution time |
+
 ## Eisenhower Matrix
 - **DO** (important + urgent) — Work on immediately
 - **SCHEDULE** (important + not-urgent) — Block time, protect from neglect
