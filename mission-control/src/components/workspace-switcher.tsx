@@ -1,7 +1,8 @@
 "use client";
 
 import { useState } from "react";
-import { Check, ChevronDown, Plus } from "lucide-react";
+import { Check, ChevronDown, Plus, Settings2 } from "lucide-react";
+import Link from "next/link";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -94,6 +95,14 @@ export function WorkspaceSwitcher({ collapsed = false }: WorkspaceSwitcherProps)
                 <span className="flex-1 truncate text-left font-medium text-xs">
                   {display.name}
                 </span>
+                <Link
+                  href="/settings"
+                  onClick={(e) => e.stopPropagation()}
+                  className="shrink-0 rounded p-0.5 text-sidebar-foreground/50 hover:text-sidebar-foreground transition-colors"
+                  title="Settings"
+                >
+                  <Settings2 className="h-3 w-3" />
+                </Link>
                 <ChevronDown className="h-3 w-3 shrink-0 text-sidebar-foreground/50" />
               </>
             )}

@@ -4,6 +4,7 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import {
   LayoutDashboard,
+  LayoutGrid,
   Grid2x2,
   Crosshair,
   Lightbulb,
@@ -20,7 +21,6 @@ import {
   Layers,
   CheckSquare,
   FolderKanban,
-  Settings2,
   Radio,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
@@ -56,7 +56,7 @@ const commsLinks = [
 ];
 
 const settingsLinks = [
-  { href: "/settings", label: "General", icon: Settings2 },
+  { href: "/field-ops", label: "Overview", icon: LayoutGrid },
   { href: "/field-ops/services", label: "Services", icon: Globe },
   { href: "/field-ops/vault", label: "Vault", icon: Lock },
   { href: "/field-ops/safety", label: "Safety", icon: Shield },
@@ -258,7 +258,7 @@ export function AppSidebar({ collapsed, unreadInbox = 0, pendingDecisions = 0, p
             <Separator className="mx-2 my-2" />
             <div className="px-3 pb-1">
               <p className="text-xs font-semibold uppercase tracking-wider text-sidebar-foreground/50">
-                Settings
+                Connections
               </p>
             </div>
             <nav className="space-y-0.5 px-2">
@@ -368,7 +368,7 @@ export function AppSidebar({ collapsed, unreadInbox = 0, pendingDecisions = 0, p
           <Separator className="mx-2 my-2" />
           {!collapsed && (
             <div className="px-3 pb-1">
-              <p className="text-xs font-semibold uppercase tracking-wider text-sidebar-foreground/50">Settings</p>
+              <p className="text-xs font-semibold uppercase tracking-wider text-sidebar-foreground/50">Connections</p>
             </div>
           )}
           <nav className="space-y-0.5 px-2">

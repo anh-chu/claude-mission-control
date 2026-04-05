@@ -6,12 +6,8 @@ import Link from "next/link";
 import {
   Plus,
   ArrowLeft,
-  ShieldCheck,
-  ShieldAlert,
-  ShieldOff,
   Check,
   Clock,
-  Shield,
   CheckCircle2,
   Activity,
   Pause,
@@ -35,25 +31,6 @@ import { useFieldServices, useExecuteTask } from "@/hooks/use-field-ops";
 import { apiFetch } from "@/lib/api-client";
 import { showSuccess, showError } from "@/lib/toast";
 import type { Initiative, InitiativeStatus, AutonomyLevel, Task, FieldTaskType } from "@/lib/types";
-
-function autonomyIcon(level: AutonomyLevel | null) {
-  const l = level ?? "approve-all";
-  switch (l) {
-    case "approve-all": return ShieldCheck;
-    case "approve-high-risk": return ShieldAlert;
-    case "full-autonomy": return ShieldOff;
-  }
-}
-
-function autonomyLabel(level: AutonomyLevel | null) {
-  const l = level ?? null;
-  switch (l) {
-    case "approve-all": return "Manual Approval";
-    case "approve-high-risk": return "Supervised";
-    case "full-autonomy": return "Full Autonomy";
-    default: return "Inherited";
-  }
-}
 
 function kanbanBadge(kanban: Task["kanban"]) {
   switch (kanban) {
@@ -153,7 +130,6 @@ export default function InitiativeDetailPage() {
   const doneCount = tasks.filter((t) => t.kanban === "done").length;
   const totalTaskCount = tasks.length;
   const pendingApprovals = actions.filter((a) => a.status === "pending-approval");
-  const AutonomyIcon = initiative ? autonomyIcon(initiative.autonomyLevel) : ShieldCheck;
 
   async function handleTogglePause() {
     if (!initiative) return;
@@ -371,14 +347,9 @@ export default function InitiativeDetailPage() {
         </div>
       </div>
 
-      <Card>
-        <CardContent className="p-4 flex items-center gap-6 flex-wrap">
-          <div className="flex items-center gap-2 text-sm">
-            <AutonomyIcon className="h-4 w-4" />
-            <span className="text-muted-foreground">Approval:</span>
-            <span className="font-medium">{autonomyLabel(initiative.autonomyLevel)}</span>
-          </div>
-          {pendingApprovals.length > 0 && (
+      {pendingApprovals.length > 0 && (
+        <Card>
+          <CardContent className="p-4 flex items-center gap-4 flex-wrap">
             <div className="flex items-center gap-2 text-sm text-amber-400">
               <Clock className="h-4 w-4 animate-pulse" />
               <span className="font-medium">
@@ -390,28 +361,27 @@ export default function InitiativeDetailPage() {
                 </Button>
               </Link>
             </div>
-          )}
-          <div className="flex items-center gap-2 text-sm">
-            <Shield className="h-4 w-4" />
-            <span className="text-muted-foreground">Tasks:</span>
-            <span className="font-medium">{totalTaskCount}</span>
-          </div>
-          <div className="flex items-center gap-2 text-sm">
-            <CheckCircle2 className="h-4 w-4 text-green-400" />
-            <span className="font-medium">{doneCount} of {totalTaskCount} done</span>
-          </div>
-        </CardContent>
-      </Card>
+          </CardContent>
+        </Card>
+      )}
 
       <Tabs defaultValue="tasks">
-        <TabsList>
-          <TabsTrigger value="tasks">
-            Tasks {!loadingTasks && <span className="ml-1.5 text-xs opacity-60">({tasks.length})</span>}
-          </TabsTrigger>
-          <TabsTrigger value="actions">
-            Actions {!loadingActions && <span className="ml-1.5 text-xs opacity-60">({actions.length})</span>}
-          </TabsTrigger>
-        </TabsList>
+        <div className="flex items-center justify-between">
+          <TabsList>
+            <TabsTrigger value="tasks">
+              Tasks {!loadingTasks && <span className="ml-1.5 text-xs opacity-60">({tasks.length})</span>}
+            </TabsTrigger>
+            <TabsTrigger value="actions">
+              Actions {!loadingActions && <span className="ml-1.5 text-xs opacity-60">({actions.length})</span>}
+            </TabsTrigger>
+          </TabsList>
+          {!loadingTasks && totalTaskCount > 0 && (
+            <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
+              <CheckCircle2 className="h-3.5 w-3.5 text-green-400" />
+              <span>{doneCount} of {totalTaskCount} done</span>
+            </div>
+          )}
+        </div>
 
         <TabsContent value="tasks" className="mt-4">
           <Card>
