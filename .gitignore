@@ -40,6 +40,11 @@ mission-control/data/field-ops/.credentials.json
 mission-control/data/field-ops/.tmp/
 mission-control/data/field-ops/attachments/
 
+# Field Ops operational data (live state, not source)
+mission-control/data/field-ops/activity-log.json
+mission-control/data/field-ops/missions.json
+mission-control/data/field-ops/approval-config.json
+
 # Personal data files (use `pnpm seed:demo` to generate sample data)
 mission-control/data/tasks.json
 mission-control/data/tasks-archive.json
