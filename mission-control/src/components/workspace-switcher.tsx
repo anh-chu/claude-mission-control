@@ -78,36 +78,42 @@ export function WorkspaceSwitcher({ collapsed = false }: WorkspaceSwitcherProps)
   return (
     <>
       <DropdownMenu>
-        <DropdownMenuTrigger asChild>
-          <button
-            className={cn(
-              "mx-2 mb-1 flex w-[calc(100%-1rem)] items-center gap-2 rounded-lg px-3 py-2 text-sm transition-colors",
-              "hover:bg-sidebar-accent/50 text-sidebar-foreground",
-              collapsed && "justify-center px-2 w-10"
-            )}
-          >
-            <span
-              className="h-2.5 w-2.5 rounded-full shrink-0"
-              style={{ backgroundColor: display.color }}
-            />
-            {!collapsed && (
-              <>
-                <span className="flex-1 truncate text-left font-medium text-xs">
-                  {display.name}
-                </span>
-                <Link
-                  href="/settings"
-                  onClick={(e) => e.stopPropagation()}
-                  className="shrink-0 rounded p-0.5 text-sidebar-foreground/50 hover:text-sidebar-foreground transition-colors"
-                  title="Settings"
-                >
-                  <Settings2 className="h-3 w-3" />
-                </Link>
-                <ChevronDown className="h-3 w-3 shrink-0 text-sidebar-foreground/50" />
-              </>
-            )}
-          </button>
-        </DropdownMenuTrigger>
+        <div className={cn(
+          "mx-2 mb-1 flex w-[calc(100%-1rem)] items-center rounded-lg text-sm text-sidebar-foreground",
+          collapsed && "w-10 justify-center"
+        )}>
+          <DropdownMenuTrigger asChild>
+            <button
+              className={cn(
+                "flex flex-1 items-center gap-2 rounded-lg px-3 py-2 transition-colors",
+                "hover:bg-sidebar-accent/50",
+                collapsed && "justify-center px-2"
+              )}
+            >
+              <span
+                className="h-2.5 w-2.5 rounded-full shrink-0"
+                style={{ backgroundColor: display.color }}
+              />
+              {!collapsed && (
+                <>
+                  <span className="flex-1 truncate text-left font-medium text-xs">
+                    {display.name}
+                  </span>
+                  <ChevronDown className="h-3 w-3 shrink-0 text-sidebar-foreground/50" />
+                </>
+              )}
+            </button>
+          </DropdownMenuTrigger>
+          {!collapsed && (
+            <Link
+              href="/settings"
+              className="shrink-0 rounded p-1.5 text-sidebar-foreground/50 hover:text-sidebar-foreground transition-colors"
+              title="Settings"
+            >
+              <Settings2 className="h-3 w-3" />
+            </Link>
+          )}
+        </div>
 
         <DropdownMenuContent side="right" align="start" className="w-52">
           {workspaces.map((ws) => (

@@ -127,8 +127,8 @@ export default function InitiativeDetailPage() {
 
   const parentGoal = initiative?.parentGoalId ? goals.find((g) => g.id === initiative.parentGoalId) : null;
 
-  const doneCount = tasks.filter((t) => t.kanban === "done").length;
-  const totalTaskCount = tasks.length;
+  const doneCount = tasks.filter((t) => t.kanban === "done").length + actions.filter((a) => a.status === "completed").length;
+  const totalCount = tasks.length + actions.length;
   const pendingApprovals = actions.filter((a) => a.status === "pending-approval");
 
   async function handleTogglePause() {
@@ -341,11 +341,16 @@ export default function InitiativeDetailPage() {
           )}
         </div>
 
-        <div className="pl-7 space-y-1">
-          <span className="text-xs text-muted-foreground">Approval level:</span>
-          <AutonomySelector value={initiative.autonomyLevel ?? null} onChange={handleAutonomyChange} showInherit />
-        </div>
       </div>
+
+      <Card>
+        <CardHeader className="pb-3">
+          <CardTitle className="text-sm font-medium text-muted-foreground">Autonomy Level</CardTitle>
+        </CardHeader>
+        <CardContent className="pt-0">
+          <AutonomySelector value={initiative.autonomyLevel ?? null} onChange={handleAutonomyChange} showInherit />
+        </CardContent>
+      </Card>
 
       {pendingApprovals.length > 0 && (
         <Card>
@@ -375,10 +380,10 @@ export default function InitiativeDetailPage() {
               Actions {!loadingActions && <span className="ml-1.5 text-xs opacity-60">({actions.length})</span>}
             </TabsTrigger>
           </TabsList>
-          {!loadingTasks && totalTaskCount > 0 && (
+          {!loadingTasks && !loadingActions && totalCount > 0 && (
             <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
               <CheckCircle2 className="h-3.5 w-3.5 text-green-400" />
-              <span>{doneCount} of {totalTaskCount} done</span>
+              <span>{doneCount} of {totalCount} done</span>
             </div>
           )}
         </div>
