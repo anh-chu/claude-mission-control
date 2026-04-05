@@ -5,7 +5,6 @@ import { usePathname } from "next/navigation";
 import {
   LayoutDashboard,
   Grid2x2,
-  Columns3,
   Crosshair,
   Lightbulb,
   Rocket,
@@ -40,13 +39,11 @@ import { Separator } from "@/components/ui/separator";
 import { Tooltip, TooltipContent, TooltipTrigger, TooltipProvider } from "@/components/ui/tooltip";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { ThemeToggle } from "@/components/theme-toggle";
 import { SidebarFooter } from "@/components/sidebar-footer";
 import type { AgentDefinition } from "@/lib/types";
 
 const mainLinks = [
   { href: "/", label: "Dashboard", icon: LayoutDashboard },
-  { href: "/objectives", label: "Objectives", icon: Crosshair },
   { href: "/ventures", label: "Projects", icon: Sparkles },
   { href: "/brain-dump", label: "Quick Capture", icon: Lightbulb },
   { href: "/checkpoints", label: "Checkpoints", icon: Flag },
@@ -54,9 +51,10 @@ const mainLinks = [
   { href: "/guide", label: "Guide", icon: BookOpen },
 ];
 
-const taskLinks = [
-  { href: "/priority-matrix", label: "Priority Matrix", icon: Grid2x2 },
-  { href: "/status-board", label: "Status Board", icon: Columns3 },
+const workbenchLinks = [
+  { href: "/objectives", label: "Objectives", icon: Crosshair },
+  { href: "/field-ops/missions", label: "Initiatives", icon: Rocket },
+  { href: "/priority-matrix", label: "Tasks", icon: Grid2x2 },
 ];
 
 const commsLinks = [
@@ -67,7 +65,6 @@ const commsLinks = [
 
 const fieldOpsLinks = [
   { href: "/field-ops", label: "Dashboard", icon: Radio },
-  { href: "/field-ops/missions", label: "Initiatives", icon: Rocket },
   { href: "/field-ops/services", label: "Services", icon: Globe },
   { href: "/field-ops/vault", label: "Vault", icon: Lock },
   { href: "/field-ops/safety", label: "Safety", icon: Shield },
@@ -82,6 +79,79 @@ const iconMap: Record<string, typeof User> = {
 
 function getAgentIcon(iconName: string) {
   return iconMap[iconName] ?? Bot;
+}
+
+interface NavLinkProps {
+  href: string;
+  label: string;
+  icon: typeof User;
+  isActive: boolean;
+  collapsed: boolean;
+  onClick?: () => void;
+  size?: "default" | "small";
+  badge?: React.ReactNode;
+  badgeDot?: string;
+  tooltipSuffix?: string;
+  tooltipContent?: React.ReactNode;
+}
+
+function NavLink({
+  href,
+  label,
+  icon: Icon,
+  isActive,
+  collapsed,
+  onClick,
+  size = "default",
+  badge,
+  badgeDot,
+  tooltipSuffix,
+  tooltipContent,
+}: NavLinkProps) {
+  const isSmall = size === "small";
+  const link = (
+    <Link
+      href={href}
+      onClick={onClick}
+      className={cn(
+        "flex items-center gap-3 rounded-lg transition-colors",
+        isSmall ? "px-3 py-1.5 text-sm" : "px-3 py-2 text-sm font-medium",
+        collapsed && "justify-center px-2",
+        isActive
+          ? "bg-sidebar-accent text-sidebar-accent-foreground"
+          : isSmall
+          ? "text-sidebar-foreground/80 hover:bg-sidebar-accent/50 hover:text-sidebar-accent-foreground"
+          : "text-sidebar-foreground hover:bg-sidebar-accent/50 hover:text-sidebar-accent-foreground"
+      )}
+    >
+      <Icon className={cn("shrink-0", isSmall ? "h-3.5 w-3.5" : "h-4 w-4")} />
+      {!collapsed && (
+        <>
+          <span className={cn("flex-1", isSmall && "truncate text-xs")}>{label}</span>
+          {badge}
+        </>
+      )}
+    </Link>
+  );
+
+  if (collapsed) {
+    return (
+      <Tooltip>
+        <TooltipTrigger asChild>
+          <div className="relative">
+            {link}
+            {badgeDot && <span className={cn("absolute -top-0.5 -right-0.5 h-2.5 w-2.5 rounded-full", badgeDot)} />}
+          </div>
+        </TooltipTrigger>
+        <TooltipContent side="right">
+          {tooltipContent ?? (
+            <>{label}{tooltipSuffix}</>
+          )}
+        </TooltipContent>
+      </Tooltip>
+    );
+  }
+  return link;
 }
 
 interface AppSidebarProps {
@@ -142,16 +212,16 @@ export function AppSidebar({ collapsed, unreadInbox = 0, pendingDecisions = 0, p
               })}
             </nav>
 
-            {/* Tasks */}
+            {/* Workbench */}
             <Separator className="mx-2 my-2" />
             <div className="px-3 pb-1">
               <p className="text-xs font-semibold uppercase tracking-wider text-sidebar-foreground/50">
-                Tasks
+                Workbench
               </p>
-              <p className="text-[10px] text-sidebar-foreground/30 mt-0.5">Prioritize and track work</p>
+              <p className="text-[10px] text-sidebar-foreground/30 mt-0.5">Objectives, initiatives, and tasks</p>
             </div>
             <nav className="space-y-0.5 px-2">
-              {taskLinks.map(({ href, label, icon: Icon }) => {
+              {workbenchLinks.map(({ href, label, icon: Icon }) => {
                 const isActive = pathname === href || pathname.startsWith(href + "/");
                 return (
                   <Link
@@ -313,7 +383,7 @@ export function AppSidebar({ collapsed, unreadInbox = 0, pendingDecisions = 0, p
     );
   }
 
-  // Desktop: original sidebar behavior
+  // Desktop: collapsible sidebar
   return (
     <TooltipProvider delayDuration={0}>
       <aside
@@ -323,323 +393,143 @@ export function AppSidebar({ collapsed, unreadInbox = 0, pendingDecisions = 0, p
         )}
       >
         <ScrollArea className="flex-1">
-          {/* Main Navigation */}
           <nav className="space-y-0.5 p-2">
-            {mainLinks.map(({ href, label, icon: Icon }) => {
-              const isActive = pathname === href || (href !== "/" && pathname.startsWith(href));
-              const link = (
-                <Link
-                  key={href}
-                  href={href}
-                  className={cn(
-                    "flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium transition-colors",
-                    collapsed && "justify-center px-2",
-                    isActive
-                      ? "bg-sidebar-accent text-sidebar-accent-foreground"
-                      : "text-sidebar-foreground hover:bg-sidebar-accent/50 hover:text-sidebar-accent-foreground"
-                  )}
-                >
-                  <Icon className="h-4 w-4 shrink-0" />
-                  {!collapsed && <span>{label}</span>}
-                </Link>
-              );
-
-              if (collapsed) {
-                return (
-                  <Tooltip key={href}>
-                    <TooltipTrigger asChild>{link}</TooltipTrigger>
-                    <TooltipContent side="right">{label}</TooltipContent>
-                  </Tooltip>
-                );
-              }
-              return link;
-            })}
+            {mainLinks.map(({ href, label, icon }) => (
+              <NavLink
+                key={href}
+                href={href}
+                label={label}
+                icon={icon}
+                isActive={pathname === href || (href !== "/" && pathname.startsWith(href))}
+                collapsed={collapsed}
+              />
+            ))}
           </nav>
 
-          {/* Tasks */}
           <Separator className="mx-2 my-2" />
           {!collapsed && (
             <div className="px-3 pb-1">
-              <p className="text-xs font-semibold uppercase tracking-wider text-sidebar-foreground/50">
-                Tasks
-              </p>
-              <p className="text-[10px] text-sidebar-foreground/30 mt-0.5">
-                Prioritize and track work
-              </p>
+              <p className="text-xs font-semibold uppercase tracking-wider text-sidebar-foreground/50">Workbench</p>
+              <p className="text-[10px] text-sidebar-foreground/30 mt-0.5">Objectives, initiatives, and tasks</p>
             </div>
           )}
           <nav className="space-y-0.5 px-2">
-            {taskLinks.map(({ href, label, icon: Icon }) => {
-              const isActive = pathname === href || pathname.startsWith(href + "/");
-              const link = (
-                <Link
-                  key={href}
-                  href={href}
-                  className={cn(
-                    "flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium transition-colors",
-                    collapsed && "justify-center px-2",
-                    isActive
-                      ? "bg-sidebar-accent text-sidebar-accent-foreground"
-                      : "text-sidebar-foreground hover:bg-sidebar-accent/50 hover:text-sidebar-accent-foreground"
-                  )}
-                >
-                  <Icon className="h-4 w-4 shrink-0" />
-                  {!collapsed && <span>{label}</span>}
-                </Link>
-              );
-
-              if (collapsed) {
-                return (
-                  <Tooltip key={href}>
-                    <TooltipTrigger asChild>{link}</TooltipTrigger>
-                    <TooltipContent side="right">{label}</TooltipContent>
-                  </Tooltip>
-                );
-              }
-              return link;
-            })}
+            {workbenchLinks.map(({ href, label, icon }) => (
+              <NavLink
+                key={href}
+                href={href}
+                label={label}
+                icon={icon}
+                isActive={pathname === href || pathname.startsWith(href + "/")}
+                collapsed={collapsed}
+              />
+            ))}
           </nav>
 
-          {/* Integrations */}
           <Separator className="mx-2 my-2" />
           {!collapsed && (
             <div className="px-3 pb-1">
-              <p className="text-xs font-semibold uppercase tracking-wider text-sidebar-foreground/50">
-                Integrations
-              </p>
-              <p className="text-[10px] text-sidebar-foreground/30 mt-0.5">
-                External services, approvals, and safety
-              </p>
+              <p className="text-xs font-semibold uppercase tracking-wider text-sidebar-foreground/50">Integrations</p>
+              <p className="text-[10px] text-sidebar-foreground/30 mt-0.5">External services, approvals, and safety</p>
             </div>
           )}
           <nav className="space-y-0.5 px-2">
-            {fieldOpsLinks.map(({ href, label, icon: Icon }) => {
-              const isActive = pathname === href || (href !== "/field-ops" && pathname.startsWith(href));
-              const showFieldBadge = href === "/field-ops" && pendingFieldApprovals > 0;
-              const link = (
-                <Link
+            {fieldOpsLinks.map(({ href, label, icon }) => {
+              const showBadge = href === "/field-ops" && pendingFieldApprovals > 0;
+              return (
+                <NavLink
                   key={href}
                   href={href}
-                  className={cn(
-                    "flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium transition-colors",
-                    collapsed && "justify-center px-2",
-                    isActive
-                      ? "bg-sidebar-accent text-sidebar-accent-foreground"
-                      : "text-sidebar-foreground hover:bg-sidebar-accent/50 hover:text-sidebar-accent-foreground"
-                  )}
-                >
-                  <Icon className="h-4 w-4 shrink-0" />
-                  {!collapsed && (
-                    <>
-                      <span className="flex-1">{label}</span>
-                      {showFieldBadge && (
-                        <Badge className="h-5 min-w-5 justify-center px-1.5 text-xs bg-emerald-500/20 text-emerald-400 border-emerald-500/30">
-                          {pendingFieldApprovals}
-                        </Badge>
-                      )}
-                    </>
-                  )}
-                </Link>
+                  label={label}
+                  icon={icon}
+                  isActive={pathname === href || (href !== "/field-ops" && pathname.startsWith(href))}
+                  collapsed={collapsed}
+                  badge={showBadge ? (
+                    <Badge className="h-5 min-w-5 justify-center px-1.5 text-xs bg-emerald-500/20 text-emerald-400 border-emerald-500/30">
+                      {pendingFieldApprovals}
+                    </Badge>
+                  ) : undefined}
+                  badgeDot={showBadge ? "bg-emerald-500" : undefined}
+                  tooltipSuffix={showBadge ? ` (${pendingFieldApprovals} pending)` : undefined}
+                />
               );
-
-              if (collapsed) {
-                return (
-                  <Tooltip key={href}>
-                    <TooltipTrigger asChild>
-                      <div className="relative">
-                        {link}
-                        {showFieldBadge && (
-                          <span className="absolute -top-0.5 -right-0.5 h-2.5 w-2.5 rounded-full bg-emerald-500" />
-                        )}
-                      </div>
-                    </TooltipTrigger>
-                    <TooltipContent side="right">
-                      {label}
-                      {showFieldBadge && ` (${pendingFieldApprovals} pending)`}
-                    </TooltipContent>
-                  </Tooltip>
-                );
-              }
-              return link;
             })}
           </nav>
 
-          {/* Messages */}
           <Separator className="mx-2 my-2" />
           {!collapsed && (
             <div className="px-3 pb-1">
-              <p className="text-xs font-semibold uppercase tracking-wider text-sidebar-foreground/50">
-                Messages
-              </p>
-              <p className="text-[10px] text-sidebar-foreground/30 mt-0.5">
-                Agent reports, decisions, and activity
-              </p>
+              <p className="text-xs font-semibold uppercase tracking-wider text-sidebar-foreground/50">Messages</p>
+              <p className="text-[10px] text-sidebar-foreground/30 mt-0.5">Agent reports, decisions, and activity</p>
             </div>
           )}
           <nav className="space-y-0.5 px-2">
-            {commsLinks.map(({ href, label, icon: Icon, badgeKey }) => {
-              const isActive = pathname === href || pathname.startsWith(href + "/");
+            {commsLinks.map(({ href, label, icon, badgeKey }) => {
               const count = badgeKey ? badges[badgeKey] : 0;
-              const link = (
-                <Link
+              return (
+                <NavLink
                   key={href}
                   href={href}
-                  className={cn(
-                    "flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium transition-colors",
-                    collapsed && "justify-center px-2",
-                    isActive
-                      ? "bg-sidebar-accent text-sidebar-accent-foreground"
-                      : "text-sidebar-foreground hover:bg-sidebar-accent/50 hover:text-sidebar-accent-foreground"
-                  )}
-                >
-                  <Icon className="h-4 w-4 shrink-0" />
-                  {!collapsed && (
-                    <>
-                      <span className="flex-1">{label}</span>
-                      {count > 0 && (
-                        <Badge variant="destructive" className="h-5 min-w-5 justify-center px-1.5 text-xs">
-                          {count}
-                        </Badge>
-                      )}
-                    </>
-                  )}
-                </Link>
+                  label={label}
+                  icon={icon}
+                  isActive={pathname === href || pathname.startsWith(href + "/")}
+                  collapsed={collapsed}
+                  badge={count > 0 ? (
+                    <Badge variant="destructive" className="h-5 min-w-5 justify-center px-1.5 text-xs">
+                      {count}
+                    </Badge>
+                  ) : undefined}
+                  badgeDot={count > 0 ? "bg-destructive" : undefined}
+                  tooltipSuffix={count > 0 ? ` (${count})` : undefined}
+                />
               );
-
-              if (collapsed) {
-                return (
-                  <Tooltip key={href}>
-                    <TooltipTrigger asChild>
-                      <div className="relative">
-                        {link}
-                        {count > 0 && (
-                          <span className="absolute -top-0.5 -right-0.5 h-2.5 w-2.5 rounded-full bg-destructive" />
-                        )}
-                      </div>
-                    </TooltipTrigger>
-                    <TooltipContent side="right">
-                      {label}
-                      {count > 0 && ` (${count})`}
-                    </TooltipContent>
-                  </Tooltip>
-                );
-              }
-              return link;
             })}
           </nav>
 
-          {/* Agents */}
           <Separator className="mx-2 my-2" />
           {!collapsed && (
             <div className="px-3 pb-1">
-              <p className="text-xs font-semibold uppercase tracking-wider text-sidebar-foreground/50">
-                Agents
-              </p>
-              <p className="text-[10px] text-sidebar-foreground/30 mt-0.5">
-                Your team of AI workers and their skills
-              </p>
+              <p className="text-xs font-semibold uppercase tracking-wider text-sidebar-foreground/50">Agents</p>
+              <p className="text-[10px] text-sidebar-foreground/30 mt-0.5">Your team of AI workers and their skills</p>
             </div>
           )}
           <div className="space-y-0.5 px-2">
-            {/* Crew overview link */}
-            {(() => {
-              const isActive = pathname === "/crew" || pathname.startsWith("/crew/");
-              const link = (
-                <Link
-                  key="crew-overview"
-                  href="/crew"
-                  className={cn(
-                    "flex items-center gap-3 rounded-lg px-3 py-1.5 text-sm transition-colors",
-                    collapsed && "justify-center px-2",
-                    isActive
-                      ? "bg-sidebar-accent text-sidebar-accent-foreground"
-                      : "text-sidebar-foreground/80 hover:bg-sidebar-accent/50 hover:text-sidebar-accent-foreground"
-                  )}
-                >
-                  <Users className="h-3.5 w-3.5 shrink-0" />
-                  {!collapsed && <span className="truncate text-xs font-medium">All Agents</span>}
-                </Link>
-              );
-              if (collapsed) {
-                return (
-                  <Tooltip key="crew-overview">
-                    <TooltipTrigger asChild>{link}</TooltipTrigger>
-                    <TooltipContent side="right">All Agents</TooltipContent>
-                  </Tooltip>
-                );
-              }
-              return link;
-            })()}
-            {/* Dynamic agent list */}
-            {activeAgents.map((agent) => {
-              const Icon = getAgentIcon(agent.icon);
-              const isActive = pathname === `/team/${agent.id}`;
-              const link = (
-                <Link
-                  key={agent.id}
-                  href={`/team/${agent.id}`}
-                  className={cn(
-                    "flex items-center gap-3 rounded-lg px-3 py-1.5 text-sm transition-colors",
-                    collapsed && "justify-center px-2",
-                    isActive
-                      ? "bg-sidebar-accent text-sidebar-accent-foreground"
-                      : "text-sidebar-foreground/80 hover:bg-sidebar-accent/50 hover:text-sidebar-accent-foreground"
-                  )}
-                >
-                  <Icon className="h-3.5 w-3.5 shrink-0" />
-                  {!collapsed && (
-                    <span className="truncate text-xs">{agent.name}</span>
-                  )}
-                </Link>
-              );
-
-              if (collapsed) {
-                return (
-                  <Tooltip key={agent.id}>
-                    <TooltipTrigger asChild>{link}</TooltipTrigger>
-                    <TooltipContent side="right">
-                      <p className="font-medium">{agent.name}</p>
-                      <p className="text-xs text-muted-foreground">{agent.description}</p>
-                    </TooltipContent>
-                  </Tooltip>
-                );
-              }
-              return link;
-            })}
-            {/* Skills library link */}
-            {(() => {
-              const isActive = pathname === "/skills" || pathname.startsWith("/skills/");
-              const link = (
-                <Link
-                  key="skills-library"
-                  href="/skills"
-                  className={cn(
-                    "flex items-center gap-3 rounded-lg px-3 py-1.5 text-sm transition-colors",
-                    collapsed && "justify-center px-2",
-                    isActive
-                      ? "bg-sidebar-accent text-sidebar-accent-foreground"
-                      : "text-sidebar-foreground/80 hover:bg-sidebar-accent/50 hover:text-sidebar-accent-foreground"
-                  )}
-                >
-                  <BookOpen className="h-3.5 w-3.5 shrink-0" />
-                  {!collapsed && <span className="truncate text-xs font-medium">Skills Library</span>}
-                </Link>
-              );
-              if (collapsed) {
-                return (
-                  <Tooltip key="skills-library">
-                    <TooltipTrigger asChild>{link}</TooltipTrigger>
-                    <TooltipContent side="right">Skills Library</TooltipContent>
-                  </Tooltip>
-                );
-              }
-              return link;
-            })()}
+            <NavLink
+              href="/crew"
+              label="All Agents"
+              icon={Users}
+              isActive={pathname === "/crew" || pathname.startsWith("/crew/")}
+              collapsed={collapsed}
+              size="small"
+            />
+            {activeAgents.map((agent) => (
+              <NavLink
+                key={agent.id}
+                href={`/team/${agent.id}`}
+                label={agent.name}
+                icon={getAgentIcon(agent.icon)}
+                isActive={pathname === `/team/${agent.id}`}
+                collapsed={collapsed}
+                size="small"
+                tooltipContent={
+                  <>
+                    <p className="font-medium">{agent.name}</p>
+                    <p className="text-xs text-muted-foreground">{agent.description}</p>
+                  </>
+                }
+              />
+            ))}
+            <NavLink
+              href="/skills"
+              label="Skills Library"
+              icon={BookOpen}
+              isActive={pathname === "/skills" || pathname.startsWith("/skills/")}
+              collapsed={collapsed}
+              size="small"
+            />
           </div>
-
         </ScrollArea>
 
-        {/* Footer */}
         <SidebarFooter collapsed={collapsed} />
       </aside>
     </TooltipProvider>
