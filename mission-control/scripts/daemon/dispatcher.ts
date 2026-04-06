@@ -5,6 +5,7 @@ import { logger } from "./logger";
 import { AgentRunner, parseClaudeOutput } from "./runner";
 import { HealthMonitor } from "./health";
 import { buildTaskPrompt, buildScheduledPrompt, getPendingTasks, isTaskUnblocked, hasPendingDecision } from "./prompt-builder";
+import { persistSessionRecord, clearSessionRecord } from "./recovery";
 import type { DaemonConfig, ProjectRunsFile } from "./types";
 import { DATA_DIR } from "../../src/lib/paths";
 const FIELD_OPS_DIR = path.join(DATA_DIR, "field-ops");
@@ -241,6 +242,7 @@ export class Dispatcher {
         skipPermissions: this.config.execution.skipPermissions,
         allowedTools: this.config.execution.allowedTools,
         cwd: "", // Uses runner default (workspace root)
+        onSessionId: (sessionId) => persistSessionRecord(taskId, agentId, sessionId),
       });
 
       // Handle completion asynchronously
@@ -265,6 +267,7 @@ export class Dispatcher {
 
         if (result.exitCode === 0 && !result.timedOut) {
           logger.info("dispatcher", `Task ${taskId} completed successfully by ${agentId}`);
+          clearSessionRecord(taskId);
         } else {
           this.handleFailure(taskId, agentId, result);
         }
@@ -275,6 +278,89 @@ export class Dispatcher {
 
     } catch (err) {
       logger.error("dispatcher", `Failed to dispatch task ${taskId}: ${err instanceof Error ? err.message : String(err)}`);
+    }
+  }
+
+  /**
+   * Attempt to resume an orphaned Claude session after a daemon crash.
+   * Uses --resume <sessionId> so the agent has full conversation history
+   * and can continue from where it left off.
+   * Falls back to a normal re-dispatch if the resume fails to start.
+   */
+  async resumeOrphanedSession(taskId: string, agentId: string, sessionId: string): Promise<void> {
+    try {
+      logger.info("dispatcher", `Attempting session resume for task ${taskId} (session=${sessionId})`);
+
+      const { getTask } = await import("./prompt-builder");
+      const task = getTask(taskId);
+      if (!task) {
+        logger.warn("dispatcher", `Task ${taskId} not found — skipping resume`);
+        clearSessionRecord(taskId);
+        return;
+      }
+
+      const resumePrompt =
+        "The daemon was restarted unexpectedly. Review your conversation history to understand " +
+        "what you were working on, then continue and complete the task. If the task is already " +
+        "done, mark it done and post a completion report.";
+
+      const innerSessionId = this.health.startSession(agentId, taskId, "task-resume", 0);
+
+      const spawnPromise = this.runner.spawnAgent({
+        prompt: resumePrompt,
+        maxTurns: this.config.execution.maxTurns,
+        timeoutMinutes: this.config.execution.timeoutMinutes,
+        skipPermissions: this.config.execution.skipPermissions,
+        allowedTools: this.config.execution.allowedTools,
+        cwd: "",
+        resumeSessionId: sessionId,
+        // Persist the new session ID in case the resume itself gets interrupted
+        onSessionId: (newId) => persistSessionRecord(taskId, agentId, newId),
+      });
+
+      spawnPromise.then(result => {
+        if (result.pid > 0) this.health.updateSessionPid(innerSessionId, result.pid);
+        const meta = parseClaudeOutput(result.stdout);
+        this.health.endSession(innerSessionId, result.exitCode, result.stderr || null, result.timedOut, meta.totalCostUsd, meta.numTurns, meta.usage);
+
+        if (result.exitCode === 0 && !result.timedOut) {
+          logger.info("dispatcher", `Session resume succeeded for task ${taskId}`);
+          clearSessionRecord(taskId);
+        } else {
+          logger.warn("dispatcher", `Session resume failed for task ${taskId} — resetting to not-started`);
+          clearSessionRecord(taskId);
+          this.resetTaskToNotStarted(taskId);
+        }
+      }).catch(err => {
+        this.health.endSession(innerSessionId, 1, err instanceof Error ? err.message : String(err), false);
+        logger.error("dispatcher", `Session resume error for task ${taskId}: ${err instanceof Error ? err.message : String(err)}`);
+        clearSessionRecord(taskId);
+        this.resetTaskToNotStarted(taskId);
+      });
+
+    } catch (err) {
+      logger.error("dispatcher", `Failed to initiate resume for task ${taskId}: ${err instanceof Error ? err.message : String(err)}`);
+      clearSessionRecord(taskId);
+      this.resetTaskToNotStarted(taskId);
+    }
+  }
+
+  private resetTaskToNotStarted(taskId: string): void {
+    try {
+      const TASKS_FILE_PATH = path.join(DATA_DIR, "tasks.json");
+      if (!existsSync(TASKS_FILE_PATH)) return;
+      const data = JSON.parse(readFileSync(TASKS_FILE_PATH, "utf-8")) as { tasks: Array<Record<string, unknown>> };
+      const task = data.tasks.find(t => t.id === taskId);
+      if (task && task.kanban === "in-progress") {
+        task.kanban = "not-started";
+        task.updatedAt = new Date().toISOString();
+        const tmp = TASKS_FILE_PATH + ".tmp";
+        writeFileSync(tmp, JSON.stringify(data, null, 2), "utf-8");
+        renameSync(tmp, TASKS_FILE_PATH);
+        logger.info("dispatcher", `Task ${taskId} reset to not-started`);
+      }
+    } catch (err) {
+      logger.error("dispatcher", `Failed to reset task ${taskId}: ${err instanceof Error ? err.message : String(err)}`);
     }
   }
 
@@ -318,6 +404,9 @@ export class Dispatcher {
         this.retryQueue = this.retryQueue.filter(r => r.taskId !== taskId);
         this.saveRetryQueue();
       }
+
+      // Clear session recovery record — no point resuming a permanently failed task
+      clearSessionRecord(taskId);
     }
   }
 

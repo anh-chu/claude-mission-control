@@ -7,6 +7,7 @@ export interface ScheduleEntry {
 }
 
 export interface DaemonConfig {
+  autoStart?: boolean;
   polling: {
     enabled: boolean;
     intervalMinutes: number;
@@ -116,6 +117,8 @@ export interface SpawnOptions {
   cwd: string;
   streamFile?: string;
   onSpawned?: (pid: number) => void;
+  onSessionId?: (sessionId: string) => void;
+  resumeSessionId?: string;
 }
 
 export interface SpawnResult {

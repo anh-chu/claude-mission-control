@@ -7,6 +7,7 @@ import { HealthMonitor } from "./health";
 import { AgentRunner } from "./runner";
 import { Dispatcher } from "./dispatcher";
 import { Scheduler } from "./scheduler";
+import { runCrashRecovery } from "./recovery";
 import { DATA_DIR } from "../../src/lib/paths";
 
 // ─── Constants ───────────────────────────────────────────────────────────────
@@ -134,6 +135,15 @@ async function handleStart(): Promise<void> {
 
   // Start scheduler
   scheduler.start();
+
+  // Crash recovery: reset orphaned in-progress tasks, attempt session resumes
+  const recovery = runCrashRecovery();
+  if (recovery.sessionsToResume.length > 0) {
+    logger.info("daemon", `Resuming ${recovery.sessionsToResume.length} interrupted session(s)...`);
+    for (const session of recovery.sessionsToResume) {
+      void dispatcher.resumeOrphanedSession(session.taskId, session.agentId, session.sessionId);
+    }
+  }
 
   // Run initial poll immediately
   if (config.polling.enabled) {

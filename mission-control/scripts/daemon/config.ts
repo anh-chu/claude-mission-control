@@ -8,6 +8,7 @@ const CONFIG_FILE = path.join(DATA_DIR, "daemon-config.json");
 // ─── Default Configuration ───────────────────────────────────────────────────
 
 const DEFAULT_CONFIG: DaemonConfig = {
+  autoStart: false,
   polling: {
     enabled: true,
     intervalMinutes: 5,
@@ -48,6 +49,9 @@ function validateConfig(config: unknown): DaemonConfig {
 
   const c = config as Record<string, unknown>;
   const result = { ...DEFAULT_CONFIG };
+
+  // Merge autoStart
+  if (typeof c.autoStart === "boolean") result.autoStart = c.autoStart;
 
   // Merge polling
   if (c.polling && typeof c.polling === "object") {

@@ -343,6 +343,11 @@ export class AgentRunner {
         "--max-turns", String(opts.maxTurns),
       ];
 
+      if (opts.resumeSessionId) {
+        args.push("--resume", opts.resumeSessionId);
+        logger.info("runner", `Resuming session: ${opts.resumeSessionId}`);
+      }
+
       if (opts.skipPermissions) {
         args.push("--dangerously-skip-permissions");
         logger.security("runner", "Spawning with --dangerously-skip-permissions");
@@ -374,6 +379,7 @@ export class AgentRunner {
       let stderr = "";
       let timedOut = false;
       let settled = false;
+      let sessionIdEmitted = false;
 
       // Set up JSONL stream file if requested
       let streamWriter: ReturnType<typeof createWriteStream> | null = null;
@@ -397,24 +403,33 @@ export class AgentRunner {
           stdout += text;
         }
 
-        // Write complete lines to the JSONL stream file
-        if (streamWriter) {
-          lineBuffer += text;
-          const lines = lineBuffer.split("\n");
-          // Keep the last partial line in the buffer
-          lineBuffer = lines.pop() ?? "";
-          for (const line of lines) {
-            if (line.trim()) {
-              if (backend === "codex") {
-                // Codex outputs plain text — wrap each line as a JSON object
-                streamWriter.write(JSON.stringify({ type: "assistant", content: [{ type: "text", text: line }] }) + "\n");
-              } else {
-                // Claude stream-json outputs JSONL natively
-                streamWriter.write(line + "\n");
+        // Parse complete lines: detect session_id + write to stream file
+        lineBuffer += text;
+        const lines = lineBuffer.split("\n");
+        lineBuffer = lines.pop() ?? "";
+        for (const line of lines) {
+          if (!line.trim()) continue;
+
+          // Extract Claude session_id from the first system init event
+          if (!sessionIdEmitted && opts.onSessionId && backend === "claude") {
+            try {
+              const evt = JSON.parse(line) as Record<string, unknown>;
+              if (evt.type === "system" && evt.subtype === "init" && typeof evt.session_id === "string") {
+                sessionIdEmitted = true;
+                opts.onSessionId(evt.session_id);
               }
+            } catch { /* not JSON or not the init event */ }
+          }
+
+          if (streamWriter) {
+            if (backend === "codex") {
+              streamWriter.write(JSON.stringify({ type: "assistant", content: [{ type: "text", text: line }] }) + "\n");
+            } else {
+              streamWriter.write(line + "\n");
             }
           }
         }
+
       });
 
       // Capture stderr with size limit

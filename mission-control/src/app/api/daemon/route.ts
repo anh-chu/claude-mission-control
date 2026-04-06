@@ -104,6 +104,9 @@ export async function POST(request: Request) {
 
       child.unref();
 
+      // Persist autoStart so the daemon restarts on server reboot
+      await mutateDaemonConfig(async (cfg) => ({ ...cfg, autoStart: true }));
+
       return NextResponse.json({ message: "Daemon starting...", pid: child.pid });
     }
 
@@ -115,6 +118,8 @@ export async function POST(request: Request) {
 
       try {
         process.kill(pid, "SIGTERM");
+        // Clear autoStart so the daemon doesn't restart on next server reboot
+        await mutateDaemonConfig(async (cfg) => ({ ...cfg, autoStart: false }));
         return NextResponse.json({ message: "Stop signal sent", pid });
       } catch (err) {
         return NextResponse.json(
