@@ -45,6 +45,8 @@ import {
 } from "@/lib/field-ops-security";
 import { ExecutionResultPanel } from "./execution-result-panel";
 import { SignTransactionButton } from "./sign-transaction-button";
+import { ContextMenu, ContextMenuTrigger } from "@/components/ui/context-menu";
+import { FieldTaskContextMenuContent } from "@/components/context-menus/field-task-context-menu";
 
 // ─── Icon lookup ────────────────────────────────────────────────────────────
 
@@ -292,12 +294,14 @@ export function FieldTaskCard({
   }
 
   return (
-    <Card className={cn(
-      "transition-all",
-      isPending && "ring-1 ring-amber-500/40 bg-amber-500/5",
-      isAwaitingSignature && "ring-1 ring-purple-500/40 bg-purple-500/5",
-    )}>
-      <CardContent className="p-4 space-y-3">
+    <ContextMenu>
+      <ContextMenuTrigger asChild>
+        <Card className={cn(
+          "transition-all",
+          isPending && "ring-1 ring-amber-500/40 bg-amber-500/5",
+          isAwaitingSignature && "ring-1 ring-purple-500/40 bg-purple-500/5",
+        )}>
+          <CardContent className="p-4 space-y-3">
         {/* Top row: type icon + title + badges */}
         <div className="flex items-start justify-between gap-2">
           <div className="flex items-start gap-2.5 min-w-0 flex-1">
@@ -556,7 +560,10 @@ export function FieldTaskCard({
             </DropdownMenuContent>
           </DropdownMenu>
         </div>
-      </CardContent>
-    </Card>
+          </CardContent>
+        </Card>
+      </ContextMenuTrigger>
+      <FieldTaskContextMenuContent task={task} onOpen={onOpen} onEdit={onEdit} onDelete={onDelete} />
+    </ContextMenu>
   );
 }

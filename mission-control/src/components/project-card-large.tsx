@@ -15,6 +15,8 @@ import { cn } from "@/lib/utils";
 import type { Project, Task, Goal } from "@/lib/types";
 import { getQuadrant } from "@/lib/types";
 import { RunButton } from "@/components/run-button";
+import { ContextMenu, ContextMenuTrigger } from "@/components/ui/context-menu";
+import { ProjectContextMenuContent } from "@/components/context-menus/project-context-menu";
 
 interface ProjectCardLargeProps {
   project: Project;
@@ -53,8 +55,10 @@ export function ProjectCardLarge({ project, tasks, goals, isRunning, isProjectRu
   );
 
   return (
-    <Link href={`/ventures/${project.id}`}>
-      <Card className={cn(
+    <ContextMenu>
+      <ContextMenuTrigger asChild>
+        <Link href={`/ventures/${project.id}`}>
+          <Card className={cn(
         "group cursor-pointer transition-all hover:shadow-lg hover:border-primary/30 hover:-translate-y-0.5 animate-fade-in-up",
         isRunning && "ring-2 ring-green-500/50 border-green-500/30 shadow-green-500/10 shadow-md"
       )}>
@@ -188,8 +192,18 @@ export function ProjectCardLarge({ project, tasks, goals, isRunning, isProjectRu
               ))}
             </div>
           )}
-        </CardContent>
-      </Card>
-    </Link>
+          </CardContent>
+        </Card>
+      </Link>
+      </ContextMenuTrigger>
+      <ProjectContextMenuContent
+        project={project}
+        href={`/ventures/${project.id}`}
+        onEdit={onEdit}
+        onRun={hasEligibleTasks ? onRun : undefined}
+        onArchive={onArchive}
+        onDelete={onDelete}
+      />
+    </ContextMenu>
   );
 }

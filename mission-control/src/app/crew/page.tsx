@@ -6,120 +6,141 @@ import { useRouter } from "next/navigation";
 import {
   Plus,
   Users,
-  Search,
-  Code,
-  Megaphone,
-  BarChart3,
-  User,
-  Bot,
-  Zap,
   CircleDot,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { EmptyState } from "@/components/empty-state";
 import { BreadcrumbNav } from "@/components/breadcrumb-nav";
-import { useAgents, useTasks } from "@/hooks/use-data";
+import { useAgents, useTasks, useProjects, useGoals } from "@/hooks/use-data";
 import { AgentCardSkeleton } from "@/components/skeletons";
 import { ErrorState } from "@/components/error-state";
 import { Tip } from "@/components/ui/tip";
 import { cn } from "@/lib/utils";
+import { getAgentIcon } from "@/lib/agent-icons";
+import { apiFetch } from "@/lib/api-client";
+import { ContextMenu, ContextMenuTrigger } from "@/components/ui/context-menu";
+import { AgentContextMenuContent } from "@/components/context-menus/agent-context-menu";
+import { CreateTaskDialog } from "@/components/create-task-dialog";
 import type { AgentDefinition } from "@/lib/types";
-
-// Map Lucide icon names to components
-const iconMap: Record<string, typeof User> = {
-  User,
-  Search,
-  Code,
-  Megaphone,
-  BarChart3,
-  Bot,
-  Zap,
-};
-
-function getAgentIcon(iconName: string) {
-  return iconMap[iconName] ?? Bot;
-}
 
 function AgentCard({
   agent,
   taskCount,
+  onEdit,
+  onNewTask,
+  onToggleStatus,
 }: {
   agent: AgentDefinition;
   taskCount: number;
+  onEdit?: (agentId: string) => void;
+  onNewTask?: (agentId: string) => void;
+  onToggleStatus?: (agentId: string, currentStatus: AgentDefinition["status"]) => void;
 }) {
-  const Icon = getAgentIcon(agent.icon);
+  const Icon = getAgentIcon(agent.id, agent.icon);
   const isInactive = agent.status === "inactive";
 
   return (
-    <Link href={`/team/${agent.id}`}>
-      <div
-        className={cn(
-          "group rounded-xl border bg-card p-5 transition-all hover:shadow-md hover:border-primary/30",
-          isInactive && "opacity-60"
-        )}
-      >
-        <div className="flex items-start justify-between">
-          <div className="flex items-center gap-3">
-            <div className="h-10 w-10 rounded-full bg-primary/10 flex items-center justify-center">
-              <Icon className="h-5 w-5 text-primary" />
-            </div>
-            <div>
-              <h3 className="font-semibold text-sm group-hover:text-primary transition-colors">
-                {agent.name}
-              </h3>
-              <p className="text-xs text-muted-foreground mt-0.5 line-clamp-1">
-                {agent.description}
-              </p>
-            </div>
-          </div>
-          <div className="flex items-center gap-1.5">
-            <CircleDot
-              className={cn(
-                "h-3 w-3",
-                agent.status === "active" ? "text-green-500" : "text-muted-foreground"
-              )}
-            />
-          </div>
-        </div>
-
-        {/* Capabilities preview */}
-        {agent.capabilities.length > 0 && (
-          <div className="flex flex-wrap gap-1 mt-3">
-            {agent.capabilities.slice(0, 3).map((cap) => (
-              <Badge key={cap} variant="secondary" className="text-[10px] px-1.5 py-0">
-                {cap}
-              </Badge>
-            ))}
-            {agent.capabilities.length > 3 && (
-              <Badge variant="outline" className="text-[10px] px-1.5 py-0">
-                +{agent.capabilities.length - 3}
-              </Badge>
+    <ContextMenu>
+      <ContextMenuTrigger asChild>
+        <Link href={`/team/${agent.id}`}>
+          <div
+            className={cn(
+              "group rounded-xl border bg-card p-5 transition-all hover:shadow-md hover:border-primary/30",
+              isInactive && "opacity-60"
             )}
-          </div>
-        )}
+          >
+            <div className="flex items-start justify-between">
+              <div className="flex items-center gap-3">
+                <div className="h-10 w-10 rounded-full bg-primary/10 flex items-center justify-center">
+                  <Icon className="h-5 w-5 text-primary" />
+                </div>
+                <div>
+                  <h3 className="font-semibold text-sm group-hover:text-primary transition-colors">
+                    {agent.name}
+                  </h3>
+                  <p className="text-xs text-muted-foreground mt-0.5 line-clamp-1">
+                    {agent.description}
+                  </p>
+                </div>
+              </div>
+              <div className="flex items-center gap-1.5">
+                <CircleDot
+                  className={cn(
+                    "h-3 w-3",
+                    agent.status === "active" ? "text-green-500" : "text-muted-foreground"
+                  )}
+                />
+              </div>
+            </div>
 
-        {/* Footer stats */}
-        <div className="flex items-center justify-between mt-3 pt-3 border-t">
-          <span className="text-xs text-muted-foreground">
-            {taskCount} active task{taskCount !== 1 ? "s" : ""}
-          </span>
-          {agent.skillIds.length > 0 && (
-            <span className="text-xs text-muted-foreground">
-              {agent.skillIds.length} skill{agent.skillIds.length !== 1 ? "s" : ""}
-            </span>
-          )}
-        </div>
-      </div>
-    </Link>
+            {/* Capabilities preview */}
+            {agent.capabilities.length > 0 && (
+              <div className="flex flex-wrap gap-1 mt-3">
+                {agent.capabilities.slice(0, 3).map((cap) => (
+                  <Badge key={cap} variant="secondary" className="text-[10px] px-1.5 py-0">
+                    {cap}
+                  </Badge>
+                ))}
+                {agent.capabilities.length > 3 && (
+                  <Badge variant="outline" className="text-[10px] px-1.5 py-0">
+                    +{agent.capabilities.length - 3}
+                  </Badge>
+                )}
+              </div>
+            )}
+
+            {/* Footer stats */}
+            <div className="flex items-center justify-between mt-3 pt-3 border-t">
+              <span className="text-xs text-muted-foreground">
+                {taskCount} active task{taskCount !== 1 ? "s" : ""}
+              </span>
+              {agent.skillIds.length > 0 && (
+                <span className="text-xs text-muted-foreground">
+                  {agent.skillIds.length} skill{agent.skillIds.length !== 1 ? "s" : ""}
+                </span>
+              )}
+            </div>
+          </div>
+        </Link>
+      </ContextMenuTrigger>
+      <AgentContextMenuContent
+        agent={agent}
+        href={`/team/${agent.id}`}
+        onEdit={onEdit}
+        onNewTask={onNewTask}
+        onToggleStatus={onToggleStatus}
+      />
+    </ContextMenu>
   );
 }
 
 export default function CrewPage() {
   const { agents, loading, error: agentsError, refetch } = useAgents();
-  const { tasks } = useTasks();
+  const { tasks, create: createTask } = useTasks();
+  const { projects } = useProjects();
+  const { goals } = useGoals();
   const router = useRouter();
   const [filter, setFilter] = useState<"all" | "active" | "inactive">("all");
+  const [newTaskForAgentId, setNewTaskForAgentId] = useState<string | null>(null);
+
+  function handleEditAgent(agentId: string) {
+    router.push(`/crew/${agentId}`);
+  }
+
+  function handleNewTask(agentId: string) {
+    setNewTaskForAgentId(agentId);
+  }
+
+  async function handleToggleStatus(agentId: string, currentStatus: AgentDefinition["status"]) {
+    const newStatus = currentStatus === "active" ? "inactive" : "active";
+    await apiFetch(`/api/agents/${agentId}`, {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ status: newStatus }),
+    });
+    refetch();
+  }
 
   const filteredAgents =
     filter === "all"
@@ -200,9 +221,35 @@ export default function CrewPage() {
               key={agent.id}
               agent={agent}
               taskCount={taskCountByAgent(agent.id)}
+              onEdit={handleEditAgent}
+              onNewTask={handleNewTask}
+              onToggleStatus={handleToggleStatus}
             />
           ))}
         </div>
+      )}
+
+      {newTaskForAgentId && (
+        <CreateTaskDialog
+          open={!!newTaskForAgentId}
+          onOpenChange={(open) => { if (!open) setNewTaskForAgentId(null); }}
+          projects={projects}
+          goals={goals}
+          defaultValues={{ assignedTo: newTaskForAgentId }}
+          onSubmit={async (data) => {
+            await createTask({
+              id: `task_${Date.now()}`,
+              ...data,
+              dailyActions: [],
+              tags: data.tags.split(",").map((t) => t.trim()).filter(Boolean),
+              acceptanceCriteria: data.acceptanceCriteria.split("\n").map((s) => s.trim()).filter(Boolean),
+              createdAt: new Date().toISOString(),
+              updatedAt: new Date().toISOString(),
+              completedAt: null,
+            });
+            setNewTaskForAgentId(null);
+          }}
+        />
       )}
     </div>
   );

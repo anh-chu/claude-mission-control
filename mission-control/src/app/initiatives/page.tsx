@@ -17,6 +17,8 @@ import { useInitiatives, useGoals } from "@/hooks/use-data";
 import { FinancialOverviewCard } from "@/components/field-ops/financial-overview-card";
 import { GettingStartedCard } from "@/components/field-ops/getting-started-card";
 import { apiFetch } from "@/lib/api-client";
+import { ContextMenu, ContextMenuTrigger } from "@/components/ui/context-menu";
+import { InitiativeContextMenuContent } from "@/components/context-menus/initiative-context-menu";
 import type { Initiative, InitiativeStatus, AutonomyLevel } from "@/lib/types";
 
 interface InitiativeStats {
@@ -309,48 +311,83 @@ function CreateInitiativeDialog({ open, onOpenChange, onSubmit, parentGoalOption
   );
 }
 
-function InitiativeCard({ initiative, parentGoalTitle }: { initiative: Initiative; parentGoalTitle?: string }) {
+function InitiativeCard({
+  initiative,
+  parentGoalTitle,
+  onTogglePause,
+  onArchive,
+  onDelete,
+}: {
+  initiative: Initiative;
+  parentGoalTitle?: string;
+  onTogglePause?: (initiative: Initiative) => void;
+  onArchive?: (initiativeId: string) => void;
+  onDelete?: (initiativeId: string) => void;
+}) {
   const router = useRouter();
   return (
-    <Card
-      className="hover:border-primary/30 transition-all cursor-pointer"
-      onClick={() => router.push(`/initiatives/${initiative.id}`)}
-    >
-      <CardContent className="p-4 space-y-2">
-        <div className="flex items-start justify-between gap-3">
-          <div className="flex items-center gap-2 min-w-0 flex-1">
-            <span
-              className="h-3 w-3 rounded-full shrink-0"
-              style={{ backgroundColor: initiative.color }}
-            />
-            <h3 className="font-medium truncate">{initiative.title}</h3>
-          </div>
-          <div className="flex items-center gap-1.5 shrink-0">
-            {autonomyBadge(initiative.autonomyLevel)}
-            {statusBadge(initiative.status)}
-          </div>
-        </div>
+    <ContextMenu>
+      <ContextMenuTrigger asChild>
+        <Card
+          className="hover:border-primary/30 transition-all cursor-pointer"
+          onClick={() => router.push(`/initiatives/${initiative.id}`)}
+        >
+          <CardContent className="p-4 space-y-2">
+            <div className="flex items-start justify-between gap-3">
+              <div className="flex items-center gap-2 min-w-0 flex-1">
+                <span
+                  className="h-3 w-3 rounded-full shrink-0"
+                  style={{ backgroundColor: initiative.color }}
+                />
+                <h3 className="font-medium truncate">{initiative.title}</h3>
+              </div>
+              <div className="flex items-center gap-1.5 shrink-0">
+                {autonomyBadge(initiative.autonomyLevel)}
+                {statusBadge(initiative.status)}
+              </div>
+            </div>
 
-        {initiative.description && (
-          <p className="text-sm text-muted-foreground line-clamp-2 ml-5">{initiative.description}</p>
-        )}
+            {initiative.description && (
+              <p className="text-sm text-muted-foreground line-clamp-2 ml-5">{initiative.description}</p>
+            )}
 
-        <div className="flex items-center gap-4 text-xs text-muted-foreground ml-5">
-          <span>{initiative.taskIds.length} tasks</span>
-          <span>{initiative.actionIds.length} actions</span>
-          {parentGoalTitle && (
-            <span className="truncate">Goal: {parentGoalTitle}</span>
-          )}
-        </div>
-      </CardContent>
-    </Card>
+            <div className="flex items-center gap-4 text-xs text-muted-foreground ml-5">
+              <span>{initiative.taskIds.length} tasks</span>
+              <span>{initiative.actionIds.length} actions</span>
+              {parentGoalTitle && (
+                <span className="truncate">Goal: {parentGoalTitle}</span>
+              )}
+            </div>
+          </CardContent>
+        </Card>
+      </ContextMenuTrigger>
+      <InitiativeContextMenuContent
+        initiative={initiative}
+        onTogglePause={onTogglePause}
+        onArchive={onArchive}
+        onDelete={onDelete}
+      />
+    </ContextMenu>
   );
 }
 
 export default function InitiativesPage() {
-  const { initiatives, loading, create } = useInitiatives();
+  const { initiatives, loading, create, update, remove } = useInitiatives();
   const { goals } = useGoals();
   const [createOpen, setCreateOpen] = useState(false);
+
+  async function handleTogglePause(initiative: Initiative) {
+    const newStatus = initiative.status === "paused" ? "active" : "paused";
+    await update(initiative.id, { status: newStatus });
+  }
+
+  async function handleArchive(initiativeId: string) {
+    await update(initiativeId, { status: "archived" });
+  }
+
+  async function handleDeleteInitiative(initiativeId: string) {
+    await remove(initiativeId);
+  }
 
   const visible = initiatives.filter((i) => !i.deletedAt);
   const stats = useInitiativeStats(visible);
@@ -454,6 +491,9 @@ export default function InitiativesPage() {
                       key={initiative.id}
                       initiative={initiative}
                       parentGoalTitle={initiative.parentGoalId ? goalMap.get(initiative.parentGoalId) : undefined}
+                      onTogglePause={handleTogglePause}
+                      onArchive={handleArchive}
+                      onDelete={handleDeleteInitiative}
                     />
                   ))}
                 </div>

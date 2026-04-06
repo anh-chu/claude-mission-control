@@ -19,7 +19,7 @@ import { TaskCard } from "@/components/task-card";
 import { TaskDetailPanel } from "@/components/task-detail-panel";
 import { CreateTaskDialog } from "@/components/create-task-dialog";
 import { Badge } from "@/components/ui/badge";
-import type { Task, Project, Goal } from "@/lib/types";
+import type { Task, Project, Goal, KanbanStatus } from "@/lib/types";
 import type { TaskFormData } from "@/components/task-form";
 import { cn } from "@/lib/utils";
 
@@ -36,7 +36,7 @@ export interface ColumnConfig {
 
 // ─── Shared draggable card ──────────────────────────────────────────────────
 
-export function DraggableTaskCard({ task, project, onClick, isSelected, onToggleSelect, isRunning, onRun, pendingDecisionTaskIds }: {
+export function DraggableTaskCard({ task, project, onClick, isSelected, onToggleSelect, isRunning, onRun, pendingDecisionTaskIds, onStatusChange, onDuplicate, onDelete }: {
   task: Task;
   project?: Project | null;
   onClick: () => void;
@@ -45,6 +45,9 @@ export function DraggableTaskCard({ task, project, onClick, isSelected, onToggle
   isRunning?: boolean;
   onRun?: (taskId: string) => void;
   pendingDecisionTaskIds?: Set<string>;
+  onStatusChange?: (taskId: string, status: KanbanStatus) => void;
+  onDuplicate?: (task: Task) => void;
+  onDelete?: (taskId: string) => void;
 }) {
   const { attributes, listeners, setNodeRef, transform, isDragging } = useDraggable({ id: task.id });
   const style = transform ? { transform: `translate(${transform.x}px, ${transform.y}px)` } : undefined;
@@ -53,6 +56,8 @@ export function DraggableTaskCard({ task, project, onClick, isSelected, onToggle
   // Merge our pointer tracking with dnd-kit's onPointerDown
   const handlePointerDown = useCallback(
     (e: React.PointerEvent) => {
+      // Defense-in-depth: right-clicks should never start a drag
+      if (e.button !== 0) return;
       pointerStartRef.current = { x: e.clientX, y: e.clientY };
       // Forward to dnd-kit so drag detection still works
       const dndListeners = listeners as Record<string, (e: React.PointerEvent) => void> | undefined;
@@ -93,14 +98,14 @@ export function DraggableTaskCard({ task, project, onClick, isSelected, onToggle
       onPointerDown={handlePointerDown}
       onPointerUp={handlePointerUp}
     >
-      <TaskCard task={task} project={project} isDragging={isDragging} isRunning={isRunning} onRun={onRun} pendingDecisionTaskIds={pendingDecisionTaskIds} className="cursor-pointer" />
+      <TaskCard task={task} project={project} isDragging={isDragging} isRunning={isRunning} onRun={onRun} pendingDecisionTaskIds={pendingDecisionTaskIds} onStatusChange={onStatusChange} onDuplicate={onDuplicate} onDelete={onDelete} className="cursor-pointer" />
     </div>
   );
 }
 
 // ─── Shared drop zone / column ──────────────────────────────────────────────
 
-export function BoardColumn({ config, tasks, projects, onTaskClick, minHeight = "min-h-[280px]", maxHeight, selected, onToggleSelect, runningTaskIds, onRunTask, pendingDecisionTaskIds }: {
+export function BoardColumn({ config, tasks, projects, onTaskClick, minHeight = "min-h-[280px]", maxHeight, selected, onToggleSelect, runningTaskIds, onRunTask, pendingDecisionTaskIds, onStatusChange, onDuplicate, onDelete }: {
   config: ColumnConfig;
   tasks: Task[];
   projects: Project[];
@@ -112,6 +117,9 @@ export function BoardColumn({ config, tasks, projects, onTaskClick, minHeight = 
   runningTaskIds?: Set<string>;
   onRunTask?: (taskId: string) => void;
   pendingDecisionTaskIds?: Set<string>;
+  onStatusChange?: (taskId: string, status: KanbanStatus) => void;
+  onDuplicate?: (task: Task) => void;
+  onDelete?: (taskId: string) => void;
 }) {
   const { setNodeRef, isOver } = useDroppable({ id: config.id });
 
@@ -161,6 +169,9 @@ export function BoardColumn({ config, tasks, projects, onTaskClick, minHeight = 
             isRunning={runningTaskIds?.has(task.id)}
             onRun={onRunTask}
             pendingDecisionTaskIds={pendingDecisionTaskIds}
+            onStatusChange={onStatusChange}
+            onDuplicate={onDuplicate}
+            onDelete={onDelete}
           />
         ))}
       </div>

@@ -20,7 +20,7 @@ import { useActiveRunsContext as useActiveRuns } from "@/providers/active-runs-p
 import { useFastTaskPoll } from "@/hooks/use-fast-task-poll";
 import { TaskCardSkeleton } from "@/components/skeletons";
 import { ErrorState } from "@/components/error-state";
-import type { Task } from "@/lib/types";
+import type { Task, KanbanStatus } from "@/lib/types";
 import type { TaskFormData } from "@/components/task-form";
 
 const iconMap: Record<string, typeof User> = {
@@ -35,7 +35,7 @@ function getAgentIcon(iconName: string) {
 export default function TeamMemberPage() {
   const params = useParams();
   const roleId = params.role as string;
-  const { tasks, loading, update: updateTask, remove: deleteTask, refetch: refetchTasks } = useTasks();
+  const { tasks, loading, update: updateTask, create: createTask, remove: deleteTask, refetch: refetchTasks } = useTasks();
   const { goals } = useGoals();
   const { projects } = useProjects();
   const { messages } = useInbox();
@@ -114,6 +114,28 @@ export default function TeamMemberPage() {
     if (!selectedTask) return;
     await deleteTask(selectedTask.id);
     setSelectedTask(null);
+  };
+
+  const handleStatusChange = async (taskId: string, status: KanbanStatus) => {
+    await updateTask(taskId, { kanban: status });
+    refetchTasks();
+  };
+
+  const handleDuplicate = async (task: Task) => {
+    await createTask({
+      ...task,
+      id: `task_${Date.now()}`,
+      title: `${task.title} (copy)`,
+      kanban: "not-started",
+      completedAt: null,
+    });
+    refetchTasks();
+  };
+
+  const handleDeleteById = async (taskId: string) => {
+    await deleteTask(taskId);
+    if (selectedTask?.id === taskId) setSelectedTask(null);
+    refetchTasks();
   };
 
   const getProject = (id: string | null) => projects.find((p) => p.id === id) ?? null;
@@ -350,7 +372,7 @@ export default function TeamMemberPage() {
           </h2>
           <div className="grid gap-3 sm:grid-cols-2">
             {inProgress.map((task) => (
-              <TaskCard key={task.id} task={task} project={getProject(task.projectId)} onClick={() => setSelectedTask(task)} isRunning={isTaskRunning(task.id)} onRun={runTask} allTasks={tasks} pendingDecisionTaskIds={pendingDecisionTaskIds} />
+              <TaskCard key={task.id} task={task} project={getProject(task.projectId)} onClick={() => setSelectedTask(task)} isRunning={isTaskRunning(task.id)} onRun={runTask} allTasks={tasks} pendingDecisionTaskIds={pendingDecisionTaskIds} onStatusChange={handleStatusChange} onDuplicate={handleDuplicate} onDelete={handleDeleteById} />
             ))}
           </div>
         </section>
@@ -364,7 +386,7 @@ export default function TeamMemberPage() {
           </h2>
           <div className="grid gap-3 sm:grid-cols-2">
             {todo.map((task) => (
-              <TaskCard key={task.id} task={task} project={getProject(task.projectId)} onClick={() => setSelectedTask(task)} isRunning={isTaskRunning(task.id)} onRun={runTask} allTasks={tasks} pendingDecisionTaskIds={pendingDecisionTaskIds} />
+              <TaskCard key={task.id} task={task} project={getProject(task.projectId)} onClick={() => setSelectedTask(task)} isRunning={isTaskRunning(task.id)} onRun={runTask} allTasks={tasks} pendingDecisionTaskIds={pendingDecisionTaskIds} onStatusChange={handleStatusChange} onDuplicate={handleDuplicate} onDelete={handleDeleteById} />
             ))}
           </div>
         </section>
@@ -378,7 +400,7 @@ export default function TeamMemberPage() {
           </h2>
           <div className="grid gap-3 sm:grid-cols-2">
             {completed.map((task) => (
-              <TaskCard key={task.id} task={task} project={getProject(task.projectId)} onClick={() => setSelectedTask(task)} className="opacity-60" isRunning={isTaskRunning(task.id)} onRun={runTask} allTasks={tasks} pendingDecisionTaskIds={pendingDecisionTaskIds} />
+              <TaskCard key={task.id} task={task} project={getProject(task.projectId)} onClick={() => setSelectedTask(task)} className="opacity-60" isRunning={isTaskRunning(task.id)} onRun={runTask} allTasks={tasks} pendingDecisionTaskIds={pendingDecisionTaskIds} onStatusChange={handleStatusChange} onDuplicate={handleDuplicate} onDelete={handleDeleteById} />
             ))}
           </div>
         </section>

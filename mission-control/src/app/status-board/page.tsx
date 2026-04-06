@@ -71,6 +71,27 @@ export default function KanbanPage() {
     grouped[task.kanban].push(task);
   }
 
+  async function handleStatusChange(taskId: string, status: KanbanStatus) {
+    await updateTask(taskId, { kanban: status });
+    refetch();
+  }
+
+  async function handleDuplicate(task: Task) {
+    await createTask({
+      ...task,
+      id: `task_${Date.now()}`,
+      title: `${task.title} (copy)`,
+      kanban: "not-started",
+      completedAt: null,
+    });
+    refetch();
+  }
+
+  async function handleDelete(taskId: string) {
+    await deleteTask(taskId);
+    refetch();
+  }
+
   async function handleDragEnd(event: DragEndEvent) {
     baseDragEnd();
     const { active, over } = event;
@@ -141,6 +162,9 @@ export default function KanbanPage() {
               runningTaskIds={runningTaskIds}
               onRunTask={runTask}
               pendingDecisionTaskIds={pendingDecisionTaskIds}
+              onStatusChange={handleStatusChange}
+              onDuplicate={handleDuplicate}
+              onDelete={handleDelete}
             />
           ))}
         </div>
