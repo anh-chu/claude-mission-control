@@ -3,7 +3,8 @@ import { spawn } from "child_process";
 import { readFileSync, writeFileSync, existsSync } from "fs";
 import path from "path";
 import { parseAgentMentions, generateId } from "@/lib/utils";
-import { DATA_DIR } from "@/lib/paths";
+import { applyWorkspaceContext } from "@/lib/workspace-context";
+import { getWorkspaceDataDir } from "@/lib/data";
 
 function readJSON<T>(file: string): T | null {
   try {
@@ -38,6 +39,8 @@ export async function POST(
   { params }: { params: Promise<{ id: string }> }
 ) {
   const { id: taskId } = await params;
+  const workspaceId = await applyWorkspaceContext();
+  const wsDir = getWorkspaceDataDir(workspaceId);
 
   let body: { content: string; author?: string; attachments?: Array<{ id: string; type: "image" | "file"; url: string; filename: string }> };
   try {
@@ -56,7 +59,7 @@ export async function POST(
 
   const author = body.author ?? "me";
 
-  const tasksPath = path.join(DATA_DIR, "tasks.json");
+  const tasksPath = path.join(wsDir, "tasks.json");
   const tasksData = readJSON<{ tasks: TaskEntry[] }>(tasksPath);
   if (!tasksData) {
     return NextResponse.json({ error: "Could not read tasks" }, { status: 500 });
@@ -92,7 +95,7 @@ export async function POST(
   }
 
   const mentionedIds = parseAgentMentions(content);
-  const agentsData = readJSON<{ agents: AgentEntry[] }>(path.join(DATA_DIR, "agents.json"));
+  const agentsData = readJSON<{ agents: AgentEntry[] }>(path.join(wsDir, "agents.json"));
   const validAgents = agentsData?.agents ?? [];
   const validMentions = mentionedIds.filter((id) =>
     validAgents.some((a) => a.id === id && a.status === "active")
@@ -130,7 +133,7 @@ export async function POST(
   }
 
   try {
-    const activityPath = path.join(DATA_DIR, "activity-log.json");
+    const activityPath = path.join(wsDir, "activity-log.json");
     const activityRaw = existsSync(activityPath)
       ? readFileSync(activityPath, "utf-8")
       : '{"events":[]}';
@@ -165,6 +168,8 @@ export async function DELETE(
   { params }: { params: Promise<{ id: string }> }
 ) {
   const { id: taskId } = await params;
+  const workspaceId = await applyWorkspaceContext();
+  const wsDir = getWorkspaceDataDir(workspaceId);
 
   const url = new URL(request.url);
   const commentId = url.searchParams.get("commentId");
@@ -172,7 +177,7 @@ export async function DELETE(
     return NextResponse.json({ error: "commentId query param is required" }, { status: 400 });
   }
 
-  const tasksPath = path.join(DATA_DIR, "tasks.json");
+  const tasksPath = path.join(wsDir, "tasks.json");
   const tasksData = readJSON<{ tasks: TaskEntry[] }>(tasksPath);
   if (!tasksData) {
     return NextResponse.json({ error: "Could not read tasks" }, { status: 500 });

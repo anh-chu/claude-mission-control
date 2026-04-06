@@ -3,8 +3,8 @@ import { spawn } from "child_process";
 import { readFileSync, writeFileSync, existsSync } from "fs";
 import path from "path";
 import { parseAgentMentions, generateId } from "@/lib/utils";
-import { DATA_DIR } from "@/lib/paths";
-const ACTIONS_FILE = path.join(DATA_DIR, "workspaces", "default", "actions.json");
+import { applyWorkspaceContext } from "@/lib/workspace-context";
+import { getWorkspaceDataDir } from "@/lib/data";
 
 function readJSON<T>(file: string): T | null {
   try {
@@ -48,6 +48,9 @@ export async function POST(
   { params }: { params: Promise<{ id: string }> }
 ) {
   const { id: actionId } = await params;
+  const workspaceId = await applyWorkspaceContext();
+  const wsDir = getWorkspaceDataDir(workspaceId);
+  const ACTIONS_FILE = path.join(wsDir, "actions.json");
 
   let body: { content: string; author?: string; attachments?: CommentAttachment[] };
   try {
@@ -101,7 +104,7 @@ export async function POST(
   }
 
   const mentionedIds = parseAgentMentions(content);
-  const agentsData = readJSON<{ agents: AgentEntry[] }>(path.join(DATA_DIR, "agents.json"));
+  const agentsData = readJSON<{ agents: AgentEntry[] }>(path.join(wsDir, "agents.json"));
   const validAgents = agentsData?.agents ?? [];
   const validMentions = mentionedIds.filter((id) =>
     validAgents.some((a) => a.id === id && a.status === "active")
@@ -139,7 +142,7 @@ export async function POST(
   }
 
   try {
-    const activityPath = path.join(DATA_DIR, "activity-log.json");
+    const activityPath = path.join(wsDir, "activity-log.json");
     const activityRaw = existsSync(activityPath)
       ? readFileSync(activityPath, "utf-8")
       : '{"events":[]}';
@@ -174,6 +177,9 @@ export async function DELETE(
   { params }: { params: Promise<{ id: string }> }
 ) {
   const { id: actionId } = await params;
+  const workspaceId = await applyWorkspaceContext();
+  const wsDir = getWorkspaceDataDir(workspaceId);
+  const ACTIONS_FILE = path.join(wsDir, "actions.json");
 
   const url = new URL(request.url);
   const commentId = url.searchParams.get("commentId");
