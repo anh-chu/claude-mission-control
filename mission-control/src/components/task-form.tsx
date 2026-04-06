@@ -18,6 +18,7 @@ import type { Project, Goal, Importance, Urgency, KanbanStatus, AgentRole, Task,
 // import { AGENT_ROLES } from "@/lib/types";
 import { LIMITS } from "@/lib/validations";
 import { cn } from "@/lib/utils";
+import { MarkdownContent } from "@/components/markdown-content";
 import { useAgents, useInitiatives } from "@/hooks/use-data";
 import { getAgentIcon } from "@/lib/agent-icons";
 import { Badge } from "@/components/ui/badge";
@@ -61,6 +62,7 @@ export function TaskForm({ initial, projects: _projects, goals: _goals, allTasks
   const { initiatives } = useInitiatives();
   const activeInitiatives = initiatives.filter((i) => !i.deletedAt);
 
+  const [editingDesc, setEditingDesc] = useState(false);
   const descFileInputRef = useRef<HTMLInputElement>(null);
   const handleDescFileAttach = useCallback(async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -228,19 +230,36 @@ export function TaskForm({ initial, projects: _projects, goals: _goals, allTasks
             />
           </div>
         </div>
-        <Textarea
-          id="description"
-          value={form.description}
-          onChange={(e) => {
-            setForm({ ...form, description: e.target.value });
-            if (errors.description) clearError("description");
-          }}
-          placeholder="Describe the task..."
-          rows={3}
-          aria-invalid={!!errors.description}
-          aria-describedby={errors.description ? "description-error" : undefined}
-          className={cn(errors.description && "border-destructive focus-visible:ring-destructive")}
-        />
+        {editingDesc ? (
+          <Textarea
+            id="description"
+            autoFocus
+            value={form.description}
+            onChange={(e) => {
+              setForm({ ...form, description: e.target.value });
+              if (errors.description) clearError("description");
+            }}
+            onBlur={() => setEditingDesc(false)}
+            onKeyDown={(e) => { if (e.key === "Escape") setEditingDesc(false); }}
+            placeholder="Describe the task..."
+            rows={3}
+            aria-invalid={!!errors.description}
+            aria-describedby={errors.description ? "description-error" : undefined}
+            className={cn(errors.description && "border-destructive focus-visible:ring-destructive")}
+          />
+        ) : (
+          <div
+            className="cursor-text hover:bg-muted/40 rounded p-2 -mx-1 transition-colors min-h-[60px] border border-transparent hover:border-border/40"
+            onClick={() => setEditingDesc(true)}
+            title="Click to edit"
+          >
+            {form.description ? (
+              <MarkdownContent content={form.description} />
+            ) : (
+              <p className="text-xs text-muted-foreground/40 italic">Click to add description...</p>
+            )}
+          </div>
+        )}
         {errors.description && <p id="description-error" className="text-xs text-destructive">{errors.description}</p>}
       </div>
 
