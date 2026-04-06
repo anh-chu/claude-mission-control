@@ -40,6 +40,13 @@ export function MarkdownContent({ content, className }: MarkdownContentProps) {
           li({ children }) {
             return <li>{highlightMentions(children)}</li>;
           },
+          a({ href, children }) {
+            return (
+              <a href={href} target="_blank" rel="noopener noreferrer">
+                {children}
+              </a>
+            );
+          },
         }}
       >
         {content}

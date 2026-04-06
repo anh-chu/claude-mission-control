@@ -2,10 +2,10 @@
 
 import { useState, useRef, useEffect, useCallback } from "react";
 import { Textarea } from "@/components/ui/textarea";
-import type { AgentDefinition, CommentAttachment } from "@/lib/types";
+import type { AgentDefinition } from "@/lib/types";
 import { getAgentIcon } from "@/lib/agent-icons";
 import { cn } from "@/lib/utils";
-import { Paperclip, X, Loader2 } from "lucide-react";
+import { Paperclip, X } from "lucide-react";
 
 interface MentionTextareaProps {
   value: string;
@@ -14,8 +14,8 @@ interface MentionTextareaProps {
   placeholder?: string;
   className?: string;
   onSubmit?: () => void;
-  stagedAttachments?: CommentAttachment[];
-  onAttachmentsChange?: (attachments: CommentAttachment[]) => void;
+  stagedFiles?: File[];
+  onFilesChange?: (files: File[]) => void;
 }
 
 export function MentionTextarea({
@@ -25,14 +25,13 @@ export function MentionTextarea({
   placeholder = "Add a comment... Use @ to mention an agent",
   className,
   onSubmit,
-  stagedAttachments,
-  onAttachmentsChange,
+  stagedFiles,
+  onFilesChange,
 }: MentionTextareaProps) {
   const [showDropdown, setShowDropdown] = useState(false);
   const [mentionQuery, setMentionQuery] = useState("");
   const [selectedIndex, setSelectedIndex] = useState(0);
   const [mentionStart, setMentionStart] = useState(-1);
-  const [uploading, setUploading] = useState(false);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   const dropdownRef = useRef<HTMLDivElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -136,35 +135,12 @@ export function MentionTextarea({
     [showDropdown, filteredAgents, selectedIndex, insertMention, onSubmit]
   );
 
-  const handleFileSelect = useCallback(async (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleFileSelect = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
-    e.target.value = ""; // reset so same file can be re-selected
-
-    setUploading(true);
-    try {
-      const formData = new FormData();
-      formData.append("file", file);
-      const res = await fetch("/api/upload", { method: "POST", body: formData });
-      if (!res.ok) {
-        const data = await res.json().catch(() => ({})) as { error?: string };
-        console.error("Upload failed:", data.error ?? "Unknown error");
-        return;
-      }
-      const data = await res.json() as { url: string; filename: string };
-      const attachment: CommentAttachment = {
-        id: `att_${Date.now()}`,
-        type: file.type.startsWith("image/") ? "image" : "file",
-        url: data.url,
-        filename: data.filename,
-      };
-      onAttachmentsChange?.([...(stagedAttachments ?? []), attachment]);
-    } catch (err) {
-      console.error("Upload error:", err);
-    } finally {
-      setUploading(false);
-    }
-  }, [stagedAttachments, onAttachmentsChange]);
+    e.target.value = "";
+    onFilesChange?.([...(stagedFiles ?? []), file]);
+  }, [stagedFiles, onFilesChange]);
 
   // Close dropdown on click outside
   useEffect(() => {
@@ -236,9 +212,8 @@ export function MentionTextarea({
           onClick={() => fileInputRef.current?.click()}
           className="shrink-0 h-8 w-8 rounded flex items-center justify-center text-muted-foreground hover:text-foreground hover:bg-muted transition-colors"
           title="Attach file"
-          disabled={uploading}
         >
-          {uploading ? <Loader2 className="h-4 w-4 animate-spin" /> : <Paperclip className="h-4 w-4" />}
+          <Paperclip className="h-4 w-4" />
         </button>
 
         <input
@@ -250,17 +225,17 @@ export function MentionTextarea({
         />
       </div>
 
-      {stagedAttachments && stagedAttachments.length > 0 && (
+      {stagedFiles && stagedFiles.length > 0 && (
         <div className="flex flex-wrap gap-1.5 mt-1.5">
-          {stagedAttachments.map((att) => (
+          {stagedFiles.map((file, idx) => (
             <div
-              key={att.id}
+              key={idx}
               className="flex items-center gap-1 bg-muted rounded px-2 py-0.5 text-xs text-muted-foreground"
             >
-              <span className="max-w-[120px] truncate">{att.filename}</span>
+              <span className="max-w-[120px] truncate">{file.name}</span>
               <button
                 type="button"
-                onClick={() => onAttachmentsChange?.(stagedAttachments.filter((a) => a.id !== att.id))}
+                onClick={() => onFilesChange?.(stagedFiles.filter((_, i) => i !== idx))}
                 className="text-muted-foreground hover:text-foreground ml-0.5"
               >
                 <X className="h-3 w-3" />

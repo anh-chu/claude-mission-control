@@ -18,6 +18,7 @@ import {
   Globe,
   Palette,
   Wallet,
+  Paperclip,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -268,9 +269,7 @@ export function ActionDetailPanel({
   agents,
 }: ActionDetailPanelProps) {
   const [commentText, setCommentText] = useState("");
-  const [stagedAttachments, setStagedAttachments] = useState<
-    CommentAttachment[]
-  >([]);
+  const [stagedFiles, setStagedFiles] = useState<File[]>([]);
   const [commentsOpen, setCommentsOpen] = useState(true);
   const [editingDesc, setEditingDesc] = useState(false);
   const [descDraft, setDescDraft] = useState("");
@@ -278,6 +277,7 @@ export function ActionDetailPanel({
     action?.comments ?? [],
   );
   const panelRef = useRef<HTMLElement>(null);
+  const descFileInputRef = useRef<HTMLInputElement>(null);
 
   // Sync comments when action changes
   useEffect(() => {
@@ -299,6 +299,25 @@ export function ActionDetailPanel({
     const trimmed = commentText.trim();
     if (!trimmed) return;
 
+    // Upload staged files first
+    const uploadedAttachments: Array<{ id: string; type: "image" | "file"; url: string; filename: string }> = [];
+    for (const file of stagedFiles) {
+      try {
+        const formData = new FormData();
+        formData.append("file", file);
+        const uploadRes = await fetch("/api/upload", { method: "POST", body: formData });
+        if (uploadRes.ok) {
+          const uploadData = await uploadRes.json() as { url: string; filename: string };
+          uploadedAttachments.push({
+            id: `att_${Date.now()}_${Math.random().toString(36).slice(2)}`,
+            type: file.type.startsWith("image/") ? "image" : "file",
+            url: uploadData.url,
+            filename: uploadData.filename,
+          });
+        }
+      } catch { /* non-fatal */ }
+    }
+
     try {
       const res = await apiFetch(`/api/actions/${action.id}/comment`, {
         method: "POST",
@@ -306,9 +325,7 @@ export function ActionDetailPanel({
         body: JSON.stringify({
           content: trimmed,
           author: "me",
-          ...(stagedAttachments.length > 0
-            ? { attachments: stagedAttachments }
-            : {}),
+          ...(uploadedAttachments.length > 0 ? { attachments: uploadedAttachments } : {}),
         }),
       });
       if (!res.ok) {
@@ -316,13 +333,10 @@ export function ActionDetailPanel({
         toast.error(err.error ?? "Failed to add comment");
         return;
       }
-      const data = await res.json() as {
-        comment: TaskComment;
-        mentionedAgents: string[];
-      };
+      const data = await res.json() as { comment: TaskComment; mentionedAgents: string[] };
       setLocalComments((prev) => [...prev, data.comment]);
       setCommentText("");
-      setStagedAttachments([]);
+      setStagedFiles([]);
       const mentions = data.mentionedAgents;
       if (mentions.length > 0) {
         toast.success(`Comment sent — @${mentions.join(", @")} notified`);
@@ -332,7 +346,7 @@ export function ActionDetailPanel({
     } catch {
       toast.error("Failed to add comment");
     }
-  }, [commentText, stagedAttachments, action]);
+  }, [commentText, stagedFiles, action]);
 
   const handleSaveDesc = useCallback(async () => {
     if (!action || !onUpdate) return;
@@ -343,6 +357,23 @@ export function ActionDetailPanel({
     await onUpdate(action.id, { description: descDraft });
     setEditingDesc(false);
   }, [action, descDraft, onUpdate]);
+
+  const handleDescFileAttach = useCallback(async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    e.target.value = "";
+    try {
+      const formData = new FormData();
+      formData.append("file", file);
+      const res = await fetch("/api/upload", { method: "POST", body: formData });
+      if (!res.ok) return;
+      const data = await res.json() as { url: string; filename: string };
+      const md = file.type.startsWith("image/")
+        ? `![${data.filename}](${data.url})`
+        : `[${data.filename}](${data.url})`;
+      setDescDraft((prev) => prev ? `${prev}\n${md}` : md);
+    } catch { /* non-fatal */ }
+  }, []);
 
   if (!open || !action) return null;
 
@@ -429,7 +460,7 @@ export function ActionDetailPanel({
                     if (e.key === "Escape") setEditingDesc(false);
                   }}
                 />
-                <div className="flex gap-2">
+                <div className="flex gap-2 items-center">
                   <Button
                     size="sm"
                     className="h-7 text-xs"
@@ -445,6 +476,21 @@ export function ActionDetailPanel({
                   >
                     Cancel
                   </Button>
+                  <button
+                    type="button"
+                    title="Attach file"
+                    className="ml-auto h-7 w-7 flex items-center justify-center rounded text-muted-foreground hover:text-foreground hover:bg-muted transition-colors"
+                    onClick={() => descFileInputRef.current?.click()}
+                  >
+                    <Paperclip className="h-3.5 w-3.5" />
+                  </button>
+                  <input
+                    ref={descFileInputRef}
+                    type="file"
+                    className="hidden"
+                    accept="image/*,.pdf,.txt,.md"
+                    onChange={handleDescFileAttach}
+                  />
                 </div>
               </div>
             ) : (
@@ -570,15 +616,15 @@ export function ActionDetailPanel({
                     onChange={setCommentText}
                     agents={activeAgents}
                     onSubmit={handleAddComment}
-                    stagedAttachments={stagedAttachments}
-                    onAttachmentsChange={setStagedAttachments}
+                    stagedFiles={stagedFiles}
+                    onFilesChange={setStagedFiles}
                   />
                 </div>
                 <Button
                   size="sm"
                   className="h-8 w-8 p-0 shrink-0"
                   disabled={
-                    !commentText.trim() && stagedAttachments.length === 0
+                    !commentText.trim() && stagedFiles.length === 0
                   }
                   onClick={handleAddComment}
                 >

@@ -29,7 +29,6 @@ import { cn, parseAgentMentions } from "@/lib/utils";
 import { toast } from "sonner";
 import { MentionTextarea } from "@/components/mention-textarea";
 import { MarkdownContent } from "@/components/markdown-content";
-import type { CommentAttachment } from "@/lib/types";
 import { apiFetch } from "@/lib/api-client";
 
 const quadrantLabels: Record<string, { label: string; color: string }> = {
@@ -55,7 +54,11 @@ export function TaskDetailPanel({ task, projects, goals, allTasks, onUpdate, onD
   const { agents } = useAgents();
   const { decisions } = useDecisions();
   const [commentText, setCommentText] = useState("");
-  const [stagedAttachments, setStagedAttachments] = useState<CommentAttachment[]>([]);
+  const [stagedFiles, setStagedFiles] = useState<File[]>([]);
+  const [localComments, setLocalComments] = useState(task.comments ?? []);
+  useEffect(() => {
+    setLocalComments(task.comments ?? []);
+  }, [task.id]);
   const mentionedAgentIds = parseAgentMentions(commentText);
   const [timelineOpen, setTimelineOpen] = useState(false);
   const [commentsOpen, setCommentsOpen] = useState(true);
@@ -152,7 +155,27 @@ export function TaskDetailPanel({ task, projects, goals, allTasks, onUpdate, onD
 
   const handleAddComment = useCallback(async () => {
     const trimmed = commentText.trim();
+    if (!trimmed && stagedFiles.length === 0) return;
     if (!trimmed) return;
+
+    // Upload staged files first
+    const uploadedAttachments: Array<{ id: string; type: "image" | "file"; url: string; filename: string }> = [];
+    for (const file of stagedFiles) {
+      try {
+        const formData = new FormData();
+        formData.append("file", file);
+        const uploadRes = await fetch("/api/upload", { method: "POST", body: formData });
+        if (uploadRes.ok) {
+          const uploadData = await uploadRes.json() as { url: string; filename: string };
+          uploadedAttachments.push({
+            id: `att_${Date.now()}_${Math.random().toString(36).slice(2)}`,
+            type: file.type.startsWith("image/") ? "image" : "file",
+            url: uploadData.url,
+            filename: uploadData.filename,
+          });
+        }
+      } catch { /* non-fatal */ }
+    }
 
     try {
       const res = await apiFetch(`/api/tasks/${task.id}/comment`, {
@@ -161,7 +184,7 @@ export function TaskDetailPanel({ task, projects, goals, allTasks, onUpdate, onD
         body: JSON.stringify({
           content: trimmed,
           author: "me",
-          ...(stagedAttachments.length > 0 ? { attachments: stagedAttachments } : {}),
+          ...(uploadedAttachments.length > 0 ? { attachments: uploadedAttachments } : {}),
         }),
       });
 
@@ -172,11 +195,9 @@ export function TaskDetailPanel({ task, projects, goals, allTasks, onUpdate, onD
       }
 
       const data = await res.json();
-      // Optimistically update the local task reference
-      if (!Array.isArray(task.comments)) task.comments = [];
-      task.comments.push(data.comment);
+      setLocalComments((prev) => [...prev, data.comment]);
       setCommentText("");
-      setStagedAttachments([]);
+      setStagedFiles([]);
 
       const mentions = data.mentionedAgents as string[];
       if (mentions.length > 0) {
@@ -187,7 +208,7 @@ export function TaskDetailPanel({ task, projects, goals, allTasks, onUpdate, onD
     } catch {
       toast.error("Failed to add comment");
     }
-  }, [commentText, task]);
+  }, [commentText, stagedFiles, task]);
 
   const handleDeleteComment = useCallback(async (commentId: string) => {
     try {
@@ -199,9 +220,7 @@ export function TaskDetailPanel({ task, projects, goals, allTasks, onUpdate, onD
         return;
       }
       // Optimistically remove from local state
-      if (Array.isArray(task.comments)) {
-        task.comments = task.comments.filter((c) => c.id !== commentId);
-      }
+      setLocalComments((prev) => prev.filter((c) => c.id !== commentId));
       toast.success("Comment deleted");
     } catch {
       toast.error("Failed to delete comment");
@@ -250,7 +269,7 @@ export function TaskDetailPanel({ task, projects, goals, allTasks, onUpdate, onD
     .sort((a, b) => new Date(a.timestamp).getTime() - new Date(b.timestamp).getTime());
 
   // Comments
-  const comments = task.comments ?? [];
+  const comments = localComments;
 
   return (
     <>
@@ -520,8 +539,8 @@ export function TaskDetailPanel({ task, projects, goals, allTasks, onUpdate, onD
                     onChange={setCommentText}
                     agents={activeAgents}
                     onSubmit={handleAddComment}
-                    stagedAttachments={stagedAttachments}
-                    onAttachmentsChange={setStagedAttachments}
+                    stagedFiles={stagedFiles}
+                    onFilesChange={setStagedFiles}
                   />
                 </div>
                 <Tip content={mentionedAgentIds.length > 0 ? `Send to @${mentionedAgentIds.join(", @")}` : "Post comment"}>
@@ -533,7 +552,7 @@ export function TaskDetailPanel({ task, projects, goals, allTasks, onUpdate, onD
                       mentionedAgentIds.length > 0 && "text-blue-400 hover:text-blue-500"
                     )}
                     onClick={handleAddComment}
-                    disabled={!commentText.trim()}
+                    disabled={!commentText.trim() && stagedFiles.length === 0}
                     aria-label={mentionedAgentIds.length > 0 ? `Send to @${mentionedAgentIds.join(", @")}` : "Send comment"}
                   >
                     <Send className="h-4 w-4" />
