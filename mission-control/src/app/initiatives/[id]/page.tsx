@@ -343,7 +343,7 @@ export default function InitiativeDetailPage() {
 
       </div>
 
-      <div className="max-w-md">
+      <div className="max-w-2xl">
         <Card>
           <CardHeader className="pb-3">
             <CardTitle className="text-sm font-medium text-muted-foreground">Autonomy Level</CardTitle>
