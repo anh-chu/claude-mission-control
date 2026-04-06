@@ -5,9 +5,7 @@
 import cron from "node-cron";
 import { readdirSync, statSync, unlinkSync, existsSync, readFileSync } from "fs";
 import path from "path";
-import { DATA_DIR } from "./paths";
-
-const UPLOADS_DIR = path.resolve(process.cwd(), "public", "uploads");
+import { DATA_DIR, UPLOADS_DIR } from "./paths";
 const GRACE_MS = 60 * 60 * 1000; // 1 hour
 const UPLOAD_RE = /\/uploads\/[^"'\s)\]]+/g;
 

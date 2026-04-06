@@ -2,8 +2,7 @@ import { NextResponse } from "next/server";
 import { writeFile, mkdir } from "fs/promises";
 import path from "path";
 import { randomUUID } from "crypto";
-
-const UPLOADS_DIR = path.resolve(process.cwd(), "public", "uploads");
+import { UPLOADS_DIR } from "@/lib/paths";
 
 const ALLOWED_MIME_TYPES = new Set([
   "image/jpeg",

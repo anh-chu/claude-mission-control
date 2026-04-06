@@ -5,6 +5,7 @@ import path from "path";
 import { parseAgentMentions, generateId } from "@/lib/utils";
 import { applyWorkspaceContext } from "@/lib/workspace-context";
 import { getWorkspaceDataDir } from "@/lib/data";
+import { UPLOADS_DIR } from "@/lib/paths";
 
 function readJSON<T>(file: string): T | null {
   try {
@@ -221,7 +222,7 @@ export async function DELETE(
     for (const att of deletedComment.attachments) {
       if (typeof att.url === "string" && att.url.startsWith("/uploads/")) {
         try {
-          unlinkSync(path.join(process.cwd(), "public", att.url));
+          unlinkSync(path.join(UPLOADS_DIR, path.basename(att.url)));
         } catch { /* ignore */ }
       }
     }
