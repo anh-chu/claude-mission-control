@@ -15,24 +15,21 @@
 
 ## What This Is
 
-A self-hosted web app where you break down your work into tasks, assign them to AI agents, and let a background daemon execute them autonomously using Claude Code or Codex CLI.
+A self-hosted task manager that runs your work through AI agents. You add tasks, set priorities, and Autopilot handles execution: it spawns Claude Code or Codex CLI sessions, streams output live, and routes decisions back to you. Anything with real-world consequences, like posting to X or sending a payment, goes through an approval queue first.
 
-You use the UI to capture ideas, set priorities, and review what agents have done. The daemon (called Autopilot) runs continuously, picks up tasks, spawns agent sessions, and routes anything requiring a decision back to you. When an agent needs to take a real-world action, like posting to X or sending a payment, it goes into an approval queue first.
-
-Everything runs on your machine. Data lives in `~/.cmc/`. Nothing is sent to a cloud service.
+Runs entirely on your machine. Data in `~/.cmc/`. No cloud.
 
 ---
 
 ## The Mental Model
 
-Work is organized in a four-level hierarchy:
-
 ```
 Workspace
-  └── Goals           (long-term outcomes you're working toward)
-        └── Initiatives (projects grouping related work)
-              ├── Tasks   (cognitive/execution work; agents run these)
-              └── Actions (real-world side-effects; require your approval)
+  ├── Objectives          (long-term outcomes)
+  ├── Projects            (group related work)
+  │     └── Initiatives   (active execution units, linked to an Objective)
+  │           ├── Tasks   (cognitive/execution work; agents run these)
+  │           └── Actions (real-world side-effects; require your approval)
 ```
 
 **Tasks** are things agents *do*: research, write code, analyze, plan. They execute as Claude Code or Codex CLI sessions, stream output live, and mark themselves done.
@@ -60,11 +57,13 @@ Agents read and write the same JSON files the UI uses. There's no API translatio
 
 The daemon (`pnpm daemon:start`) is the engine. It runs as a detached background process, independent of the web server, and handles autonomous execution:
 
-- **Polls for tasks** on a configurable interval (default: 5 min)
+- **Watches for tasks** via file system events; picks up new work immediately as tasks.json changes
 - **Spawns agent sessions** up to your concurrency limit
 - **Persists across server restarts:** `autoStart: true` in daemon-config.json auto-relaunches on Next.js boot
 - **Crash recovery:** on restart, orphaned in-progress tasks are reset; interrupted Claude sessions resume via `--resume <sessionId>` using the persisted conversation ID
 - **Human-input pause:** when an agent needs a decision, it sets `awaiting-decision` status; Autopilot resumes automatically once you answer
+- **Permission escalation:** if an agent tries to use a tool outside its allowed list, it auto-generates a decision item rather than failing silently
+- **Inbox loop:** Autopilot posts to your inbox when it picks up, completes, or fails a task — you stay informed without watching dashboards
 - **Exponential retry:** failed tasks retry with backoff, up to a configurable limit
 - **Scheduled commands:** runs `/daily-plan`, `/standup`, `/weekly-review` on cron schedules
 
@@ -76,7 +75,7 @@ The daemon (`pnpm daemon:start`) is the engine. It runs as a detached background
 - **Eisenhower Matrix:** Prioritize by importance x urgency; drag-and-drop between Do, Schedule, Delegate, Eliminate
 - **Kanban Board:** Not Started → In Progress → Done (+ Awaiting Decision for paused agent tasks)
 - **Workspaces:** Isolated data contexts; switch workspaces from the sidebar header
-- **Goals + Initiatives:** Long-term goals broken into initiatives; each initiative owns its Tasks and Actions
+- **Objectives + Projects + Initiatives:** Long-term objectives broken into initiatives via projects; each initiative owns its Tasks and Actions
 - **Quick Capture:** Capture ideas instantly, triage into tasks later
 
 ### Agent Execution
@@ -86,7 +85,7 @@ The daemon (`pnpm daemon:start`) is the engine. It runs as a detached background
 - **Multi-CLI Backend:** Claude Code or Codex CLI, configurable per agent
 - **@-Mention in Comments:** Tag any agent in a task or action comment; they read the context and respond inline
 - **Continuous Missions:** Run an entire project; tasks auto-dispatch as dependencies resolve
-- **Loop Detection:** Detects agents stuck in failure loops; escalates after 3 attempts
+- **Loop Detection:** Agents that keep failing the same task are escalated after 3 attempts rather than burning tokens indefinitely — safe to leave running unattended
 
 ### Resilience
 - **Auto-Start on Boot:** Daemon relaunches automatically when the Next.js server starts
@@ -165,7 +164,7 @@ Or start it from **Settings → Autopilot** in the UI. Once started, Autopilot w
 ### The Autopilot Loop
 
 ```
-Autopilot polls tasks.json every N minutes
+Autopilot watches tasks.json for changes
   → Finds tasks: kanban=not-started, assignedTo≠me, unblocked
   → Spawns a Claude Code / Codex CLI session with agent persona + task context
   → Agent executes, streams output live to ~/.cmc/agent-streams/<id>.jsonl
@@ -183,7 +182,7 @@ Server restarts (or crashes)
   → Daemon reads daemon-session-recovery.json for persisted session IDs
   → For each orphaned in-progress task:
       Has session ID → attempts claude --resume <sessionId> to continue mid-task
-      No session ID  → resets to not-started, picked up on next poll
+      No session ID  → resets to not-started, picked up on next file change
 ```
 
 ### @-Mention Flow
@@ -264,7 +263,7 @@ Each agent can use Claude Code or Codex CLI as its backend, configurable from th
     inbox.json                           Agent <-> human messages
     decisions.json                       Pending decisions awaiting human input
     activity-log.json                    Full event log
-    daemon-config.json                   Autopilot config (polling, concurrency, autoStart)
+    daemon-config.json                   Autopilot config (concurrency, autoStart, schedule)
     daemon-session-recovery.json         Claude session IDs for crash resume
     field-ops/                           Services, vault, safety controls
   agent-streams/                         Live JSONL output per active agent session
@@ -274,7 +273,7 @@ mission-control/                         Next.js 15 app (source only, no data he
   instrumentation.ts                     Boot hooks: upload cleanup + daemon auto-start
   scripts/daemon/
     index.ts                             Daemon start/stop/status + startup crash recovery
-    dispatcher.ts                        Task polling, dispatch, retry queue, session resume
+    dispatcher.ts                        Task dispatch, retry queue, session resume, inbox notifications
     runner.ts                            CLI runner (Claude Code + Codex, stream-json output)
     recovery.ts                          Orphan detection + session ID persistence
     health.ts                            Session tracking, PID checks, status persistence
