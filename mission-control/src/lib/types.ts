@@ -150,11 +150,19 @@ export interface Subtask {
 
 // ─── Task Comments ───────────────────────────────────────────────────────────
 
+export interface CommentAttachment {
+  id: string;
+  type: "image" | "file";
+  url: string;
+  filename: string;
+}
+
 export interface TaskComment {
   id: string;
   author: AgentRole | "system";
   content: string;
   createdAt: string;
+  attachments?: CommentAttachment[];
 }
 
 // ─── Tasks ────────────────────────────────────────────────────────────────────
@@ -748,6 +756,7 @@ export interface Action {
   approvedBy: string | null;
   rejectedBy: string | null;
   scheduledFor?: string | null;
+  comments: TaskComment[];
   createdAt: string;
   updatedAt: string;
   executedAt: string | null;

@@ -78,11 +78,19 @@ const subtaskSchema = z.object({
   done: z.boolean(),
 });
 
+const commentAttachmentSchema = z.object({
+  id: z.string().max(100),
+  type: z.enum(["image", "file"]),
+  url: z.string().max(500),
+  filename: z.string().max(255),
+});
+
 const commentSchema = z.object({
   id: z.string().max(100),
   author: actorEnum,
   content: z.string().max(LIMITS.COMMENT_CONTENT),
   createdAt: z.string().max(30),
+  attachments: z.array(commentAttachmentSchema).max(10).optional(),
 });
 
 // ─── Task schemas ──────────────────────────────────────────────────────────────
@@ -583,6 +591,7 @@ export const actionCreateSchema = z.object({
     "Payload exceeds 10KB limit",
   ),
   linkedTaskId: z.string().nullable().optional().default(null),
+  comments: z.array(commentSchema).max(LIMITS.MAX_COMMENTS).optional().default([]),
 });
 
 export const actionUpdateSchema = z.object({
@@ -603,6 +612,7 @@ export const actionUpdateSchema = z.object({
   result: z.record(z.string(), z.unknown()).optional(),
   linkedTaskId: z.string().nullable().optional(),
   blockedBy: z.array(z.string()).max(LIMITS.MAX_BLOCKED_BY).optional(),
+  comments: z.array(commentSchema).max(LIMITS.MAX_COMMENTS).optional(),
   rejectionFeedback: z.string().max(LIMITS.DESCRIPTION).nullable().optional(),
   scheduledFor: z.string().max(30).nullable().optional(),
 });

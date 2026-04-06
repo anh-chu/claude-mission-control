@@ -2,9 +2,10 @@
 
 import { useState, useRef, useEffect, useCallback } from "react";
 import { Textarea } from "@/components/ui/textarea";
-import type { AgentDefinition } from "@/lib/types";
+import type { AgentDefinition, CommentAttachment } from "@/lib/types";
 import { getAgentIcon } from "@/lib/agent-icons";
 import { cn } from "@/lib/utils";
+import { Paperclip, X, Loader2 } from "lucide-react";
 
 interface MentionTextareaProps {
   value: string;
@@ -13,6 +14,8 @@ interface MentionTextareaProps {
   placeholder?: string;
   className?: string;
   onSubmit?: () => void;
+  stagedAttachments?: CommentAttachment[];
+  onAttachmentsChange?: (attachments: CommentAttachment[]) => void;
 }
 
 export function MentionTextarea({
@@ -22,13 +25,17 @@ export function MentionTextarea({
   placeholder = "Add a comment... Use @ to mention an agent",
   className,
   onSubmit,
+  stagedAttachments,
+  onAttachmentsChange,
 }: MentionTextareaProps) {
   const [showDropdown, setShowDropdown] = useState(false);
   const [mentionQuery, setMentionQuery] = useState("");
   const [selectedIndex, setSelectedIndex] = useState(0);
   const [mentionStart, setMentionStart] = useState(-1);
+  const [uploading, setUploading] = useState(false);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   const dropdownRef = useRef<HTMLDivElement>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   const activeAgents = agents.filter((a) => a.status === "active" && a.id !== "me");
 
@@ -129,6 +136,36 @@ export function MentionTextarea({
     [showDropdown, filteredAgents, selectedIndex, insertMention, onSubmit]
   );
 
+  const handleFileSelect = useCallback(async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    e.target.value = ""; // reset so same file can be re-selected
+
+    setUploading(true);
+    try {
+      const formData = new FormData();
+      formData.append("file", file);
+      const res = await fetch("/api/upload", { method: "POST", body: formData });
+      if (!res.ok) {
+        const data = await res.json().catch(() => ({})) as { error?: string };
+        console.error("Upload failed:", data.error ?? "Unknown error");
+        return;
+      }
+      const data = await res.json() as { url: string; filename: string };
+      const attachment: CommentAttachment = {
+        id: `att_${Date.now()}`,
+        type: file.type.startsWith("image/") ? "image" : "file",
+        url: data.url,
+        filename: data.filename,
+      };
+      onAttachmentsChange?.([...(stagedAttachments ?? []), attachment]);
+    } catch (err) {
+      console.error("Upload error:", err);
+    } finally {
+      setUploading(false);
+    }
+  }, [stagedAttachments, onAttachmentsChange]);
+
   // Close dropdown on click outside
   useEffect(() => {
     function handleClickOutside(e: MouseEvent) {
@@ -146,70 +183,93 @@ export function MentionTextarea({
   }, []);
 
   return (
-    <div className="relative flex-1">
-      <Textarea
-        ref={textareaRef}
-        value={value}
-        onChange={handleInputChange}
-        onKeyDown={handleKeyDown}
-        placeholder={placeholder}
-        className={cn("min-h-[60px] text-xs resize-none", className)}
-      />
+    <div className="flex flex-col gap-0">
+      <div className="flex items-end gap-1">
+        <div className="relative flex-1">
+          <Textarea
+            ref={textareaRef}
+            value={value}
+            onChange={handleInputChange}
+            onKeyDown={handleKeyDown}
+            placeholder={placeholder}
+            className={cn("min-h-[60px] text-xs resize-none", className)}
+          />
 
-      {/* @-mention autocomplete dropdown */}
-      {showDropdown && filteredAgents.length > 0 && (
-        <div
-          ref={dropdownRef}
-          className="absolute bottom-full left-0 mb-1 w-56 max-h-48 overflow-y-auto rounded-lg border bg-popover shadow-lg z-50"
+          {/* @-mention autocomplete dropdown */}
+          {showDropdown && filteredAgents.length > 0 && (
+            <div
+              ref={dropdownRef}
+              className="absolute bottom-full left-0 mb-1 w-56 max-h-48 overflow-y-auto rounded-lg border bg-popover shadow-lg z-50"
+            >
+              {filteredAgents.map((agent, idx) => {
+                const Icon = getAgentIcon(agent.id, agent.icon);
+                return (
+                  <button
+                    key={agent.id}
+                    type="button"
+                    className={cn(
+                      "flex items-center gap-2 w-full px-3 py-1.5 text-left text-xs hover:bg-accent transition-colors",
+                      idx === selectedIndex && "bg-accent"
+                    )}
+                    onMouseDown={(e) => {
+                      e.preventDefault(); // Prevent blur
+                      insertMention(agent.id);
+                    }}
+                    onMouseEnter={() => setSelectedIndex(idx)}
+                  >
+                    <div className="h-5 w-5 rounded-full bg-muted flex items-center justify-center shrink-0">
+                      <Icon className="h-3 w-3 text-muted-foreground" />
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <span className="font-medium">{agent.name}</span>
+                      <span className="text-muted-foreground ml-1">@{agent.id}</span>
+                    </div>
+                  </button>
+                );
+              })}
+            </div>
+          )}
+        </div>
+
+        <button
+          type="button"
+          onClick={() => fileInputRef.current?.click()}
+          className="shrink-0 h-8 w-8 rounded flex items-center justify-center text-muted-foreground hover:text-foreground hover:bg-muted transition-colors"
+          title="Attach file"
+          disabled={uploading}
         >
-          {filteredAgents.map((agent, idx) => {
-            const Icon = getAgentIcon(agent.id, agent.icon);
-            return (
+          {uploading ? <Loader2 className="h-4 w-4 animate-spin" /> : <Paperclip className="h-4 w-4" />}
+        </button>
+
+        <input
+          ref={fileInputRef}
+          type="file"
+          className="hidden"
+          accept="image/*,.pdf,.txt,.md"
+          onChange={handleFileSelect}
+        />
+      </div>
+
+      {stagedAttachments && stagedAttachments.length > 0 && (
+        <div className="flex flex-wrap gap-1.5 mt-1.5">
+          {stagedAttachments.map((att) => (
+            <div
+              key={att.id}
+              className="flex items-center gap-1 bg-muted rounded px-2 py-0.5 text-xs text-muted-foreground"
+            >
+              <span className="max-w-[120px] truncate">{att.filename}</span>
               <button
-                key={agent.id}
                 type="button"
-                className={cn(
-                  "flex items-center gap-2 w-full px-3 py-1.5 text-left text-xs hover:bg-accent transition-colors",
-                  idx === selectedIndex && "bg-accent"
-                )}
-                onMouseDown={(e) => {
-                  e.preventDefault(); // Prevent blur
-                  insertMention(agent.id);
-                }}
-                onMouseEnter={() => setSelectedIndex(idx)}
+                onClick={() => onAttachmentsChange?.(stagedAttachments.filter((a) => a.id !== att.id))}
+                className="text-muted-foreground hover:text-foreground ml-0.5"
               >
-                <div className="h-5 w-5 rounded-full bg-muted flex items-center justify-center shrink-0">
-                  <Icon className="h-3 w-3 text-muted-foreground" />
-                </div>
-                <div className="flex-1 min-w-0">
-                  <span className="font-medium">{agent.name}</span>
-                  <span className="text-muted-foreground ml-1">@{agent.id}</span>
-                </div>
+                <X className="h-3 w-3" />
               </button>
-            );
-          })}
+            </div>
+          ))}
         </div>
       )}
     </div>
   );
 }
 
-/**
- * Render comment text with highlighted @-mentions.
- */
-export function CommentContent({ content }: { content: string }) {
-  const parts = content.split(/(@[a-z0-9-]+)/g);
-  return (
-    <p className="text-xs text-muted-foreground mt-0.5 whitespace-pre-wrap">
-      {parts.map((part, i) =>
-        /^@[a-z0-9-]+$/.test(part) ? (
-          <span key={i} className="text-blue-400 font-medium">
-            {part}
-          </span>
-        ) : (
-          <span key={i}>{part}</span>
-        )
-      )}
-    </p>
-  );
-}

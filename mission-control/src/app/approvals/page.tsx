@@ -20,9 +20,10 @@ import { FieldTaskCard } from "@/components/field-ops/field-task-card";
 import { VaultUnlockDialog } from "@/components/field-ops/vault-unlock-dialog";
 import { apiFetch } from "@/lib/api-client";
 import { cn } from "@/lib/utils";
-import { useActions } from "@/hooks/use-data";
+import { useActions, useAgents } from "@/hooks/use-data";
 import { useFieldServices, useExecuteTask } from "@/hooks/use-field-ops";
 import { GettingStartedCard } from "@/components/field-ops/getting-started-card";
+import { ActionDetailPanel } from "@/components/action-detail-panel";
 import { actionToFieldTask } from "@/lib/action-adapter";
 import type { Action, FieldTask } from "@/lib/types";
 import { showSuccess, showError } from "@/lib/toast";
@@ -77,8 +78,10 @@ export default function ApprovalsPage() {
   const { actions, loading, refetch } = useActions({ status: "pending-approval" });
   const { services } = useFieldServices();
   const { execute: executeAction, executingTaskId, dryRunTaskId } = useExecuteTask();
+  const { agents } = useAgents();
 
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
+  const [detailAction, setDetailAction] = useState<Action | null>(null);
   const [riskFilter, setRiskFilter] = useState<RiskFilter>("all");
   const [rejectTarget, setRejectTarget] = useState<{ id: string; title: string } | null>(null);
   const [batchAction, setBatchAction] = useState<"approve" | "reject" | null>(null);
@@ -375,6 +378,7 @@ export default function ApprovalsPage() {
                     onDryRun={(task) => void executeAction(task.id, undefined, true)}
                     dryRunning={dryRunTaskId === action.id}
                     executing={executingTaskId === action.id}
+                    onOpen={() => setDetailAction(actions.find(a => a.id === action.id) ?? null)}
                   />
                 </div>
               </div>
@@ -414,6 +418,13 @@ export default function ApprovalsPage() {
         open={vaultUnlockOpen}
         onOpenChange={setVaultUnlockOpen}
         onUnlock={async () => false}
+      />
+
+      <ActionDetailPanel
+        action={detailAction}
+        open={!!detailAction}
+        onClose={() => setDetailAction(null)}
+        agents={agents}
       />
     </div>
   );

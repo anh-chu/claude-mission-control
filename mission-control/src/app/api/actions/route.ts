@@ -70,6 +70,7 @@ export async function POST(request: Request) {
       rejectionFeedback: null,
       approvedBy: null,
       rejectedBy: null,
+      comments: [],
       createdAt: new Date().toISOString(),
       updatedAt: new Date().toISOString(),
       executedAt: null,

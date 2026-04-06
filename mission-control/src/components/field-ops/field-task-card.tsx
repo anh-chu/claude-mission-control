@@ -79,6 +79,8 @@ interface FieldTaskCardProps {
   onEdit: (task: FieldTask) => void;
   onDelete: (taskId: string) => void;
   onReject: (task: FieldTask) => void;
+  /** Called when the task title or comment icon is clicked to open the detail panel. */
+  onOpen?: (task: FieldTask) => void;
   /** Called when "Execute" is clicked on an approved task. Triggers vault unlock + API call. */
   onExecute?: (task: FieldTask) => void;
   /** Whether execution is currently in progress for this specific task. */
@@ -98,6 +100,7 @@ export function FieldTaskCard({
   onEdit,
   onDelete,
   onReject,
+  onOpen,
   onExecute,
   executing,
   onDryRun,
@@ -300,7 +303,15 @@ export function FieldTaskCard({
           <div className="flex items-start gap-2.5 min-w-0 flex-1">
             <TypeIcon className={cn("h-4 w-4 mt-0.5 shrink-0", TASK_TYPE_COLORS[task.type])} />
             <div className="min-w-0 flex-1">
-              <h4 className="font-medium text-sm truncate">{task.title}</h4>
+              <h4
+                className={cn(
+                  "font-medium text-sm truncate",
+                  onOpen && "cursor-pointer hover:underline"
+                )}
+                onClick={() => onOpen?.(task)}
+              >
+                {task.title}
+              </h4>
               {task.description && (
                 <p className="text-xs text-muted-foreground mt-0.5 line-clamp-2">
                   {task.description}
@@ -354,6 +365,15 @@ export function FieldTaskCard({
                 Linked task
               </span>
             </>
+          )}
+          {onOpen && (
+            <button
+              onClick={() => onOpen(task)}
+              className="flex items-center gap-0.5 text-muted-foreground hover:text-foreground transition-colors ml-auto"
+              title="View details & comments"
+            >
+              <MessageSquare className="h-3 w-3" />
+            </button>
           )}
         </div>
 

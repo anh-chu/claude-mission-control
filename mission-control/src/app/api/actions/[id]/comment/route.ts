@@ -5,6 +5,7 @@ import path from "path";
 import { parseAgentMentions, generateId } from "@/lib/utils";
 
 const DATA_DIR = path.resolve(process.cwd(), "data");
+const ACTIONS_FILE = path.join(DATA_DIR, "workspaces", "default", "actions.json");
 
 function readJSON<T>(file: string): T | null {
   try {
@@ -15,17 +16,26 @@ function readJSON<T>(file: string): T | null {
   }
 }
 
-interface TaskEntry {
+interface CommentAttachment {
+  id: string;
+  type: "image" | "file";
+  url: string;
+  filename: string;
+}
+
+interface ActionEntry {
   id: string;
   title: string;
   assignedTo: string | null;
-  kanban: string;
+  status: string;
   comments?: Array<{
     id: string;
     author: string;
     content: string;
     createdAt: string;
+    attachments?: CommentAttachment[];
   }>;
+  updatedAt?: string;
   [key: string]: unknown;
 }
 
@@ -38,9 +48,9 @@ export async function POST(
   request: Request,
   { params }: { params: Promise<{ id: string }> }
 ) {
-  const { id: taskId } = await params;
+  const { id: actionId } = await params;
 
-  let body: { content: string; author?: string; attachments?: Array<{ id: string; type: "image" | "file"; url: string; filename: string }> };
+  let body: { content: string; author?: string; attachments?: CommentAttachment[] };
   try {
     body = await request.json();
   } catch {
@@ -56,19 +66,18 @@ export async function POST(
   }
 
   const author = body.author ?? "me";
-
-  const tasksPath = path.join(DATA_DIR, "tasks.json");
-  const tasksData = readJSON<{ tasks: TaskEntry[] }>(tasksPath);
-  if (!tasksData) {
-    return NextResponse.json({ error: "Could not read tasks" }, { status: 500 });
-  }
-
-  const task = tasksData.tasks.find((t) => t.id === taskId);
-  if (!task) {
-    return NextResponse.json({ error: "Task not found" }, { status: 404 });
-  }
-
   const attachments = Array.isArray(body.attachments) ? body.attachments.slice(0, 10) : [];
+
+  const actionsData = readJSON<{ actions: ActionEntry[] }>(ACTIONS_FILE);
+  if (!actionsData) {
+    return NextResponse.json({ error: "Could not read actions" }, { status: 500 });
+  }
+
+  const action = actionsData.actions.find((a) => a.id === actionId);
+  if (!action) {
+    return NextResponse.json({ error: "Action not found" }, { status: 404 });
+  }
+
   const comment = {
     id: generateId("cmt"),
     author,
@@ -77,19 +86,19 @@ export async function POST(
     ...(attachments.length > 0 ? { attachments } : {}),
   };
 
-  if (!Array.isArray(task.comments)) {
-    task.comments = [];
+  if (!Array.isArray(action.comments)) {
+    action.comments = [];
   }
-  if (task.comments.length >= 100) {
-    return NextResponse.json({ error: "Max 100 comments per task" }, { status: 400 });
+  if (action.comments.length >= 100) {
+    return NextResponse.json({ error: "Max 100 comments per action" }, { status: 400 });
   }
-  task.comments.push(comment);
-  task.updatedAt = new Date().toISOString();
+  action.comments.push(comment);
+  action.updatedAt = new Date().toISOString();
 
   try {
-    writeFileSync(tasksPath, JSON.stringify(tasksData, null, 2), "utf-8");
+    writeFileSync(ACTIONS_FILE, JSON.stringify(actionsData, null, 2), "utf-8");
   } catch {
-    return NextResponse.json({ error: "Failed to write task" }, { status: 500 });
+    return NextResponse.json({ error: "Failed to write action" }, { status: 500 });
   }
 
   const mentionedIds = parseAgentMentions(content);
@@ -103,14 +112,14 @@ export async function POST(
 
   if (validMentions.length > 0) {
     const cwd = process.cwd();
-    const scriptPath = path.resolve(cwd, "scripts", "daemon", "run-task-comment.ts");
+    const scriptPath = path.resolve(cwd, "scripts", "daemon", "run-action-comment.ts");
 
     for (const agentId of validMentions) {
       try {
         const args = [
           "--import", "tsx",
           scriptPath,
-          taskId,
+          actionId,
           "--agent", agentId,
           "--comment", content,
           "--comment-author", author,
@@ -125,7 +134,7 @@ export async function POST(
         child.unref();
         spawned.push({ agentId, pid: child.pid ?? 0 });
       } catch {
-        // Non-fatal — continue with other agents
+        // Non-fatal
       }
     }
   }
@@ -141,10 +150,10 @@ export async function POST(
       id: generateId("evt"),
       type: "message_sent",
       actor: author,
-      taskId,
+      taskId: null,
       summary: validMentions.length > 0
-        ? `Comment on "${task.title}" mentioning @${validMentions.join(", @")}`
-        : `Comment on "${task.title}"`,
+        ? `Comment on action "${action.title}" mentioning @${validMentions.join(", @")}`
+        : `Comment on action "${action.title}"`,
       details: content.slice(0, 300),
       timestamp: new Date().toISOString(),
     });
@@ -165,7 +174,7 @@ export async function DELETE(
   request: Request,
   { params }: { params: Promise<{ id: string }> }
 ) {
-  const { id: taskId } = await params;
+  const { id: actionId } = await params;
 
   const url = new URL(request.url);
   const commentId = url.searchParams.get("commentId");
@@ -173,33 +182,32 @@ export async function DELETE(
     return NextResponse.json({ error: "commentId query param is required" }, { status: 400 });
   }
 
-  const tasksPath = path.join(DATA_DIR, "tasks.json");
-  const tasksData = readJSON<{ tasks: TaskEntry[] }>(tasksPath);
-  if (!tasksData) {
-    return NextResponse.json({ error: "Could not read tasks" }, { status: 500 });
+  const actionsData = readJSON<{ actions: ActionEntry[] }>(ACTIONS_FILE);
+  if (!actionsData) {
+    return NextResponse.json({ error: "Could not read actions" }, { status: 500 });
   }
 
-  const task = tasksData.tasks.find((t) => t.id === taskId);
-  if (!task) {
-    return NextResponse.json({ error: "Task not found" }, { status: 404 });
+  const action = actionsData.actions.find((a) => a.id === actionId);
+  if (!action) {
+    return NextResponse.json({ error: "Action not found" }, { status: 404 });
   }
 
-  if (!Array.isArray(task.comments)) {
+  if (!Array.isArray(action.comments)) {
     return NextResponse.json({ error: "Comment not found" }, { status: 404 });
   }
 
-  const idx = task.comments.findIndex((c) => c.id === commentId);
+  const idx = action.comments.findIndex((c) => c.id === commentId);
   if (idx === -1) {
     return NextResponse.json({ error: "Comment not found" }, { status: 404 });
   }
 
-  task.comments.splice(idx, 1);
-  task.updatedAt = new Date().toISOString();
+  action.comments.splice(idx, 1);
+  action.updatedAt = new Date().toISOString();
 
   try {
-    writeFileSync(tasksPath, JSON.stringify(tasksData, null, 2), "utf-8");
+    writeFileSync(ACTIONS_FILE, JSON.stringify(actionsData, null, 2), "utf-8");
   } catch {
-    return NextResponse.json({ error: "Failed to write task" }, { status: 500 });
+    return NextResponse.json({ error: "Failed to write action" }, { status: 500 });
   }
 
   return NextResponse.json({ deleted: commentId });

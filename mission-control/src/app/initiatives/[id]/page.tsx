@@ -12,6 +12,7 @@ import {
   Activity,
   Pause,
   Play,
+  Trash2,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -20,17 +21,20 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { AutonomySelector } from "@/components/autonomy-selector";
+import { ConfirmDialog } from "@/components/confirm-dialog";
 import { BreadcrumbNav } from "@/components/breadcrumb-nav";
 import { FieldTaskCard } from "@/components/field-ops/field-task-card";
 import { VaultUnlockDialog } from "@/components/field-ops/vault-unlock-dialog";
+import { ActionDetailPanel } from "@/components/action-detail-panel";
 import { FieldTaskFormDialog } from "@/components/field-ops/field-task-form-dialog";
 import { TaskForm, type TaskFormData } from "@/components/task-form";
 import { actionToFieldTask } from "@/lib/action-adapter";
-import { useInitiatives, useGoals, useInitiativeTasks, useActions, useActivityLog, useProjects } from "@/hooks/use-data";
+import { MarkdownContent } from "@/components/markdown-content";
+import { useInitiatives, useGoals, useInitiativeTasks, useActions, useActivityLog, useProjects, useAgents } from "@/hooks/use-data";
 import { useFieldServices, useExecuteTask } from "@/hooks/use-field-ops";
 import { apiFetch } from "@/lib/api-client";
 import { showSuccess, showError } from "@/lib/toast";
-import type { Initiative, InitiativeStatus, AutonomyLevel, Task, FieldTaskType } from "@/lib/types";
+import type { Initiative, InitiativeStatus, AutonomyLevel, Task, FieldTaskType, Action } from "@/lib/types";
 
 function kanbanBadge(kanban: Task["kanban"]) {
   switch (kanban) {
@@ -105,19 +109,22 @@ export default function InitiativeDetailPage() {
   const router = useRouter();
   const initiativeId = params.id as string;
 
-  const { initiatives, update, loading: loadingInitiatives } = useInitiatives();
+  const { initiatives, update, remove, loading: loadingInitiatives } = useInitiatives();
   const { goals } = useGoals();
   const { tasks, loading: loadingTasks, refetch: refetchTasks } = useInitiativeTasks(initiativeId);
   const { actions, loading: loadingActions, refetch: refetchActions } = useActions({ initiativeId });
   const { services } = useFieldServices();
   const { execute: executeAction, executingTaskId, dryRunTaskId } = useExecuteTask();
   const { projects } = useProjects();
+  const { agents } = useAgents();
 
   const [addTaskOpen, setAddTaskOpen] = useState(false);
+  const [detailAction, setDetailAction] = useState<Action | null>(null);
   const [addActionOpen, setAddActionOpen] = useState(false);
   const [vaultUnlockOpen, setVaultUnlockOpen] = useState(false);
   const [togglingStatus, setTogglingStatus] = useState(false);
 
+  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
   const [editingTitle, setEditingTitle] = useState(false);
   const [titleDraft, setTitleDraft] = useState("");
   const [editingDesc, setEditingDesc] = useState(false);
@@ -188,8 +195,8 @@ export default function InitiativeDetailPage() {
       }),
     });
     if (!res.ok) {
-      const err = await res.json().catch(() => ({}));
-      throw new Error((err as { error?: string }).error ?? "Failed to create action");
+      const err = await res.json().catch(() => ({})) as { error?: string };
+      throw new Error(err.error ?? "Failed to create action");
     }
     showSuccess("Action created");
     refetchActions();
@@ -203,8 +210,8 @@ export default function InitiativeDetailPage() {
         body: JSON.stringify({ id: taskId, status }),
       });
       if (!res.ok) {
-        const err = await res.json().catch(() => ({}));
-        throw new Error((err as { error?: string }).error ?? "Failed to update status");
+        const err = await res.json().catch(() => ({})) as { error?: string };
+        throw new Error(err.error ?? "Failed to update status");
       }
       showSuccess(`Status updated to ${status}`);
       refetchActions();
@@ -286,13 +293,17 @@ export default function InitiativeDetailPage() {
                 onKeyDown={(e) => { if (e.key === "Escape") setEditingDesc(false); }}
               />
             ) : (
-              <p
-                className={`text-sm cursor-text hover:opacity-80 transition-opacity ${initiative.description ? "text-muted-foreground" : "text-muted-foreground/40 italic"}`}
+              <div
+                className="cursor-text hover:opacity-80 transition-opacity"
                 onClick={() => { setDescDraft(initiative.description ?? ""); setEditingDesc(true); }}
                 title="Click to edit"
               >
-                {initiative.description || "Click to add description"}
-              </p>
+                {initiative.description ? (
+                  <MarkdownContent content={initiative.description} className="text-sm" />
+                ) : (
+                  <p className="text-sm text-muted-foreground/40 italic">Click to add description</p>
+                )}
+              </div>
             )}
             {parentGoal && (
               <p className="text-xs text-muted-foreground">
@@ -339,6 +350,15 @@ export default function InitiativeDetailPage() {
               )}
             </Button>
           )}
+          <Button
+            variant="ghost"
+            size="sm"
+            className="h-6 w-6 p-0 ml-auto text-destructive hover:text-destructive"
+            onClick={() => setShowDeleteConfirm(true)}
+            title="Delete initiative"
+          >
+            <Trash2 className="h-3.5 w-3.5" />
+          </Button>
         </div>
 
       </div>
@@ -470,6 +490,7 @@ export default function InitiativeDetailPage() {
                       onDryRun={(task) => void executeAction(task.id, undefined, true)}
                       dryRunning={dryRunTaskId === action.id}
                       executing={executingTaskId === action.id}
+                      onOpen={() => setDetailAction(action)}
                     />
                   ))}
                 </div>
@@ -503,8 +524,8 @@ export default function InitiativeDetailPage() {
                 }),
               });
               if (!res.ok) {
-                const err = await res.json().catch(() => ({}));
-                throw new Error((err as { error?: string }).error ?? "Failed to create task");
+                const err = await res.json().catch(() => ({})) as { error?: string };
+                throw new Error(err.error ?? "Failed to create task");
               }
               showSuccess("Task created");
               setAddTaskOpen(false);
@@ -529,6 +550,34 @@ export default function InitiativeDetailPage() {
         open={vaultUnlockOpen}
         onOpenChange={setVaultUnlockOpen}
         onUnlock={async () => false}
+      />
+
+      <ActionDetailPanel
+        action={detailAction}
+        open={!!detailAction}
+        onClose={() => setDetailAction(null)}
+        onUpdate={async (id, patch) => {
+          await apiFetch("/api/actions", {
+            method: "PUT",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ id, ...patch }),
+          });
+          refetchActions();
+        }}
+        agents={agents}
+      />
+
+      <ConfirmDialog
+        open={showDeleteConfirm}
+        onOpenChange={setShowDeleteConfirm}
+        title="Delete initiative?"
+        description={`"${initiative.title}" will be deleted. Tasks and actions linked to it will remain.`}
+        confirmLabel="Delete"
+        variant="destructive"
+        onConfirm={async () => {
+          await remove(initiative.id);
+          router.push("/initiatives");
+        }}
       />
     </div>
   );
