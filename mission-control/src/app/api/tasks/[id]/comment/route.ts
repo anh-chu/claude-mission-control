@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { spawn } from "child_process";
-import { readFileSync, writeFileSync, existsSync } from "fs";
+import { readFileSync, writeFileSync, existsSync, unlinkSync } from "fs";
 import path from "path";
 import { parseAgentMentions, generateId } from "@/lib/utils";
 import { applyWorkspaceContext } from "@/lib/workspace-context";
@@ -25,6 +25,7 @@ interface TaskEntry {
     author: string;
     content: string;
     createdAt: string;
+    attachments?: Array<{ id: string; type: string; url: string; filename: string }>;
   }>;
   [key: string]: unknown;
 }
@@ -197,6 +198,7 @@ export async function DELETE(
     return NextResponse.json({ error: "Comment not found" }, { status: 404 });
   }
 
+  const deletedComment = task.comments[idx];
   task.comments.splice(idx, 1);
   task.updatedAt = new Date().toISOString();
 
@@ -204,6 +206,17 @@ export async function DELETE(
     writeFileSync(tasksPath, JSON.stringify(tasksData, null, 2), "utf-8");
   } catch {
     return NextResponse.json({ error: "Failed to write task" }, { status: 500 });
+  }
+
+  // Delete uploaded attachment files (best-effort)
+  if (Array.isArray(deletedComment.attachments)) {
+    for (const att of deletedComment.attachments) {
+      if (typeof att.url === "string" && att.url.startsWith("/uploads/")) {
+        try {
+          unlinkSync(path.join(process.cwd(), "public", att.url));
+        } catch { /* ignore */ }
+      }
+    }
   }
 
   return NextResponse.json({ deleted: commentId });
