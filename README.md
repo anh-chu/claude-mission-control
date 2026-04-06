@@ -1,5 +1,5 @@
 <p align="center">
-  <img src="https://img.shields.io/badge/version-0.11-blue" alt="Version" />&nbsp;
+  <img src="https://img.shields.io/badge/version-0.15-blue" alt="Version" />&nbsp;
   <img src="https://img.shields.io/github/license/MeisnerDan/mission-control" alt="License" />
 </p>
 
@@ -34,7 +34,7 @@ You stay in control without micromanaging.
 
 ## What's New in This Fork
 
-This fork adds four major features on top of the original Mission Control:
+This fork adds significant features on top of the original Mission Control:
 
 ### 1. Workspace-Scoped IA (Workspaces → Goals → Initiatives → Tasks + Actions)
 
@@ -54,12 +54,12 @@ See what your agents are doing **live**, not after the fact.
 
 - **Live Console** -- expand any active session on the Automation page to watch agent output stream in real time (tool calls, responses, progress)
 - **Server-Sent Events** -- `GET /api/runs/stream?runId=X` tails the agent's `.jsonl` stream file and pushes events to the browser
-- **Stream-JSON output** -- the daemon now uses `--output-format stream-json` instead of `json`, writing each event to `data/agent-streams/<runId>.jsonl`
+- **Stream-JSON output** -- the daemon uses `--output-format stream-json`, writing each event to `~/.cmc/agent-streams/<runId>.jsonl`
 - **Auto-cleanup** -- stream files are pruned when completed runs expire (>1hr old)
 
-### 2. @-Mention Agents in Comments
+### 3. @-Mention Agents in Comments
 
-Tag any agent directly in a task comment to get their input.
+Tag any agent directly in a task or action comment to get their input.
 
 - Type `@` in the comment box to see an autocomplete dropdown of available agents
 - The mentioned agent receives the comment, reads the full task context, and responds with a new comment
@@ -67,7 +67,7 @@ Tag any agent directly in a task comment to get their input.
 - Agent responses appear inline in the comment thread with distinct styling (blue border + icon)
 - Each mention spawns an independent agent session with live streaming support
 
-### 3. Codex CLI Support (Optional)
+### 4. Codex CLI Support (Optional)
 
 Run agents on either **Claude Code** or **OpenAI Codex CLI**.
 
@@ -75,7 +75,25 @@ Run agents on either **Claude Code** or **OpenAI Codex CLI**.
 - The daemon auto-detects the correct binary (`claude` or `codex`) and spawns with appropriate flags
 - Codex output is normalized to the same JSONL stream format for consistent live console display
 
-### 5. General-Purpose Rebrand
+### 5. File Attachments + Markdown Descriptions
+
+Richer task and action detail panels.
+
+- **File attachments** -- attach images and files to task descriptions and comments; stored in `~/.cmc/uploads/`
+- **Markdown rendering** -- task descriptions render full markdown (headers, lists, code blocks); click to edit
+- **Inline attachment previews** -- images display inline in comments; other files as download links
+- **Auto-cleanup** -- orphaned uploads (unlinked files) removed on server start and via `pnpm cleanup:uploads`
+
+### 6. Autopilot Resilience
+
+The daemon survives server restarts and recovers from crashes automatically.
+
+- **Auto-start on boot** -- if the daemon was running before a server restart, it restarts automatically via `instrumentation.ts`
+- **Crash recovery sweep** -- on daemon startup, scans for `in-progress` tasks with no live process and resets them to `not-started`
+- **Session resume** -- daemon captures Claude's session ID from stream-json output; on crash, attempts `--resume <sessionId>` so agents continue mid-task with full conversation history
+- **Human-input pause** -- agents can pause execution and set `awaiting-decision` status when they need human input; daemon resumes automatically when the decision is answered
+
+### 7. General-Purpose Rebrand
 
 Renamed from founder/startup-specific terminology to general-purpose labels:
 
@@ -152,13 +170,22 @@ Agents don't just manage tasks -- they execute real-world actions. Post to X, se
 
 ### Agent Execution
 - **Real-Time Streaming** -- Live console shows agent tool calls, responses, and progress as they happen
-- **@-Mention in Comments** -- Tag agents in task comments to get their input; agents can reply or reopen tasks
+- **@-Mention in Comments** -- Tag agents in task or action comments to get their input; agents can reply or reopen tasks
 - **Multi-CLI Backend** -- Run agents on Claude Code or OpenAI Codex CLI (per-agent configurable)
 - **One-Click Execution** -- Press play on any task card to spawn an agent session
 - **Autonomous Daemon** -- Background process that polls tasks, spawns sessions, enforces concurrency, with real-time dashboard
+- **Auto-Start on Boot** -- Daemon auto-restarts when the Next.js server starts if it was running before
+- **Crash Recovery** -- On daemon restart, orphaned in-progress tasks are reset; interrupted Claude sessions resume via `--resume`
+- **Human-Input Pause** -- Daemon pauses agent execution when a decision is needed; resumes automatically when answered
 - **Session Resilience** -- Agents that timeout or hit max turns auto-spawn continuation sessions
-- **Continuous Missions** -- Run an entire project with one click; tasks auto-dispatch as others complete
+- **Continuous Missions** -- Run an entire project with one click; tasks auto-dispatch as dependencies resolve
 - **Loop Detection** -- Auto-detects agents stuck in failure loops; escalates after 3 attempts
+
+### Task & Action Detail
+- **Markdown Descriptions** -- Task descriptions render full markdown; click to toggle edit mode
+- **File Attachments** -- Attach images and files to task descriptions and action/task comments
+- **Inline Previews** -- Images display inline; other files as download links
+- **Comments on Actions** -- Full comment + @-mention support on Actions, not just Tasks
 
 ### Monitoring & Safety
 - **Cost & Usage Tracking** -- Full token usage (input, output, cache) from every session
@@ -300,8 +327,7 @@ Each agent's backend (Claude Code or Codex CLI) is configurable from the Agents 
 ## Architecture
 
 ```
-mission-control/                       Next.js 15 web app
-mission-control/data/
+~/.cmc/                                All persistent data (survives app updates)
   workspaces.json                      Workspace registry (id, name, color, autonomy default)
   workspaces/{id}/                     Per-workspace isolated data
     tasks.json                         Tasks with Eisenhower + Kanban + agent assignment
@@ -313,27 +339,37 @@ mission-control/data/
     inbox.json                         Agent <-> human messages
     decisions.json                     Pending decisions requiring human judgment
     activity-log.json                  Timestamped event log
-    daemon-config.json                 Per-workspace daemon config (polling, concurrency)
+    daemon-config.json                 Autopilot config (polling, concurrency, autoStart)
+    daemon-session-recovery.json       Persisted Claude session IDs for crash resume
     field-ops/                         Integrations data (services, vault, safety)
   agent-streams/                       Live JSONL stream files per active run
+  uploads/                             File attachments (served via /uploads/[filename])
   ai-context.md                        Generated ~650-token workspace snapshot
-mission-control/scripts/daemon/        Agent daemon + execution scripts
-  runner.ts                            CLI runner (Claude Code + Codex CLI)
-  run-task.ts                          Task execution with streaming
-  run-task-comment.ts                  @-mention comment handler
-mission-control/src/
-  app/initiatives/                     Initiative list + detail pages
-  app/approvals/                       Cross-initiative pending actions queue
-  app/actions/activity/                Global actions activity log
-  app/settings/                        Workspace settings + autopilot config
-  app/api/workspaces/                  Workspace CRUD
-  app/api/initiatives/                 Initiative CRUD (workspace-scoped)
-  app/api/actions/                     Action CRUD (workspace-scoped)
-  components/autonomy-selector.tsx     Shield button autonomy toggle
-  components/workspace-switcher.tsx    Workspace dropdown
-  lib/action-adapter.ts                Maps Action → FieldTask for FieldTaskCard
-  lib/autonomy.ts                      3-tier autonomy cascade resolver
-  lib/workspace-context.ts             Reads x-workspace-id header in API routes
+
+mission-control/                       Next.js 15 web app (source only — no data here)
+  instrumentation.ts                   Server startup hooks (upload cleanup, daemon auto-start)
+  scripts/daemon/                      Agent daemon + execution scripts
+    index.ts                           Daemon entry point (start/stop/status + crash recovery)
+    dispatcher.ts                      Task polling, dispatch, retry queue, session resume
+    runner.ts                          CLI runner (Claude Code + Codex CLI, stream-json)
+    recovery.ts                        Crash recovery: orphan detection + session ID persistence
+    health.ts                          Session tracking, stale PID cleanup, status persistence
+    scheduler.ts                       Cron-based scheduled commands (daily-plan, standup, etc.)
+  src/
+    app/initiatives/                   Initiative list + detail pages
+    app/approvals/                     Cross-initiative pending actions queue
+    app/actions/activity/              Global actions activity log
+    app/settings/                      Workspace settings + autopilot config
+    app/api/workspaces/                Workspace CRUD
+    app/api/initiatives/               Initiative CRUD (workspace-scoped)
+    app/api/actions/                   Action CRUD (workspace-scoped)
+    app/api/daemon/                    Autopilot start/stop/config (sets autoStart flag)
+    components/autonomy-selector.tsx   Shield button autonomy toggle
+    components/workspace-switcher.tsx  Workspace dropdown
+    lib/action-adapter.ts              Maps Action → FieldTask for FieldTaskCard
+    lib/autonomy.ts                    3-tier autonomy cascade resolver
+    lib/workspace-context.ts           Reads x-workspace-id header in API routes
+    lib/scheduled-jobs.ts              Upload cleanup scheduler
 ```
 
 ### Design Decisions
@@ -367,12 +403,13 @@ mission-control/src/
 ```bash
 pnpm dev              # Start dev server
 pnpm build            # Production build
-pnpm test             # Run all 193 tests
+pnpm test             # Run all tests
 pnpm verify           # Typecheck + lint + build + test
 pnpm daemon:start     # Start autonomous daemon
 pnpm daemon:stop      # Stop daemon
-pnpm daemon:status    # Show daemon status
+pnpm daemon:status    # Show daemon status + active sessions
 pnpm gen:context      # Regenerate ai-context.md
+pnpm cleanup:uploads  # Remove orphaned upload files from ~/.cmc/uploads
 ```
 
 ---
