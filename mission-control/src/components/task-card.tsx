@@ -94,14 +94,11 @@ export function TaskCard({ task, project, agents = [], className, isDragging, on
 
   return (
     <ContextMenu onOpenChange={(open) => {
-      if (open) {
-        suppressNextClick.current = true;
-      } else {
-        setTimeout(() => { suppressNextClick.current = false; }, 150);
-      }
+      if (!open) setTimeout(() => { suppressNextClick.current = false; }, 150);
     }}>
       <ContextMenuTrigger asChild>
         <Card
+          onContextMenu={() => { suppressNextClick.current = true; }}
           className={cn(
             "cursor-grab select-none transition-all hover:shadow-md hover:border-primary/20 animate-fade-in-up",
             isDragging && "opacity-50 shadow-lg rotate-1",
