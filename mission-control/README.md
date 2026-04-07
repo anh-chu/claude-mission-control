@@ -23,7 +23,6 @@ Click **"Load Demo Data"** on the welcome screen to explore with sample tasks, a
 | `pnpm tsc --noEmit` | TypeScript type check |
 | `pnpm test` | Run test suite |
 | `pnpm verify` | Typecheck + lint + build + test |
-| `pnpm seed:demo` | Load sample demo data |
 | `pnpm gen:context` | Regenerate `~/.cmc/ai-context.md` |
 | `pnpm daemon:start` | Start Autopilot daemon |
 | `pnpm daemon:stop` | Stop daemon |

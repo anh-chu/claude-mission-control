@@ -1,4 +1,5 @@
-import { readFile, writeFile, readdir, unlink, mkdir } from "fs/promises";
+import { readFile, writeFile, readdir, unlink, mkdir, copyFile, cp } from "fs/promises";
+import { existsSync } from "fs";
 import path from "path";
 import { Mutex } from "async-mutex";
 import type {
@@ -58,63 +59,83 @@ export async function ensureFieldOpsDir(): Promise<void> {
   await mkdir(FIELD_OPS_DIR, { recursive: true });
 }
 
+// Artifacts directory containing seed templates for new workspaces.
+// Located relative to mission-control/ root (one level up from src/lib/).
+const ARTIFACTS_DIR = path.resolve(__dirname, "..", "..", "artifacts", "workspaces", "default");
+
+async function seedFile(dest: string, artifactSrc: string | null, fallback: unknown): Promise<void> {
+  try {
+    await readFile(dest, "utf-8"); // already exists, skip
+  } catch {
+    if (artifactSrc && existsSync(artifactSrc)) {
+      await copyFile(artifactSrc, dest);
+    } else {
+      await writeFile(dest, JSON.stringify(fallback, null, 2), "utf-8");
+    }
+  }
+}
+
 export async function ensureWorkspaceDir(workspaceId: string): Promise<void> {
   const wsDir = getWorkspaceDataDir(workspaceId);
   await mkdir(wsDir, { recursive: true });
   await mkdir(path.join(wsDir, "field-ops"), { recursive: true });
-  // Seed empty JSON files if they don't exist
-  const seedFiles: Record<string, unknown> = {
-    "tasks.json": { tasks: [] },
-    "tasks-archive.json": { tasks: [] },
-    "goals.json": { goals: [] },
-    "initiatives.json": { initiatives: [] },
-    "actions.json": { actions: [] },
-    "projects.json": { projects: [] },
-    "brain-dump.json": { entries: [] },
-    "activity-log.json": { events: [] },
-    "inbox.json": { messages: [] },
-    "decisions.json": { decisions: [] },
-    "agents.json": { agents: [] },
-    "skills-library.json": { skills: [] },
-    "active-runs.json": { runs: [] },
-    "daemon-config.json": {},
-  };
+
+  // Files seeded from artifacts when available, otherwise empty defaults
+  const seedFiles: Array<{ name: string; artifact?: string; fallback: unknown }> = [
+    { name: "tasks.json", fallback: { tasks: [] } },
+    { name: "tasks-archive.json", fallback: { tasks: [] } },
+    { name: "goals.json", fallback: { goals: [] } },
+    { name: "initiatives.json", fallback: { initiatives: [] } },
+    { name: "actions.json", fallback: { actions: [] } },
+    { name: "projects.json", fallback: { projects: [] } },
+    { name: "brain-dump.json", fallback: { entries: [] } },
+    { name: "activity-log.json", fallback: { events: [] } },
+    { name: "inbox.json", fallback: { messages: [] } },
+    { name: "decisions.json", fallback: { decisions: [] } },
+    { name: "agents.json", artifact: path.join(ARTIFACTS_DIR, "agents.json"), fallback: { agents: [] } },
+    { name: "skills-library.json", artifact: path.join(ARTIFACTS_DIR, "skills-library.json"), fallback: { skills: [] } },
+    { name: "active-runs.json", fallback: { runs: [] } },
+    { name: "daemon-config.json", artifact: path.join(ARTIFACTS_DIR, "daemon-config.json"), fallback: {} },
+  ];
   await Promise.all(
-    Object.entries(seedFiles).map(async ([filename, empty]) => {
-      const fp = path.join(wsDir, filename);
-      try {
-        await readFile(fp, "utf-8"); // already exists, skip
-      } catch {
-        await writeFile(fp, JSON.stringify(empty, null, 2), "utf-8");
-      }
-    })
+    seedFiles.map(({ name, artifact, fallback }) =>
+      seedFile(path.join(wsDir, name), artifact ?? null, fallback)
+    )
   );
-  // Seed empty field-ops files
-  const fieldOpsSeedFiles: Record<string, unknown> = {
-    "missions.json": { missions: [] },
-    "tasks.json": { tasks: [] },
-    "services.json": { services: [] },
-    "activity-log.json": { events: [] },
-    "approval-config.json": { config: { mode: "approve-all", overrides: {} } },
-    "safety-limits.json": {
+
+  // Seed field-ops files
+  const fieldOpsSeedFiles: Array<{ name: string; artifact?: string; fallback: unknown }> = [
+    { name: "missions.json", fallback: { missions: [] } },
+    { name: "tasks.json", fallback: { tasks: [] } },
+    { name: "services.json", fallback: { services: [] } },
+    { name: "activity-log.json", fallback: { events: [] } },
+    { name: "approval-config.json", fallback: { config: { mode: "approve-all", overrides: {} } } },
+    { name: "safety-limits.json", fallback: {
       global: { enabled: true, dailyBudgetUsd: 100, weeklyBudgetUsd: 500, monthlyBudgetUsd: 2000, pauseOnBreach: true },
       services: {},
       spendLog: [],
       updatedAt: new Date().toISOString(),
       updatedBy: "me",
-    },
-    "templates.json": { templates: [] },
-  };
+    } },
+    { name: "templates.json", fallback: { templates: [] } },
+    { name: "service-catalog.json", artifact: path.join(ARTIFACTS_DIR, "field-ops", "service-catalog.json"), fallback: { services: [] } },
+  ];
   await Promise.all(
-    Object.entries(fieldOpsSeedFiles).map(async ([filename, empty]) => {
-      const fp = path.join(wsDir, "field-ops", filename);
-      try {
-        await readFile(fp, "utf-8");
-      } catch {
-        await writeFile(fp, JSON.stringify(empty, null, 2), "utf-8");
-      }
-    })
+    fieldOpsSeedFiles.map(({ name, artifact, fallback }) =>
+      seedFile(path.join(wsDir, "field-ops", name), artifact ?? null, fallback)
+    )
   );
+
+  // Copy CLAUDE.md from artifacts if available
+  const claudeMdSrc = path.join(ARTIFACTS_DIR, "CLAUDE.md");
+  const claudeMdDest = path.join(wsDir, "CLAUDE.md");
+  try {
+    await readFile(claudeMdDest, "utf-8");
+  } catch {
+    if (existsSync(claudeMdSrc)) {
+      await copyFile(claudeMdSrc, claudeMdDest);
+    }
+  }
 }
 
 export function getCheckpointsDir(): string {

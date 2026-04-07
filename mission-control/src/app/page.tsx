@@ -4,7 +4,7 @@ import { useState } from "react";
 import {
   Plus, CheckSquare, Target, Lightbulb, FolderOpen, Sparkles,
   Mail, HelpCircle, Activity, User, Search, Code, Megaphone, BarChart3,
-  AlertTriangle, CircleDot, ShieldAlert, Rocket, Users, Zap, Database, Square,
+  AlertTriangle, CircleDot, ShieldAlert, Rocket, Users, Zap, Square,
   Radio, Shield,
 } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -220,25 +220,6 @@ export default function CommandCenterPage() {
     }
   };
 
-  const [seeding, setSeeding] = useState(false);
-
-  const handleSeedDemo = async () => {
-    setSeeding(true);
-    try {
-      const res = await fetch("/api/seed-demo", { method: "POST" });
-      if (res.ok) {
-        toast.success("Demo data loaded! Refreshing...");
-        setTimeout(() => window.location.reload(), 500);
-      } else {
-        toast.error("Failed to load demo data");
-      }
-    } catch {
-      toast.error("Failed to load demo data");
-    } finally {
-      setSeeding(false);
-    }
-  };
-
   if (loading) {
     return (
       <div className="space-y-6">
@@ -324,23 +305,6 @@ export default function CommandCenterPage() {
               </Card>
             </div>
 
-            <div className="pt-2 border-t border-border">
-              <Tip content="Populate with sample tasks, projects, and goals">
-                <Button
-                  variant="outline"
-                  size="sm"
-                  className="gap-2"
-                  onClick={handleSeedDemo}
-                  disabled={seeding}
-                >
-                  <Database className="h-3.5 w-3.5" />
-                  {seeding ? "Loading..." : "Load demo data"}
-                </Button>
-              </Tip>
-              <p className="text-xs text-muted-foreground mt-2">
-                Try Task Control with sample projects, tasks, and agent activity
-              </p>
-            </div>
           </div>
         </div>
 

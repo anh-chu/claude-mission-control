@@ -5,9 +5,7 @@ import Link from "next/link";
 import {
   Rocket,
   Lock,
-  Database,
   Zap,
-  Loader2,
   CheckCircle2,
   Flag,
 } from "lucide-react";
@@ -20,13 +18,13 @@ import {
 } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { VaultSetupWizard } from "@/components/vault-setup-wizard";
-import { apiFetch } from "@/lib/api-client";
+
 
 const STORAGE_KEY = "mc-onboarded";
 
 // ─── Step types ─────────────────────────────────────────────────────────────
 
-type StepType = "bullets" | "vault-setup" | "demo-data" | "data-management" | "ready";
+type StepType = "bullets" | "vault-setup" | "data-management" | "ready";
 
 interface BaseStep {
   icon: typeof Rocket;
@@ -41,7 +39,7 @@ interface BulletsStep extends BaseStep {
 }
 
 interface SpecialStep extends BaseStep {
-  type: "vault-setup" | "demo-data" | "data-management" | "ready";
+  type: "vault-setup" | "data-management" | "ready";
 }
 
 type Step = BulletsStep | SpecialStep;
@@ -68,13 +66,6 @@ const steps: Step[] = [
       "Set a master password to encrypt your API keys and tokens. Your agents need credentials to execute tasks on your behalf.",
   },
   {
-    type: "demo-data",
-    icon: Database,
-    title: "Load Demo Data?",
-    description:
-      "Want to explore with sample data? We'll create example tasks, projects, goals, agent messages, and Field Ops initiatives so you can see everything in action.",
-  },
-  {
     type: "data-management",
     icon: Flag,
     title: "Your Data, Your Control",
@@ -95,8 +86,6 @@ const steps: Step[] = [
 export function OnboardingDialog() {
   const [open, setOpen] = useState(false);
   const [step, setStep] = useState(0);
-  const [loadingDemo, setLoadingDemo] = useState(false);
-  const [demoLoaded, setDemoLoaded] = useState(false);
   const [vaultDone, setVaultDone] = useState(false);
 
   useEffect(() => {
@@ -115,21 +104,6 @@ export function OnboardingDialog() {
       setStep(step + 1);
     } else {
       handleClose();
-    }
-  };
-
-  const handleLoadDemo = async () => {
-    setLoadingDemo(true);
-    try {
-      const res = await apiFetch("/api/seed-demo", { method: "POST" });
-      if (res.ok) {
-        setDemoLoaded(true);
-        setTimeout(() => handleNext(), 800);
-      }
-    } catch {
-      // Silent — demo loading is optional
-    } finally {
-      setLoadingDemo(false);
     }
   };
 
@@ -180,70 +154,6 @@ export function OnboardingDialog() {
           </div>
         );
 
-      case "demo-data":
-        if (demoLoaded) {
-          return (
-            <div className="text-center py-4 space-y-2">
-              <CheckCircle2 className="h-8 w-8 text-green-400 mx-auto" />
-              <p className="text-sm font-medium">Demo Data Loaded</p>
-              <p className="text-xs text-muted-foreground">
-                Sample tasks, projects, goals, and Field Ops initiatives are ready
-                to explore.
-              </p>
-              <p className="text-xs text-muted-foreground/70 pt-1">
-                When you&apos;re done exploring, go to{" "}
-                <span className="font-medium text-muted-foreground">Checkpoints &rarr; New Workspace</span>{" "}
-                to start fresh.
-              </p>
-            </div>
-          );
-        }
-        return (
-          <div className="py-3 space-y-4">
-            <div className="grid grid-cols-2 gap-2 text-xs text-muted-foreground">
-              <div className="rounded-md bg-muted/50 p-2">
-                <span className="font-semibold text-foreground">7</span> Tasks
-              </div>
-              <div className="rounded-md bg-muted/50 p-2">
-                <span className="font-semibold text-foreground">3</span>{" "}
-                Projects
-              </div>
-              <div className="rounded-md bg-muted/50 p-2">
-                <span className="font-semibold text-foreground">4</span> Goals
-              </div>
-              <div className="rounded-md bg-muted/50 p-2">
-                <span className="font-semibold text-foreground">1</span> Field
-                Ops Initiative
-              </div>
-            </div>
-            <div className="flex gap-2">
-              <Button
-                size="sm"
-                onClick={handleLoadDemo}
-                disabled={loadingDemo}
-                className="flex-1"
-              >
-                {loadingDemo ? (
-                  <>
-                    <Loader2 className="h-3.5 w-3.5 animate-spin mr-1.5" />
-                    Loading...
-                  </>
-                ) : (
-                  "Load Demo Data"
-                )}
-              </Button>
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={handleNext}
-                className="flex-1"
-              >
-                Start Empty
-              </Button>
-            </div>
-          </div>
-        );
-
       case "data-management":
         return (
           <ul className="space-y-2 py-2">
@@ -259,13 +169,6 @@ export function OnboardingDialog() {
                   Checkpoints
                 </Link>{" "}
                 to save, restore, or export your workspace at any time
-              </span>
-            </li>
-            <li className="flex items-start gap-2 text-sm text-muted-foreground">
-              <span className="text-primary mt-1 shrink-0">&bull;</span>
-              <span>
-                Clear all demo data with Checkpoints &rarr; &ldquo;New
-                Workspace&rdquo;
               </span>
             </li>
             <li className="flex items-start gap-2 text-sm text-muted-foreground">
@@ -329,20 +232,6 @@ export function OnboardingDialog() {
                 Ctrl+Click tasks to multi-select for bulk actions
               </span>
             </li>
-            <li className="flex items-start gap-2 text-sm text-muted-foreground">
-              <span className="text-primary mt-1 shrink-0">&bull;</span>
-              <span>
-                Ready to clear demo data?{" "}
-                <Link
-                  href="/checkpoints"
-                  className="text-primary hover:underline"
-                  onClick={handleClose}
-                >
-                  Checkpoints
-                </Link>{" "}
-                &rarr; New Workspace
-              </span>
-            </li>
           </ul>
         );
     }
@@ -354,8 +243,7 @@ export function OnboardingDialog() {
     current.type === "bullets" ||
     current.type === "data-management" ||
     current.type === "ready" ||
-    (current.type === "vault-setup" && vaultDone) ||
-    (current.type === "demo-data" && demoLoaded);
+    (current.type === "vault-setup" && vaultDone);
 
   return (
     <Dialog
@@ -363,7 +251,7 @@ export function OnboardingDialog() {
       onOpenChange={(o) => {
         if (!o) {
           const currentType = steps[step]?.type;
-          if (currentType === "vault-setup" || currentType === "demo-data") {
+          if (currentType === "vault-setup") {
             // Don't close during interactive steps
             return;
           }
@@ -376,13 +264,13 @@ export function OnboardingDialog() {
         onPointerDownOutside={(e) => {
           // Prevent accidental close during interactive steps
           const currentType = steps[step]?.type;
-          if (currentType === "vault-setup" || currentType === "demo-data") {
+          if (currentType === "vault-setup") {
             e.preventDefault();
           }
         }}
         onEscapeKeyDown={(e) => {
           const currentType = steps[step]?.type;
-          if (currentType === "vault-setup" || currentType === "demo-data") {
+          if (currentType === "vault-setup") {
             e.preventDefault();
           }
         }}

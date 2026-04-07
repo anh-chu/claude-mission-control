@@ -19,11 +19,6 @@ pnpm dev
 
 The app runs at `http://localhost:3000`.
 
-### Load Demo Data
-```bash
-pnpm seed:demo
-```
-
 ## Development
 
 ### Commands
