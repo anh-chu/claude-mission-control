@@ -1,503 +1,481 @@
 "use client";
 
-import { useState, useEffect } from "react";
-import { useRouter, useParams } from "next/navigation";
+import { useState } from "react";
+import { useParams, useRouter } from "next/navigation";
 import {
-  ArrowLeft,
-  Save,
-  Plus,
-  X,
-  Trash2,
-  User,
-  Search,
-  Code,
-  Megaphone,
-  BarChart3,
-  Bot,
-  Zap,
-  Shield,
-  Wrench,
-  BookOpen,
-  Globe,
-  Brain,
-  Palette,
-  HeartPulse,
+  User, Search, Code, Megaphone, BarChart3, Send, Bot,
+  Save, Plus, X, Zap, Shield, Wrench, BookOpen, Globe, Brain, Palette, HeartPulse,
 } from "lucide-react";
+import { Card, CardContent } from "@/components/ui/card";
+import { EmptyState } from "@/components/empty-state";
+import { Badge } from "@/components/ui/badge";
+import { BreadcrumbNav } from "@/components/breadcrumb-nav";
+import { TaskCard } from "@/components/task-card";
+import { TaskDetailPanel } from "@/components/task-detail-panel";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
-import { Label } from "@/components/ui/label";
-import { Badge } from "@/components/ui/badge";
-import { Switch } from "@/components/ui/switch";
-import { BreadcrumbNav } from "@/components/breadcrumb-nav";
-import { ConfirmDialog } from "@/components/confirm-dialog";
-import { useAgents } from "@/hooks/use-data";
-import { cn } from "@/lib/utils";
+import { useTasks, useGoals, useProjects, useInbox, useActivityLog, useAgents, useSkills, useDecisions } from "@/hooks/use-data";
+import { useActiveRunsContext as useActiveRuns } from "@/providers/active-runs-provider";
+import { useFastTaskPoll } from "@/hooks/use-fast-task-poll";
+import { TaskCardSkeleton } from "@/components/skeletons";
+import { ErrorState } from "@/components/error-state";
+import type { Task, KanbanStatus } from "@/lib/types";
+import type { TaskFormData } from "@/components/task-form";
 
-const ICON_OPTIONS = [
-  { name: "User", icon: User },
-  { name: "Search", icon: Search },
-  { name: "Code", icon: Code },
-  { name: "Megaphone", icon: Megaphone },
-  { name: "BarChart3", icon: BarChart3 },
-  { name: "Bot", icon: Bot },
-  { name: "Zap", icon: Zap },
-  { name: "Shield", icon: Shield },
-  { name: "Wrench", icon: Wrench },
-  { name: "BookOpen", icon: BookOpen },
-  { name: "Globe", icon: Globe },
-  { name: "Brain", icon: Brain },
-  { name: "Palette", icon: Palette },
-  { name: "HeartPulse", icon: HeartPulse },
-];
+const iconMap: Record<string, typeof User> = {
+  User, Search, Code, Megaphone, BarChart3, Bot, Zap,
+  Shield, Wrench, BookOpen, Globe, Brain, Palette, HeartPulse,
+};
 
-export default function EditAgentPage() {
+function getAgentIcon(iconName: string) {
+  return iconMap[iconName] ?? Bot;
+}
+
+export default function AgentPage() {
   const router = useRouter();
   const params = useParams();
   const id = params.id as string;
-  const { agents, loading, update: updateAgent, remove: deleteAgent } = useAgents();
+  const { tasks, loading, update: updateTask, create: createTask, remove: deleteTask, refetch: refetchTasks } = useTasks();
+  const { goals } = useGoals();
+  const { projects } = useProjects();
+  const { messages } = useInbox();
+  const { events } = useActivityLog();
+  const { agents, update: updateAgent, error: agentsError, refetch } = useAgents();
+  const { skills: allSkills } = useSkills();
+  const { decisions } = useDecisions();
+  const { runningTaskIds, isTaskRunning, runTask } = useActiveRuns();
+  useFastTaskPoll(runningTaskIds.size > 0, refetchTasks);
+  const pendingDecisionTaskIds = new Set(
+    decisions.filter((d) => d.status === "pending" && d.taskId).map((d) => d.taskId as string)
+  );
+  const [selectedTask, setSelectedTask] = useState<Task | null>(null);
+
+  // Profile editing state
+  const [editingInstructions, setEditingInstructions] = useState(false);
+  const [instructionsText, setInstructionsText] = useState("");
+  const [editingDescription, setEditingDescription] = useState(false);
+  const [descriptionText, setDescriptionText] = useState("");
+  const [capInput, setCapInput] = useState("");
+  const [savingProfile, setSavingProfile] = useState(false);
 
   const agent = agents.find((a) => a.id === id);
 
-  const [form, setForm] = useState({
-    name: "",
-    icon: "Bot",
-    description: "",
-    instructions: "",
-    status: "active" as "active" | "inactive",
-    backend: "claude" as "claude" | "codex",
-    skipPermissions: "inherit" as "inherit" | "on" | "off",
-    yolo: "inherit" as "inherit" | "on" | "off",
-  });
-  const [capabilities, setCapabilities] = useState<string[]>([]);
-  const [capInput, setCapInput] = useState("");
-  const [allowedTools, setAllowedTools] = useState<string[]>([]);
-  const [toolInput, setToolInput] = useState("");
-  const [saving, setSaving] = useState(false);
-  const [error, setError] = useState<string | null>(null);
-  const [initialized, setInitialized] = useState(false);
-  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
-
-  // Pre-populate form fields once agent is loaded
-  useEffect(() => {
-    if (agent && !initialized) {
-      setForm({
-        name: agent.name,
-        icon: agent.icon,
-        description: agent.description,
-        instructions: agent.instructions,
-        status: agent.status,
-        backend: agent.backend ?? "claude",
-        skipPermissions: agent.skipPermissions ?? "inherit",
-        yolo: agent.yolo ?? "inherit",
-      });
-      setCapabilities(agent.capabilities ?? []);
-      setAllowedTools(agent.allowedTools ?? []);
-      setInitialized(true);
-    }
-  }, [agent, initialized]);
-
-  const addCapability = () => {
-    const trimmed = capInput.trim();
-    if (trimmed && !capabilities.includes(trimmed)) {
-      setCapabilities((prev) => [...prev, trimmed]);
-      setCapInput("");
-    }
-  };
-
-  const removeCapability = (cap: string) => {
-    setCapabilities((prev) => prev.filter((c) => c !== cap));
-  };
-
-  const addTool = () => {
-    const trimmed = toolInput.trim();
-    if (trimmed && !allowedTools.includes(trimmed)) {
-      setAllowedTools((prev) => [...prev, trimmed]);
-      setToolInput("");
-    }
-  };
-
-  const removeTool = (tool: string) => {
-    setAllowedTools((prev) => prev.filter((t) => t !== tool));
-  };
-
-  const handleSubmit = async () => {
-    setError(null);
-
-    if (!form.name.trim()) {
-      setError("Name is required");
-      return;
-    }
-    if (!agent) return;
-
-    setSaving(true);
-    try {
-      await updateAgent(agent.id, {
-        name: form.name,
-        icon: form.icon,
-        description: form.description,
-        instructions: form.instructions,
-        capabilities,
-        skillIds: agent.skillIds,
-        status: form.status,
-        backend: form.backend,
-        allowedTools,
-        skipPermissions: form.skipPermissions,
-        yolo: form.yolo,
-        updatedAt: new Date().toISOString(),
-      });
-      router.push("/crew");
-    } catch {
-      setError("Failed to save agent.");
-    } finally {
-      setSaving(false);
-    }
-  };
-
-  const SelectedIcon = ICON_OPTIONS.find((o) => o.name === form.icon)?.icon ?? Bot;
-
   if (loading) {
     return (
-      <div className="space-y-6 max-w-2xl">
-        <BreadcrumbNav items={[{ label: "Agents", href: "/crew" }, { label: "Edit Agent" }]} />
-        <p className="text-sm text-muted-foreground">Loading...</p>
+      <div className="space-y-6">
+        <BreadcrumbNav items={[{ label: "Agents", href: "/crew" }, { label: id }]} />
+        <div className="grid gap-3 sm:grid-cols-2">
+          <TaskCardSkeleton />
+          <TaskCardSkeleton />
+          <TaskCardSkeleton />
+        </div>
+      </div>
+    );
+  }
+
+  if (agentsError) {
+    return (
+      <div className="space-y-6">
+        <BreadcrumbNav items={[{ label: "Agents", href: "/crew" }, { label: id }]} />
+        <ErrorState message={agentsError} onRetry={refetch} />
       </div>
     );
   }
 
   if (!agent) {
     return (
-      <div className="space-y-6 max-w-2xl">
-        <BreadcrumbNav items={[{ label: "Agents", href: "/crew" }, { label: "Edit Agent" }]} />
-        <p className="text-sm text-muted-foreground">Agent not found.</p>
-        <Button variant="ghost" onClick={() => router.push("/crew")}>
-          <ArrowLeft className="h-4 w-4 mr-2" />
-          Back to Agents
-        </Button>
+      <div className="space-y-6">
+        <BreadcrumbNav items={[{ label: "Agents", href: "/crew" }, { label: "Not Found" }]} />
+        <p className="text-muted-foreground">Agent &ldquo;{id}&rdquo; not found.</p>
       </div>
     );
   }
 
-  return (
-    <div className="space-y-6 max-w-2xl">
-      <BreadcrumbNav
-        items={[{ label: "Agents", href: "/crew" }, { label: "Edit Agent" }]}
-      />
+  const Icon = getAgentIcon(agent.icon);
+  const agentTasks = tasks.filter((t) => t.assignedTo === agent.id || t.collaborators?.includes(agent.id));
+  const inProgress = agentTasks.filter((t) => t.kanban === "in-progress");
+  const todo = agentTasks.filter((t) => t.kanban === "not-started");
+  const completed = agentTasks.filter((t) => t.kanban === "done");
+  const agentMessages = messages.filter((m) => m.from === agent.id || m.to === agent.id).slice(0, 5);
+  const agentEvents = events.filter((e) => e.actor === agent.id).slice(0, 5);
+  const linkedSkills = allSkills.filter((s) => agent.skillIds.includes(s.id));
 
-      <div className="flex items-center justify-between">
-        <div className="flex items-center gap-3">
-          <Button variant="ghost" size="icon" onClick={() => router.back()}>
-            <ArrowLeft className="h-4 w-4" />
-          </Button>
-          <h1 className="text-xl font-bold">Edit Agent</h1>
+  const handleUpdateTask = async (data: TaskFormData) => {
+    if (!selectedTask) return;
+    await updateTask(selectedTask.id, {
+      ...data,
+      tags: data.tags.split(",").map((t) => t.trim()).filter(Boolean),
+      acceptanceCriteria: data.acceptanceCriteria.split("\n").map((s) => s.trim()).filter(Boolean),
+    });
+    setSelectedTask(null);
+  };
+
+  const handleDeleteTask = async () => {
+    if (!selectedTask) return;
+    await deleteTask(selectedTask.id);
+    setSelectedTask(null);
+  };
+
+  const handleStatusChange = async (taskId: string, status: KanbanStatus) => {
+    await updateTask(taskId, { kanban: status });
+    refetchTasks();
+  };
+
+  const handleDuplicate = async (task: Task) => {
+    await createTask({
+      ...task,
+      id: `task_${Date.now()}`,
+      title: `${task.title} (copy)`,
+      kanban: "not-started",
+      completedAt: null,
+    });
+    refetchTasks();
+  };
+
+  const handleDeleteById = async (taskId: string) => {
+    await deleteTask(taskId);
+    if (selectedTask?.id === taskId) setSelectedTask(null);
+    refetchTasks();
+  };
+
+  const getProject = (projectId: string | null) => projects.find((p) => p.id === projectId) ?? null;
+
+  const handleSaveInstructions = async () => {
+    setSavingProfile(true);
+    try {
+      await updateAgent(agent.id, { instructions: instructionsText });
+      setEditingInstructions(false);
+    } finally {
+      setSavingProfile(false);
+    }
+  };
+
+  const handleSaveDescription = async () => {
+    setSavingProfile(true);
+    try {
+      await updateAgent(agent.id, { description: descriptionText });
+      setEditingDescription(false);
+    } finally {
+      setSavingProfile(false);
+    }
+  };
+
+  const addCapability = async (cap: string) => {
+    if (!cap.trim() || agent.capabilities.includes(cap.trim())) return;
+    await updateAgent(agent.id, { capabilities: [...agent.capabilities, cap.trim()] });
+    setCapInput("");
+  };
+
+  const removeCapability = async (cap: string) => {
+    await updateAgent(agent.id, { capabilities: agent.capabilities.filter((c) => c !== cap) });
+  };
+
+  const addSkill = async (skillId: string) => {
+    if (agent.skillIds.includes(skillId)) return;
+    await updateAgent(agent.id, { skillIds: [...agent.skillIds, skillId] });
+  };
+
+  const removeSkill = async (skillId: string) => {
+    await updateAgent(agent.id, { skillIds: agent.skillIds.filter((s) => s !== skillId) });
+  };
+
+  return (
+    <div className="space-y-6">
+      <BreadcrumbNav items={[{ label: "Agents", href: "/crew" }, { label: agent.name }]} />
+
+      {/* Agent Profile Header */}
+      <div className="flex items-start gap-4">
+        <div className="h-14 w-14 rounded-xl bg-primary/10 flex items-center justify-center shrink-0">
+          <Icon className="h-7 w-7 text-primary" />
         </div>
-        <div className="flex items-center gap-2">
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={async () => {
-              const newStatus = agent.status === "active" ? "inactive" : "active";
-              await updateAgent(agent.id, { status: newStatus });
-            }}
-          >
-            {agent.status === "active" ? "Deactivate" : "Activate"}
-          </Button>
-          <Button variant="outline" size="sm" className="text-destructive hover:text-destructive" onClick={() => setShowDeleteConfirm(true)}>
-            <Trash2 className="h-3.5 w-3.5 mr-1.5" />
-            Delete
-          </Button>
+        <div className="flex-1 min-w-0">
+          <div className="flex items-center gap-2">
+            <h1 className="text-xl font-bold">{agent.name}</h1>
+            <Badge variant={agent.status === "active" ? "default" : "secondary"} className="text-xs">
+              {agent.status}
+            </Badge>
+            <Button variant="outline" size="sm" className="h-6 text-xs px-2 ml-1" onClick={() => router.push(`/crew/${agent.id}/edit`)}>
+              Edit
+            </Button>
+          </div>
+          {editingDescription ? (
+            <div className="flex items-center gap-2 mt-1">
+              <Input
+                value={descriptionText}
+                onChange={(e) => setDescriptionText(e.target.value)}
+                className="text-sm h-8"
+                autoFocus
+              />
+              <Button size="sm" variant="ghost" onClick={handleSaveDescription} disabled={savingProfile}>
+                <Save className="h-3.5 w-3.5" />
+              </Button>
+              <Button size="sm" variant="ghost" onClick={() => setEditingDescription(false)}>
+                <X className="h-3.5 w-3.5" />
+              </Button>
+            </div>
+          ) : (
+            <p
+              className="text-sm text-muted-foreground cursor-pointer hover:text-foreground transition-colors mt-0.5"
+              onClick={() => { setDescriptionText(agent.description); setEditingDescription(true); }}
+              title="Click to edit"
+            >
+              {agent.description || "Click to add a description..."}
+            </p>
+          )}
         </div>
       </div>
 
-      {error && (
-        <div className="rounded-lg border border-destructive bg-destructive/10 px-4 py-3 text-sm text-destructive">
-          {error}
-        </div>
-      )}
+      {/* Stats */}
+      <div className="grid grid-cols-3 gap-4">
+        <Card className="bg-card/50">
+          <CardContent className="p-4 text-center">
+            <p className="text-2xl font-bold tabular-nums">{agentTasks.length}</p>
+            <p className="text-xs text-muted-foreground">Total Tasks</p>
+          </CardContent>
+        </Card>
+        <Card className="bg-card/50">
+          <CardContent className="p-4 text-center">
+            <p className="text-2xl font-bold tabular-nums text-status-in-progress">{inProgress.length}</p>
+            <p className="text-xs text-muted-foreground">In Progress</p>
+          </CardContent>
+        </Card>
+        <Card className="bg-card/50">
+          <CardContent className="p-4 text-center">
+            <p className="text-2xl font-bold tabular-nums text-status-done">{completed.length}</p>
+            <p className="text-xs text-muted-foreground">Completed</p>
+          </CardContent>
+        </Card>
+      </div>
 
-      <div className="space-y-5">
-        <div className="space-y-2">
-          <Label htmlFor="name">Name *</Label>
-          <Input
-            id="name"
-            placeholder="e.g. Legal Advisor"
-            value={form.name}
-            onChange={(e) => setForm((prev) => ({ ...prev, name: e.target.value }))}
-          />
-        </div>
-
-        <div className="space-y-2">
-          <Label htmlFor="agent-id">ID (URL-safe slug)</Label>
-          <Input
-            id="agent-id"
-            value={agent.id}
-            readOnly
-            disabled
-            className="font-mono text-sm"
-          />
-          <p className="text-xs text-muted-foreground">
-            Agent ID cannot be changed after creation.
-          </p>
-        </div>
-
-        <div className="space-y-2">
-          <Label>Icon</Label>
-          <div className="flex flex-wrap gap-1.5">
-            {ICON_OPTIONS.map(({ name, icon: Ic }) => (
-              <button
-                key={name}
-                type="button"
-                onClick={() => setForm((prev) => ({ ...prev, icon: name }))}
-                className={cn(
-                  "h-9 w-9 rounded-lg border flex items-center justify-center transition-colors",
-                  form.icon === name
-                    ? "bg-primary text-primary-foreground border-primary"
-                    : "bg-muted hover:bg-accent"
-                )}
-              >
-                <Ic className="h-4 w-4" />
-              </button>
-            ))}
-          </div>
-        </div>
-
-        <div className="space-y-2">
-          <Label htmlFor="description">Description</Label>
-          <Input
-            id="description"
-            placeholder="Short description of what this agent does"
-            value={form.description}
-            onChange={(e) => setForm((prev) => ({ ...prev, description: e.target.value }))}
-          />
-        </div>
-
-        {/* Backend CLI */}
-        <div className="space-y-2">
-          <Label>Backend CLI</Label>
-          <div className="flex gap-2">
+      {/* Instructions Section */}
+      <section className="rounded-xl border bg-card/50 p-4 space-y-3">
+        <div className="flex items-center justify-between">
+          <h2 className="text-sm font-semibold">Instructions (System Prompt)</h2>
+          {!editingInstructions && (
             <Button
-              type="button"
-              variant={form.backend === "claude" ? "default" : "outline"}
+              variant="ghost"
               size="sm"
-              onClick={() => setForm((prev) => ({ ...prev, backend: "claude" as const }))}
+              className="text-xs"
+              onClick={() => { setInstructionsText(agent.instructions); setEditingInstructions(true); }}
             >
-              Claude Code
+              Edit
             </Button>
-            <Button
-              type="button"
-              variant={form.backend === "codex" ? "default" : "outline"}
-              size="sm"
-              onClick={() => setForm((prev) => ({ ...prev, backend: "codex" as const }))}
-            >
-              Codex CLI
-            </Button>
-          </div>
-          <p className="text-xs text-muted-foreground">
-            {form.backend === "codex"
-              ? "Uses OpenAI Codex CLI for task execution"
-              : "Uses Claude Code CLI for task execution (default)"}
-          </p>
+          )}
         </div>
-
-        {form.backend === "claude" ? (
+        {editingInstructions ? (
           <div className="space-y-2">
-            <Label>Skip Permissions</Label>
-            <div className="flex gap-1">
-              {(["inherit", "on", "off"] as const).map((v) => (
-                <Button
-                  key={v}
-                  type="button"
-                  variant={form.skipPermissions === v ? "default" : "outline"}
-                  size="sm"
-                  className="capitalize"
-                  onClick={() => setForm((prev) => ({ ...prev, skipPermissions: v }))}
-                >
-                  {v}
+            <Textarea
+              value={instructionsText}
+              onChange={(e) => setInstructionsText(e.target.value)}
+              rows={12}
+              className="font-mono text-sm"
+            />
+            <div className="flex items-center justify-between">
+              <p className="text-xs text-muted-foreground">
+                {instructionsText.length.toLocaleString()} characters
+              </p>
+              <div className="flex gap-2">
+                <Button size="sm" variant="ghost" onClick={() => setEditingInstructions(false)}>
+                  Cancel
                 </Button>
-              ))}
+                <Button size="sm" onClick={handleSaveInstructions} disabled={savingProfile} className="gap-1">
+                  <Save className="h-3.5 w-3.5" /> Save
+                </Button>
+              </div>
             </div>
-            <p className="text-xs text-muted-foreground">
-              {form.skipPermissions === "on"
-                ? "Agent runs with --dangerously-skip-permissions (bypasses all prompts)"
-                : form.skipPermissions === "off"
-                ? "Agent always requires permission prompts regardless of global setting"
-                : "Inherits global skipPermissions setting from Autopilot config"}
-            </p>
           </div>
         ) : (
+          <pre className="text-xs text-muted-foreground whitespace-pre-wrap font-mono bg-muted rounded-lg p-3 max-h-48 overflow-y-auto">
+            {agent.instructions || "No instructions set. Click Edit to add a system prompt."}
+          </pre>
+        )}
+      </section>
+
+      {/* Capabilities Section */}
+      <section className="rounded-xl border bg-card/50 p-4 space-y-3">
+        <h2 className="text-sm font-semibold">Capabilities</h2>
+        <div className="flex flex-wrap gap-1.5">
+          {agent.capabilities.map((cap) => (
+            <Badge key={cap} variant="secondary" className="gap-1 pr-1">
+              {cap}
+              <button
+                onClick={() => removeCapability(cap)}
+                className="rounded-full hover:bg-muted-foreground/20 p-0.5"
+              >
+                <X className="h-3 w-3" />
+              </button>
+            </Badge>
+          ))}
+          {agent.capabilities.length === 0 && (
+            <p className="text-xs text-muted-foreground">No capabilities defined.</p>
+          )}
+        </div>
+        <div className="flex gap-2">
+          <Input
+            placeholder="Add capability..."
+            value={capInput}
+            onChange={(e) => setCapInput(e.target.value)}
+            onKeyDown={(e) => {
+              if (e.key === "Enter") { e.preventDefault(); addCapability(capInput); }
+            }}
+            className="h-8 text-sm"
+          />
+          <Button size="sm" variant="outline" onClick={() => addCapability(capInput)}>
+            <Plus className="h-3.5 w-3.5" />
+          </Button>
+        </div>
+      </section>
+
+      {/* Skills Section */}
+      <section className="rounded-xl border bg-card/50 p-4 space-y-3">
+        <h2 className="text-sm font-semibold">Assigned Skills</h2>
+        {linkedSkills.length > 0 ? (
           <div className="space-y-2">
-            <Label>Full-Auto Mode (--yolo)</Label>
-            <div className="flex gap-1">
-              {(["inherit", "on", "off"] as const).map((v) => (
-                <Button
-                  key={v}
-                  type="button"
-                  variant={form.yolo === v ? "default" : "outline"}
-                  size="sm"
-                  className="capitalize"
-                  onClick={() => setForm((prev) => ({ ...prev, yolo: v }))}
-                >
-                  {v}
+            {linkedSkills.map((skill) => (
+              <div key={skill.id} className="flex items-center justify-between rounded-lg border p-2.5">
+                <div>
+                  <p className="text-sm font-medium">{skill.name}</p>
+                  <p className="text-xs text-muted-foreground">{skill.description}</p>
+                </div>
+                <Button size="sm" variant="ghost" onClick={() => removeSkill(skill.id)}>
+                  <X className="h-3.5 w-3.5" />
                 </Button>
+              </div>
+            ))}
+          </div>
+        ) : (
+          <p className="text-xs text-muted-foreground">No skills assigned.</p>
+        )}
+        {/* Available skills to add */}
+        {allSkills.filter((s) => !agent.skillIds.includes(s.id)).length > 0 && (
+          <div className="pt-2 border-t space-y-1">
+            <p className="text-xs text-muted-foreground">Available skills:</p>
+            <div className="flex flex-wrap gap-1.5">
+              {allSkills.filter((s) => !agent.skillIds.includes(s.id)).map((skill) => (
+                <button
+                  key={skill.id}
+                  onClick={() => addSkill(skill.id)}
+                  className="inline-flex items-center gap-1 rounded-full border px-2.5 py-0.5 text-xs hover:bg-primary/10 hover:border-primary/30 transition-colors"
+                >
+                  <Plus className="h-3 w-3" />
+                  {skill.name}
+                </button>
               ))}
             </div>
-            <p className="text-xs text-muted-foreground">
-              {form.yolo === "on"
-                ? "Agent runs with --full-auto --yolo (maximum autonomy)"
-                : form.yolo === "off"
-                ? "Agent runs without --full-auto (manual approval required)"
-                : "Default: runs with --full-auto"}
-            </p>
           </div>
         )}
+      </section>
 
-        <div className="space-y-2">
-          <Label htmlFor="instructions">Instructions (System Prompt)</Label>
-          <Textarea
-            id="instructions"
-            placeholder="Full instructions for this agent. This becomes the system prompt when the agent is activated in Claude Code."
-            value={form.instructions}
-            onChange={(e) => setForm((prev) => ({ ...prev, instructions: e.target.value }))}
-            rows={10}
-            className="font-mono text-sm"
-          />
-          <p className="text-xs text-muted-foreground">
-            {form.instructions.length.toLocaleString()} characters
-          </p>
-        </div>
-
-        <div className="space-y-2">
-          <Label>Capabilities</Label>
-          <div className="flex gap-2">
-            <Input
-              placeholder="e.g. contract-review"
-              value={capInput}
-              onChange={(e) => setCapInput(e.target.value)}
-              onKeyDown={(e) => {
-                if (e.key === "Enter") {
-                  e.preventDefault();
-                  addCapability();
-                }
-              }}
-            />
-            <Button type="button" variant="outline" size="sm" onClick={addCapability}>
-              <Plus className="h-3.5 w-3.5" />
-            </Button>
+      {/* Task Sections */}
+      {inProgress.length > 0 && (
+        <section className="space-y-3">
+          <h2 className="text-sm font-semibold flex items-center gap-2">
+            <div className="h-2 w-2 rounded-full bg-status-in-progress" />
+            In Progress ({inProgress.length})
+          </h2>
+          <div className="grid gap-3 sm:grid-cols-2">
+            {inProgress.map((task) => (
+              <TaskCard key={task.id} task={task} project={getProject(task.projectId)} onClick={() => setSelectedTask(task)} isRunning={isTaskRunning(task.id)} onRun={runTask} allTasks={tasks} pendingDecisionTaskIds={pendingDecisionTaskIds} onStatusChange={handleStatusChange} onDuplicate={handleDuplicate} onDelete={handleDeleteById} />
+            ))}
           </div>
-          {capabilities.length > 0 && (
-            <div className="flex flex-wrap gap-1.5 mt-2">
-              {capabilities.map((cap) => (
-                <Badge key={cap} variant="secondary" className="gap-1 pr-1">
-                  {cap}
-                  <button
-                    type="button"
-                    onClick={() => removeCapability(cap)}
-                    className="rounded-full hover:bg-muted-foreground/20 p-0.5"
-                  >
-                    <X className="h-3 w-3" />
-                  </button>
-                </Badge>
-              ))}
-            </div>
-          )}
-        </div>
+        </section>
+      )}
 
-        <div className="space-y-2">
-          <Label>Allowed Tools</Label>
-          <div className="flex gap-2">
-            <Input
-              placeholder="e.g. mcp__gmail__*"
-              value={toolInput}
-              onChange={(e) => setToolInput(e.target.value)}
-              onKeyDown={(e) => {
-                if (e.key === "Enter") {
-                  e.preventDefault();
-                  addTool();
-                }
-              }}
-            />
-            <Button type="button" variant="outline" size="sm" onClick={addTool}>
-              <Plus className="h-3.5 w-3.5" />
-            </Button>
+      {todo.length > 0 && (
+        <section className="space-y-3">
+          <h2 className="text-sm font-semibold flex items-center gap-2">
+            <div className="h-2 w-2 rounded-full bg-status-not-started" />
+            To Do ({todo.length})
+          </h2>
+          <div className="grid gap-3 sm:grid-cols-2">
+            {todo.map((task) => (
+              <TaskCard key={task.id} task={task} project={getProject(task.projectId)} onClick={() => setSelectedTask(task)} isRunning={isTaskRunning(task.id)} onRun={runTask} allTasks={tasks} pendingDecisionTaskIds={pendingDecisionTaskIds} onStatusChange={handleStatusChange} onDuplicate={handleDuplicate} onDelete={handleDeleteById} />
+            ))}
           </div>
-          {allowedTools.length > 0 && (
-            <div className="flex flex-wrap gap-1.5 mt-2">
-              {allowedTools.map((tool) => (
-                <Badge key={tool} variant="secondary" className="gap-1 pr-1">
-                  {tool}
-                  <button
-                    type="button"
-                    onClick={() => removeTool(tool)}
-                    className="rounded-full hover:bg-muted-foreground/20 p-0.5"
-                  >
-                    <X className="h-3 w-3" />
-                  </button>
-                </Badge>
-              ))}
-            </div>
-          )}
-          <p className="text-xs text-muted-foreground">
-            e.g. mcp__gmail__*, Read, Write. Pre-approves tools to prevent permission prompts.
-          </p>
-        </div>
+        </section>
+      )}
 
-        <div className="flex items-center justify-between rounded-lg border p-4">
-          <div>
-            <Label>Status</Label>
-            <p className="text-xs text-muted-foreground mt-0.5">
-              Inactive agents won&apos;t receive task assignments
-            </p>
+      {completed.length > 0 && (
+        <section className="space-y-3">
+          <h2 className="text-sm font-semibold flex items-center gap-2 text-muted-foreground">
+            <div className="h-2 w-2 rounded-full bg-status-done" />
+            Completed ({completed.length})
+          </h2>
+          <div className="grid gap-3 sm:grid-cols-2">
+            {completed.map((task) => (
+              <TaskCard key={task.id} task={task} project={getProject(task.projectId)} onClick={() => setSelectedTask(task)} className="opacity-60" isRunning={isTaskRunning(task.id)} onRun={runTask} allTasks={tasks} pendingDecisionTaskIds={pendingDecisionTaskIds} onStatusChange={handleStatusChange} onDuplicate={handleDuplicate} onDelete={handleDeleteById} />
+            ))}
           </div>
-          <div className="flex items-center gap-2">
-            <span className="text-xs text-muted-foreground">
-              {form.status === "active" ? "Active" : "Inactive"}
-            </span>
-            <Switch
-              checked={form.status === "active"}
-              onCheckedChange={(checked) =>
-                setForm((prev) => ({ ...prev, status: checked ? "active" : "inactive" }))
-              }
-            />
+        </section>
+      )}
+
+      {agentTasks.length === 0 && (
+        <EmptyState
+          icon={Bot}
+          title="No tasks assigned"
+          description={`Assign tasks to ${agent.name} from the Eisenhower or Kanban views.`}
+        />
+      )}
+
+      {/* Recent Messages */}
+      {agentMessages.length > 0 && (
+        <section className="space-y-3">
+          <h2 className="text-sm font-semibold flex items-center gap-2">
+            <Send className="h-3.5 w-3.5" />
+            Recent Messages
+          </h2>
+          <div className="space-y-2">
+            {agentMessages.map((msg) => (
+              <Card key={msg.id} className="bg-card/50">
+                <CardContent className="p-3 flex items-center gap-3">
+                  <Badge variant={msg.status === "unread" ? "default" : "secondary"} className="text-xs shrink-0">
+                    {msg.type}
+                  </Badge>
+                  <div className="flex-1 min-w-0">
+                    <p className="text-xs font-medium truncate">{msg.subject}</p>
+                    <p className="text-xs text-muted-foreground">{msg.from} → {msg.to}</p>
+                  </div>
+                  <p className="text-xs text-muted-foreground shrink-0">
+                    {new Date(msg.createdAt).toLocaleDateString()}
+                  </p>
+                </CardContent>
+              </Card>
+            ))}
           </div>
-        </div>
+        </section>
+      )}
 
-        <div className="rounded-lg border bg-muted/50 p-4">
-          <p className="text-xs font-semibold text-muted-foreground mb-2">Preview</p>
-          <div className="flex items-center gap-3">
-            <div className="h-10 w-10 rounded-full bg-primary/10 flex items-center justify-center">
-              <SelectedIcon className="h-5 w-5 text-primary" />
-            </div>
-            <div>
-              <p className="font-semibold text-sm">{form.name || "Agent Name"}</p>
-              <p className="text-xs text-muted-foreground">
-                {form.description || "No description"}
-              </p>
-            </div>
+      {/* Recent Activity */}
+      {agentEvents.length > 0 && (
+        <section className="space-y-3">
+          <h2 className="text-sm font-semibold flex items-center gap-2">
+            Recent Activity
+          </h2>
+          <div className="space-y-1">
+            {agentEvents.map((evt) => (
+              <div key={evt.id} className="flex items-center gap-2 px-3 py-1.5 rounded-lg text-xs text-muted-foreground">
+                <div className="h-1.5 w-1.5 rounded-full bg-primary/50 shrink-0" />
+                <span className="flex-1">{evt.summary}</span>
+                <span className="text-xs shrink-0">{new Date(evt.timestamp).toLocaleDateString()}</span>
+              </div>
+            ))}
           </div>
-        </div>
+        </section>
+      )}
 
-        <div className="flex gap-3 pt-2">
-          <Button onClick={handleSubmit} disabled={saving} className="gap-1.5">
-            <Save className="h-3.5 w-3.5" />
-            {saving ? "Saving..." : "Save Changes"}
-          </Button>
-          <Button variant="ghost" onClick={() => router.back()}>
-            Cancel
-          </Button>
-        </div>
-      </div>
-
-      <ConfirmDialog
-        open={showDeleteConfirm}
-        onOpenChange={setShowDeleteConfirm}
-        title="Delete agent"
-        description={`This will permanently delete "${agent.name}". Tasks assigned to this agent will not be deleted. This action cannot be undone.`}
-        confirmLabel="Delete"
-        onConfirm={async () => {
-          await deleteAgent(agent.id);
-          router.push("/crew");
-        }}
-      />
+      {/* Task Detail Panel */}
+      {selectedTask && (
+        <TaskDetailPanel
+          task={selectedTask}
+          projects={projects}
+          goals={goals}
+          allTasks={tasks}
+          onUpdate={handleUpdateTask}
+          onDelete={handleDeleteTask}
+          onClose={() => setSelectedTask(null)}
+        />
+      )}
     </div>
   );
 }

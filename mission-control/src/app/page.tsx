@@ -717,7 +717,7 @@ export default function CommandCenterPage() {
                   agent.status === "dependencies" ? "Dependencies" :
                   "On track";
                 return (
-                  <Link key={agent.id} href={`/team/${agent.id}`} className="block">
+                  <Link key={agent.id} href={`/crew/${agent.id}`} className="block">
                     <div className="group hover:bg-accent/30 rounded-lg px-2 py-1.5 -mx-2 transition-colors">
                       <div className="flex items-center gap-2">
                         <div className="relative">

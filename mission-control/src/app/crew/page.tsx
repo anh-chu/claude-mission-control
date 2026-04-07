@@ -47,7 +47,7 @@ function AgentCard({
   return (
     <ContextMenu>
       <ContextMenuTrigger asChild>
-        <Link href={`/team/${agent.id}`}>
+        <Link href={`/crew/${agent.id}`}>
           <div
             className={cn(
               "group rounded-xl border bg-card p-5 transition-all hover:shadow-md hover:border-primary/30",
@@ -137,7 +137,7 @@ function AgentCard({
       </ContextMenuTrigger>
       <AgentContextMenuContent
         agent={agent}
-        href={`/team/${agent.id}`}
+        href={`/crew/${agent.id}`}
         onEdit={onEdit}
         onNewTask={onNewTask}
         onToggleStatus={onToggleStatus}
@@ -165,7 +165,7 @@ export default function CrewPage() {
   }
 
   function handleEditAgent(agentId: string) {
-    router.push(`/crew/${agentId}`);
+    router.push(`/crew/${agentId}/edit`);
   }
 
   function handleNewTask(agentId: string) {
