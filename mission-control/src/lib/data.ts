@@ -136,6 +136,16 @@ export async function ensureWorkspaceDir(workspaceId: string): Promise<void> {
       await copyFile(claudeMdSrc, claudeMdDest);
     }
   }
+
+  // Generate .claude/commands/ and skills/ from the seeded agents + skills data.
+  // Dynamic import avoids circular dependency (sync-commands imports from data.ts).
+  try {
+    const { syncAllAgentCommands, syncAllSkillFiles } = await import("./sync-commands");
+    await syncAllAgentCommands();
+    await syncAllSkillFiles();
+  } catch {
+    // Non-fatal: command/skill file sync can fail on first run
+  }
 }
 
 export function getCheckpointsDir(): string {
