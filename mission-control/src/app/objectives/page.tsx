@@ -292,14 +292,14 @@ export default function GoalsPage() {
           return (
             <ContextMenu key={goal.id}>
               <ContextMenuTrigger asChild>
-            <Card>
+            <Card
+              className="cursor-pointer hover:border-primary/30 hover:shadow-sm transition-all"
+              onClick={() => setSelectedGoal(goal)}
+            >
               <CardHeader className="pb-3">
                 <div className="flex items-center justify-between">
                   <div className="flex items-center gap-2">
-                    <CardTitle
-                      className="text-base cursor-pointer hover:text-primary transition-colors"
-                      onClick={() => setSelectedGoal(goal)}
-                    >
+                    <CardTitle className="text-base">
                       {goal.title}
                     </CardTitle>
                     <Tip content="Edit objective">
@@ -307,7 +307,7 @@ export default function GoalsPage() {
                         variant="ghost"
                         size="icon"
                         className="h-6 w-6 text-muted-foreground hover:text-foreground"
-                        onClick={() => setEditingGoal(goal)}
+                        onClick={(e) => { e.stopPropagation(); setEditingGoal(goal); }}
                         aria-label="Edit objective"
                       >
                         <Pencil className="h-3 w-3" />
@@ -318,7 +318,7 @@ export default function GoalsPage() {
                         variant="ghost"
                         size="icon"
                         className="h-6 w-6 text-muted-foreground hover:text-destructive"
-                        onClick={() => setDeletingGoalId(goal.id)}
+                        onClick={(e) => { e.stopPropagation(); setDeletingGoalId(goal.id); }}
                         aria-label="Delete objective"
                       >
                         <Trash2 className="h-3 w-3" />
@@ -331,7 +331,7 @@ export default function GoalsPage() {
                         variant="outline"
                         size="sm"
                         className="h-6 gap-1 text-xs px-2"
-                        onClick={() => { setNewInitTitle(""); setNewInitDesc(""); setAddingInitiativeForGoalId(goal.id); }}
+                        onClick={(e) => { e.stopPropagation(); setNewInitTitle(""); setNewInitDesc(""); setAddingInitiativeForGoalId(goal.id); }}
                       >
                         <Rocket className="h-3 w-3" />
                         Add Initiative

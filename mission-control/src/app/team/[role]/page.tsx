@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { useParams } from "next/navigation";
+import { useParams, useRouter } from "next/navigation";
 import {
   User, Search, Code, Megaphone, BarChart3, Send, Bot,
   Save, Plus, X, Zap, Shield, Wrench, BookOpen, Globe, Brain, Palette, HeartPulse,
@@ -33,6 +33,7 @@ function getAgentIcon(iconName: string) {
 }
 
 export default function TeamMemberPage() {
+  const router = useRouter();
   const params = useParams();
   const roleId = params.role as string;
   const { tasks, loading, update: updateTask, create: createTask, remove: deleteTask, refetch: refetchTasks } = useTasks();
@@ -194,6 +195,9 @@ export default function TeamMemberPage() {
             <Badge variant={agent.status === "active" ? "default" : "secondary"} className="text-xs">
               {agent.status}
             </Badge>
+            <Button variant="outline" size="sm" className="h-6 text-xs px-2 ml-1" onClick={() => router.push(`/crew/${agent.id}`)}>
+              Edit
+            </Button>
           </div>
           {editingDescription ? (
             <div className="flex items-center gap-2 mt-1">
