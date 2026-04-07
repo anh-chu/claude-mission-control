@@ -47,18 +47,6 @@ For tasks with `collaborators`:
 1. Run `pnpm gen:context` in `mission-control/` to regenerate `ai-context.md`
 2. Report a summary of what was accomplished
 
-## Parallel Execution Mode
-
-For true parallel execution (multiple Claude Code sessions via tmux), use the shell scripts instead:
-
-```bash
-# Run all agents in parallel (one tmux pane per agent)
-bash scripts/run-team.sh
-
-# Run a specific multi-agent task
-bash scripts/run-task-team.sh <task-id>
-```
-
 ## Rules
 - Never skip the situational awareness step
 - Always check for blocked tasks before assigning work

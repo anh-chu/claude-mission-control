@@ -46,7 +46,6 @@ mission-control/scripts/daemon/  — Autonomous agent daemon (background process
 research/                        — Research notes (markdown)
 docs/                            — Business plans, strategies, analysis
 templates/                       — Project templates
-scripts/                         — Team execution scripts (run-team.sh, run-task-team.sh)
 ```
 
 ## Data Schema Reference
