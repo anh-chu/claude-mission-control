@@ -89,7 +89,6 @@ export default function KanbanPage() {
 
   async function handleDelete(taskId: string) {
     await deleteTask(taskId);
-    refetch();
   }
 
   async function handleDragEnd(event: DragEndEvent) {

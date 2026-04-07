@@ -115,7 +115,6 @@ export default function TasksPage() {
 
   async function handleDelete(taskId: string) {
     await deleteTask(taskId);
-    refetch();
   }
 
   async function handleMatrixDragEnd(event: DragEndEvent) {
