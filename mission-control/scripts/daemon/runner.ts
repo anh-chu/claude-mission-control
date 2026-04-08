@@ -3,7 +3,7 @@ import { existsSync, readFileSync, createWriteStream, mkdirSync } from "fs";
 import path from "path";
 import { logger } from "./logger";
 import { loadConfig } from "./config";
-import { validateBinary, buildSafeEnv, scrubCredentials } from "./security";
+import { validateBinary, scrubCredentials } from "./security";
 import { getWorkspaceDir } from "../../src/lib/paths";
 import type { SpawnOptions, SpawnResult, ClaudeOutputMeta, ClaudeUsage, AgentBackend } from "./types";
 
@@ -369,7 +369,8 @@ export class AgentRunner {
       }
     }
 
-    const safeEnv = buildSafeEnv({ agentTeams: opts.agentTeams });
+    const spawnEnv: NodeJS.ProcessEnv = { ...process.env };
+    if (opts.agentTeams) spawnEnv.CLAUDE_CODE_EXPERIMENTAL_AGENT_TEAMS = "1";
 
     logger.debug("runner", `Spawning [${backend}]: ${resolved.bin} ${resolved.prefixArgs.length ? resolved.prefixArgs[0] + " " : ""}-p "<prompt>" --max-turns ${opts.maxTurns}`);
     logger.debug("runner", `CWD: ${cwd}`);
@@ -378,7 +379,7 @@ export class AgentRunner {
       const startedAt = Date.now();
       const child: ChildProcess = spawn(resolved.bin, args, {
         cwd,
-        env: safeEnv as NodeJS.ProcessEnv,
+        env: spawnEnv,
         stdio: ["ignore", "pipe", "pipe"] as const,
         windowsHide: true,
       });
