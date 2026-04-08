@@ -60,8 +60,8 @@ export async function ensureFieldOpsDir(): Promise<void> {
 }
 
 // Artifacts directory containing seed templates for new workspaces.
-// Located relative to mission-control/ root (one level up from src/lib/).
-const ARTIFACTS_DIR = path.resolve(__dirname, "..", "..", "artifacts", "workspaces", "default");
+// process.cwd() is always mission-control/ root in both dev and production.
+const ARTIFACTS_DIR = path.join(process.cwd(), "artifacts", "workspaces", "default");
 
 async function seedFile(dest: string, artifactSrc: string | null, fallback: unknown): Promise<void> {
   try {

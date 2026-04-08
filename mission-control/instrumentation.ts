@@ -11,6 +11,10 @@ export async function register() {
     return;
   }
 
+  // Ensure the default workspace exists with seeded data on first run
+  const { ensureWorkspaceDir } = await import("./src/lib/data");
+  await ensureWorkspaceDir("default");
+
   const { scheduleUploadsCleanup } = await import("./src/lib/scheduled-jobs");
   scheduleUploadsCleanup();
 
