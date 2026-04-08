@@ -1104,12 +1104,42 @@ This is session ${continuationIndex + 1}. Previous session(s) ran out of turns o
       },
     });
 
-    const result = await spawnPromise;
-    const durationMs = Date.now() - runStartedAtMs;
+    let result = await spawnPromise;
+    let durationMs = Date.now() - runStartedAtMs;
     if (decisionWatcher) {
       clearInterval(decisionWatcher);
       decisionWatcher = null;
     }
+
+    // If --resume failed (quick non-zero exit with no output), retry fresh
+    if (decisionResumeSessionId && result.exitCode !== 0 && durationMs < 5_000 && result.stdout.trim().length < 50) {
+      logger.warn("run-task", `Resume session ${decisionResumeSessionId} failed — retrying task ${taskId} without resume`);
+      const retryStartMs = Date.now();
+      const retryPromise = runner.spawnAgent({
+        prompt,
+        maxTurns,
+        timeoutMinutes,
+        skipPermissions: resolvedSkipPermissions,
+        yolo: resolvedYolo,
+        allowedTools,
+        agentTeams: useAgentTeams,
+        backend,
+        cwd: WORKSPACE_DIR,
+        streamFile,
+        onSessionId: (sid) => { capturedSessionId = sid; },
+        onSpawned: (pid) => {
+          spawnedPid = pid;
+          try {
+            const runs = readActiveRuns();
+            const run = runs.runs.find((r) => r.id === activeRunId);
+            if (run) { run.pid = pid; writeActiveRuns(runs); }
+          } catch { /* non-fatal */ }
+        },
+      });
+      result = await retryPromise;
+      durationMs = Date.now() - retryStartMs;
+    }
+
     taskLogger.info("run-task", "Agent exited", {
       taskId,
       exitCode: result.exitCode,
