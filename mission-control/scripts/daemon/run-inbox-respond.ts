@@ -35,6 +35,7 @@ const taskLogger = createLogger("task", { sync: true });
 import { getWorkspaceDir } from "../../src/lib/paths";
 const workspaceId = process.env.CMC_WORKSPACE_ID ?? "default";
 const WORKSPACE_DIR = getWorkspaceDir(workspaceId);
+const TSX_BIN = path.resolve(__dirname, "../../node_modules/.bin/tsx");
 
 // ─── Data Types ─────────────────────────────────────────────────────────────
 
@@ -452,9 +453,8 @@ function parseArgs(): ParsedArgs {
 function spawnContinuation(messageId: string, runId: string, nextIndex: number): void {
   const scriptPath = path.resolve(__dirname, "run-inbox-respond.ts");
   const child = spawn(
-    process.execPath,
+    TSX_BIN,
     [
-      "--import", "tsx",
       scriptPath,
       messageId,
       "--run-id", runId,

@@ -4,10 +4,11 @@ import path from "path";
 import { logger } from "./logger";
 import { AgentRunner, parseClaudeOutput } from "./runner";
 import { HealthMonitor } from "./health";
-import { buildTaskPrompt, buildScheduledPrompt, getPendingTasks, isTaskUnblocked, hasPendingDecision } from "./prompt-builder";
+import { buildScheduledPrompt, getPendingTasks, isTaskUnblocked, hasPendingDecision } from "./prompt-builder";
 import { persistSessionRecord, clearSessionRecord } from "./recovery";
 import type { DaemonConfig, ProjectRunsFile } from "./types";
 import { DATA_DIR, getWorkspaceDir } from "../../src/lib/paths";
+const TSX_BIN = path.resolve(__dirname, "../../node_modules/.bin/tsx");
 const MAX_RETRY_DELAY_MINUTES = 60;
 const FIELD_OPS_EXECUTE_URL = "http://localhost:3000/api/field-ops/execute";
 
@@ -260,101 +261,44 @@ export class Dispatcher {
   /**
    * Dispatch a single task to its assigned agent.
    */
-  private async dispatchTask(taskId: string, agentId: string): Promise<void> {
+  private dispatchTask(taskId: string, agentId: string): void {
+    // Notify inbox: task picked up
     try {
-      // Build task data for prompt (re-read to get fresh state)
-      const { getTask } = await import("./prompt-builder");
+      const { getTask } = require("./prompt-builder");
       const task = getTask(taskId);
-      if (!task) {
-        logger.error("dispatcher", `Task ${taskId} not found`);
-        return;
-      }
-
-      logger.info("dispatch", "Dispatching task", {
-        taskId,
-        agentId,
-        priority: `${task.importance}/${task.urgency}`,
-      });
-
-      const prompt = buildTaskPrompt(agentId, task);
-
-      // Notify inbox: task picked up
-      this.writeInboxMessage(
-        agentId,
-        "update",
-        taskId,
-        `Picked up: ${task.title}`,
-        `Agent "${agentId}" has started working on this task.`,
-      );
-
-      // Start tracking the session
-      const sessionId = this.health.startSession(agentId, taskId, "task", 0);
-
-      // Spawn the Claude Code process
-      const spawnPromise = this.runner.spawnAgent({
-        prompt,
-        maxTurns: this.config.execution.maxTurns,
-        timeoutMinutes: this.config.execution.timeoutMinutes,
-        skipPermissions: this.config.execution.skipPermissions,
-        allowedTools: this.config.execution.allowedTools,
-        cwd: getWorkspaceDir(this.workspaceId),
-        onSessionId: (sessionId) => persistSessionRecord(taskId, agentId, sessionId),
-      });
-
-      // Handle completion asynchronously
-      spawnPromise.then(result => {
-        // Update session PID if we got one
-        if (result.pid > 0) {
-          this.health.updateSessionPid(sessionId, result.pid);
-        }
-
-        // Parse cost/usage from Claude Code output
-        const meta = parseClaudeOutput(result.stdout);
-
-        this.health.endSession(
-          sessionId,
-          result.exitCode,
-          result.stderr || null,
-          result.timedOut,
-          meta.totalCostUsd,
-          meta.numTurns,
-          meta.usage,
+      if (task) {
+        this.writeInboxMessage(
+          agentId,
+          "update",
+          taskId,
+          `Picked up: ${task.title}`,
+          `Agent "${agentId}" has started working on this task.`,
         );
+      }
+    } catch {
+      // Non-fatal — inbox notification is best-effort
+    }
 
-        if (result.exitCode === 0 && !result.timedOut) {
-          logger.info("dispatcher", `Task ${taskId} completed successfully by ${agentId}`);
-          clearSessionRecord(taskId);
-          this.writeInboxMessage(
-            agentId,
-            "report",
-            taskId,
-            `Completed: ${task.title}`,
-            `Agent "${agentId}" finished this task successfully.`,
-          );
-        } else {
-          if (result.timedOut) {
-            logger.warn("dispatch", "Task timed out", {
-              taskId,
-              agentId,
-              pid: result.pid,
-              timeoutMinutes: this.config.execution.timeoutMinutes,
-            });
-          }
-          const reason = result.timedOut ? "timed out" : `exited with code ${result.exitCode}`;
-          this.writeInboxMessage(
-            agentId,
-            "report",
-            taskId,
-            `Failed: ${task.title}`,
-            `Agent "${agentId}" ${reason}. The task will be retried if attempts remain.\n\nStderr: ${result.stderr?.slice(0, 500) || "(none)"}`,
-          );
-          this.handleFailure(taskId, agentId, result);
-        }
-      }).catch(err => {
-        this.health.endSession(sessionId, 1, err instanceof Error ? err.message : String(err), false);
-        logger.error("dispatcher", `Dispatch error for ${taskId}: ${err instanceof Error ? err.message : String(err)}`);
+    const scriptPath = path.resolve(__dirname, "run-task.ts");
+    const args = [
+      scriptPath,
+      taskId,
+    ];
+
+    if (this.config.execution.agentTeams) {
+      args.push("--agent-teams");
+    }
+
+    try {
+      const child = spawn(TSX_BIN, args, {
+        cwd: getWorkspaceDir(this.workspaceId),
+        detached: true,
+        stdio: "ignore",
+        shell: false,
+        env: { ...process.env, CMC_WORKSPACE_ID: this.workspaceId },
       });
-
+      child.unref();
+      logger.info("dispatcher", `Dispatched task ${taskId} to agent ${agentId} (pid: ${child.pid})`);
     } catch (err) {
       logger.error("dispatcher", `Failed to dispatch task ${taskId}: ${err instanceof Error ? err.message : String(err)}`);
     }
@@ -610,7 +554,6 @@ export class Dispatcher {
             const scriptPath = path.resolve(__dirname, "run-task.ts");
             for (const task of toSpawn) {
               const args = [
-                "--import", "tsx",
                 scriptPath,
                 task.id as string,
                 "--source", "project-run-chain",
@@ -620,7 +563,7 @@ export class Dispatcher {
                 args.push("--agent-teams");
               }
               try {
-                const child = spawn(process.execPath, args, {
+                const child = spawn(TSX_BIN, args, {
                   cwd: getWorkspaceDir(this.workspaceId),
                   detached: true,
                   stdio: "ignore",

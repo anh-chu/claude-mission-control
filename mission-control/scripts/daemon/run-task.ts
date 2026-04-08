@@ -32,6 +32,7 @@ const taskLogger = createLogger("task", { sync: true });
 
 import { getWorkspaceDir } from "../../src/lib/paths";
 const WORKSPACE_DIR = getWorkspaceDir(process.env.CMC_WORKSPACE_ID ?? "default");
+const TSX_BIN = path.resolve(__dirname, "../../node_modules/.bin/tsx");
 const ACTIVE_RUNS_FILE = path.join(WORKSPACE_DIR, "active-runs.json");
 const STREAMS_DIR = path.join(WORKSPACE_DIR, "agent-streams");
 const TASKS_FILE = path.join(WORKSPACE_DIR, "tasks.json");
@@ -377,7 +378,6 @@ function spawnContinuation(
 ): void {
   const scriptPath = path.resolve(__dirname, "run-task.ts");
   const args = [
-    "--import", "tsx",
     scriptPath,
     taskId,
     "--source", source,
@@ -388,7 +388,7 @@ function spawnContinuation(
   if (missionId) args.push("--mission", missionId);
 
   try {
-    const child = spawn(process.execPath, args, {
+    const child = spawn(TSX_BIN, args, {
       cwd: WORKSPACE_DIR,
       detached: true,
       stdio: "ignore",
@@ -701,7 +701,6 @@ function handleProjectRunContinuation(
     const scriptPath = path.resolve(__dirname, "run-task.ts");
     for (const task of toSpawn) {
       const args = [
-        "--import", "tsx",
         scriptPath,
         task.id as string,
         "--source", "mission-chain",
@@ -711,7 +710,7 @@ function handleProjectRunContinuation(
         args.push("--agent-teams");
       }
       try {
-        const child = spawn(process.execPath, args, {
+        const child = spawn(TSX_BIN, args, {
           cwd: WORKSPACE_DIR,
           detached: true,
           stdio: "ignore",
