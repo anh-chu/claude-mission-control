@@ -3,7 +3,6 @@ import { getAgents, mutateAgents, mutateTasks, mutateSkillsLibrary } from "@/lib
 import type { AgentDefinition } from "@/lib/types";
 import { agentCreateSchema, agentUpdateSchema, validateBody, DEFAULT_LIMIT } from "@/lib/validations";
 import { syncAgentCommand } from "@/lib/sync-commands";
-import { requireOwner } from "@/lib/owner-guard";
 
 export const dynamic = "force-dynamic";
 
@@ -44,9 +43,6 @@ export async function POST(request: Request) {
   const validation = await validateBody(request, agentCreateSchema);
   if (!validation.success) return validation.error;
   const body = validation.data;
-
-  const ownerCheck = await requireOwner(body as Record<string, unknown>);
-  if (ownerCheck) return ownerCheck;
 
   const newAgent = await mutateAgents(async (data) => {
     // Check for duplicate ID
@@ -90,9 +86,6 @@ export async function PUT(request: Request) {
   if (!validation.success) return validation.error;
   const body = validation.data;
 
-  const ownerCheck = await requireOwner(body as Record<string, unknown>);
-  if (ownerCheck) return ownerCheck;
-
   const updatedAgent = await mutateAgents(async (data) => {
     const idx = data.agents.findIndex((a) => a.id === body.id);
     if (idx === -1) {
@@ -128,15 +121,6 @@ export async function DELETE(request: Request) {
   if (!id) {
     return NextResponse.json({ error: "id required" }, { status: 400 });
   }
-
-  // Agent deletion requires owner authorization
-  const deleteBody: Record<string, unknown> = {};
-  const actor = searchParams.get("actor");
-  const masterPassword = searchParams.get("masterPassword");
-  if (actor) deleteBody.actor = actor;
-  if (masterPassword) deleteBody.masterPassword = masterPassword;
-  const ownerCheck = await requireOwner(deleteBody);
-  if (ownerCheck) return ownerCheck;
 
   // Built-in agents can't be hard-deleted, only deactivated
   const builtIn = ["me", "researcher", "developer", "marketer", "business-analyst"];

@@ -21,7 +21,6 @@ import {
   useSelection,
   type ColumnConfig,
 } from "@/components/board-view";
-import { BulkActionBar } from "@/components/bulk-action-bar";
 import { useTasks, useGoals, useProjects, useDecisions } from "@/hooks/use-data";
 import { useActiveRunsContext as useActiveRuns } from "@/providers/active-runs-provider";
 import { useFastTaskPoll } from "@/hooks/use-fast-task-poll";
@@ -168,19 +167,6 @@ export default function KanbanPage() {
           ))}
         </div>
       </BoardDndWrapper>
-
-      <BulkActionBar
-        count={selection.count}
-        onMarkDone={async () => {
-          await bulkUpdate(selection.ids, { kanban: "done" } as Partial<Task>);
-          selection.clear();
-        }}
-        onDelete={async () => {
-          await bulkRemove(selection.ids);
-          selection.clear();
-        }}
-        onClear={selection.clear}
-      />
 
       <BoardPanels
         tasks={tasks}

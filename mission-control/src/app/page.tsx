@@ -5,7 +5,6 @@ import {
   Plus, CheckSquare, Target, Lightbulb, FolderOpen, Sparkles,
   Mail, HelpCircle, Activity, User, Search, Code, Megaphone, BarChart3,
   AlertTriangle, CircleDot, ShieldAlert, Rocket, Users, Zap, Square,
-  Radio, Shield,
 } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -30,13 +29,11 @@ const CreateGoalDialog = dynamic(
 );
 import { useDashboardData } from "@/hooks/use-dashboard-data";
 import { useDaemon } from "@/hooks/use-daemon";
-import { useFieldMissions, useFieldTasks, useFieldServices } from "@/hooks/use-field-ops";
 import { useActiveRunsContext as useActiveRuns } from "@/providers/active-runs-provider";
 import { useFastTaskPoll } from "@/hooks/use-fast-task-poll";
 import { DashboardSkeleton } from "@/components/skeletons";
 import { ErrorState } from "@/components/error-state";
 import { Tip } from "@/components/ui/tip";
-import { FinancialOverviewCard } from "@/components/field-ops/financial-overview-card";
 import { AGENT_ROLES } from "@/lib/types";
 import type { AgentRole } from "@/lib/types";
 import type { TaskFormData } from "@/components/task-form";
@@ -44,7 +41,6 @@ import { apiFetch } from "@/lib/api-client";
 import { showSuccess, showError } from "@/lib/toast";
 import Link from "next/link";
 import { cn } from "@/lib/utils";
-import { toast } from "sonner";
 
 function formatRelativeTime(isoString: string): string {
   const diff = Date.now() - new Date(isoString).getTime();
@@ -68,16 +64,7 @@ export default function CommandCenterPage() {
   const { data, loading, error, refetch } = useDashboardData();
   const { isRunning: daemonRunning, status: daemonStatus, start: startDaemon, stop: stopDaemon } = useDaemon();
   const { runningTaskIds, isProjectRunning, isProjectRunActive, runProject, stopProject } = useActiveRuns();
-  const { missions: fieldMissions } = useFieldMissions();
-  const { tasks: fieldTasks } = useFieldTasks();
-  const { services: fieldServices } = useFieldServices();
   useFastTaskPoll(runningTaskIds.size > 0, refetch);
-
-  // Field Ops derived stats
-  const pendingApprovals = fieldTasks.filter((t) => t.status === "pending-approval").length;
-  const executingTasks = fieldTasks.filter((t) => t.status === "executing").length;
-  const activeMissions = fieldMissions.filter((m) => m.status === "active").length;
-  const connectedServices = fieldServices.filter((s) => s.status === "connected").length;
 
   const [showCreateTask, setShowCreateTask] = useState(false);
   const [showCreateProject, setShowCreateProject] = useState(false);
@@ -141,7 +128,6 @@ export default function CommandCenterPage() {
     (Date.now() - new Date(t.completedAt).getTime()) < 7 * 24 * 60 * 60 * 1000
   );
   const attentionItems = [
-    ...(pendingApprovals > 0 ? [{ key: "field-approvals", icon: Shield, label: `${pendingApprovals} Field Ops approval${pendingApprovals > 1 ? "s" : ""} pending`, href: "/field-ops", color: "text-emerald-400" }] : []),
     ...(pendingDecisions.length > 0 ? [{ key: "decisions", icon: HelpCircle, label: `${pendingDecisions.length} pending decision${pendingDecisions.length > 1 ? "s" : ""}`, href: "/decisions", color: "text-yellow-500" }] : []),
     ...(unreadReports.length > 0 ? [{ key: "reports", icon: Mail, label: `${unreadReports.length} agent report${unreadReports.length > 1 ? "s" : ""} to review`, href: "/inbox", color: "text-blue-400" }] : []),
     ...(doQuadrantMyTasks.length > 0 ? [{ key: "do-tasks", icon: ShieldAlert, label: `${doQuadrantMyTasks.length} DO-quadrant task${doQuadrantMyTasks.length > 1 ? "s" : ""} not started`, href: "/priority-matrix", color: "text-red-400" }] : []),
@@ -489,49 +475,6 @@ export default function CommandCenterPage() {
         </Card>
       )}
 
-
-      {/* ─── Field Ops Summary ──────────────────────────────────────────────── */}
-      <Link href="/field-ops">
-        <Card className={cn(
-          "bg-card/50 cursor-pointer transition-all hover:shadow-lg hover:border-primary/30",
-          (pendingApprovals > 0 || executingTasks > 0) && "border-emerald-500/20 bg-emerald-500/5"
-        )}>
-          <CardContent className="p-4">
-            <div className="flex items-center justify-between">
-              <div className="flex items-center gap-3">
-                <div className={cn(
-                  "h-9 w-9 rounded-lg flex items-center justify-center",
-                  (pendingApprovals > 0 || executingTasks > 0) ? "bg-emerald-500/10" : "bg-muted"
-                )}>
-                  <Radio className={cn("h-4 w-4", (pendingApprovals > 0 || executingTasks > 0) ? "text-emerald-500" : "text-muted-foreground")} />
-                </div>
-                <div>
-                  <p className="text-sm font-semibold">Field Ops</p>
-                  <p className="text-xs text-muted-foreground mt-0.5">
-                    {activeMissions} active initiative{activeMissions !== 1 ? "s" : ""} · {connectedServices} service{connectedServices !== 1 ? "s" : ""} connected
-                  </p>
-                </div>
-              </div>
-              <div className="flex items-center gap-3">
-                {pendingApprovals > 0 && (
-                  <Badge className="text-xs tabular-nums bg-emerald-500/20 text-emerald-400 border-emerald-500/30">
-                    {pendingApprovals} awaiting approval
-                  </Badge>
-                )}
-                {executingTasks > 0 && (
-                  <Badge className="text-xs tabular-nums bg-blue-500/20 text-blue-400 border-blue-500/30">
-                    {executingTasks} executing
-                  </Badge>
-                )}
-                <span className="text-xs text-muted-foreground">View Details →</span>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-      </Link>
-
-      {/* ─── Financial Summary ────────────────────────────────────────────── */}
-      <FinancialOverviewCard variant="summary" />
 
       {/* ─── Comms: Inbox + Decisions ──────────────────────────────────────── */}
       <div role="region" aria-label="Communications" className="grid gap-4 lg:grid-cols-2">

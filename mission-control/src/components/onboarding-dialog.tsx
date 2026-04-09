@@ -4,9 +4,7 @@ import { useState, useEffect } from "react";
 import Link from "next/link";
 import {
   Rocket,
-  Lock,
   Zap,
-  CheckCircle2,
   Flag,
 } from "lucide-react";
 import {
@@ -17,14 +15,12 @@ import {
   DialogDescription,
 } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
-import { VaultSetupWizard } from "@/components/vault-setup-wizard";
-
 
 const STORAGE_KEY = "mc-onboarded";
 
 // ─── Step types ─────────────────────────────────────────────────────────────
 
-type StepType = "bullets" | "vault-setup" | "data-management" | "ready";
+type StepType = "bullets" | "data-management" | "ready";
 
 interface BaseStep {
   icon: typeof Rocket;
@@ -39,7 +35,7 @@ interface BulletsStep extends BaseStep {
 }
 
 interface SpecialStep extends BaseStep {
-  type: "vault-setup" | "data-management" | "ready";
+  type: "data-management" | "ready";
 }
 
 type Step = BulletsStep | SpecialStep;
@@ -55,15 +51,8 @@ const steps: Step[] = [
       "Prioritize with the Eisenhower Matrix (Do, Schedule, Delegate, Eliminate)",
       "Track progress with Kanban boards and goal milestones",
       "Delegate to specialized AI agents (Researcher, Developer, Marketer, etc.)",
-      "Execute real actions via Integrations — social posts, transactions, API calls",
+      "Launch automation through the daemon for recurring work and scheduled execution",
     ],
-  },
-  {
-    type: "vault-setup",
-    icon: Lock,
-    title: "Secure Your Vault",
-    description:
-      "Set a master password to encrypt your API keys and tokens. Your agents need credentials to execute tasks on your behalf.",
   },
   {
     type: "data-management",
@@ -86,7 +75,6 @@ const steps: Step[] = [
 export function OnboardingDialog() {
   const [open, setOpen] = useState(false);
   const [step, setStep] = useState(0);
-  const [vaultDone, setVaultDone] = useState(false);
 
   useEffect(() => {
     if (typeof window !== "undefined" && !localStorage.getItem(STORAGE_KEY)) {
@@ -127,31 +115,6 @@ export function OnboardingDialog() {
               </li>
             ))}
           </ul>
-        );
-
-      case "vault-setup":
-        if (vaultDone) {
-          return (
-            <div className="text-center py-4 space-y-2">
-              <CheckCircle2 className="h-8 w-8 text-green-400 mx-auto" />
-              <p className="text-sm font-medium">Vault Initialized</p>
-              <p className="text-xs text-muted-foreground">
-                You can now store API keys and tokens securely.
-              </p>
-            </div>
-          );
-        }
-        return (
-          <div className="py-2">
-            <VaultSetupWizard
-              compact
-              onComplete={() => {
-                setVaultDone(true);
-                setTimeout(() => handleNext(), 1000);
-              }}
-              onSkip={handleNext}
-            />
-          </div>
         );
 
       case "data-management":
@@ -237,43 +200,17 @@ export function OnboardingDialog() {
     }
   }
 
-  // ─── Determine if we should show Next/Skip in the footer ────────────────
-  // Some steps (vault-setup, demo-data) have their own navigation built in
-  const showFooterNav =
-    current.type === "bullets" ||
-    current.type === "data-management" ||
-    current.type === "ready" ||
-    (current.type === "vault-setup" && vaultDone);
+  const showFooterNav = true;
 
   return (
     <Dialog
       open={open}
       onOpenChange={(o) => {
-        if (!o) {
-          const currentType = steps[step]?.type;
-          if (currentType === "vault-setup") {
-            // Don't close during interactive steps
-            return;
-          }
-          handleClose();
-        }
+        if (!o) handleClose();
       }}
     >
       <DialogContent
         className="max-w-md"
-        onPointerDownOutside={(e) => {
-          // Prevent accidental close during interactive steps
-          const currentType = steps[step]?.type;
-          if (currentType === "vault-setup") {
-            e.preventDefault();
-          }
-        }}
-        onEscapeKeyDown={(e) => {
-          const currentType = steps[step]?.type;
-          if (currentType === "vault-setup") {
-            e.preventDefault();
-          }
-        }}
       >
         <DialogHeader>
           <div className="flex items-center gap-3">

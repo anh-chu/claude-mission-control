@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
-import { Plus, Lightbulb, ShieldCheck, ShieldAlert, ShieldOff, AlertTriangle } from "lucide-react";
+import { Plus, Lightbulb, AlertTriangle } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent } from "@/components/ui/card";
@@ -14,68 +14,15 @@ import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useInitiatives, useGoals } from "@/hooks/use-data";
-import { FinancialOverviewCard } from "@/components/field-ops/financial-overview-card";
-import { GettingStartedCard } from "@/components/field-ops/getting-started-card";
-import { apiFetch } from "@/lib/api-client";
 import { ContextMenu, ContextMenuTrigger } from "@/components/ui/context-menu";
 import { InitiativeContextMenuContent } from "@/components/context-menus/initiative-context-menu";
-import type { Initiative, InitiativeStatus, AutonomyLevel } from "@/lib/types";
+import { apiFetch } from "@/lib/api-client";
+import type { Initiative, InitiativeStatus } from "@/lib/types";
 
 interface InitiativeStats {
   activeInitiatives: number;
-  pendingApprovals: number;
-  connectedServices: number;
-  completedActions: number;
-}
-
-function useInitiativeStats(initiatives: Initiative[]): InitiativeStats {
-  const [stats, setStats] = useState<InitiativeStats>({
-    activeInitiatives: 0,
-    pendingApprovals: 0,
-    connectedServices: 0,
-    completedActions: 0,
-  });
-
-  const activeInitiatives = initiatives.filter((i) => i.status === "active").length;
-
-  useEffect(() => {
-    let cancelled = false;
-    async function fetchStats() {
-      try {
-        const [pendingRes, servicesRes, completedRes] = await Promise.all([
-          apiFetch("/api/actions?status=pending-approval&limit=1000"),
-          apiFetch("/api/field-ops/services"),
-          apiFetch("/api/actions?status=completed&limit=1000"),
-        ]);
-
-        const [pendingJson, servicesJson, completedJson] = await Promise.all([
-          pendingRes.ok ? pendingRes.json() : { actions: [] },
-          servicesRes.ok ? servicesRes.json() : { services: [] },
-          completedRes.ok ? completedRes.json() : { actions: [] },
-        ]);
-
-        if (!cancelled) {
-          const allServices: { status: string }[] = servicesJson.services ?? [];
-          setStats({
-            activeInitiatives,
-            pendingApprovals: (pendingJson.actions ?? []).length,
-            connectedServices: allServices.filter((s) => s.status === "connected").length,
-            completedActions: (completedJson.actions ?? []).length,
-          });
-        }
-      } catch {
-        // Silent fail — stats are supplementary
-        if (!cancelled) {
-          setStats((prev) => ({ ...prev, activeInitiatives }));
-        }
-      }
-    }
-    fetchStats();
-    return () => { cancelled = true; };
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [activeInitiatives]);
-
-  return stats;
+  totalTasks: number;
+  linkedGoals: number;
 }
 
 interface CircuitBreakerWarning {
@@ -132,36 +79,6 @@ const COLOR_SWATCHES = [
   "#3b82f6", "#06b6d4", "#64748b", "#78716c",
 ];
 
-function autonomyBadge(level: AutonomyLevel | null) {
-  const l = level ?? "inherit";
-  switch (l) {
-    case "approve-all":
-      return (
-        <Badge variant="outline" className="text-[10px] gap-0.5">
-          <ShieldCheck className="h-2.5 w-2.5" /> Approve All
-        </Badge>
-      );
-    case "approve-high-risk":
-      return (
-        <Badge variant="outline" className="text-[10px] gap-0.5 border-amber-500/40 text-amber-400">
-          <ShieldAlert className="h-2.5 w-2.5" /> Supervised
-        </Badge>
-      );
-    case "full-autonomy":
-      return (
-        <Badge variant="outline" className="text-[10px] gap-0.5 border-red-500/40 text-red-400">
-          <ShieldOff className="h-2.5 w-2.5" /> Full Autonomy
-        </Badge>
-      );
-    default:
-      return (
-        <Badge variant="outline" className="text-[10px] text-muted-foreground">
-          Inherit
-        </Badge>
-      );
-  }
-}
-
 function statusBadge(status: InitiativeStatus) {
   switch (status) {
     case "active":
@@ -187,7 +104,6 @@ function CreateInitiativeDialog({ open, onOpenChange, onSubmit, parentGoalOption
   const [description, setDescription] = useState("");
   const [color, setColor] = useState(COLOR_SWATCHES[0]);
   const [parentGoalId, setParentGoalId] = useState<string>("none");
-  const [autonomyLevel, setAutonomyLevel] = useState<string>("none");
   const [saving, setSaving] = useState(false);
 
   async function handleSubmit(e: React.FormEvent) {
@@ -200,10 +116,8 @@ function CreateInitiativeDialog({ open, onOpenChange, onSubmit, parentGoalOption
         description: description.trim(),
         color,
         parentGoalId: parentGoalId === "none" ? null : parentGoalId,
-        autonomyLevel: autonomyLevel === "none" ? null : (autonomyLevel as AutonomyLevel),
         status: "active",
         taskIds: [],
-        actionIds: [],
         tags: [],
         teamMembers: [],
       });
@@ -211,7 +125,6 @@ function CreateInitiativeDialog({ open, onOpenChange, onSubmit, parentGoalOption
       setDescription("");
       setColor(COLOR_SWATCHES[0]);
       setParentGoalId("none");
-      setAutonomyLevel("none");
       onOpenChange(false);
     } finally {
       setSaving(false);
@@ -284,21 +197,6 @@ function CreateInitiativeDialog({ open, onOpenChange, onSubmit, parentGoalOption
             </div>
           )}
 
-          <div className="space-y-1.5">
-            <Label htmlFor="autonomyLevel">Autonomy Level</Label>
-            <Select value={autonomyLevel} onValueChange={setAutonomyLevel}>
-              <SelectTrigger id="autonomyLevel">
-                <SelectValue placeholder="Inherit from workspace" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="none">Inherit from workspace</SelectItem>
-                <SelectItem value="approve-all">Approve All</SelectItem>
-                <SelectItem value="approve-high-risk">Approve High Risk</SelectItem>
-                <SelectItem value="full-autonomy">Full Autonomy</SelectItem>
-              </SelectContent>
-            </Select>
-          </div>
-
           <DialogFooter>
             <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>Cancel</Button>
             <Button type="submit" disabled={saving || !title.trim()}>
@@ -342,7 +240,6 @@ function InitiativeCard({
                 <h3 className="font-medium truncate">{initiative.title}</h3>
               </div>
               <div className="flex items-center gap-1.5 shrink-0">
-                {autonomyBadge(initiative.autonomyLevel)}
                 {statusBadge(initiative.status)}
               </div>
             </div>
@@ -353,7 +250,6 @@ function InitiativeCard({
 
             <div className="flex items-center gap-4 text-xs text-muted-foreground ml-5">
               <span>{initiative.taskIds.length} tasks</span>
-              <span>{initiative.actionIds.length} actions</span>
               {parentGoalTitle && (
                 <span className="truncate">Goal: {parentGoalTitle}</span>
               )}
@@ -375,6 +271,7 @@ export default function InitiativesPage() {
   const { initiatives, loading, create, update, remove } = useInitiatives();
   const { goals } = useGoals();
   const [createOpen, setCreateOpen] = useState(false);
+  const router = useRouter();
 
   async function handleTogglePause(initiative: Initiative) {
     const newStatus = initiative.status === "paused" ? "active" : "paused";
@@ -390,8 +287,13 @@ export default function InitiativesPage() {
   }
 
   const visible = initiatives.filter((i) => !i.deletedAt);
-  const stats = useInitiativeStats(visible);
   const circuitWarnings = useCircuitBreakerWarnings(visible);
+
+  const stats: InitiativeStats = {
+    activeInitiatives: visible.filter((i) => i.status === "active").length,
+    totalTasks: visible.reduce((sum, initiative) => sum + initiative.taskIds.length, 0),
+    linkedGoals: new Set(visible.map((initiative) => initiative.parentGoalId).filter(Boolean)).size,
+  };
 
   const goalOptions = goals
     .filter((g) => g.type === "long-term")
@@ -401,9 +303,8 @@ export default function InitiativesPage() {
 
   const statCards = [
     { label: "Active Initiatives", value: stats.activeInitiatives },
-    { label: "Pending Approvals", value: stats.pendingApprovals },
-    { label: "Connected Services", value: stats.connectedServices },
-    { label: "Completed Actions", value: stats.completedActions },
+    { label: "Total Tasks", value: stats.totalTasks },
+    { label: "Linked Goals", value: stats.linkedGoals },
   ];
 
   return (
@@ -431,8 +332,6 @@ export default function InitiativesPage() {
         ))}
       </div>
 
-      <FinancialOverviewCard variant="summary" />
-
       {circuitWarnings.map((w) => (
         <div
           key={w.initiativeId}
@@ -451,27 +350,23 @@ export default function InitiativesPage() {
         </div>
       ) : visible.length === 0 ? (
         <div className="space-y-4">
-          <GettingStartedCard
-            title="Get started with Initiatives"
-            description="Initiatives group related actions and tasks together. Each initiative can have its own approval level and autonomy settings."
-            steps={[
-              "Create your first initiative with a title and description",
-              "Add actions (real-world tasks agents will execute) to the initiative",
-              "Set an approval level — start with Manual Approval for maximum control"
-            ]}
-            learnMoreHref="/guide"
-            storageKey="initiatives-getting-started"
-          />
           <Card>
-            <CardContent className="flex flex-col items-center justify-center py-16 text-center">
-              <Lightbulb className="h-12 w-12 text-muted-foreground/30 mb-4" />
-              <h3 className="font-medium text-lg">No initiatives yet</h3>
-              <p className="text-sm text-muted-foreground mt-1 max-w-sm">
-                Create your first initiative to group tasks and actions into a focused campaign.
-              </p>
-              <Button className="mt-4 gap-1.5" onClick={() => setCreateOpen(true)}>
-                <Plus className="h-4 w-4" /> Create Initiative
-              </Button>
+            <CardContent className="flex flex-col items-center justify-center gap-3 py-16 text-center">
+              <Lightbulb className="h-12 w-12 text-muted-foreground/30" />
+              <div className="space-y-1.5 max-w-sm">
+                <h3 className="font-medium text-lg">No initiatives yet</h3>
+                <p className="text-sm text-muted-foreground">
+                  Use initiatives to group related tasks and actions into a focused campaign with one ownership point.
+                </p>
+              </div>
+              <div className="flex gap-2">
+                <Button variant="outline" onClick={() => router.push("/guide")}>
+                  Open Guide
+                </Button>
+                <Button className="gap-1.5" onClick={() => setCreateOpen(true)}>
+                  <Plus className="h-4 w-4" /> Create Initiative
+                </Button>
+              </div>
             </CardContent>
           </Card>
         </div>

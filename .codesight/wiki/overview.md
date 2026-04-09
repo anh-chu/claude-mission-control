@@ -6,25 +6,24 @@
 
 ## Scale
 
-132 API routes · 113 UI components · 4 middleware layers · 21 environment variables
+86 API routes · 80 UI components · 3 middleware layers · 21 environment variables
 
 ## Subsystems
 
-- **[Auth](./auth.md)** — 1 routes — touches: auth
-- **[Route](./route.md)** — 131 routes — touches: auth, upload, cache, queue, payment
+- **[Route](./route.md)** — 86 routes — touches: cache, auth, queue, ai, upload
 
-**UI:** 113 components (react) — see [ui.md](./ui.md)
+**UI:** 80 components (react) — see [ui.md](./ui.md)
 
 ## High-Impact Files
 
 Changes to these files have the widest blast radius across the codebase:
 
-- `mission-control/src/lib/paths.ts` — imported by **20** files
-- `mission-control/scripts/daemon/logger.ts` — imported by **14** files
-- `mission-control/scripts/daemon/types.ts` — imported by **11** files
-- `mission-control/scripts/daemon/security.ts` — imported by **8** files
-- `mission-control/scripts/daemon/runner.ts` — imported by **7** files
+- `mission-control/src/lib/paths.ts` — imported by **19** files
+- `mission-control/scripts/daemon/logger.ts` — imported by **13** files
+- `mission-control/scripts/daemon/types.ts` — imported by **10** files
+- `mission-control/scripts/daemon/security.ts` — imported by **7** files
 - `mission-control/scripts/daemon/config.ts` — imported by **6** files
+- `mission-control/scripts/daemon/runner.ts` — imported by **6** files
 
 ## Required Environment Variables
 
@@ -32,7 +31,7 @@ Changes to these files have the widest blast radius across the codebase:
 - `APPDATA` — `mission-control/scripts/daemon/runner.ts`
 - `CLAUDE_CODE_OAUTH_TOKEN` — `mission-control/scripts/daemon/security.ts`
 - `CMC_DATA_DIR` — `mission-control/__tests__/helpers.ts`
-- `CMC_WORKSPACE_ID` — `mission-control/scripts/daemon/run-action-comment.ts`
+- `CMC_WORKSPACE_ID` — `mission-control/scripts/daemon/run-brain-dump-triage.ts`
 - `COMSPEC` — `mission-control/scripts/daemon/security.ts`
 - `HOME` — `mission-control/scripts/daemon/runner.ts`
 - `LOCALAPPDATA` — `mission-control/scripts/daemon/runner.ts`

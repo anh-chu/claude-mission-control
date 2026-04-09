@@ -31,7 +31,7 @@ export async function POST(request: NextRequest) {
     description: parsed.data.description,
     color: parsed.data.color,
     isDefault: false,
-    settings: { autonomyLevel: "approve-all" },
+    settings: {},
     createdAt: now,
     updatedAt: now,
   };

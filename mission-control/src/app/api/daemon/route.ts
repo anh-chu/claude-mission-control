@@ -4,7 +4,6 @@ import { spawn } from "child_process";
 import path from "path";
 import { getDaemonConfig, mutateDaemonConfig } from "@/lib/data";
 import { daemonConfigUpdateSchema, validateBody } from "@/lib/validations";
-import { requireOwner } from "@/lib/owner-guard";
 import { DATA_DIR } from "@/lib/paths";
 
 const STATUS_FILE = path.join(DATA_DIR, "daemon-status.json");

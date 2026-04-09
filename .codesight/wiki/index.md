@@ -9,15 +9,14 @@ Structural map compiled from source code via AST. No LLM — deterministic, 200m
 ## Articles
 
 - [Overview](./overview.md)
-- [Auth](./auth.md)
 - [Route](./route.md)
 - [Ui](./ui.md)
 
 ## Quick Stats
 
-- Routes: **132**
+- Routes: **86**
 - Models: **0**
-- Components: **113**
+- Components: **80**
 - Env vars: **21** required, **0** with defaults
 
 ## How to Use
@@ -44,4 +43,4 @@ These exist in your codebase but are **not** reflected in wiki articles:
 When in doubt, search the source. The wiki is a starting point, not a complete inventory.
 
 ---
-_Last compiled: 2026-04-09 · 5 articles · [codesight](https://github.com/Houseofmvps/codesight)_
+_Last compiled: 2026-04-09 · 4 articles · [codesight](https://github.com/Houseofmvps/codesight)_

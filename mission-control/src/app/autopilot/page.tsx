@@ -24,7 +24,6 @@ import {
   DialogDescription,
 } from "@/components/ui/dialog";
 import { Rocket, Square, Clock, CheckCircle2, XCircle, Timer, RefreshCw, Zap, AlertTriangle, Pencil, Save, X, Plus, Trash2, Lock, Eye, EyeOff } from "lucide-react";
-import { showError } from "@/lib/toast";
 
 function formatDuration(minutes: number): string {
   if (minutes < 1) return "< 1m";
@@ -791,9 +790,9 @@ export default function AutopilotPage() {
                 </button>
               </div>
               <p className="text-xs text-muted-foreground">
-                Forgot your password?{" "}
-                <Link href="/field-ops/vault" className="text-red-400 hover:underline">
-                  Reset vault
+                Need help recovering access?{" "}
+                <Link href="/guide#security" className="text-red-400 hover:underline">
+                  Read the security guide
                 </Link>
               </p>
             </div>

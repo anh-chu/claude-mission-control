@@ -16,12 +16,11 @@ const appLogger = createLogger("app");
 // ─── Seed default workspace on fresh install ────────────────────────────────
 
 const wsDir = path.join(DATA_DIR, "workspaces", "default");
-const fieldOpsDir = path.join(wsDir, "field-ops");
 const artifactsDir = path.join(process.cwd(), "artifacts", "workspaces", "default");
 
 if (!existsSync(wsDir)) {
   appLogger.info("startup", "Initializing workspace", { workspaceId: "default" });
-  mkdirSync(fieldOpsDir, { recursive: true });
+  mkdirSync(wsDir, { recursive: true });
 
   if (existsSync(artifactsDir)) {
     for (const file of ["agents.json", "skills-library.json", "daemon-config.json", "CLAUDE.md"]) {
@@ -36,11 +35,6 @@ if (!existsSync(wsDir)) {
       cpSync(claudeSrc, path.join(wsDir, ".claude"), { recursive: true });
       appLogger.info("startup", "Seeded workspace directory", { workspaceId: "default", directory: ".claude" });
     }
-    const foSrc = path.join(artifactsDir, "field-ops");
-    if (existsSync(foSrc)) {
-      cpSync(foSrc, fieldOpsDir, { recursive: true });
-      appLogger.info("startup", "Seeded workspace directory", { workspaceId: "default", directory: "field-ops" });
-    }
   }
 
   const emptySeeds: Record<string, unknown> = {
@@ -48,7 +42,6 @@ if (!existsSync(wsDir)) {
     "tasks-archive.json": { tasks: [] },
     "goals.json": { goals: [] },
     "initiatives.json": { initiatives: [] },
-    "actions.json": { actions: [] },
     "projects.json": { projects: [] },
     "brain-dump.json": { entries: [] },
     "activity-log.json": { events: [] },
@@ -61,27 +54,6 @@ if (!existsSync(wsDir)) {
     if (!existsSync(dest)) {
       writeFileSync(dest, JSON.stringify(content, null, 2), "utf-8");
       appLogger.info("startup", "Seeded workspace data file", { workspaceId: "default", file });
-    }
-  }
-
-  const foEmptySeeds: Record<string, unknown> = {
-    "missions.json": { missions: [] },
-    "tasks.json": { tasks: [] },
-    "services.json": { services: [] },
-    "activity-log.json": { events: [] },
-    "approval-config.json": { config: { mode: "approve-all", overrides: {} } },
-    "safety-limits.json": {
-      global: { enabled: true, dailyBudgetUsd: 100, weeklyBudgetUsd: 500, monthlyBudgetUsd: 2000, pauseOnBreach: true },
-      services: {},
-      spendLog: [],
-    },
-    "templates.json": { templates: [] },
-  };
-  for (const [file, content] of Object.entries(foEmptySeeds)) {
-    const dest = path.join(fieldOpsDir, file);
-    if (!existsSync(dest)) {
-      writeFileSync(dest, JSON.stringify(content, null, 2), "utf-8");
-      appLogger.info("startup", "Seeded field-ops data file", { workspaceId: "default", file });
     }
   }
 }

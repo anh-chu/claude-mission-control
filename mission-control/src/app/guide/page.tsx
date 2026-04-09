@@ -23,8 +23,8 @@ const sections = [
   { id: "projects", label: "Projects & Goals", icon: Target },
   { id: "brain-dump", label: "Quick Capture", icon: Lightbulb },
   { id: "agents", label: "AI Agents", icon: Bot },
-  { id: "field-ops", label: "Integrations", icon: Radio },
-  { id: "vault-security", label: "Vault Security", icon: Shield },
+  { id: "automation", label: "Automation", icon: Radio },
+  { id: "security", label: "Security", icon: Shield },
   { id: "data-management", label: "Data Management", icon: Database },
   { id: "shortcuts", label: "Keyboard Shortcuts", icon: Keyboard },
   { id: "cloud", label: "Mission Control Cloud", icon: Cloud },
@@ -77,7 +77,7 @@ export default function GuidePage() {
             <li><strong className="text-foreground">AI-powered task management</strong> -- AI agents read and write data files directly, enabling autonomous task execution</li>
             <li><strong className="text-foreground">Solo entrepreneur focus</strong> -- Eisenhower matrix prioritization, Kanban workflow, goal hierarchy, and quick capture</li>
             <li><strong className="text-foreground">Multi-agent orchestration</strong> -- delegate work to specialized AI agents (Researcher, Developer, Marketer, Business Analyst)</li>
-            <li><strong className="text-foreground">Field Ops</strong> -- connect to external platforms and automate real-world actions with configurable autonomy levels</li>
+            <li><strong className="text-foreground">Automation</strong> -- schedule recurring work, start the daemon, and monitor execution from the Automation page</li>
           </ul>
         </CardContent>
       </Card>
@@ -208,78 +208,70 @@ export default function GuidePage() {
         </CardContent>
       </Card>
 
-      {/* Field Ops */}
-      <Card id="field-ops">
+      {/* Automation */}
+      <Card id="automation">
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
             <Radio className="h-5 w-5 text-primary" />
-            Field Ops
+            Automation
           </CardTitle>
         </CardHeader>
         <CardContent className="space-y-4 text-sm">
           <div>
-            <h3 className="font-semibold mb-1.5">Autonomy Levels</h3>
+            <h3 className="font-semibold mb-1.5">Daemon Controls</h3>
             <ul className="list-disc pl-5 space-y-1 text-muted-foreground">
-              <li><strong className="text-foreground">Manual Approval</strong> -- every action requires your explicit approval before execution</li>
-              <li><strong className="text-foreground">Supervised</strong> -- agents execute within guardrails, flagging edge cases for review</li>
-              <li><strong className="text-foreground">Full Autonomy</strong> -- agents execute freely within configured limits</li>
+              <li>Use <strong className="text-foreground">Automation</strong> to start and stop the daemon</li>
+              <li>Define recurring schedules for repeatable work</li>
+              <li>Review active sessions and task runs from the Automation page</li>
             </ul>
           </div>
           <div>
             <h3 className="font-semibold mb-1.5">Initiatives</h3>
             <ul className="list-disc pl-5 space-y-1 text-muted-foreground">
-              <li>Grouped containers for related field tasks</li>
-              <li>Track overall initiative progress, budget, and status</li>
+              <li>Group related tasks and actions into focused campaigns</li>
+              <li>Track initiative progress, status, and linked work in one place</li>
             </ul>
           </div>
           <div>
-            <h3 className="font-semibold mb-1.5">Field Task Lifecycle</h3>
+            <h3 className="font-semibold mb-1.5">Task Surfaces</h3>
             <ul className="list-disc pl-5 space-y-1 text-muted-foreground">
-              <li><strong className="text-foreground">Draft</strong> &rarr; <strong className="text-foreground">Pending Approval</strong> &rarr; <strong className="text-foreground">Approved</strong> &rarr; <strong className="text-foreground">Executing</strong> &rarr; <strong className="text-foreground">Completed</strong> / <strong className="text-foreground">Failed</strong></li>
-              <li>Each transition can require approval depending on the autonomy level</li>
-            </ul>
-          </div>
-          <div>
-            <h3 className="font-semibold mb-1.5">Services & Approvals</h3>
-            <ul className="list-disc pl-5 space-y-1 text-muted-foreground">
-              <li><strong className="text-foreground">Services catalog</strong> -- connect external platforms (APIs, tools, services)</li>
-              <li><strong className="text-foreground">Approval queue</strong> -- review and approve/reject pending field tasks</li>
-              <li><strong className="text-foreground">Financial overview</strong> -- track balances, spend per initiative, and budget limits</li>
+              <li><strong className="text-foreground">Priority Matrix</strong> -- triage work by urgency and importance</li>
+              <li><strong className="text-foreground">Status Board</strong> -- move tasks from not started to done</li>
+              <li><strong className="text-foreground">Activity Log</strong> -- review what changed and when</li>
             </ul>
           </div>
         </CardContent>
       </Card>
 
-      {/* Vault Security */}
-      <Card id="vault-security">
+      {/* Security */}
+      <Card id="security">
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
             <Shield className="h-5 w-5 text-primary" />
-            Vault Security
+            Security
           </CardTitle>
         </CardHeader>
         <CardContent className="space-y-4 text-sm">
           <div>
-            <h3 className="font-semibold mb-1.5">Encryption</h3>
+            <h3 className="font-semibold mb-1.5">Local Data</h3>
             <ul className="list-disc pl-5 space-y-1 text-muted-foreground">
-              <li><strong className="text-foreground">Master password</strong> -- hashed with scrypt (N=16384, r=8, p=1)</li>
-              <li><strong className="text-foreground">Credential encryption</strong> -- AES-256-GCM per credential</li>
-              <li><strong className="text-foreground">Key derivation</strong> -- scrypt KDF with unique 256-bit salt per credential</li>
+              <li>Workspace data stays local as JSON files under your configured data directory</li>
+              <li>Use checkpoints to snapshot, restore, or export your workspace</li>
+              <li>Keep secrets in your local environment and rotate them as needed</li>
             </ul>
           </div>
           <div>
-            <h3 className="font-semibold mb-1.5">Session & Rate Limiting</h3>
+            <h3 className="font-semibold mb-1.5">Access & Recovery</h3>
             <ul className="list-disc pl-5 space-y-1 text-muted-foreground">
-              <li><strong className="text-foreground">Session</strong> -- cached in server memory for 30 minutes, never written to disk</li>
-              <li><strong className="text-foreground">Rate limiting</strong> -- 3 soft / 10 hard limit on failed attempts, 15-minute lockout</li>
+              <li>Use the command palette and sidebar to reach recovery and backup pages quickly</li>
+              <li>Keep a recent checkpoint before major edits or cleanup passes</li>
             </ul>
           </div>
           <div>
-            <h3 className="font-semibold mb-1.5">Audit & Storage</h3>
+            <h3 className="font-semibold mb-1.5">Audit Trail</h3>
             <ul className="list-disc pl-5 space-y-1 text-muted-foreground">
-              <li><strong className="text-foreground">Audit trail</strong> -- all vault access is logged</li>
-              <li><strong className="text-foreground">File location</strong> -- <code className="rounded bg-muted px-1.5 py-0.5 text-xs font-mono">~/.cmc/.../field-ops/.credentials.json</code> <span className="text-[10px] text-muted-foreground">(or $CMC_DATA_DIR)</span></li>
-              <li className="text-amber-500 font-medium">WARNING: No recovery if master password is forgotten</li>
+              <li>Important changes are logged in the activity feed</li>
+              <li>Back up before large automation or workspace changes</li>
             </ul>
           </div>
         </CardContent>

@@ -25,7 +25,7 @@
 - `POST` `/api/checkpoints/load` → out: { error }
 - `POST` `/api/checkpoints/new` → out: { ok }
 - `GET` `/api/dashboard` [cache]
-- `POST` `/api/emergency-stop` → out: { ok, results }
+- `POST` `/api/emergency-stop` → out: { ok, results } [auth]
 - `POST` `/api/inbox/respond` → out: { error }
 - `GET` `/api/inbox/respond/status` → out: { runs }
 - `POST` `/api/inbox/respond/stop` → out: { error }

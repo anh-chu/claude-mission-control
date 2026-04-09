@@ -1,25 +1,25 @@
 # Libraries
 
-- `mission-control/scripts/daemon/config.ts`
+- `scripts/daemon/config.ts`
   - function loadConfig: (workspaceId) => DaemonConfig
   - function saveConfig: (config, workspaceId) => void
   - function getConfigPath: (workspaceId) => string
-- `mission-control/scripts/daemon/dispatcher.ts` — class Dispatcher
-- `mission-control/scripts/daemon/health.ts` — class HealthMonitor
-- `mission-control/scripts/daemon/prompt-builder.ts`
+- `scripts/daemon/dispatcher.ts` — class Dispatcher
+- `scripts/daemon/health.ts` — class HealthMonitor
+- `scripts/daemon/prompt-builder.ts`
   - function buildTaskPrompt: (agentId, task, missionId?) => string
   - function buildScheduledPrompt: (command) => string
   - function getTask: (taskId) => TaskDef | null
   - function getPendingTasks: () => TaskDef[]
   - function isTaskUnblocked: (task) => boolean
   - function hasPendingDecision: (taskId) => boolean
-- `mission-control/scripts/daemon/recovery.ts`
+- `scripts/daemon/recovery.ts`
   - function persistSessionRecord: (taskId, agentId, sessionId) => void
   - function clearSessionRecord: (taskId) => void
   - function runCrashRecovery: (workspaceId) => RecoveryResult
   - interface SessionRecord
   - interface RecoveryResult
-- `mission-control/scripts/daemon/respond-runs.ts`
+- `scripts/daemon/respond-runs.ts`
   - function readRespondRuns: () => RespondRunsFile
   - function writeRespondRuns: (data) => void
   - function isRunStopped: (runId) => boolean
@@ -27,96 +27,104 @@
   - function getRunningRuns: () => RespondRunEntry[]
   - function createRespondRun: (entry) => void
   - _...3 more_
-- `mission-control/scripts/daemon/runner.ts` — function parseClaudeOutput: (stdout) => ClaudeOutputMeta, class AgentRunner
-- `mission-control/scripts/daemon/scheduler.ts` — class Scheduler
-- `mission-control/scripts/daemon/security.ts`
+- `scripts/daemon/runner.ts` — function parseClaudeOutput: (stdout) => ClaudeOutputMeta, class AgentRunner
+- `scripts/daemon/scheduler.ts` — class Scheduler
+- `scripts/daemon/security.ts`
   - function validatePathWithinWorkspace: (filePath, workspaceRoot) => boolean
   - function escapeFenceContent: (content) => string
   - function fenceTaskData: (taskData) => string
   - function enforcePromptLimit: (prompt) => string
   - function validateBinary: (binary) => boolean
   - function buildSafeEnv: (opts?) => Record<string, string>
-- `mission-control/src/hooks/use-active-runs.ts` — function useActiveRuns: () => void
-- `mission-control/src/hooks/use-agent-stream.ts` — function useAgentStream: (runId) => UseAgentStreamReturn, interface StreamLine
-- `mission-control/src/hooks/use-connection.ts` — function useConnection: () => void
-- `mission-control/src/hooks/use-daemon.ts` — function useDaemon: () => DaemonData
-- `mission-control/src/hooks/use-dashboard-data.ts`
+- `src/hooks/use-active-runs.ts` — function useActiveRuns: () => void
+- `src/hooks/use-agent-stream.ts` — function useAgentStream: (runId) => UseAgentStreamReturn, interface StreamLine
+- `src/hooks/use-connection.ts` — function useConnection: () => void
+- `src/hooks/use-daemon.ts` — function useDaemon: () => DaemonData
+- `src/hooks/use-dashboard-data.ts`
   - function useDashboardData: () => void
   - interface DashboardStats
   - interface DashboardAttention
   - interface DashboardEisenhowerCounts
   - interface DashboardData
-- `mission-control/src/hooks/use-dashboard.ts` — function useDashboard: () => void, interface DashboardData
-- `mission-control/src/hooks/use-data.ts`
+- `src/hooks/use-dashboard.ts` — function useDashboard: () => void, interface DashboardData
+- `src/hooks/use-data.ts`
   - function useTasks: () => void
   - function useInitiativeTasks: (initiativeId) => void
   - function useGoals: () => void
   - function useProjects: () => void
   - function useBrainDump: () => void
   - function useActivityLog: () => void
-  - _...5 more_
-- `mission-control/src/hooks/use-fast-task-poll.ts` — function useFastTaskPoll: (hasRunningTasks, refetchTasks) => void
-- `mission-control/src/hooks/use-processing-entries.ts` — function useProcessingEntries: (entries) => void
-- `mission-control/src/hooks/use-sidebar.ts` — function useSidebar: () => void
-- `mission-control/src/hooks/use-workspace.ts` — function useWorkspace: () => void
-- `mission-control/src/instrumentation.ts` — function register: () => void
-- `mission-control/src/lib/agent-icons.ts` — function getAgentIcon: (agentId, iconName?) => LucideIcon, function getIconByName: (name) => LucideIcon
-- `mission-control/src/lib/api-client.ts` — function apiFetch: (url, init?) => Promise<Response>, interface ApiFetchInit
-- `mission-control/src/lib/data.ts`
+  - _...6 more_
+- `src/hooks/use-fast-task-poll.ts` — function useFastTaskPoll: (hasRunningTasks, refetchTasks) => void
+- `src/hooks/use-field-ops.ts`
+  - function getCachedVaultPassword: () => string | null
+  - function useVaultSession: () => void
+  - function useExecuteTask: () => void
+  - function useFieldMissions: () => void
+  - function useFieldTasks: () => void
+  - function useFieldServices: () => void
+- `src/hooks/use-processing-entries.ts` — function useProcessingEntries: (entries) => void
+- `src/hooks/use-sidebar.ts` — function useSidebar: () => void
+- `src/hooks/use-workspace.ts` — function useWorkspace: () => void
+- `src/instrumentation.ts` — function register: () => void
+- `src/lib/agent-icons.ts` — function getAgentIcon: (agentId, iconName?) => LucideIcon, function getIconByName: (name) => LucideIcon
+- `src/lib/api-client.ts` — function apiFetch: (url, init?) => Promise<Response>, interface ApiFetchInit
+- `src/lib/data.ts`
   - function getCurrentWorkspace: () => string
   - function setCurrentWorkspace: (id) => void
   - function getWorkspaceDataDir: (workspaceId) => string
+  - function ensureFieldOpsDir: () => Promise<void>
   - function ensureWorkspaceDir: (workspaceId) => Promise<void>
   - function getCheckpointsDir: () => string
-  - function ensureCheckpointsDir: () => Promise<void>
-  - _...58 more_
-- `mission-control/src/lib/log-reader.ts`
+  - _...78 more_
+- `src/lib/log-reader.ts`
   - function isAllowedLogPath: (filePath) => boolean
   - function scrubLogLines: (lines) => string[]
   - function tailFile: (filePath, lines, search?) => Promise<string[]>
-- `mission-control/src/lib/logger.ts`
+- `src/lib/logger.ts`
   - function createLogger: (processName, opts) => Logger
   - interface Logger
   - type LogLevel
-- `mission-control/src/lib/paths.ts`
+- `src/lib/owner-guard.ts` — function requireOwner: (body, unknown>) => Promise<NextResponse | null>
+- `src/lib/paths.ts`
   - function getWorkspaceDir: (workspaceId) => string
   - const DATA_DIR: string
   - const UPLOADS_DIR: string
-- `mission-control/src/lib/scheduled-jobs.ts`
+- `src/lib/scheduled-jobs.ts`
   - function scheduleUploadsCleanup: () => void
   - function scheduleLogCleanup: () => void
   - function scheduleDaemonWatchdog: () => void
-- `mission-control/src/lib/scrub.ts` — function scrubCredentials: (text) => string
-- `mission-control/src/lib/sync-commands.ts`
+- `src/lib/scrub.ts` — function scrubCredentials: (text) => string
+- `src/lib/sync-commands.ts`
   - function generateAgentCommandMarkdown: (agent, linkedSkills) => string
   - function resolveLinkedSkills: (agent, allSkills) => SkillDefinition[]
   - function syncAgentCommand: (agent) => Promise<void>
   - function syncAllAgentCommands: () => Promise<void>
   - function syncSkillFile: (skill) => Promise<void>
   - function syncAllSkillFiles: () => Promise<void>
-- `mission-control/src/lib/toast.ts`
+- `src/lib/toast.ts`
   - function showSuccess: (message, options?) => void
   - function showError: (message, options?) => void
   - function showInfo: (message, options?) => void
-- `mission-control/src/lib/types.ts`
+- `src/lib/types.ts`
   - function getQuadrant: (task) => EisenhowerQuadrant
   - function quadrantFromValues: (importance, urgency) => EisenhowerQuadrant
   - function valuesFromQuadrant: (quadrant) => void
   - interface AgentDefinition
   - interface AgentsFile
   - interface SkillDefinition
-  - _...51 more_
-- `mission-control/src/lib/utils.ts`
+  - _...84 more_
+- `src/lib/utils.ts`
   - function cn: (...inputs) => void
   - function generateId: (prefix) => string
   - function parseAgentMentions: (text) => string[]
-- `mission-control/src/lib/validations.ts`
+- `src/lib/validations.ts`
   - function validateBody: (request, schema) => Promise<ValidationResult<T>>
   - const DEFAULT_LIMIT
   - const LIMITS
   - const taskCreateSchema
   - const taskUpdateSchema
   - const goalCreateSchema
-  - _...17 more_
-- `mission-control/src/lib/workspace-context.ts` — function applyWorkspaceContext: () => Promise<string>
-- `mission-control/src/middleware.ts` — function middleware: (request) => void, const config
+  - _...32 more_
+- `src/lib/workspace-context.ts` — function applyWorkspaceContext: () => Promise<string>
+- `src/middleware.ts` — function middleware: (request) => void, const config

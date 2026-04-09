@@ -2,30 +2,19 @@
 
 > **Navigation aid.** Component inventory and prop signatures extracted via AST. Read the source files before adding props or modifying component logic.
 
-**113 components** (react)
+**80 components** (react)
 
 ## Client Components
 
-- **ActionsActivityPage** — `mission-control/src/app/actions/activity/page.tsx`
 - **ActivityPage** — `mission-control/src/app/activity/page.tsx`
-- **ApprovalsPage** — `mission-control/src/app/approvals/page.tsx`
 - **AutopilotPage** — `mission-control/src/app/autopilot/page.tsx`
 - **BrainDumpPage** — `mission-control/src/app/brain-dump/page.tsx`
-- **CheckpointsPage** — `mission-control/src/app/checkpoints/page.tsx`
 - **EditAgentPage** — `mission-control/src/app/crew/[id]/edit/page.tsx`
 - **AgentPage** — `mission-control/src/app/crew/[id]/page.tsx`
 - **NewAgentPage** — `mission-control/src/app/crew/new/page.tsx`
 - **CrewPage** — `mission-control/src/app/crew/page.tsx`
 - **DecisionsPage** — `mission-control/src/app/decisions/page.tsx`
 - **Error** — props: error, reset — `mission-control/src/app/error.tsx`
-- **FieldActivityPage** — `mission-control/src/app/field-ops/activity/page.tsx`
-- **ApprovalsPage** — `mission-control/src/app/field-ops/approvals/page.tsx`
-- **MissionDetailPage** — `mission-control/src/app/field-ops/missions/[id]/page.tsx`
-- **MissionsPage** — `mission-control/src/app/field-ops/missions/page.tsx`
-- **ConnectionsOverviewPage** — `mission-control/src/app/field-ops/page.tsx`
-- **SafetyPage** — `mission-control/src/app/field-ops/safety/page.tsx`
-- **ServicesPage** — `mission-control/src/app/field-ops/services/page.tsx`
-- **VaultPage** — `mission-control/src/app/field-ops/vault/page.tsx`
 - **GlobalError** — props: error, reset — `mission-control/src/app/global-error.tsx`
 - **GuidePage** — `mission-control/src/app/guide/page.tsx`
 - **InboxPage** — `mission-control/src/app/inbox/page.tsx`
@@ -42,17 +31,13 @@
 - **SkillsPage** — `mission-control/src/app/skills/page.tsx`
 - **KanbanPage** — `mission-control/src/app/status-board/page.tsx`
 - **ProjectsPage** — `mission-control/src/app/ventures/page.tsx`
-- **ActionDetailPanel** — props: action, open, onClose, onUpdate, agents — `mission-control/src/components/action-detail-panel.tsx`
 - **AgentConsole** — props: runId, onStop — `mission-control/src/components/agent-console.tsx`
 - **AppSidebar** — props: href, label, icon, isActive, collapsed, onClick, size, badge, badgeDot, tooltipSuffix — `mission-control/src/components/app-sidebar.tsx`
-- **AutonomySelector** — props: value, onChange, showInherit — `mission-control/src/components/autonomy-selector.tsx`
 - **DraggableTaskCard** — props: task, project, onClick, isSelected, onToggleSelect, isRunning, onRun, pendingDecisionTaskIds, onStatusChange, onDuplicate — `mission-control/src/components/board-view.tsx`
 - **BreadcrumbNav** — props: items, className — `mission-control/src/components/breadcrumb-nav.tsx`
-- **BulkActionBar** — props: count, onMarkDone, onDelete, onClear — `mission-control/src/components/bulk-action-bar.tsx`
 - **CommandBar** — props: onCapture, sidebarOpen, onToggleSidebar, isMobile, tasks, onTaskClick — `mission-control/src/components/command-bar.tsx`
 - **ConfirmDialog** — props: open, onOpenChange, title, description, confirmLabel, onConfirm, variant — `mission-control/src/components/confirm-dialog.tsx`
 - **AgentContextMenuContent** — props: agent, href, onEdit, onNewTask, onToggleStatus — `mission-control/src/components/context-menus/agent-context-menu.tsx`
-- **FieldTaskContextMenuContent** — props: task, onOpen, onEdit, onDelete — `mission-control/src/components/context-menus/field-task-context-menu.tsx`
 - **GoalContextMenuContent** — props: goal, onEdit, onAddMilestone, onMarkComplete, onDelete — `mission-control/src/components/context-menus/goal-context-menu.tsx`
 - **InitiativeContextMenuContent** — props: initiative, onTogglePause, onArchive, onDelete — `mission-control/src/components/context-menus/initiative-context-menu.tsx`
 - **ProjectContextMenuContent** — props: project, href, onEdit, onRun, onArchive, onDelete — `mission-control/src/components/context-menus/project-context-menu.tsx`
@@ -64,20 +49,6 @@
 - **EditGoalDialog** — props: open, onOpenChange, goal, projects, goals, onSubmit, title, type, timeframe, status — `mission-control/src/components/edit-goal-dialog.tsx`
 - **EditProjectDialog** — props: open, onOpenChange, project, agents, onSubmit, name, description, status, color, teamMembers — `mission-control/src/components/edit-project-dialog.tsx`
 - **EisenhowerSummary** — props: tasks — `mission-control/src/components/eisenhower-summary.tsx`
-- **ActivateServiceDialog** — props: service, catalogEntry, open, onOpenChange, onActivated, updateMode — `mission-control/src/components/field-ops/activate-service-dialog.tsx`
-- **CatalogServiceCard** — props: service — `mission-control/src/components/field-ops/catalog-service-card.tsx`
-- **ExecutionResultPanel** — props: result, success, className — `mission-control/src/components/field-ops/execution-result-panel.tsx`
-- **FieldTaskCard** — props: task, services, onStatusChange, onEdit, onDelete, onReject, onOpen, onExecute, executing, onDryRun — `mission-control/src/components/field-ops/field-task-card.tsx`
-- **FieldTaskFormDialog** — props: open, onOpenChange, task, missionId, missionAutonomy, services, onSubmit, title, description, type — `mission-control/src/components/field-ops/field-task-form-dialog.tsx`
-- **FinancialOverviewCard** — props: variant — `mission-control/src/components/field-ops/financial-overview-card.tsx`
-- **GettingStartedCard** — props: title, description, steps, learnMoreHref, storageKey, accentClass — `mission-control/src/components/field-ops/getting-started-card.tsx`
-- **MissionFormDialog** — props: open, onOpenChange, mission, projects, onSubmit, title, description, autonomyLevel, linkedProjectId — `mission-control/src/components/field-ops/mission-form-dialog.tsx`
-- **RejectTaskDialog** — props: open, onOpenChange, taskTitle, onReject — `mission-control/src/components/field-ops/reject-task-dialog.tsx`
-- **SetupGuideDialog** — props: service, open, onOpenChange — `mission-control/src/components/field-ops/setup-guide-dialog.tsx`
-- **SignTransactionButton** — props: taskId, onComplete — `mission-control/src/components/field-ops/sign-transaction-button.tsx`
-- **VaultUnlockDialog** — props: open, onOpenChange, onUnlock, context — `mission-control/src/components/field-ops/vault-unlock-dialog.tsx`
-- **WalletBalanceCard** — props: onUnlockVault — `mission-control/src/components/field-ops/wallet-balance-card.tsx`
-- **WalletConnectButton** — `mission-control/src/components/field-ops/wallet-connect-button.tsx`
 - **GoalCard** — props: goal, tasks, projects, milestones, onEdit, onAddMilestone, onMarkComplete, onDelete — `mission-control/src/components/goal-card.tsx`
 - **KeyboardShortcuts** — props: onCreateTask — `mission-control/src/components/keyboard-shortcuts.tsx`
 - **LayoutShell** — `mission-control/src/components/layout-shell.tsx`
@@ -96,7 +67,6 @@
 - **TaskForm** — props: initial, projects, goals, allTasks, currentTaskId, onSubmit, onCancel, submitLabel — `mission-control/src/components/task-form.tsx`
 - **ThemeProvider** — `mission-control/src/components/theme-provider.tsx`
 - **ThemeToggle** — `mission-control/src/components/theme-toggle.tsx`
-- **VaultSecurityDetails** — props: onComplete, onSkip, compact — `mission-control/src/components/vault-setup-wizard.tsx`
 - **WorkspaceSwitcher** — props: collapsed — `mission-control/src/components/workspace-switcher.tsx`
 - **ActiveRunsProvider** — `mission-control/src/providers/active-runs-provider.tsx`
 
@@ -112,12 +82,9 @@
 - **NotFound** — `mission-control/src/app/not-found.tsx`
 - **PriorityMatrixLoading** — `mission-control/src/app/priority-matrix/loading.tsx`
 - **ProjectsDetailPage** — `mission-control/src/app/projects/[id]/page.tsx`
-- **SafetyPage** — `mission-control/src/app/safety/page.tsx`
-- **ServicesPage** — `mission-control/src/app/services/page.tsx`
 - **StatusBoardLoading** — `mission-control/src/app/status-board/loading.tsx`
 - **AgentNotFound** — `mission-control/src/app/team/[role]/not-found.tsx`
 - **TeamMemberRedirect** — props: params — `mission-control/src/app/team/[role]/page.tsx`
-- **VaultPage** — `mission-control/src/app/vault/page.tsx`
 - **VenturesDetailPage** — `mission-control/src/app/ventures/[id]/page.tsx`
 - **EmptyState** — props: icon, title, description, actionLabel, onAction, className, compact — `mission-control/src/components/empty-state.tsx`
 - **ErrorState** — props: message, onRetry, className, compact — `mission-control/src/components/error-state.tsx`

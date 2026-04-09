@@ -10,7 +10,6 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Badge } from "@/components/ui/badge";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { AutonomySelector } from "@/components/autonomy-selector";
 import { Switch } from "@/components/ui/switch";
 import { ConfirmDialog } from "@/components/confirm-dialog";
 import {
@@ -37,7 +36,6 @@ import {
   Rocket,
 } from "lucide-react";
 import Link from "next/link";
-import type { AutonomyLevel } from "@/lib/types";
 
 const COLORS = [
   "#6366f1", "#8b5cf6", "#ec4899", "#ef4444",
@@ -80,7 +78,6 @@ export default function SettingsPage() {
 
   const [name, setName] = useState("");
   const [color, setColor] = useState("#6366f1");
-  const [autonomyLevel, setAutonomyLevel] = useState<AutonomyLevel>("approve-all");
   const [saving, setSaving] = useState(false);
   const [saved, setSaved] = useState(false);
   const [showDeleteDialog, setShowDeleteDialog] = useState(false);
@@ -104,7 +101,6 @@ export default function SettingsPage() {
     if (currentWorkspace) {
       setName(currentWorkspace.name);
       setColor(currentWorkspace.color);
-      setAutonomyLevel(currentWorkspace.settings?.autonomyLevel ?? "approve-all");
     }
   }, [currentWorkspace]);
 
@@ -142,7 +138,6 @@ export default function SettingsPage() {
           id: currentWorkspace.id,
           name,
           color,
-          settings: { autonomyLevel },
         }),
       });
       setSaved(true);
@@ -322,14 +317,6 @@ export default function SettingsPage() {
                   />
                 ))}
               </div>
-            </div>
-
-            <div className="space-y-1.5">
-              <Label>Default autonomy level</Label>
-              <AutonomySelector
-                value={autonomyLevel}
-                onChange={(v) => setAutonomyLevel(v ?? "approve-all")}
-              />
             </div>
 
             <Button onClick={handleSave} disabled={saving}>

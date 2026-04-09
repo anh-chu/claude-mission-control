@@ -1,16 +1,12 @@
 import { NextResponse } from "next/server";
 import fs from "fs";
 import path from "path";
-import { mutateFieldMissions, mutateActivityLog } from "@/lib/data";
+import { mutateActivityLog } from "@/lib/data";
 import { DATA_DIR } from "@/lib/paths";
-import { clear as clearVaultSession } from "@/lib/vault-session";
-import { addFieldActivityEvent } from "@/lib/field-ops-activity";
 
 export async function POST() {
   const results = {
     daemonStopped: false,
-    missionsPaused: 0,
-    vaultCleared: false,
     activityLogged: false,
   };
 
@@ -34,51 +30,8 @@ export async function POST() {
     // No PID file or read error — skip gracefully
   }
 
-  // 2. Pause all active Field Ops missions
-  try {
-    const paused = await mutateFieldMissions(async (data) => {
-      let count = 0;
-      for (const mission of data.missions) {
-        if (mission.status === "active") {
-          mission.status = "paused";
-          mission.updatedAt = new Date().toISOString();
-          count++;
-        }
-      }
-      return count;
-    });
-    results.missionsPaused = paused;
-  } catch {
-    // Field missions file may not exist — skip gracefully
-  }
-
-  // 3. Clear vault session
-  try {
-    clearVaultSession();
-    results.vaultCleared = true;
-  } catch {
-    // Vault session clear failed — skip gracefully
-  }
-
-  // 4. Log the event
-  const details = [
-    `Daemon ${results.daemonStopped ? "stopped" : "was not running"}`,
-    `${results.missionsPaused} active mission(s) paused`,
-    `Vault session ${results.vaultCleared ? "cleared" : "clear failed"}`,
-  ].join(". ");
-
-  try {
-    await addFieldActivityEvent({
-      type: "autonomy_changed",
-      actor: "me",
-      taskId: null,
-      serviceId: null,
-      summary: "Emergency stop activated",
-      details,
-    });
-  } catch {
-    // Field activity log may not exist — skip gracefully
-  }
+  // 2. Log the event
+  const details = `Daemon ${results.daemonStopped ? "stopped" : "was not running"}`;
 
   try {
     await mutateActivityLog(async (data) => {

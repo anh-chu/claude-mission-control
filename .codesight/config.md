@@ -6,7 +6,7 @@
 - `APPDATA` **required** — mission-control/scripts/daemon/runner.ts
 - `CLAUDE_CODE_OAUTH_TOKEN` **required** — mission-control/scripts/daemon/security.ts
 - `CMC_DATA_DIR` **required** — mission-control/__tests__/helpers.ts
-- `CMC_WORKSPACE_ID` **required** — mission-control/scripts/daemon/run-action-comment.ts
+- `CMC_WORKSPACE_ID` **required** — mission-control/scripts/daemon/run-brain-dump-triage.ts
 - `COMSPEC` **required** — mission-control/scripts/daemon/security.ts
 - `HOME` **required** — mission-control/scripts/daemon/runner.ts
 - `LOCALAPPDATA` **required** — mission-control/scripts/daemon/runner.ts

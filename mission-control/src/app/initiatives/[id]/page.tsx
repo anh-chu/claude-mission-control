@@ -22,21 +22,14 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
-import { AutonomySelector } from "@/components/autonomy-selector";
 import { ConfirmDialog } from "@/components/confirm-dialog";
 import { BreadcrumbNav } from "@/components/breadcrumb-nav";
-import { FieldTaskCard } from "@/components/field-ops/field-task-card";
-import { VaultUnlockDialog } from "@/components/field-ops/vault-unlock-dialog";
-import { ActionDetailPanel } from "@/components/action-detail-panel";
-import { FieldTaskFormDialog } from "@/components/field-ops/field-task-form-dialog";
 import { TaskForm, type TaskFormData } from "@/components/task-form";
-import { actionToFieldTask } from "@/lib/action-adapter";
 import { MarkdownContent } from "@/components/markdown-content";
-import { useInitiatives, useGoals, useInitiativeTasks, useActions, useActivityLog, useProjects, useAgents } from "@/hooks/use-data";
-import { useFieldServices, useExecuteTask } from "@/hooks/use-field-ops";
+import { useInitiatives, useGoals, useInitiativeTasks, useActivityLog, useProjects } from "@/hooks/use-data";
 import { apiFetch } from "@/lib/api-client";
 import { showSuccess, showError } from "@/lib/toast";
-import type { Initiative, InitiativeStatus, AutonomyLevel, Task, FieldTaskType, Action } from "@/lib/types";
+import type { InitiativeStatus, Task } from "@/lib/types";
 
 function kanbanBadge(kanban: Task["kanban"]) {
   switch (kanban) {
@@ -114,16 +107,9 @@ export default function InitiativeDetailPage() {
   const { initiatives, update, remove, loading: loadingInitiatives } = useInitiatives();
   const { goals } = useGoals();
   const { tasks, loading: loadingTasks, refetch: refetchTasks } = useInitiativeTasks(initiativeId);
-  const { actions, loading: loadingActions, refetch: refetchActions } = useActions({ initiativeId });
-  const { services } = useFieldServices();
-  const { execute: executeAction, executingTaskId, dryRunTaskId } = useExecuteTask();
   const { projects } = useProjects();
-  const { agents } = useAgents();
 
   const [addTaskOpen, setAddTaskOpen] = useState(false);
-  const [detailAction, setDetailAction] = useState<Action | null>(null);
-  const [addActionOpen, setAddActionOpen] = useState(false);
-  const [vaultUnlockOpen, setVaultUnlockOpen] = useState(false);
   const [togglingStatus, setTogglingStatus] = useState(false);
   const [deployingAll, setDeployingAll] = useState(false);
 
@@ -137,9 +123,8 @@ export default function InitiativeDetailPage() {
 
   const parentGoal = initiative?.parentGoalId ? goals.find((g) => g.id === initiative.parentGoalId) : null;
 
-  const doneCount = tasks.filter((t) => t.kanban === "done").length + actions.filter((a) => a.status === "completed").length;
-  const totalCount = tasks.length + actions.length;
-  const pendingApprovals = actions.filter((a) => a.status === "pending-approval");
+  const doneCount = tasks.filter((t) => t.kanban === "done").length;
+  const totalCount = tasks.length;
 
   async function handleTogglePause() {
     if (!initiative) return;
@@ -174,11 +159,6 @@ export default function InitiativeDetailPage() {
     await update(initiative.id, { status: newStatus });
   }
 
-  async function handleAutonomyChange(level: AutonomyLevel | null) {
-    if (!initiative) return;
-    await update(initiative.id, { autonomyLevel: level });
-  }
-
   async function handleDeployAll() {
     if (!initiative) return;
 
@@ -204,50 +184,6 @@ export default function InitiativeDetailPage() {
       showError("Failed to deploy initiative");
     } finally {
       setDeployingAll(false);
-    }
-  }
-
-  async function handleCreateAction(data: {
-    title: string;
-    description: string;
-    type: FieldTaskType;
-    serviceId: string | null;
-    approvalRequired: boolean;
-    payload?: Record<string, unknown>;
-  }) {
-    const res = await apiFetch("/api/actions", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        ...data,
-        initiativeId,
-        status: "draft",
-        payload: data.payload ?? {},
-      }),
-    });
-    if (!res.ok) {
-      const err = await res.json().catch(() => ({})) as { error?: string };
-      throw new Error(err.error ?? "Failed to create action");
-    }
-    showSuccess("Action created");
-    refetchActions();
-  }
-
-  async function handleActionStatusChange(taskId: string, status: string) {
-    try {
-      const res = await apiFetch("/api/actions", {
-        method: "PUT",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ id: taskId, status }),
-      });
-      if (!res.ok) {
-        const err = await res.json().catch(() => ({})) as { error?: string };
-        throw new Error(err.error ?? "Failed to update status");
-      }
-      showSuccess(`Status updated to ${status}`);
-      refetchActions();
-    } catch (err) {
-      showError(err instanceof Error ? err.message : "Failed to update status");
     }
   }
 
@@ -408,46 +344,14 @@ export default function InitiativeDetailPage() {
 
       </div>
 
-      <div className="max-w-2xl">
-        <Card>
-          <CardHeader className="pb-3">
-            <CardTitle className="text-sm font-medium text-muted-foreground">Autonomy Level</CardTitle>
-          </CardHeader>
-          <CardContent className="pt-0">
-            <AutonomySelector value={initiative.autonomyLevel ?? null} onChange={handleAutonomyChange} showInherit />
-          </CardContent>
-        </Card>
-      </div>
-
-      {pendingApprovals.length > 0 && (
-        <Card>
-          <CardContent className="p-4 flex items-center gap-4 flex-wrap">
-            <div className="flex items-center gap-2 text-sm text-amber-400">
-              <Clock className="h-4 w-4 animate-pulse" />
-              <span className="font-medium">
-                {pendingApprovals.length} pending approval{pendingApprovals.length !== 1 ? "s" : ""}
-              </span>
-              <Link href="/approvals">
-                <Button variant="ghost" size="sm" className="h-6 text-xs text-amber-400 hover:text-amber-300 px-1.5">
-                  Review
-                </Button>
-              </Link>
-            </div>
-          </CardContent>
-        </Card>
-      )}
-
       <Tabs defaultValue="tasks">
         <div className="flex items-center justify-between">
           <TabsList>
             <TabsTrigger value="tasks">
               Tasks {!loadingTasks && <span className="ml-1.5 text-xs opacity-60">({tasks.length})</span>}
             </TabsTrigger>
-            <TabsTrigger value="actions">
-              Actions {!loadingActions && <span className="ml-1.5 text-xs opacity-60">({actions.length})</span>}
-            </TabsTrigger>
           </TabsList>
-          {!loadingTasks && !loadingActions && totalCount > 0 && (
+          {!loadingTasks && totalCount > 0 && (
             <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
               <CheckCircle2 className="h-3.5 w-3.5 text-green-400" />
               <span>{doneCount} of {totalCount} done</span>
@@ -502,47 +406,6 @@ export default function InitiativeDetailPage() {
           </Card>
         </TabsContent>
 
-        <TabsContent value="actions" className="mt-4">
-          <Card>
-            <CardHeader className="pb-3">
-              <div className="flex items-center justify-between">
-                <CardTitle className="text-base">Actions</CardTitle>
-                <Button size="sm" className="gap-1.5" onClick={() => setAddActionOpen(true)}>
-                  <Plus className="h-4 w-4" /> Add Action
-                </Button>
-              </div>
-            </CardHeader>
-            <CardContent>
-              {loadingActions ? (
-                <div className="space-y-2">
-                  {[1, 2].map((i) => <Skeleton key={i} className="h-14 w-full" />)}
-                </div>
-              ) : actions.length === 0 ? (
-                <div className="text-center py-8 text-muted-foreground">
-                  <p className="text-sm">No actions linked to this initiative yet.</p>
-                </div>
-              ) : (
-                <div className="space-y-3">
-                  {actions.map((action) => (
-                    <FieldTaskCard
-                      key={action.id}
-                      task={actionToFieldTask(action)}
-                      services={services}
-                      onStatusChange={handleActionStatusChange}
-                      onEdit={() => {}}
-                      onDelete={() => {}}
-                      onReject={() => {}}
-                      onDryRun={(task) => void executeAction(task.id, undefined, true)}
-                      dryRunning={dryRunTaskId === action.id}
-                      executing={executingTaskId === action.id}
-                      onOpen={() => setDetailAction(action)}
-                    />
-                  ))}
-                </div>
-              )}
-            </CardContent>
-          </Card>
-        </TabsContent>
       </Tabs>
 
       <InitiativeActivitySection taskIds={initiative.taskIds} />
@@ -581,36 +444,6 @@ export default function InitiativeDetailPage() {
           />
         </DialogContent>
       </Dialog>
-
-      <FieldTaskFormDialog
-        open={addActionOpen}
-        onOpenChange={setAddActionOpen}
-        missionId={initiativeId}
-        missionAutonomy={initiative.autonomyLevel ?? "approve-all"}
-        services={services}
-        onSubmit={handleCreateAction}
-      />
-
-      <VaultUnlockDialog
-        open={vaultUnlockOpen}
-        onOpenChange={setVaultUnlockOpen}
-        onUnlock={async () => false}
-      />
-
-      <ActionDetailPanel
-        action={detailAction}
-        open={!!detailAction}
-        onClose={() => setDetailAction(null)}
-        onUpdate={async (id, patch) => {
-          await apiFetch("/api/actions", {
-            method: "PUT",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ id, ...patch }),
-          });
-          refetchActions();
-        }}
-        agents={agents}
-      />
 
       <ConfirmDialog
         open={showDeleteConfirm}

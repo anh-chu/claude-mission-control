@@ -4,24 +4,17 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import {
   LayoutDashboard,
-  LayoutGrid,
   Grid2x2,
   Crosshair,
   Lightbulb,
   User,
   Inbox,
-  Activity,
   HelpCircle,
   X,
   Users,
   Zap,
-  Shield,
-  Globe,
-  Lock,
   Layers,
-  CheckSquare,
   FolderKanban,
-  Radio,
   Terminal,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
@@ -32,7 +25,6 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { SidebarFooter } from "@/components/sidebar-footer";
 import { WorkspaceSwitcher } from "@/components/workspace-switcher";
-import type { AgentDefinition } from "@/lib/types";
 
 const mainLinks = [
   { href: "/", label: "Dashboard", icon: LayoutDashboard },
@@ -50,18 +42,12 @@ const workbenchLinks = [
 
 const commsLinks = [
   { href: "/inbox", label: "Inbox", icon: Inbox, badgeKey: "unreadInbox" as const },
-  { href: "/activity", label: "Logbook", icon: Activity, badgeKey: null },
   { href: "/logs", label: "Logs", icon: Terminal, badgeKey: null },
   { href: "/decisions", label: "Decisions", icon: HelpCircle, badgeKey: "pendingDecisions" as const },
-  { href: "/approvals", label: "Approvals", icon: CheckSquare, badgeKey: "pendingActionApprovals" as const },
-  { href: "/actions/activity", label: "Activity", icon: Radio, badgeKey: null },
 ];
 
-const settingsLinks = [
-  { href: "/field-ops", label: "Overview", icon: LayoutGrid },
-  { href: "/field-ops/services", label: "Services", icon: Globe },
-  { href: "/field-ops/vault", label: "Vault", icon: Lock },
-  { href: "/field-ops/safety", label: "Safety", icon: Shield },
+const utilityLinks = [
+  { href: "/settings", label: "Settings", icon: User },
 ];
 
 interface NavLinkProps {
@@ -141,15 +127,13 @@ interface AppSidebarProps {
   collapsed: boolean;
   unreadInbox?: number;
   pendingDecisions?: number;
-  pendingActionApprovals?: number;
   isMobile?: boolean;
   onClose?: () => void;
-  agents?: AgentDefinition[];
 }
 
-export function AppSidebar({ collapsed, unreadInbox = 0, pendingDecisions = 0, pendingActionApprovals = 0, isMobile = false, onClose, agents = [] }: AppSidebarProps) {
+export function AppSidebar({ collapsed, unreadInbox = 0, pendingDecisions = 0, isMobile = false, onClose }: AppSidebarProps) {
   const pathname = usePathname();
-  const badges = { unreadInbox, pendingDecisions, pendingActionApprovals };
+  const badges = { unreadInbox, pendingDecisions };
 
   if (isMobile) {
     return (
@@ -260,11 +244,11 @@ export function AppSidebar({ collapsed, unreadInbox = 0, pendingDecisions = 0, p
             <Separator className="mx-2 my-2" />
             <div className="px-3 pb-1">
               <p className="text-xs font-semibold uppercase tracking-wider text-sidebar-foreground/50">
-                Connections
+                Utilities
               </p>
             </div>
             <nav className="space-y-0.5 px-2">
-              {settingsLinks.map(({ href, label, icon: Icon }) => {
+              {utilityLinks.map(({ href, label, icon: Icon }) => {
                 const isActive = pathname === href || pathname.startsWith(href + "/");
                 return (
                   <Link
@@ -370,11 +354,11 @@ export function AppSidebar({ collapsed, unreadInbox = 0, pendingDecisions = 0, p
           <Separator className="mx-2 my-2" />
           {!collapsed && (
             <div className="px-3 pb-1">
-              <p className="text-xs font-semibold uppercase tracking-wider text-sidebar-foreground/50">Connections</p>
+              <p className="text-xs font-semibold uppercase tracking-wider text-sidebar-foreground/50">Utilities</p>
             </div>
           )}
           <nav className="space-y-0.5 px-2">
-            {settingsLinks.map(({ href, label, icon }) => (
+            {utilityLinks.map(({ href, label, icon }) => (
               <NavLink
                 key={href}
                 href={href}

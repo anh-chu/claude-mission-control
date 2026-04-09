@@ -1,6 +1,6 @@
 {
   "version": "1.0.0",
-  "lastScanned": 1775485157226,
+  "lastScanned": 1775755875552,
   "projectRoot": "/home/sil/ccmc/mission-control",
   "techStack": {
     "languages": [
@@ -61,8 +61,7 @@
       "check": "pnpm tsc --noEmit && pnpm lint",
       "verify": "pnpm check && pnpm build && pnpm test",
       "gen:context": "npx tsx scripts/generate-context.ts",
-      "migrate:data": "npx tsx scripts/migrate-to-home-dir.ts",
-      "seed:demo": "npx tsx scripts/seed-demo.ts",
+      "cleanup:uploads": "npx tsx scripts/cleanup-uploads.ts",
       "daemon:start": "npx tsx scripts/daemon/index.ts start",
       "daemon:stop": "npx tsx scripts/daemon/index.ts stop",
       "daemon:status": "npx tsx scripts/daemon/index.ts status"
@@ -70,7 +69,7 @@
   },
   "conventions": {
     "namingStyle": "camelCase",
-    "importStyle": "ES modules",
+    "importStyle": null,
     "testPattern": "*.test.ts",
     "fileOrganization": "type-based"
   },
@@ -94,72 +93,61 @@
     "__tests__": {
       "path": "__tests__",
       "purpose": "Test files",
-      "fileCount": 5,
-      "lastAccessed": 1775485157162,
+      "fileCount": 7,
+      "lastAccessed": 1775755875535,
       "keyFiles": [
         "daemon.test.ts",
         "data.test.ts",
+        "global-setup.ts",
         "helpers.ts",
-        "security.test.ts",
-        "validations.test.ts"
+        "security.test.ts"
       ]
     },
-    "data": {
-      "path": "data",
-      "purpose": "Data files",
-      "fileCount": 18,
-      "lastAccessed": 1775485157169,
-      "keyFiles": [
-        "active-runs.json",
-        "activity-log.json",
-        "agents.json",
-        "ai-context.md",
-        "brain-dump.json"
-      ]
+    "artifacts": {
+      "path": "artifacts",
+      "purpose": null,
+      "fileCount": 0,
+      "lastAccessed": 1775755875539,
+      "keyFiles": []
     },
     "docs": {
       "path": "docs",
       "purpose": "Documentation",
       "fileCount": 2,
-      "lastAccessed": 1775485157186,
+      "lastAccessed": 1775755875543,
       "keyFiles": [
         "demo.gif",
         "rocket.svg"
       ]
     },
-    "local_cache": {
-      "path": "local_cache",
-      "purpose": null,
-      "fileCount": 0,
-      "lastAccessed": 1775485157205,
-      "keyFiles": []
-    },
     "public": {
       "path": "public",
       "purpose": "Public files",
       "fileCount": 0,
-      "lastAccessed": 1775485157206,
+      "lastAccessed": 1775755875547,
       "keyFiles": []
     },
     "scripts": {
       "path": "scripts",
       "purpose": "Build/utility scripts",
-      "fileCount": 14,
-      "lastAccessed": 1775485157207,
+      "fileCount": 7,
+      "lastAccessed": 1775755875547,
       "keyFiles": [
+        "cleanup-uploads.ts",
         "create-launch-project.js",
         "find-auth-env.js",
         "fix-stuck-tasks.js",
-        "generate-context.ts",
-        "migrate-to-home-dir.ts"
+        "generate-context.ts"
       ]
     },
     "src": {
       "path": "src",
       "purpose": "Source code",
-      "fileCount": 1,
-      "lastAccessed": 1775485157207,
+      "fileCount": 3,
+      "lastAccessed": 1775755875548,
       "keyFiles": [
+        "instrumentation.node.ts",
+        "instrumentation.ts",
         "middleware.ts"
       ]
     },
@@ -167,7 +155,7 @@
       "path": "src/app",
       "purpose": "Application code",
       "fileCount": 8,
-      "lastAccessed": 1775485157215,
+      "lastAccessed": 1775755875549,
       "keyFiles": [
         "error.tsx",
         "global-error.tsx",
@@ -177,43 +165,49 @@
     "src/components": {
       "path": "src/components",
       "purpose": "UI components",
-      "fileCount": 38,
-      "lastAccessed": 1775485157215,
+      "fileCount": 35,
+      "lastAccessed": 1775755875550,
       "keyFiles": [
-        "action-detail-panel.tsx",
         "agent-console.tsx",
-        "app-sidebar.tsx"
+        "app-sidebar.tsx",
+        "board-view.tsx"
       ]
     },
     "src/lib": {
       "path": "src/lib",
       "purpose": "Library code",
-      "fileCount": 21,
-      "lastAccessed": 1775485157216,
+      "fileCount": 14,
+      "lastAccessed": 1775755875550,
       "keyFiles": [
-        "action-adapter.ts",
         "agent-icons.ts",
-        "api-client.ts"
+        "api-client.ts",
+        "data.ts"
       ]
     }
   },
   "hotPaths": [
     {
       "path": "src/app/initiatives/[id]/page.tsx",
-      "accessCount": 82,
-      "lastAccessed": 1775457565503,
+      "accessCount": 100,
+      "lastAccessed": 1775755266745,
       "type": "file"
     },
     {
       "path": "src/app/settings/page.tsx",
-      "accessCount": 46,
-      "lastAccessed": 1775497171178,
+      "accessCount": 55,
+      "lastAccessed": 1775755716233,
       "type": "file"
     },
     {
       "path": "src/components/app-sidebar.tsx",
-      "accessCount": 39,
-      "lastAccessed": 1775415662952,
+      "accessCount": 46,
+      "lastAccessed": 1775755200934,
+      "type": "file"
+    },
+    {
+      "path": "src/app/initiatives/page.tsx",
+      "accessCount": 46,
+      "lastAccessed": 1775755270430,
       "type": "file"
     },
     {
@@ -241,15 +235,33 @@
       "type": "file"
     },
     {
-      "path": "src/app/objectives/page.tsx",
-      "accessCount": 22,
-      "lastAccessed": 1775539791535,
+      "path": "src/lib/types.ts",
+      "accessCount": 25,
+      "lastAccessed": 1775755722824,
+      "type": "directory"
+    },
+    {
+      "path": "src/hooks/use-data.ts",
+      "accessCount": 24,
+      "lastAccessed": 1775752169899,
       "type": "file"
     },
     {
-      "path": "src/app/initiatives/page.tsx",
-      "accessCount": 20,
-      "lastAccessed": 1775506263617,
+      "path": "src/app/objectives/page.tsx",
+      "accessCount": 24,
+      "lastAccessed": 1775755647946,
+      "type": "file"
+    },
+    {
+      "path": "src",
+      "accessCount": 22,
+      "lastAccessed": 1775755740225,
+      "type": "directory"
+    },
+    {
+      "path": "src/lib/validations.ts",
+      "accessCount": 19,
+      "lastAccessed": 1775755792069,
       "type": "file"
     },
     {
@@ -259,22 +271,10 @@
       "type": "file"
     },
     {
-      "path": "src/hooks/use-data.ts",
-      "accessCount": 18,
-      "lastAccessed": 1775505947065,
-      "type": "file"
-    },
-    {
       "path": "scripts/daemon/runner.ts",
       "accessCount": 18,
       "lastAccessed": 1775653167412,
       "type": "file"
-    },
-    {
-      "path": "src/lib/types.ts",
-      "accessCount": 14,
-      "lastAccessed": 1775531301731,
-      "type": "directory"
     },
     {
       "path": "src/app/autopilot/page.tsx",
@@ -283,16 +283,10 @@
       "type": "file"
     },
     {
-      "path": "src/lib/validations.ts",
-      "accessCount": 11,
-      "lastAccessed": 1775535680560,
+      "path": "src/app/api/workspaces/route.ts",
+      "accessCount": 9,
+      "lastAccessed": 1775755727316,
       "type": "file"
-    },
-    {
-      "path": "src",
-      "accessCount": 11,
-      "lastAccessed": 1775653504862,
-      "type": "directory"
     },
     {
       "path": "src/components/task-card.tsx",
@@ -307,9 +301,9 @@
       "type": "file"
     },
     {
-      "path": "src/app/api/workspaces/route.ts",
+      "path": "src/hooks/use-sidebar.ts",
       "accessCount": 7,
-      "lastAccessed": 1775559030817,
+      "lastAccessed": 1775751928523,
       "type": "file"
     },
     {
@@ -331,15 +325,15 @@
       "type": "file"
     },
     {
-      "path": "src/hooks/use-sidebar.ts",
-      "accessCount": 5,
-      "lastAccessed": 1775409568891,
-      "type": "file"
-    },
-    {
       "path": "src/components/layout-shell.tsx",
       "accessCount": 5,
       "lastAccessed": 1775415151581,
+      "type": "file"
+    },
+    {
+      "path": "src/app/api/initiatives/route.ts",
+      "accessCount": 5,
+      "lastAccessed": 1775755207202,
       "type": "file"
     },
     {
@@ -355,6 +349,12 @@
       "type": "file"
     },
     {
+      "path": "src/app/initiatives",
+      "accessCount": 4,
+      "lastAccessed": 1775755164933,
+      "type": "directory"
+    },
+    {
       "path": "src/app/api/actions/route.ts",
       "accessCount": 3,
       "lastAccessed": 1775410331977,
@@ -364,12 +364,6 @@
       "path": "scripts/daemon",
       "accessCount": 3,
       "lastAccessed": 1775485478680,
-      "type": "directory"
-    },
-    {
-      "path": "src/app/initiatives",
-      "accessCount": 3,
-      "lastAccessed": 1775506173799,
       "type": "directory"
     },
     {
@@ -403,10 +397,16 @@
       "type": "file"
     },
     {
-      "path": "src/app/api/initiatives/route.ts",
-      "accessCount": 1,
-      "lastAccessed": 1775406509805,
+      "path": "src/hooks/use-field-ops.ts",
+      "accessCount": 2,
+      "lastAccessed": 1775752135182,
       "type": "file"
+    },
+    {
+      "path": "src/lib",
+      "accessCount": 2,
+      "lastAccessed": 1775755643386,
+      "type": "directory"
     },
     {
       "path": "src/hooks/use-workspace.ts",
@@ -418,12 +418,6 @@
       "path": "src/components/field-ops/field-task-form-dialog.tsx",
       "accessCount": 1,
       "lastAccessed": 1775408658074,
-      "type": "file"
-    },
-    {
-      "path": "src/hooks/use-field-ops.ts",
-      "accessCount": 1,
-      "lastAccessed": 1775408694340,
       "type": "file"
     },
     {
@@ -491,12 +485,6 @@
       "accessCount": 1,
       "lastAccessed": 1775415257504,
       "type": "file"
-    },
-    {
-      "path": "src/lib",
-      "accessCount": 1,
-      "lastAccessed": 1775415304814,
-      "type": "directory"
     }
   ],
   "userDirectives": []

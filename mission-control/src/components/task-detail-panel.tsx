@@ -3,7 +3,7 @@
 import { useEffect, useCallback, useState, useRef } from "react";
 import {
   X, Trash2, ListChecks, Link2, CheckCircle2, Rocket,
-  Send, Clock, MessageSquare, Activity, Radio,
+  Send, Clock, MessageSquare, Activity,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { TaskForm, type TaskFormData } from "@/components/task-form";
@@ -19,7 +19,7 @@ import {
   CollapsibleContent,
   CollapsibleTrigger,
 } from "@/components/ui/collapsible";
-import type { Task, Project, Goal, AgentRole, FieldTask } from "@/lib/types";
+import type { Task, Project, Goal, AgentRole } from "@/lib/types";
 import { getQuadrant } from "@/lib/types";
 import { useActivityLog, useInbox, useAgents, useDecisions } from "@/hooks/use-data";
 import { getAgentIcon } from "@/lib/agent-icons";
@@ -58,12 +58,11 @@ export function TaskDetailPanel({ task, projects, goals, allTasks, onUpdate, onD
   const [localComments, setLocalComments] = useState(task.comments ?? []);
   useEffect(() => {
     setLocalComments(task.comments ?? []);
-  }, [task.id]);
+  }, [task.id, task.comments]);
   const mentionedAgentIds = parseAgentMentions(commentText);
   const [timelineOpen, setTimelineOpen] = useState(false);
   const [commentsOpen, setCommentsOpen] = useState(true);
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
-  const [linkedFieldTasks, setLinkedFieldTasks] = useState<FieldTask[]>([]);
   const panelRef = useRef<HTMLElement>(null);
   const previousFocusRef = useRef<HTMLElement | null>(null);
 
@@ -83,28 +82,6 @@ export function TaskDetailPanel({ task, projects, goals, allTasks, onUpdate, onD
       }
     };
   }, [task]);
-
-  // Fetch linked field tasks when the task has fieldTaskIds
-  useEffect(() => {
-    const ids = task.fieldTaskIds;
-    if (!ids || ids.length === 0) {
-      setLinkedFieldTasks([]);
-      return;
-    }
-    async function fetchFieldTasks() {
-      try {
-        const res = await fetch("/api/field-ops/tasks");
-        if (res.ok) {
-          const data = await res.json();
-          const all: FieldTask[] = data.tasks ?? [];
-          setLinkedFieldTasks(all.filter((ft) => ids!.includes(ft.id)));
-        }
-      } catch {
-        // Silently fail
-      }
-    }
-    fetchFieldTasks();
-  }, [task.fieldTaskIds]);
 
   // Close on Escape key
   useEffect(() => {
@@ -339,12 +316,6 @@ export function TaskDetailPanel({ task, projects, goals, allTasks, onUpdate, onD
                 {criteriaCount} criteria
               </Badge>
             )}
-            {linkedFieldTasks.length > 0 && (
-              <Badge variant="secondary" className="text-xs gap-1 border-indigo-500/30 text-indigo-400">
-                <Radio className="h-3 w-3" />
-                {linkedFieldTasks.length} field task{linkedFieldTasks.length !== 1 ? "s" : ""}
-              </Badge>
-            )}
           </div>
           <div className="flex items-center gap-1 shrink-0">
             {/* Deploy button */}
@@ -428,43 +399,6 @@ export function TaskDetailPanel({ task, projects, goals, allTasks, onUpdate, onD
             submitLabel="Save Changes"
           />
 
-          {/* Linked Field Tasks */}
-          {linkedFieldTasks.length > 0 && (
-            <div className="space-y-2">
-              <div className="flex items-center gap-2 text-muted-foreground">
-                <Radio className="h-4 w-4" />
-                <span className="text-sm font-medium">
-                  Linked Field Tasks ({linkedFieldTasks.length})
-                </span>
-              </div>
-              <div className="space-y-1.5">
-                {linkedFieldTasks.map((ft) => {
-                  const statusColors: Record<string, string> = {
-                    "draft": "bg-zinc-500/20 text-zinc-400",
-                    "pending-approval": "bg-amber-500/20 text-amber-400",
-                    "approved": "bg-emerald-500/20 text-emerald-400",
-                    "executing": "bg-indigo-500/20 text-indigo-400",
-                    "completed": "bg-green-500/20 text-green-400",
-                    "failed": "bg-red-500/20 text-red-400",
-                    "rejected": "bg-orange-500/20 text-orange-400",
-                  };
-                  return (
-                    <a
-                      key={ft.id}
-                      href={ft.missionId ? `/field-ops/missions/${ft.missionId}` : "/field-ops"}
-                      className="flex items-center justify-between rounded-md border p-2 text-xs hover:border-primary/30 transition-colors"
-                    >
-                      <span className="truncate font-medium">{ft.title}</span>
-                      <Badge className={cn("text-[10px] px-1.5 py-0 ml-2 shrink-0", statusColors[ft.status] ?? "bg-muted text-muted-foreground")}>
-                        {ft.status}
-                      </Badge>
-                    </a>
-                  );
-                })}
-              </div>
-            </div>
-          )}
-
           {/* Comments Thread */}
           <Collapsible open={commentsOpen} onOpenChange={setCommentsOpen}>
             <CollapsibleTrigger className="flex items-center gap-2 w-full text-left py-2 hover:text-foreground text-muted-foreground transition-colors">
@@ -517,6 +451,7 @@ export function TaskDetailPanel({ task, projects, goals, allTasks, onUpdate, onD
                             <div className="flex flex-wrap gap-2 mt-1.5">
                               {comment.attachments.map((att) => (
                                 att.type === "image" ? (
+                                  // eslint-disable-next-line @next/next/no-img-element
                                   <img
                                     key={att.id}
                                     src={att.url}

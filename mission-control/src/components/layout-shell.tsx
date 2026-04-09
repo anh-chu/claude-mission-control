@@ -24,7 +24,7 @@ export function LayoutShell({ children }: LayoutShellProps) {
   const [isMobile, setIsMobile] = useState(false);
   const pathname = usePathname();
   const router = useRouter();
-  const { tasks, agents, unreadInbox, pendingDecisions, pendingActionApprovals } = useSidebar();
+  const { tasks, unreadInbox, pendingDecisions } = useSidebar();
   const { online } = useConnection();
 
   // Detect mobile viewport and auto-close sidebar
@@ -95,10 +95,8 @@ export function LayoutShell({ children }: LayoutShellProps) {
         collapsed={!sidebarOpen}
         unreadInbox={unreadInbox}
         pendingDecisions={pendingDecisions}
-        pendingActionApprovals={pendingActionApprovals}
         isMobile={isMobile}
         onClose={() => setSidebarOpen(false)}
-        agents={agents}
       />
       <main
         id="main-content"

@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect, useCallback, useRef } from "react";
-import type { Task, Goal, Project, BrainDumpEntry, ActivityEvent, InboxMessage, DecisionItem, AgentDefinition, SkillDefinition, Initiative, Action } from "@/lib/types";
+import type { Task, Goal, Project, BrainDumpEntry, ActivityEvent, InboxMessage, DecisionItem, AgentDefinition, SkillDefinition, Initiative } from "@/lib/types";
 import { showSuccess, showError } from "@/lib/toast";
 import { apiFetch } from "@/lib/api-client";
 
@@ -295,91 +295,3 @@ export function useInitiatives() {
   return { initiatives, ...rest };
 }
 
-export function useActions(filter?: { initiativeId?: string; status?: string }) {
-  const [actions, setActions] = useState<Action[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
-  const initialLoadDone = useRef(false);
-
-  const params = new URLSearchParams();
-  if (filter?.initiativeId) params.set("initiativeId", filter.initiativeId);
-  if (filter?.status) params.set("status", filter.status);
-  const query = params.toString();
-
-  const refetch = useCallback(async () => {
-    try {
-      if (!initialLoadDone.current) setLoading(true);
-      const url = query ? `/api/actions?${query}` : "/api/actions";
-      const res = await apiFetch(url);
-      if (!res.ok) throw new Error("Failed to fetch actions");
-      const json = await res.json();
-      setActions(json.data ?? json.actions ?? []);
-      setError(null);
-      initialLoadDone.current = true;
-    } catch (err) {
-      setError(err instanceof Error ? err.message : "Unknown error");
-    } finally {
-      setLoading(false);
-    }
-  }, [query]);
-
-  useEffect(() => {
-    refetch();
-  }, [refetch]);
-
-  const create = useCallback(async (item: Partial<Action>) => {
-    try {
-      const res = await apiFetch("/api/actions", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(item),
-      });
-      if (!res.ok) throw new Error("Failed to create action");
-      const created = await res.json();
-      setActions((prev) => [...prev, created]);
-      showSuccess("Action created");
-      return created as Action;
-    } catch (err) {
-      showError("Failed to create action");
-      throw err;
-    }
-  }, []);
-
-  const update = useCallback(async (id: string, updates: Partial<Action>) => {
-    setActions((prev) => prev.map((a) => (a.id === id ? { ...a, ...updates } : a)));
-    try {
-      const res = await apiFetch("/api/actions", {
-        method: "PUT",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ id, ...updates }),
-      });
-      if (!res.ok) {
-        await refetch();
-        throw new Error("Failed to update action");
-      }
-      return (await res.json()) as Action;
-    } catch (err) {
-      showError("Failed to update action");
-      await refetch();
-      throw err;
-    }
-  }, [refetch]);
-
-  const remove = useCallback(async (id: string) => {
-    setActions((prev) => prev.filter((a) => a.id !== id));
-    try {
-      const res = await apiFetch(`/api/actions?id=${id}`, { method: "DELETE" });
-      if (!res.ok) {
-        await refetch();
-        throw new Error("Failed to delete action");
-      }
-      showSuccess("Action deleted");
-    } catch (err) {
-      showError("Failed to delete action");
-      await refetch();
-      throw err;
-    }
-  }, [refetch]);
-
-  return { actions, loading, error, create, update, remove, refetch };
-}
