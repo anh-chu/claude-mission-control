@@ -1,0 +1,1810 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>ccmc — codesight report</title>
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+:root{--bg:#0a0a0f;--card:#12121a;--border:#1e1e2e;--text:#e0e0e8;--muted:#6b6b80;--accent:#6366f1;--accent2:#22d3ee;--green:#22c55e;--orange:#f59e0b;--red:#ef4444;--pink:#ec4899}
+body{background:var(--bg);color:var(--text);font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;padding:2rem;max-width:1400px;margin:0 auto;line-height:1.6}
+h1{font-size:2.5rem;font-weight:800;background:linear-gradient(135deg,var(--accent),var(--accent2));-webkit-background-clip:text;-webkit-text-fill-color:transparent;margin-bottom:.25rem}
+.subtitle{color:var(--muted);font-size:1rem;margin-bottom:2rem}
+.stack-badge{display:inline-block;background:var(--card);border:1px solid var(--border);border-radius:6px;padding:2px 10px;font-size:.85rem;color:var(--accent2);margin:0 4px 4px 0}
+.stats{display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:1rem;margin:2rem 0}
+.stat{background:var(--card);border:1px solid var(--border);border-radius:12px;padding:1.25rem;text-align:center}
+.stat-value{font-size:2rem;font-weight:800;background:linear-gradient(135deg,var(--accent),var(--accent2));-webkit-background-clip:text;-webkit-text-fill-color:transparent}
+.stat-label{color:var(--muted);font-size:.85rem;margin-top:.25rem}
+.token-hero{background:linear-gradient(135deg,#1a1a2e,#16213e);border:1px solid var(--accent);border-radius:16px;padding:2rem;margin:2rem 0;text-align:center}
+.token-saved{font-size:3rem;font-weight:900;color:var(--green)}
+.token-detail{color:var(--muted);font-size:.9rem;margin-top:.5rem}
+.section{margin:2.5rem 0}
+.section h2{font-size:1.4rem;font-weight:700;margin-bottom:1rem;padding-bottom:.5rem;border-bottom:1px solid var(--border)}
+.grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(320px,1fr));gap:1rem}
+.card{background:var(--card);border:1px solid var(--border);border-radius:10px;padding:1rem;transition:border-color .2s}
+.card:hover{border-color:var(--accent)}
+.card-title{font-weight:700;font-size:1rem;margin-bottom:.5rem}
+.card-meta{color:var(--muted);font-size:.8rem}
+.tag{display:inline-block;background:rgba(99,102,241,.15);color:var(--accent);border-radius:4px;padding:1px 6px;font-size:.75rem;margin:1px}
+.tag-auth{background:rgba(239,68,68,.15);color:var(--red)}
+.tag-db{background:rgba(34,211,238,.15);color:var(--accent2)}
+.tag-ai{background:rgba(236,72,153,.15);color:var(--pink)}
+.tag-payment{background:rgba(245,158,11,.15);color:var(--orange)}
+.tag-email{background:rgba(34,197,94,.15);color:var(--green)}
+.tag-queue{background:rgba(168,85,247,.15);color:#a855f7}
+.tag-cache{background:rgba(245,158,11,.15);color:var(--orange)}
+.method{font-weight:700;font-size:.8rem;padding:2px 6px;border-radius:4px;margin-right:6px}
+.method-GET{background:rgba(34,197,94,.2);color:var(--green)}
+.method-POST{background:rgba(99,102,241,.2);color:var(--accent)}
+.method-PUT{background:rgba(245,158,11,.2);color:var(--orange)}
+.method-PATCH{background:rgba(245,158,11,.2);color:var(--orange)}
+.method-DELETE{background:rgba(239,68,68,.2);color:var(--red)}
+.method-ALL{background:rgba(107,107,128,.2);color:var(--muted)}
+.route-path{font-family:'Fira Code',monospace;font-size:.9rem}
+.route-contract{color:var(--muted);font-size:.8rem;font-style:italic;margin-left:.5rem}
+.field{display:flex;gap:.5rem;padding:3px 0;font-size:.9rem}
+.field-name{font-family:monospace;color:var(--accent2)}
+.field-type{color:var(--muted);font-family:monospace}
+.field-flags{display:flex;gap:3px}
+.flag{font-size:.7rem;padding:0 4px;border-radius:3px;background:rgba(99,102,241,.1);color:var(--accent)}
+.flag-pk{background:rgba(245,158,11,.2);color:var(--orange)}
+.flag-fk{background:rgba(34,211,238,.2);color:var(--accent2)}
+.flag-unique{background:rgba(236,72,153,.2);color:var(--pink)}
+.hot-bar{height:8px;background:linear-gradient(90deg,var(--accent),var(--accent2));border-radius:4px;margin-top:4px}
+.component-props{color:var(--muted);font-size:.85rem}
+.badge-client{background:rgba(34,197,94,.15);color:var(--green);font-size:.75rem;padding:1px 6px;border-radius:4px}
+.badge-server{background:rgba(99,102,241,.15);color:var(--accent);font-size:.75rem;padding:1px 6px;border-radius:4px}
+.env-required{color:var(--red);font-weight:600;font-size:.8rem}
+.env-default{color:var(--green);font-size:.8rem}
+.footer{text-align:center;color:var(--muted);margin-top:4rem;padding-top:2rem;border-top:1px solid var(--border);font-size:.85rem}
+.footer a{color:var(--accent);text-decoration:none}
+table{width:100%;border-collapse:collapse}
+table td,table th{padding:8px 12px;text-align:left;border-bottom:1px solid var(--border);font-size:.9rem}
+table th{color:var(--muted);font-size:.8rem;font-weight:600;text-transform:uppercase}
+</style>
+</head>
+<body>
+
+<h1>ccmc</h1>
+<div class="subtitle">AI Context Map — generated by codesight</div>
+
+<div>
+<span class="stack-badge">next-app</span>
+
+<span class="stack-badge">react</span>
+<span class="stack-badge">typescript</span>
+
+</div>
+
+<div class="token-hero">
+  <div class="token-saved">~121,427 tokens saved</div>
+  <div class="token-detail">
+    Output: 10,068 tokens — Exploration cost without codesight: ~131,495 tokens — 311 files scanned
+  </div>
+</div>
+
+<div class="stats">
+  <div class="stat"><div class="stat-value">132</div><div class="stat-label">Routes</div></div>
+  <div class="stat"><div class="stat-value">0</div><div class="stat-label">Models</div></div>
+  <div class="stat"><div class="stat-value">113</div><div class="stat-label">Components</div></div>
+  <div class="stat"><div class="stat-value">51</div><div class="stat-label">Libraries</div></div>
+  <div class="stat"><div class="stat-value">21</div><div class="stat-label">Env Vars</div></div>
+  <div class="stat"><div class="stat-value">4</div><div class="stat-label">Middleware</div></div>
+  <div class="stat"><div class="stat-value">109</div><div class="stat-label">Import Links</div></div>
+</div>
+
+
+<div class="section">
+<h2>Routes</h2>
+<table>
+<tr><th>Method</th><th>Path</th><th>Contract</th><th>Tags</th><th>File</th></tr>
+<tr>
+  <td><span class="method method-POST">POST</span></td>
+  <td class="route-path">/api/actions/[id]/comment <span class="route-contract">params: id</span></td>
+  <td><span class="route-contract">out: { error }</span></td>
+  <td><span class="tag tag-auth">auth</span><span class="tag tag-upload">upload</span></td>
+  <td class="card-meta">mission-control/src/app/api/actions/[id]/comment/route.ts</td>
+</tr>
+<tr>
+  <td><span class="method method-DELETE">DELETE</span></td>
+  <td class="route-path">/api/actions/[id]/comment <span class="route-contract">params: id</span></td>
+  <td><span class="route-contract">out: { error }</span></td>
+  <td><span class="tag tag-auth">auth</span><span class="tag tag-upload">upload</span></td>
+  <td class="card-meta">mission-control/src/app/api/actions/[id]/comment/route.ts</td>
+</tr>
+<tr>
+  <td><span class="method method-GET">GET</span></td>
+  <td class="route-path">/api/actions</td>
+  <td><span class="route-contract">out: { data, meta, filtered, returned, limit, offset }</span></td>
+  <td><span class="tag tag-cache">cache</span></td>
+  <td class="card-meta">mission-control/src/app/api/actions/route.ts</td>
+</tr>
+<tr>
+  <td><span class="method method-POST">POST</span></td>
+  <td class="route-path">/api/actions</td>
+  <td><span class="route-contract">out: { data, meta, filtered, returned, limit, offset }</span></td>
+  <td><span class="tag tag-cache">cache</span></td>
+  <td class="card-meta">mission-control/src/app/api/actions/route.ts</td>
+</tr>
+<tr>
+  <td><span class="method method-PUT">PUT</span></td>
+  <td class="route-path">/api/actions</td>
+  <td><span class="route-contract">out: { data, meta, filtered, returned, limit, offset }</span></td>
+  <td><span class="tag tag-cache">cache</span></td>
+  <td class="card-meta">mission-control/src/app/api/actions/route.ts</td>
+</tr>
+<tr>
+  <td><span class="method method-DELETE">DELETE</span></td>
+  <td class="route-path">/api/actions</td>
+  <td><span class="route-contract">out: { data, meta, filtered, returned, limit, offset }</span></td>
+  <td><span class="tag tag-cache">cache</span></td>
+  <td class="card-meta">mission-control/src/app/api/actions/route.ts</td>
+</tr>
+<tr>
+  <td><span class="method method-GET">GET</span></td>
+  <td class="route-path">/api/activity-log</td>
+  <td><span class="route-contract">out: { data, events, meta, filtered, returned, limit, offset }</span></td>
+  <td><span class="tag tag-cache">cache</span></td>
+  <td class="card-meta">mission-control/src/app/api/activity-log/route.ts</td>
+</tr>
+<tr>
+  <td><span class="method method-POST">POST</span></td>
+  <td class="route-path">/api/activity-log</td>
+  <td><span class="route-contract">out: { data, events, meta, filtered, returned, limit, offset }</span></td>
+  <td><span class="tag tag-cache">cache</span></td>
+  <td class="card-meta">mission-control/src/app/api/activity-log/route.ts</td>
+</tr>
+<tr>
+  <td><span class="method method-DELETE">DELETE</span></td>
+  <td class="route-path">/api/activity-log</td>
+  <td><span class="route-contract">out: { data, events, meta, filtered, returned, limit, offset }</span></td>
+  <td><span class="tag tag-cache">cache</span></td>
+  <td class="card-meta">mission-control/src/app/api/activity-log/route.ts</td>
+</tr>
+<tr>
+  <td><span class="method method-GET">GET</span></td>
+  <td class="route-path">/api/agents</td>
+  <td><span class="route-contract">out: { data, agents, meta, filtered, returned, limit, offset }</span></td>
+  <td><span class="tag tag-auth">auth</span><span class="tag tag-cache">cache</span></td>
+  <td class="card-meta">mission-control/src/app/api/agents/route.ts</td>
+</tr>
+<tr>
+  <td><span class="method method-POST">POST</span></td>
+  <td class="route-path">/api/agents</td>
+  <td><span class="route-contract">out: { data, agents, meta, filtered, returned, limit, offset }</span></td>
+  <td><span class="tag tag-auth">auth</span><span class="tag tag-cache">cache</span></td>
+  <td class="card-meta">mission-control/src/app/api/agents/route.ts</td>
+</tr>
+<tr>
+  <td><span class="method method-PUT">PUT</span></td>
+  <td class="route-path">/api/agents</td>
+  <td><span class="route-contract">out: { data, agents, meta, filtered, returned, limit, offset }</span></td>
+  <td><span class="tag tag-auth">auth</span><span class="tag tag-cache">cache</span></td>
+  <td class="card-meta">mission-control/src/app/api/agents/route.ts</td>
+</tr>
+<tr>
+  <td><span class="method method-DELETE">DELETE</span></td>
+  <td class="route-path">/api/agents</td>
+  <td><span class="route-contract">out: { data, agents, meta, filtered, returned, limit, offset }</span></td>
+  <td><span class="tag tag-auth">auth</span><span class="tag tag-cache">cache</span></td>
+  <td class="card-meta">mission-control/src/app/api/agents/route.ts</td>
+</tr>
+<tr>
+  <td><span class="method method-POST">POST</span></td>
+  <td class="route-path">/api/brain-dump/automate</td>
+  <td><span class="route-contract">out: { error }</span></td>
+  <td></td>
+  <td class="card-meta">mission-control/src/app/api/brain-dump/automate/route.ts</td>
+</tr>
+<tr>
+  <td><span class="method method-GET">GET</span></td>
+  <td class="route-path">/api/brain-dump</td>
+  <td><span class="route-contract">out: { data, entries, meta, filtered, returned, limit, offset }</span></td>
+  <td><span class="tag tag-cache">cache</span></td>
+  <td class="card-meta">mission-control/src/app/api/brain-dump/route.ts</td>
+</tr>
+<tr>
+  <td><span class="method method-POST">POST</span></td>
+  <td class="route-path">/api/brain-dump</td>
+  <td><span class="route-contract">out: { data, entries, meta, filtered, returned, limit, offset }</span></td>
+  <td><span class="tag tag-cache">cache</span></td>
+  <td class="card-meta">mission-control/src/app/api/brain-dump/route.ts</td>
+</tr>
+<tr>
+  <td><span class="method method-PUT">PUT</span></td>
+  <td class="route-path">/api/brain-dump</td>
+  <td><span class="route-contract">out: { data, entries, meta, filtered, returned, limit, offset }</span></td>
+  <td><span class="tag tag-cache">cache</span></td>
+  <td class="card-meta">mission-control/src/app/api/brain-dump/route.ts</td>
+</tr>
+<tr>
+  <td><span class="method method-DELETE">DELETE</span></td>
+  <td class="route-path">/api/brain-dump</td>
+  <td><span class="route-contract">out: { data, entries, meta, filtered, returned, limit, offset }</span></td>
+  <td><span class="tag tag-cache">cache</span></td>
+  <td class="card-meta">mission-control/src/app/api/brain-dump/route.ts</td>
+</tr>
+<tr>
+  <td><span class="method method-GET">GET</span></td>
+  <td class="route-path">/api/checkpoints/export</td>
+  <td><span class="route-contract">out: { error }</span></td>
+  <td></td>
+  <td class="card-meta">mission-control/src/app/api/checkpoints/export/route.ts</td>
+</tr>
+<tr>
+  <td><span class="method method-POST">POST</span></td>
+  <td class="route-path">/api/checkpoints/import</td>
+  <td><span class="route-contract">out: { error }</span></td>
+  <td></td>
+  <td class="card-meta">mission-control/src/app/api/checkpoints/import/route.ts</td>
+</tr>
+<tr>
+  <td><span class="method method-POST">POST</span></td>
+  <td class="route-path">/api/checkpoints/load</td>
+  <td><span class="route-contract">out: { error }</span></td>
+  <td></td>
+  <td class="card-meta">mission-control/src/app/api/checkpoints/load/route.ts</td>
+</tr>
+<tr>
+  <td><span class="method method-POST">POST</span></td>
+  <td class="route-path">/api/checkpoints/new</td>
+  <td><span class="route-contract">out: { ok }</span></td>
+  <td></td>
+  <td class="card-meta">mission-control/src/app/api/checkpoints/new/route.ts</td>
+</tr>
+<tr>
+  <td><span class="method method-GET">GET</span></td>
+  <td class="route-path">/api/checkpoints</td>
+  <td><span class="route-contract">out: { error, details }</span></td>
+  <td></td>
+  <td class="card-meta">mission-control/src/app/api/checkpoints/route.ts</td>
+</tr>
+<tr>
+  <td><span class="method method-POST">POST</span></td>
+  <td class="route-path">/api/checkpoints</td>
+  <td><span class="route-contract">out: { error, details }</span></td>
+  <td></td>
+  <td class="card-meta">mission-control/src/app/api/checkpoints/route.ts</td>
+</tr>
+<tr>
+  <td><span class="method method-DELETE">DELETE</span></td>
+  <td class="route-path">/api/checkpoints</td>
+  <td><span class="route-contract">out: { error, details }</span></td>
+  <td></td>
+  <td class="card-meta">mission-control/src/app/api/checkpoints/route.ts</td>
+</tr>
+<tr>
+  <td><span class="method method-GET">GET</span></td>
+  <td class="route-path">/api/daemon</td>
+  <td><span class="route-contract">out: { status, config, isRunning }</span></td>
+  <td><span class="tag tag-auth">auth</span></td>
+  <td class="card-meta">mission-control/src/app/api/daemon/route.ts</td>
+</tr>
+<tr>
+  <td><span class="method method-POST">POST</span></td>
+  <td class="route-path">/api/daemon</td>
+  <td><span class="route-contract">out: { status, config, isRunning }</span></td>
+  <td><span class="tag tag-auth">auth</span></td>
+  <td class="card-meta">mission-control/src/app/api/daemon/route.ts</td>
+</tr>
+<tr>
+  <td><span class="method method-PUT">PUT</span></td>
+  <td class="route-path">/api/daemon</td>
+  <td><span class="route-contract">out: { status, config, isRunning }</span></td>
+  <td><span class="tag tag-auth">auth</span></td>
+  <td class="card-meta">mission-control/src/app/api/daemon/route.ts</td>
+</tr>
+<tr>
+  <td><span class="method method-GET">GET</span></td>
+  <td class="route-path">/api/dashboard</td>
+  <td></td>
+  <td><span class="tag tag-cache">cache</span></td>
+  <td class="card-meta">mission-control/src/app/api/dashboard/route.ts</td>
+</tr>
+<tr>
+  <td><span class="method method-GET">GET</span></td>
+  <td class="route-path">/api/decisions</td>
+  <td><span class="route-contract">out: { data, decisions, meta, filtered, returned, limit, offset }</span></td>
+  <td><span class="tag tag-cache">cache</span><span class="tag tag-queue">queue</span></td>
+  <td class="card-meta">mission-control/src/app/api/decisions/route.ts</td>
+</tr>
+<tr>
+  <td><span class="method method-POST">POST</span></td>
+  <td class="route-path">/api/decisions</td>
+  <td><span class="route-contract">out: { data, decisions, meta, filtered, returned, limit, offset }</span></td>
+  <td><span class="tag tag-cache">cache</span><span class="tag tag-queue">queue</span></td>
+  <td class="card-meta">mission-control/src/app/api/decisions/route.ts</td>
+</tr>
+<tr>
+  <td><span class="method method-PUT">PUT</span></td>
+  <td class="route-path">/api/decisions</td>
+  <td><span class="route-contract">out: { data, decisions, meta, filtered, returned, limit, offset }</span></td>
+  <td><span class="tag tag-cache">cache</span><span class="tag tag-queue">queue</span></td>
+  <td class="card-meta">mission-control/src/app/api/decisions/route.ts</td>
+</tr>
+<tr>
+  <td><span class="method method-DELETE">DELETE</span></td>
+  <td class="route-path">/api/decisions</td>
+  <td><span class="route-contract">out: { data, decisions, meta, filtered, returned, limit, offset }</span></td>
+  <td><span class="tag tag-cache">cache</span><span class="tag tag-queue">queue</span></td>
+  <td class="card-meta">mission-control/src/app/api/decisions/route.ts</td>
+</tr>
+<tr>
+  <td><span class="method method-POST">POST</span></td>
+  <td class="route-path">/api/emergency-stop</td>
+  <td><span class="route-contract">out: { ok, results }</span></td>
+  <td><span class="tag tag-auth">auth</span></td>
+  <td class="card-meta">mission-control/src/app/api/emergency-stop/route.ts</td>
+</tr>
+<tr>
+  <td><span class="method method-GET">GET</span></td>
+  <td class="route-path">/api/field-ops/activity</td>
+  <td><span class="route-contract">out: { data, events, meta }</span></td>
+  <td></td>
+  <td class="card-meta">mission-control/src/app/api/field-ops/activity/route.ts</td>
+</tr>
+<tr>
+  <td><span class="method method-GET">GET</span></td>
+  <td class="route-path">/api/field-ops/approval-config</td>
+  <td><span class="route-contract">out: { data, config }</span></td>
+  <td></td>
+  <td class="card-meta">mission-control/src/app/api/field-ops/approval-config/route.ts</td>
+</tr>
+<tr>
+  <td><span class="method method-PUT">PUT</span></td>
+  <td class="route-path">/api/field-ops/approval-config</td>
+  <td><span class="route-contract">out: { data, config }</span></td>
+  <td></td>
+  <td class="card-meta">mission-control/src/app/api/field-ops/approval-config/route.ts</td>
+</tr>
+<tr>
+  <td><span class="method method-POST">POST</span></td>
+  <td class="route-path">/api/field-ops/batch</td>
+  <td><span class="route-contract">out: { error }</span></td>
+  <td><span class="tag tag-auth">auth</span></td>
+  <td class="card-meta">mission-control/src/app/api/field-ops/batch/route.ts</td>
+</tr>
+<tr>
+  <td><span class="method method-GET">GET</span></td>
+  <td class="route-path">/api/field-ops/catalog</td>
+  <td><span class="route-contract">out: { error }</span></td>
+  <td></td>
+  <td class="card-meta">mission-control/src/app/api/field-ops/catalog/route.ts</td>
+</tr>
+<tr>
+  <td><span class="method method-POST">POST</span></td>
+  <td class="route-path">/api/field-ops/execute/prepare</td>
+  <td><span class="route-contract">out: { error }</span></td>
+  <td><span class="tag tag-payment">payment</span></td>
+  <td class="card-meta">mission-control/src/app/api/field-ops/execute/prepare/route.ts</td>
+</tr>
+<tr>
+  <td><span class="method method-POST">POST</span></td>
+  <td class="route-path">/api/field-ops/execute</td>
+  <td><span class="route-contract">out: { error }</span></td>
+  <td><span class="tag tag-auth">auth</span><span class="tag tag-db">db</span><span class="tag tag-cache">cache</span><span class="tag tag-payment">payment</span></td>
+  <td class="card-meta">mission-control/src/app/api/field-ops/execute/route.ts</td>
+</tr>
+<tr>
+  <td><span class="method method-POST">POST</span></td>
+  <td class="route-path">/api/field-ops/execute/submit-signature</td>
+  <td><span class="route-contract">out: { error }</span></td>
+  <td></td>
+  <td class="card-meta">mission-control/src/app/api/field-ops/execute/submit-signature/route.ts</td>
+</tr>
+<tr>
+  <td><span class="method method-GET">GET</span></td>
+  <td class="route-path">/api/field-ops/financials</td>
+  <td><span class="route-contract">out: { vaultLocked, snapshots, availableIntegrations }</span></td>
+  <td><span class="tag tag-auth">auth</span><span class="tag tag-payment">payment</span></td>
+  <td class="card-meta">mission-control/src/app/api/field-ops/financials/route.ts</td>
+</tr>
+<tr>
+  <td><span class="method method-GET">GET</span></td>
+  <td class="route-path">/api/field-ops/missions</td>
+  <td><span class="route-contract">out: { data, missions, meta }</span></td>
+  <td><span class="tag tag-auth">auth</span></td>
+  <td class="card-meta">mission-control/src/app/api/field-ops/missions/route.ts</td>
+</tr>
+<tr>
+  <td><span class="method method-POST">POST</span></td>
+  <td class="route-path">/api/field-ops/missions</td>
+  <td><span class="route-contract">out: { data, missions, meta }</span></td>
+  <td><span class="tag tag-auth">auth</span></td>
+  <td class="card-meta">mission-control/src/app/api/field-ops/missions/route.ts</td>
+</tr>
+<tr>
+  <td><span class="method method-PUT">PUT</span></td>
+  <td class="route-path">/api/field-ops/missions</td>
+  <td><span class="route-contract">out: { data, missions, meta }</span></td>
+  <td><span class="tag tag-auth">auth</span></td>
+  <td class="card-meta">mission-control/src/app/api/field-ops/missions/route.ts</td>
+</tr>
+<tr>
+  <td><span class="method method-DELETE">DELETE</span></td>
+  <td class="route-path">/api/field-ops/missions</td>
+  <td><span class="route-contract">out: { data, missions, meta }</span></td>
+  <td><span class="tag tag-auth">auth</span></td>
+  <td class="card-meta">mission-control/src/app/api/field-ops/missions/route.ts</td>
+</tr>
+<tr>
+  <td><span class="method method-GET">GET</span></td>
+  <td class="route-path">/api/field-ops/safety-limits</td>
+  <td><span class="route-contract">out: { ...data, spendSummary }</span></td>
+  <td><span class="tag tag-auth">auth</span></td>
+  <td class="card-meta">mission-control/src/app/api/field-ops/safety-limits/route.ts</td>
+</tr>
+<tr>
+  <td><span class="method method-PUT">PUT</span></td>
+  <td class="route-path">/api/field-ops/safety-limits</td>
+  <td><span class="route-contract">out: { ...data, spendSummary }</span></td>
+  <td><span class="tag tag-auth">auth</span></td>
+  <td class="card-meta">mission-control/src/app/api/field-ops/safety-limits/route.ts</td>
+</tr>
+<tr>
+  <td><span class="method method-POST">POST</span></td>
+  <td class="route-path">/api/field-ops/services/activate</td>
+  <td><span class="route-contract">out: { error }</span></td>
+  <td><span class="tag tag-auth">auth</span></td>
+  <td class="card-meta">mission-control/src/app/api/field-ops/services/activate/route.ts</td>
+</tr>
+<tr>
+  <td><span class="method method-GET">GET</span></td>
+  <td class="route-path">/api/field-ops/services</td>
+  <td><span class="route-contract">out: { data, services, meta }</span></td>
+  <td><span class="tag tag-auth">auth</span></td>
+  <td class="card-meta">mission-control/src/app/api/field-ops/services/route.ts</td>
+</tr>
+<tr>
+  <td><span class="method method-POST">POST</span></td>
+  <td class="route-path">/api/field-ops/services</td>
+  <td><span class="route-contract">out: { data, services, meta }</span></td>
+  <td><span class="tag tag-auth">auth</span></td>
+  <td class="card-meta">mission-control/src/app/api/field-ops/services/route.ts</td>
+</tr>
+<tr>
+  <td><span class="method method-PUT">PUT</span></td>
+  <td class="route-path">/api/field-ops/services</td>
+  <td><span class="route-contract">out: { data, services, meta }</span></td>
+  <td><span class="tag tag-auth">auth</span></td>
+  <td class="card-meta">mission-control/src/app/api/field-ops/services/route.ts</td>
+</tr>
+<tr>
+  <td><span class="method method-DELETE">DELETE</span></td>
+  <td class="route-path">/api/field-ops/services</td>
+  <td><span class="route-contract">out: { data, services, meta }</span></td>
+  <td><span class="tag tag-auth">auth</span></td>
+  <td class="card-meta">mission-control/src/app/api/field-ops/services/route.ts</td>
+</tr>
+<tr>
+  <td><span class="method method-POST">POST</span></td>
+  <td class="route-path">/api/field-ops/services/save-from-catalog</td>
+  <td><span class="route-contract">out: { error }</span></td>
+  <td><span class="tag tag-auth">auth</span></td>
+  <td class="card-meta">mission-control/src/app/api/field-ops/services/save-from-catalog/route.ts</td>
+</tr>
+<tr>
+  <td><span class="method method-POST">POST</span></td>
+  <td class="route-path">/api/field-ops/services/test</td>
+  <td><span class="route-contract">out: { error }</span></td>
+  <td><span class="tag tag-auth">auth</span><span class="tag tag-payment">payment</span></td>
+  <td class="card-meta">mission-control/src/app/api/field-ops/services/test/route.ts</td>
+</tr>
+<tr>
+  <td><span class="method method-GET">GET</span></td>
+  <td class="route-path">/api/field-ops/tasks</td>
+  <td><span class="route-contract">out: { data, tasks, meta }</span></td>
+  <td><span class="tag tag-auth">auth</span></td>
+  <td class="card-meta">mission-control/src/app/api/field-ops/tasks/route.ts</td>
+</tr>
+<tr>
+  <td><span class="method method-POST">POST</span></td>
+  <td class="route-path">/api/field-ops/tasks</td>
+  <td><span class="route-contract">out: { data, tasks, meta }</span></td>
+  <td><span class="tag tag-auth">auth</span></td>
+  <td class="card-meta">mission-control/src/app/api/field-ops/tasks/route.ts</td>
+</tr>
+<tr>
+  <td><span class="method method-PUT">PUT</span></td>
+  <td class="route-path">/api/field-ops/tasks</td>
+  <td><span class="route-contract">out: { data, tasks, meta }</span></td>
+  <td><span class="tag tag-auth">auth</span></td>
+  <td class="card-meta">mission-control/src/app/api/field-ops/tasks/route.ts</td>
+</tr>
+<tr>
+  <td><span class="method method-DELETE">DELETE</span></td>
+  <td class="route-path">/api/field-ops/tasks</td>
+  <td><span class="route-contract">out: { data, tasks, meta }</span></td>
+  <td><span class="tag tag-auth">auth</span></td>
+  <td class="card-meta">mission-control/src/app/api/field-ops/tasks/route.ts</td>
+</tr>
+<tr>
+  <td><span class="method method-POST">POST</span></td>
+  <td class="route-path">/api/field-ops/templates/instantiate</td>
+  <td><span class="route-contract">out: { error }</span></td>
+  <td></td>
+  <td class="card-meta">mission-control/src/app/api/field-ops/templates/instantiate/route.ts</td>
+</tr>
+<tr>
+  <td><span class="method method-GET">GET</span></td>
+  <td class="route-path">/api/field-ops/templates</td>
+  <td><span class="route-contract">out: { data, templates }</span></td>
+  <td></td>
+  <td class="card-meta">mission-control/src/app/api/field-ops/templates/route.ts</td>
+</tr>
+<tr>
+  <td><span class="method method-POST">POST</span></td>
+  <td class="route-path">/api/field-ops/templates</td>
+  <td><span class="route-contract">out: { data, templates }</span></td>
+  <td></td>
+  <td class="card-meta">mission-control/src/app/api/field-ops/templates/route.ts</td>
+</tr>
+<tr>
+  <td><span class="method method-DELETE">DELETE</span></td>
+  <td class="route-path">/api/field-ops/templates</td>
+  <td><span class="route-contract">out: { data, templates }</span></td>
+  <td></td>
+  <td class="card-meta">mission-control/src/app/api/field-ops/templates/route.ts</td>
+</tr>
+<tr>
+  <td><span class="method method-POST">POST</span></td>
+  <td class="route-path">/api/field-ops/vault/decrypt</td>
+  <td><span class="route-contract">out: { error }</span></td>
+  <td><span class="tag tag-auth">auth</span></td>
+  <td class="card-meta">mission-control/src/app/api/field-ops/vault/decrypt/route.ts</td>
+</tr>
+<tr>
+  <td><span class="method method-POST">POST</span></td>
+  <td class="route-path">/api/field-ops/vault/reset</td>
+  <td><span class="route-contract">out: { error }</span></td>
+  <td><span class="tag tag-auth">auth</span></td>
+  <td class="card-meta">mission-control/src/app/api/field-ops/vault/reset/route.ts</td>
+</tr>
+<tr>
+  <td><span class="method method-GET">GET</span></td>
+  <td class="route-path">/api/field-ops/vault</td>
+  <td><span class="route-contract">out: { data, credentials, meta }</span></td>
+  <td><span class="tag tag-auth">auth</span></td>
+  <td class="card-meta">mission-control/src/app/api/field-ops/vault/route.ts</td>
+</tr>
+<tr>
+  <td><span class="method method-POST">POST</span></td>
+  <td class="route-path">/api/field-ops/vault</td>
+  <td><span class="route-contract">out: { data, credentials, meta }</span></td>
+  <td><span class="tag tag-auth">auth</span></td>
+  <td class="card-meta">mission-control/src/app/api/field-ops/vault/route.ts</td>
+</tr>
+<tr>
+  <td><span class="method method-DELETE">DELETE</span></td>
+  <td class="route-path">/api/field-ops/vault</td>
+  <td><span class="route-contract">out: { data, credentials, meta }</span></td>
+  <td><span class="tag tag-auth">auth</span></td>
+  <td class="card-meta">mission-control/src/app/api/field-ops/vault/route.ts</td>
+</tr>
+<tr>
+  <td><span class="method method-GET">GET</span></td>
+  <td class="route-path">/api/field-ops/vault/session</td>
+  <td><span class="route-contract">out: { error, retryAfterMs }</span></td>
+  <td><span class="tag tag-auth">auth</span><span class="tag tag-cache">cache</span></td>
+  <td class="card-meta">mission-control/src/app/api/field-ops/vault/session/route.ts</td>
+</tr>
+<tr>
+  <td><span class="method method-POST">POST</span></td>
+  <td class="route-path">/api/field-ops/vault/session</td>
+  <td><span class="route-contract">out: { error, retryAfterMs }</span></td>
+  <td><span class="tag tag-auth">auth</span><span class="tag tag-cache">cache</span></td>
+  <td class="card-meta">mission-control/src/app/api/field-ops/vault/session/route.ts</td>
+</tr>
+<tr>
+  <td><span class="method method-DELETE">DELETE</span></td>
+  <td class="route-path">/api/field-ops/vault/session</td>
+  <td><span class="route-contract">out: { error, retryAfterMs }</span></td>
+  <td><span class="tag tag-auth">auth</span><span class="tag tag-cache">cache</span></td>
+  <td class="card-meta">mission-control/src/app/api/field-ops/vault/session/route.ts</td>
+</tr>
+<tr>
+  <td><span class="method method-POST">POST</span></td>
+  <td class="route-path">/api/field-ops/vault/setup</td>
+  <td><span class="route-contract">out: { error }</span></td>
+  <td><span class="tag tag-auth">auth</span></td>
+  <td class="card-meta">mission-control/src/app/api/field-ops/vault/setup/route.ts</td>
+</tr>
+<tr>
+  <td><span class="method method-GET">GET</span></td>
+  <td class="route-path">/api/field-ops/wallet</td>
+  <td><span class="route-contract">out: { error, wallets }</span></td>
+  <td><span class="tag tag-auth">auth</span><span class="tag tag-db">db</span><span class="tag tag-cache">cache</span></td>
+  <td class="card-meta">mission-control/src/app/api/field-ops/wallet/route.ts</td>
+</tr>
+<tr>
+  <td><span class="method method-GET">GET</span></td>
+  <td class="route-path">/api/goals</td>
+  <td><span class="route-contract">out: { data, goals, meta, filtered, returned, limit, offset }</span></td>
+  <td><span class="tag tag-cache">cache</span></td>
+  <td class="card-meta">mission-control/src/app/api/goals/route.ts</td>
+</tr>
+<tr>
+  <td><span class="method method-POST">POST</span></td>
+  <td class="route-path">/api/goals</td>
+  <td><span class="route-contract">out: { data, goals, meta, filtered, returned, limit, offset }</span></td>
+  <td><span class="tag tag-cache">cache</span></td>
+  <td class="card-meta">mission-control/src/app/api/goals/route.ts</td>
+</tr>
+<tr>
+  <td><span class="method method-PUT">PUT</span></td>
+  <td class="route-path">/api/goals</td>
+  <td><span class="route-contract">out: { data, goals, meta, filtered, returned, limit, offset }</span></td>
+  <td><span class="tag tag-cache">cache</span></td>
+  <td class="card-meta">mission-control/src/app/api/goals/route.ts</td>
+</tr>
+<tr>
+  <td><span class="method method-DELETE">DELETE</span></td>
+  <td class="route-path">/api/goals</td>
+  <td><span class="route-contract">out: { data, goals, meta, filtered, returned, limit, offset }</span></td>
+  <td><span class="tag tag-cache">cache</span></td>
+  <td class="card-meta">mission-control/src/app/api/goals/route.ts</td>
+</tr>
+<tr>
+  <td><span class="method method-POST">POST</span></td>
+  <td class="route-path">/api/inbox/respond</td>
+  <td><span class="route-contract">out: { error }</span></td>
+  <td></td>
+  <td class="card-meta">mission-control/src/app/api/inbox/respond/route.ts</td>
+</tr>
+<tr>
+  <td><span class="method method-GET">GET</span></td>
+  <td class="route-path">/api/inbox/respond/status</td>
+  <td><span class="route-contract">out: { runs }</span></td>
+  <td></td>
+  <td class="card-meta">mission-control/src/app/api/inbox/respond/status/route.ts</td>
+</tr>
+<tr>
+  <td><span class="method method-POST">POST</span></td>
+  <td class="route-path">/api/inbox/respond/stop</td>
+  <td><span class="route-contract">out: { error }</span></td>
+  <td></td>
+  <td class="card-meta">mission-control/src/app/api/inbox/respond/stop/route.ts</td>
+</tr>
+<tr>
+  <td><span class="method method-GET">GET</span></td>
+  <td class="route-path">/api/inbox</td>
+  <td><span class="route-contract">out: { data, messages, meta, filtered, returned, limit, offset }</span></td>
+  <td><span class="tag tag-cache">cache</span></td>
+  <td class="card-meta">mission-control/src/app/api/inbox/route.ts</td>
+</tr>
+<tr>
+  <td><span class="method method-POST">POST</span></td>
+  <td class="route-path">/api/inbox</td>
+  <td><span class="route-contract">out: { data, messages, meta, filtered, returned, limit, offset }</span></td>
+  <td><span class="tag tag-cache">cache</span></td>
+  <td class="card-meta">mission-control/src/app/api/inbox/route.ts</td>
+</tr>
+<tr>
+  <td><span class="method method-PUT">PUT</span></td>
+  <td class="route-path">/api/inbox</td>
+  <td><span class="route-contract">out: { data, messages, meta, filtered, returned, limit, offset }</span></td>
+  <td><span class="tag tag-cache">cache</span></td>
+  <td class="card-meta">mission-control/src/app/api/inbox/route.ts</td>
+</tr>
+<tr>
+  <td><span class="method method-DELETE">DELETE</span></td>
+  <td class="route-path">/api/inbox</td>
+  <td><span class="route-contract">out: { data, messages, meta, filtered, returned, limit, offset }</span></td>
+  <td><span class="tag tag-cache">cache</span></td>
+  <td class="card-meta">mission-control/src/app/api/inbox/route.ts</td>
+</tr>
+<tr>
+  <td><span class="method method-GET">GET</span></td>
+  <td class="route-path">/api/initiatives</td>
+  <td><span class="route-contract">out: { data, meta, filtered, returned, limit, offset }</span></td>
+  <td><span class="tag tag-cache">cache</span></td>
+  <td class="card-meta">mission-control/src/app/api/initiatives/route.ts</td>
+</tr>
+<tr>
+  <td><span class="method method-POST">POST</span></td>
+  <td class="route-path">/api/initiatives</td>
+  <td><span class="route-contract">out: { data, meta, filtered, returned, limit, offset }</span></td>
+  <td><span class="tag tag-cache">cache</span></td>
+  <td class="card-meta">mission-control/src/app/api/initiatives/route.ts</td>
+</tr>
+<tr>
+  <td><span class="method method-PUT">PUT</span></td>
+  <td class="route-path">/api/initiatives</td>
+  <td><span class="route-contract">out: { data, meta, filtered, returned, limit, offset }</span></td>
+  <td><span class="tag tag-cache">cache</span></td>
+  <td class="card-meta">mission-control/src/app/api/initiatives/route.ts</td>
+</tr>
+<tr>
+  <td><span class="method method-DELETE">DELETE</span></td>
+  <td class="route-path">/api/initiatives</td>
+  <td><span class="route-contract">out: { data, meta, filtered, returned, limit, offset }</span></td>
+  <td><span class="tag tag-cache">cache</span></td>
+  <td class="card-meta">mission-control/src/app/api/initiatives/route.ts</td>
+</tr>
+<tr>
+  <td><span class="method method-GET">GET</span></td>
+  <td class="route-path">/api/logs/app</td>
+  <td><span class="route-contract">out: { lines, error }</span></td>
+  <td></td>
+  <td class="card-meta">mission-control/src/app/api/logs/app/route.ts</td>
+</tr>
+<tr>
+  <td><span class="method method-GET">GET</span></td>
+  <td class="route-path">/api/logs/daemon</td>
+  <td><span class="route-contract">out: { lines, error }</span></td>
+  <td></td>
+  <td class="card-meta">mission-control/src/app/api/logs/daemon/route.ts</td>
+</tr>
+<tr>
+  <td><span class="method method-GET">GET</span></td>
+  <td class="route-path">/api/logs/stream</td>
+  <td></td>
+  <td><span class="tag tag-cache">cache</span><span class="tag tag-queue">queue</span></td>
+  <td class="card-meta">mission-control/src/app/api/logs/stream/route.ts</td>
+</tr>
+<tr>
+  <td><span class="method method-GET">GET</span></td>
+  <td class="route-path">/api/missions</td>
+  <td><span class="route-contract">out: { missions }</span></td>
+  <td></td>
+  <td class="card-meta">mission-control/src/app/api/missions/route.ts</td>
+</tr>
+<tr>
+  <td><span class="method method-POST">POST</span></td>
+  <td class="route-path">/api/projects/[id]/run <span class="route-contract">params: id</span></td>
+  <td><span class="route-contract">out: { error, missionId }</span></td>
+  <td><span class="tag tag-queue">queue</span></td>
+  <td class="card-meta">mission-control/src/app/api/projects/[id]/run/route.ts</td>
+</tr>
+<tr>
+  <td><span class="method method-POST">POST</span></td>
+  <td class="route-path">/api/projects/[id]/stop <span class="route-contract">params: id</span></td>
+  <td><span class="route-contract">out: { error }</span></td>
+  <td></td>
+  <td class="card-meta">mission-control/src/app/api/projects/[id]/stop/route.ts</td>
+</tr>
+<tr>
+  <td><span class="method method-GET">GET</span></td>
+  <td class="route-path">/api/projects</td>
+  <td><span class="route-contract">out: { data, projects, meta, filtered, returned, limit, offset }</span></td>
+  <td><span class="tag tag-cache">cache</span></td>
+  <td class="card-meta">mission-control/src/app/api/projects/route.ts</td>
+</tr>
+<tr>
+  <td><span class="method method-POST">POST</span></td>
+  <td class="route-path">/api/projects</td>
+  <td><span class="route-contract">out: { data, projects, meta, filtered, returned, limit, offset }</span></td>
+  <td><span class="tag tag-cache">cache</span></td>
+  <td class="card-meta">mission-control/src/app/api/projects/route.ts</td>
+</tr>
+<tr>
+  <td><span class="method method-PUT">PUT</span></td>
+  <td class="route-path">/api/projects</td>
+  <td><span class="route-contract">out: { data, projects, meta, filtered, returned, limit, offset }</span></td>
+  <td><span class="tag tag-cache">cache</span></td>
+  <td class="card-meta">mission-control/src/app/api/projects/route.ts</td>
+</tr>
+<tr>
+  <td><span class="method method-DELETE">DELETE</span></td>
+  <td class="route-path">/api/projects</td>
+  <td><span class="route-contract">out: { data, projects, meta, filtered, returned, limit, offset }</span></td>
+  <td><span class="tag tag-cache">cache</span></td>
+  <td class="card-meta">mission-control/src/app/api/projects/route.ts</td>
+</tr>
+<tr>
+  <td><span class="method method-GET">GET</span></td>
+  <td class="route-path">/api/runs</td>
+  <td></td>
+  <td></td>
+  <td class="card-meta">mission-control/src/app/api/runs/route.ts</td>
+</tr>
+<tr>
+  <td><span class="method method-GET">GET</span></td>
+  <td class="route-path">/api/runs/stream</td>
+  <td></td>
+  <td><span class="tag tag-cache">cache</span><span class="tag tag-queue">queue</span></td>
+  <td class="card-meta">mission-control/src/app/api/runs/stream/route.ts</td>
+</tr>
+<tr>
+  <td><span class="method method-GET">GET</span></td>
+  <td class="route-path">/api/server-status</td>
+  <td><span class="route-contract">out: { mode, uptimeSeconds, pid }</span></td>
+  <td></td>
+  <td class="card-meta">mission-control/src/app/api/server-status/route.ts</td>
+</tr>
+<tr>
+  <td><span class="method method-GET">GET</span></td>
+  <td class="route-path">/api/sidebar</td>
+  <td><span class="route-contract">out: { tasks, unreadInbox, pendingDecisions, pendingFieldApprovals, pendingActionApprovals, agents }</span></td>
+  <td><span class="tag tag-cache">cache</span></td>
+  <td class="card-meta">mission-control/src/app/api/sidebar/route.ts</td>
+</tr>
+<tr>
+  <td><span class="method method-GET">GET</span></td>
+  <td class="route-path">/api/skills</td>
+  <td><span class="route-contract">out: { data, skills, meta, filtered, returned, limit, offset }</span></td>
+  <td><span class="tag tag-cache">cache</span></td>
+  <td class="card-meta">mission-control/src/app/api/skills/route.ts</td>
+</tr>
+<tr>
+  <td><span class="method method-POST">POST</span></td>
+  <td class="route-path">/api/skills</td>
+  <td><span class="route-contract">out: { data, skills, meta, filtered, returned, limit, offset }</span></td>
+  <td><span class="tag tag-cache">cache</span></td>
+  <td class="card-meta">mission-control/src/app/api/skills/route.ts</td>
+</tr>
+<tr>
+  <td><span class="method method-PUT">PUT</span></td>
+  <td class="route-path">/api/skills</td>
+  <td><span class="route-contract">out: { data, skills, meta, filtered, returned, limit, offset }</span></td>
+  <td><span class="tag tag-cache">cache</span></td>
+  <td class="card-meta">mission-control/src/app/api/skills/route.ts</td>
+</tr>
+<tr>
+  <td><span class="method method-DELETE">DELETE</span></td>
+  <td class="route-path">/api/skills</td>
+  <td><span class="route-contract">out: { data, skills, meta, filtered, returned, limit, offset }</span></td>
+  <td><span class="tag tag-cache">cache</span></td>
+  <td class="card-meta">mission-control/src/app/api/skills/route.ts</td>
+</tr>
+<tr>
+  <td><span class="method method-POST">POST</span></td>
+  <td class="route-path">/api/sync</td>
+  <td><span class="route-contract">out: { ok, message }</span></td>
+  <td><span class="tag tag-ai">ai</span></td>
+  <td class="card-meta">mission-control/src/app/api/sync/route.ts</td>
+</tr>
+<tr>
+  <td><span class="method method-POST">POST</span></td>
+  <td class="route-path">/api/tasks/[id]/comment <span class="route-contract">params: id</span></td>
+  <td><span class="route-contract">out: { error }</span></td>
+  <td><span class="tag tag-auth">auth</span><span class="tag tag-upload">upload</span></td>
+  <td class="card-meta">mission-control/src/app/api/tasks/[id]/comment/route.ts</td>
+</tr>
+<tr>
+  <td><span class="method method-DELETE">DELETE</span></td>
+  <td class="route-path">/api/tasks/[id]/comment <span class="route-contract">params: id</span></td>
+  <td><span class="route-contract">out: { error }</span></td>
+  <td><span class="tag tag-auth">auth</span><span class="tag tag-upload">upload</span></td>
+  <td class="card-meta">mission-control/src/app/api/tasks/[id]/comment/route.ts</td>
+</tr>
+<tr>
+  <td><span class="method method-POST">POST</span></td>
+  <td class="route-path">/api/tasks/[id]/run <span class="route-contract">params: id</span></td>
+  <td><span class="route-contract">out: { error }</span></td>
+  <td></td>
+  <td class="card-meta">mission-control/src/app/api/tasks/[id]/run/route.ts</td>
+</tr>
+<tr>
+  <td><span class="method method-POST">POST</span></td>
+  <td class="route-path">/api/tasks/[id]/stop <span class="route-contract">params: id</span></td>
+  <td><span class="route-contract">out: { error }</span></td>
+  <td></td>
+  <td class="card-meta">mission-control/src/app/api/tasks/[id]/stop/route.ts</td>
+</tr>
+<tr>
+  <td><span class="method method-GET">GET</span></td>
+  <td class="route-path">/api/tasks/archive</td>
+  <td><span class="route-contract">out: { data, tasks, archived, meta, filtered }</span></td>
+  <td></td>
+  <td class="card-meta">mission-control/src/app/api/tasks/archive/route.ts</td>
+</tr>
+<tr>
+  <td><span class="method method-POST">POST</span></td>
+  <td class="route-path">/api/tasks/archive</td>
+  <td><span class="route-contract">out: { data, tasks, archived, meta, filtered }</span></td>
+  <td></td>
+  <td class="card-meta">mission-control/src/app/api/tasks/archive/route.ts</td>
+</tr>
+<tr>
+  <td><span class="method method-PUT">PUT</span></td>
+  <td class="route-path">/api/tasks/bulk</td>
+  <td><span class="route-contract">out: { error }</span></td>
+  <td></td>
+  <td class="card-meta">mission-control/src/app/api/tasks/bulk/route.ts</td>
+</tr>
+<tr>
+  <td><span class="method method-DELETE">DELETE</span></td>
+  <td class="route-path">/api/tasks/bulk</td>
+  <td><span class="route-contract">out: { error }</span></td>
+  <td></td>
+  <td class="card-meta">mission-control/src/app/api/tasks/bulk/route.ts</td>
+</tr>
+<tr>
+  <td><span class="method method-GET">GET</span></td>
+  <td class="route-path">/api/tasks</td>
+  <td><span class="route-contract">out: { data, tasks, meta }</span></td>
+  <td><span class="tag tag-cache">cache</span></td>
+  <td class="card-meta">mission-control/src/app/api/tasks/route.ts</td>
+</tr>
+<tr>
+  <td><span class="method method-POST">POST</span></td>
+  <td class="route-path">/api/tasks</td>
+  <td><span class="route-contract">out: { data, tasks, meta }</span></td>
+  <td><span class="tag tag-cache">cache</span></td>
+  <td class="card-meta">mission-control/src/app/api/tasks/route.ts</td>
+</tr>
+<tr>
+  <td><span class="method method-PUT">PUT</span></td>
+  <td class="route-path">/api/tasks</td>
+  <td><span class="route-contract">out: { data, tasks, meta }</span></td>
+  <td><span class="tag tag-cache">cache</span></td>
+  <td class="card-meta">mission-control/src/app/api/tasks/route.ts</td>
+</tr>
+<tr>
+  <td><span class="method method-DELETE">DELETE</span></td>
+  <td class="route-path">/api/tasks</td>
+  <td><span class="route-contract">out: { data, tasks, meta }</span></td>
+  <td><span class="tag tag-cache">cache</span></td>
+  <td class="card-meta">mission-control/src/app/api/tasks/route.ts</td>
+</tr>
+<tr>
+  <td><span class="method method-POST">POST</span></td>
+  <td class="route-path">/api/upload</td>
+  <td><span class="route-contract">out: { error }</span></td>
+  <td><span class="tag tag-upload">upload</span></td>
+  <td class="card-meta">mission-control/src/app/api/upload/route.ts</td>
+</tr>
+<tr>
+  <td><span class="method method-POST">POST</span></td>
+  <td class="route-path">/api/ventures/[id]/run <span class="route-contract">params: id</span></td>
+  <td><span class="route-contract">out: { error, missionId }</span></td>
+  <td><span class="tag tag-queue">queue</span></td>
+  <td class="card-meta">mission-control/src/app/api/ventures/[id]/run/route.ts</td>
+</tr>
+<tr>
+  <td><span class="method method-POST">POST</span></td>
+  <td class="route-path">/api/ventures/[id]/stop <span class="route-contract">params: id</span></td>
+  <td><span class="route-contract">out: { error }</span></td>
+  <td></td>
+  <td class="card-meta">mission-control/src/app/api/ventures/[id]/stop/route.ts</td>
+</tr>
+<tr>
+  <td><span class="method method-GET">GET</span></td>
+  <td class="route-path">/api/ventures</td>
+  <td><span class="route-contract">out: { data, projects, meta, filtered, returned, limit, offset }</span></td>
+  <td><span class="tag tag-cache">cache</span></td>
+  <td class="card-meta">mission-control/src/app/api/ventures/route.ts</td>
+</tr>
+<tr>
+  <td><span class="method method-POST">POST</span></td>
+  <td class="route-path">/api/ventures</td>
+  <td><span class="route-contract">out: { data, projects, meta, filtered, returned, limit, offset }</span></td>
+  <td><span class="tag tag-cache">cache</span></td>
+  <td class="card-meta">mission-control/src/app/api/ventures/route.ts</td>
+</tr>
+<tr>
+  <td><span class="method method-PUT">PUT</span></td>
+  <td class="route-path">/api/ventures</td>
+  <td><span class="route-contract">out: { data, projects, meta, filtered, returned, limit, offset }</span></td>
+  <td><span class="tag tag-cache">cache</span></td>
+  <td class="card-meta">mission-control/src/app/api/ventures/route.ts</td>
+</tr>
+<tr>
+  <td><span class="method method-DELETE">DELETE</span></td>
+  <td class="route-path">/api/ventures</td>
+  <td><span class="route-contract">out: { data, projects, meta, filtered, returned, limit, offset }</span></td>
+  <td><span class="tag tag-cache">cache</span></td>
+  <td class="card-meta">mission-control/src/app/api/ventures/route.ts</td>
+</tr>
+<tr>
+  <td><span class="method method-GET">GET</span></td>
+  <td class="route-path">/api/workspaces</td>
+  <td><span class="route-contract">out: { error }</span></td>
+  <td></td>
+  <td class="card-meta">mission-control/src/app/api/workspaces/route.ts</td>
+</tr>
+<tr>
+  <td><span class="method method-POST">POST</span></td>
+  <td class="route-path">/api/workspaces</td>
+  <td><span class="route-contract">out: { error }</span></td>
+  <td></td>
+  <td class="card-meta">mission-control/src/app/api/workspaces/route.ts</td>
+</tr>
+<tr>
+  <td><span class="method method-PUT">PUT</span></td>
+  <td class="route-path">/api/workspaces</td>
+  <td><span class="route-contract">out: { error }</span></td>
+  <td></td>
+  <td class="card-meta">mission-control/src/app/api/workspaces/route.ts</td>
+</tr>
+<tr>
+  <td><span class="method method-DELETE">DELETE</span></td>
+  <td class="route-path">/api/workspaces</td>
+  <td><span class="route-contract">out: { error }</span></td>
+  <td></td>
+  <td class="card-meta">mission-control/src/app/api/workspaces/route.ts</td>
+</tr>
+<tr>
+  <td><span class="method method-GET">GET</span></td>
+  <td class="route-path">/uploads/[filename] <span class="route-contract">params: filename</span></td>
+  <td><span class="route-contract">out: { error }</span></td>
+  <td><span class="tag tag-cache">cache</span><span class="tag tag-upload">upload</span></td>
+  <td class="card-meta">mission-control/src/app/uploads/[filename]/route.ts</td>
+</tr>
+</table>
+</div>
+
+
+
+
+<div class="section">
+<h2>Components</h2>
+<div class="grid">
+<div class="card">
+  <div class="card-title">ActionsActivityPage <span class="badge-client">client</span></div>
+  
+  <div class="card-meta">mission-control/src/app/actions/activity/page.tsx</div>
+</div>
+<div class="card">
+  <div class="card-title">ActivityPage <span class="badge-client">client</span></div>
+  
+  <div class="card-meta">mission-control/src/app/activity/page.tsx</div>
+</div>
+<div class="card">
+  <div class="card-title">ApprovalsPage <span class="badge-client">client</span></div>
+  
+  <div class="card-meta">mission-control/src/app/approvals/page.tsx</div>
+</div>
+<div class="card">
+  <div class="card-title">AutopilotPage <span class="badge-client">client</span></div>
+  
+  <div class="card-meta">mission-control/src/app/autopilot/page.tsx</div>
+</div>
+<div class="card">
+  <div class="card-title">BrainDumpLoading </div>
+  
+  <div class="card-meta">mission-control/src/app/brain-dump/loading.tsx</div>
+</div>
+<div class="card">
+  <div class="card-title">BrainDumpPage <span class="badge-client">client</span></div>
+  
+  <div class="card-meta">mission-control/src/app/brain-dump/page.tsx</div>
+</div>
+<div class="card">
+  <div class="card-title">CheckpointsPage <span class="badge-client">client</span></div>
+  
+  <div class="card-meta">mission-control/src/app/checkpoints/page.tsx</div>
+</div>
+<div class="card">
+  <div class="card-title">EditAgentPage <span class="badge-client">client</span></div>
+  
+  <div class="card-meta">mission-control/src/app/crew/[id]/edit/page.tsx</div>
+</div>
+<div class="card">
+  <div class="card-title">AgentPage <span class="badge-client">client</span></div>
+  
+  <div class="card-meta">mission-control/src/app/crew/[id]/page.tsx</div>
+</div>
+<div class="card">
+  <div class="card-title">CrewLoading </div>
+  
+  <div class="card-meta">mission-control/src/app/crew/loading.tsx</div>
+</div>
+<div class="card">
+  <div class="card-title">NewAgentPage <span class="badge-client">client</span></div>
+  
+  <div class="card-meta">mission-control/src/app/crew/new/page.tsx</div>
+</div>
+<div class="card">
+  <div class="card-title">CrewPage <span class="badge-client">client</span></div>
+  
+  <div class="card-meta">mission-control/src/app/crew/page.tsx</div>
+</div>
+<div class="card">
+  <div class="card-title">DaemonPage </div>
+  
+  <div class="card-meta">mission-control/src/app/daemon/page.tsx</div>
+</div>
+<div class="card">
+  <div class="card-title">DecisionsPage <span class="badge-client">client</span></div>
+  
+  <div class="card-meta">mission-control/src/app/decisions/page.tsx</div>
+</div>
+<div class="card">
+  <div class="card-title">Error <span class="badge-client">client</span></div>
+  <div class="component-props">props: error, reset</div>
+  <div class="card-meta">mission-control/src/app/error.tsx</div>
+</div>
+<div class="card">
+  <div class="card-title">FieldActivityPage <span class="badge-client">client</span></div>
+  
+  <div class="card-meta">mission-control/src/app/field-ops/activity/page.tsx</div>
+</div>
+<div class="card">
+  <div class="card-title">ApprovalsPage <span class="badge-client">client</span></div>
+  
+  <div class="card-meta">mission-control/src/app/field-ops/approvals/page.tsx</div>
+</div>
+<div class="card">
+  <div class="card-title">MissionDetailPage <span class="badge-client">client</span></div>
+  
+  <div class="card-meta">mission-control/src/app/field-ops/missions/[id]/page.tsx</div>
+</div>
+<div class="card">
+  <div class="card-title">MissionsPage <span class="badge-client">client</span></div>
+  
+  <div class="card-meta">mission-control/src/app/field-ops/missions/page.tsx</div>
+</div>
+<div class="card">
+  <div class="card-title">ConnectionsOverviewPage <span class="badge-client">client</span></div>
+  
+  <div class="card-meta">mission-control/src/app/field-ops/page.tsx</div>
+</div>
+<div class="card">
+  <div class="card-title">SafetyPage <span class="badge-client">client</span></div>
+  
+  <div class="card-meta">mission-control/src/app/field-ops/safety/page.tsx</div>
+</div>
+<div class="card">
+  <div class="card-title">ServicesPage <span class="badge-client">client</span></div>
+  
+  <div class="card-meta">mission-control/src/app/field-ops/services/page.tsx</div>
+</div>
+<div class="card">
+  <div class="card-title">VaultPage <span class="badge-client">client</span></div>
+  
+  <div class="card-meta">mission-control/src/app/field-ops/vault/page.tsx</div>
+</div>
+<div class="card">
+  <div class="card-title">GlobalError <span class="badge-client">client</span></div>
+  <div class="component-props">props: error, reset</div>
+  <div class="card-meta">mission-control/src/app/global-error.tsx</div>
+</div>
+<div class="card">
+  <div class="card-title">GoalsPage </div>
+  
+  <div class="card-meta">mission-control/src/app/goals/page.tsx</div>
+</div>
+<div class="card">
+  <div class="card-title">GuidePage <span class="badge-client">client</span></div>
+  
+  <div class="card-meta">mission-control/src/app/guide/page.tsx</div>
+</div>
+<div class="card">
+  <div class="card-title">InboxLoading </div>
+  
+  <div class="card-meta">mission-control/src/app/inbox/loading.tsx</div>
+</div>
+<div class="card">
+  <div class="card-title">InboxPage <span class="badge-client">client</span></div>
+  
+  <div class="card-meta">mission-control/src/app/inbox/page.tsx</div>
+</div>
+<div class="card">
+  <div class="card-title">InitiativeDetailPage <span class="badge-client">client</span></div>
+  
+  <div class="card-meta">mission-control/src/app/initiatives/[id]/page.tsx</div>
+</div>
+<div class="card">
+  <div class="card-title">InitiativesPage <span class="badge-client">client</span></div>
+  <div class="component-props">props: open, onOpenChange, onSubmit, parentGoalOptions</div>
+  <div class="card-meta">mission-control/src/app/initiatives/page.tsx</div>
+</div>
+<div class="card">
+  <div class="card-title">RootLayout </div>
+  
+  <div class="card-meta">mission-control/src/app/layout.tsx</div>
+</div>
+<div class="card">
+  <div class="card-title">DashboardLoading </div>
+  
+  <div class="card-meta">mission-control/src/app/loading.tsx</div>
+</div>
+<div class="card">
+  <div class="card-title">LogsPage <span class="badge-client">client</span></div>
+  
+  <div class="card-meta">mission-control/src/app/logs/page.tsx</div>
+</div>
+<div class="card">
+  <div class="card-title">NotFound </div>
+  
+  <div class="card-meta">mission-control/src/app/not-found.tsx</div>
+</div>
+<div class="card">
+  <div class="card-title">GoalsPage <span class="badge-client">client</span></div>
+  
+  <div class="card-meta">mission-control/src/app/objectives/page.tsx</div>
+</div>
+<div class="card">
+  <div class="card-title">CommandCenterPage <span class="badge-client">client</span></div>
+  
+  <div class="card-meta">mission-control/src/app/page.tsx</div>
+</div>
+<div class="card">
+  <div class="card-title">PriorityMatrixLoading </div>
+  
+  <div class="card-meta">mission-control/src/app/priority-matrix/loading.tsx</div>
+</div>
+<div class="card">
+  <div class="card-title">TasksPage <span class="badge-client">client</span></div>
+  
+  <div class="card-meta">mission-control/src/app/priority-matrix/page.tsx</div>
+</div>
+<div class="card">
+  <div class="card-title">ProjectsDetailPage </div>
+  
+  <div class="card-meta">mission-control/src/app/projects/[id]/page.tsx</div>
+</div>
+<div class="card">
+  <div class="card-title">ProjectsPage <span class="badge-client">client</span></div>
+  
+  <div class="card-meta">mission-control/src/app/projects/page.tsx</div>
+</div>
+<div class="card">
+  <div class="card-title">SafetyPage </div>
+  
+  <div class="card-meta">mission-control/src/app/safety/page.tsx</div>
+</div>
+<div class="card">
+  <div class="card-title">ServicesPage </div>
+  
+  <div class="card-meta">mission-control/src/app/services/page.tsx</div>
+</div>
+<div class="card">
+  <div class="card-title">SettingsPage <span class="badge-client">client</span></div>
+  
+  <div class="card-meta">mission-control/src/app/settings/page.tsx</div>
+</div>
+<div class="card">
+  <div class="card-title">SkillEditorPage <span class="badge-client">client</span></div>
+  
+  <div class="card-meta">mission-control/src/app/skills/[id]/page.tsx</div>
+</div>
+<div class="card">
+  <div class="card-title">NewSkillPage <span class="badge-client">client</span></div>
+  
+  <div class="card-meta">mission-control/src/app/skills/new/page.tsx</div>
+</div>
+<div class="card">
+  <div class="card-title">SkillsPage <span class="badge-client">client</span></div>
+  
+  <div class="card-meta">mission-control/src/app/skills/page.tsx</div>
+</div>
+<div class="card">
+  <div class="card-title">StatusBoardLoading </div>
+  
+  <div class="card-meta">mission-control/src/app/status-board/loading.tsx</div>
+</div>
+<div class="card">
+  <div class="card-title">KanbanPage <span class="badge-client">client</span></div>
+  
+  <div class="card-meta">mission-control/src/app/status-board/page.tsx</div>
+</div>
+<div class="card">
+  <div class="card-title">AgentNotFound </div>
+  
+  <div class="card-meta">mission-control/src/app/team/[role]/not-found.tsx</div>
+</div>
+<div class="card">
+  <div class="card-title">TeamMemberRedirect </div>
+  <div class="component-props">props: params</div>
+  <div class="card-meta">mission-control/src/app/team/[role]/page.tsx</div>
+</div>
+<div class="card">
+  <div class="card-title">VaultPage </div>
+  
+  <div class="card-meta">mission-control/src/app/vault/page.tsx</div>
+</div>
+<div class="card">
+  <div class="card-title">VenturesDetailPage </div>
+  
+  <div class="card-meta">mission-control/src/app/ventures/[id]/page.tsx</div>
+</div>
+<div class="card">
+  <div class="card-title">ProjectsPage <span class="badge-client">client</span></div>
+  
+  <div class="card-meta">mission-control/src/app/ventures/page.tsx</div>
+</div>
+<div class="card">
+  <div class="card-title">ActionDetailPanel <span class="badge-client">client</span></div>
+  <div class="component-props">props: action, open, onClose, onUpdate, agents</div>
+  <div class="card-meta">mission-control/src/components/action-detail-panel.tsx</div>
+</div>
+<div class="card">
+  <div class="card-title">AgentConsole <span class="badge-client">client</span></div>
+  <div class="component-props">props: runId, onStop</div>
+  <div class="card-meta">mission-control/src/components/agent-console.tsx</div>
+</div>
+<div class="card">
+  <div class="card-title">AppSidebar <span class="badge-client">client</span></div>
+  <div class="component-props">props: href, label, icon, isActive, collapsed, onClick, size, badge, badgeDot, tooltipSuffix</div>
+  <div class="card-meta">mission-control/src/components/app-sidebar.tsx</div>
+</div>
+<div class="card">
+  <div class="card-title">AutonomySelector <span class="badge-client">client</span></div>
+  <div class="component-props">props: value, onChange, showInherit</div>
+  <div class="card-meta">mission-control/src/components/autonomy-selector.tsx</div>
+</div>
+<div class="card">
+  <div class="card-title">DraggableTaskCard <span class="badge-client">client</span></div>
+  <div class="component-props">props: task, project, onClick, isSelected, onToggleSelect, isRunning, onRun, pendingDecisionTaskIds, onStatusChange, onDuplicate</div>
+  <div class="card-meta">mission-control/src/components/board-view.tsx</div>
+</div>
+<div class="card">
+  <div class="card-title">BreadcrumbNav <span class="badge-client">client</span></div>
+  <div class="component-props">props: items, className</div>
+  <div class="card-meta">mission-control/src/components/breadcrumb-nav.tsx</div>
+</div>
+<div class="card">
+  <div class="card-title">BulkActionBar <span class="badge-client">client</span></div>
+  <div class="component-props">props: count, onMarkDone, onDelete, onClear</div>
+  <div class="card-meta">mission-control/src/components/bulk-action-bar.tsx</div>
+</div>
+<div class="card">
+  <div class="card-title">CommandBar <span class="badge-client">client</span></div>
+  <div class="component-props">props: onCapture, sidebarOpen, onToggleSidebar, isMobile, tasks, onTaskClick</div>
+  <div class="card-meta">mission-control/src/components/command-bar.tsx</div>
+</div>
+<div class="card">
+  <div class="card-title">ConfirmDialog <span class="badge-client">client</span></div>
+  <div class="component-props">props: open, onOpenChange, title, description, confirmLabel, onConfirm, variant</div>
+  <div class="card-meta">mission-control/src/components/confirm-dialog.tsx</div>
+</div>
+<div class="card">
+  <div class="card-title">AgentContextMenuContent <span class="badge-client">client</span></div>
+  <div class="component-props">props: agent, href, onEdit, onNewTask, onToggleStatus</div>
+  <div class="card-meta">mission-control/src/components/context-menus/agent-context-menu.tsx</div>
+</div>
+<div class="card">
+  <div class="card-title">FieldTaskContextMenuContent <span class="badge-client">client</span></div>
+  <div class="component-props">props: task, onOpen, onEdit, onDelete</div>
+  <div class="card-meta">mission-control/src/components/context-menus/field-task-context-menu.tsx</div>
+</div>
+<div class="card">
+  <div class="card-title">GoalContextMenuContent <span class="badge-client">client</span></div>
+  <div class="component-props">props: goal, onEdit, onAddMilestone, onMarkComplete, onDelete</div>
+  <div class="card-meta">mission-control/src/components/context-menus/goal-context-menu.tsx</div>
+</div>
+<div class="card">
+  <div class="card-title">InitiativeContextMenuContent <span class="badge-client">client</span></div>
+  <div class="component-props">props: initiative, onTogglePause, onArchive, onDelete</div>
+  <div class="card-meta">mission-control/src/components/context-menus/initiative-context-menu.tsx</div>
+</div>
+<div class="card">
+  <div class="card-title">ProjectContextMenuContent <span class="badge-client">client</span></div>
+  <div class="component-props">props: project, href, onEdit, onRun, onArchive, onDelete</div>
+  <div class="card-meta">mission-control/src/components/context-menus/project-context-menu.tsx</div>
+</div>
+<div class="card">
+  <div class="card-title">TaskContextMenuContent <span class="badge-client">client</span></div>
+  <div class="component-props">props: task, onOpen, onStatusChange, onDuplicate, onRun, onDelete</div>
+  <div class="card-meta">mission-control/src/components/context-menus/task-context-menu.tsx</div>
+</div>
+<div class="card">
+  <div class="card-title">CreateGoalDialog <span class="badge-client">client</span></div>
+  <div class="component-props">props: open, onOpenChange, projects, goals, onSubmit, title, type, timeframe, projectId, parentGoalId</div>
+  <div class="card-meta">mission-control/src/components/create-goal-dialog.tsx</div>
+</div>
+<div class="card">
+  <div class="card-title">CreateProjectDialog <span class="badge-client">client</span></div>
+  <div class="component-props">props: open, onOpenChange, onSubmit</div>
+  <div class="card-meta">mission-control/src/components/create-project-dialog.tsx</div>
+</div>
+<div class="card">
+  <div class="card-title">CreateTaskDialog <span class="badge-client">client</span></div>
+  <div class="component-props">props: open, onOpenChange, projects, goals, onSubmit, defaultValues</div>
+  <div class="card-meta">mission-control/src/components/create-task-dialog.tsx</div>
+</div>
+<div class="card">
+  <div class="card-title">DecisionDialog <span class="badge-client">client</span></div>
+  <div class="component-props">props: open, onOpenChange, decision, onAnswered</div>
+  <div class="card-meta">mission-control/src/components/decision-dialog.tsx</div>
+</div>
+<div class="card">
+  <div class="card-title">EditGoalDialog <span class="badge-client">client</span></div>
+  <div class="component-props">props: open, onOpenChange, goal, projects, goals, onSubmit, title, type, timeframe, status</div>
+  <div class="card-meta">mission-control/src/components/edit-goal-dialog.tsx</div>
+</div>
+<div class="card">
+  <div class="card-title">EditProjectDialog <span class="badge-client">client</span></div>
+  <div class="component-props">props: open, onOpenChange, project, agents, onSubmit, name, description, status, color, teamMembers</div>
+  <div class="card-meta">mission-control/src/components/edit-project-dialog.tsx</div>
+</div>
+<div class="card">
+  <div class="card-title">EisenhowerSummary <span class="badge-client">client</span></div>
+  <div class="component-props">props: tasks</div>
+  <div class="card-meta">mission-control/src/components/eisenhower-summary.tsx</div>
+</div>
+<div class="card">
+  <div class="card-title">EmptyState </div>
+  <div class="component-props">props: icon, title, description, actionLabel, onAction, className, compact</div>
+  <div class="card-meta">mission-control/src/components/empty-state.tsx</div>
+</div>
+<div class="card">
+  <div class="card-title">ErrorState </div>
+  <div class="component-props">props: message, onRetry, className, compact</div>
+  <div class="card-meta">mission-control/src/components/error-state.tsx</div>
+</div>
+<div class="card">
+  <div class="card-title">ActivateServiceDialog <span class="badge-client">client</span></div>
+  <div class="component-props">props: service, catalogEntry, open, onOpenChange, onActivated, updateMode</div>
+  <div class="card-meta">mission-control/src/components/field-ops/activate-service-dialog.tsx</div>
+</div>
+<div class="card">
+  <div class="card-title">CatalogServiceCard <span class="badge-client">client</span></div>
+  <div class="component-props">props: service</div>
+  <div class="card-meta">mission-control/src/components/field-ops/catalog-service-card.tsx</div>
+</div>
+<div class="card">
+  <div class="card-title">ExecutionResultPanel <span class="badge-client">client</span></div>
+  <div class="component-props">props: result, success, className</div>
+  <div class="card-meta">mission-control/src/components/field-ops/execution-result-panel.tsx</div>
+</div>
+<div class="card">
+  <div class="card-title">FieldTaskCard <span class="badge-client">client</span></div>
+  <div class="component-props">props: task, services, onStatusChange, onEdit, onDelete, onReject, onOpen, onExecute, executing, onDryRun</div>
+  <div class="card-meta">mission-control/src/components/field-ops/field-task-card.tsx</div>
+</div>
+<div class="card">
+  <div class="card-title">FieldTaskFormDialog <span class="badge-client">client</span></div>
+  <div class="component-props">props: open, onOpenChange, task, missionId, missionAutonomy, services, onSubmit, title, description, type</div>
+  <div class="card-meta">mission-control/src/components/field-ops/field-task-form-dialog.tsx</div>
+</div>
+<div class="card">
+  <div class="card-title">FinancialOverviewCard <span class="badge-client">client</span></div>
+  <div class="component-props">props: variant</div>
+  <div class="card-meta">mission-control/src/components/field-ops/financial-overview-card.tsx</div>
+</div>
+<div class="card">
+  <div class="card-title">GettingStartedCard <span class="badge-client">client</span></div>
+  <div class="component-props">props: title, description, steps, learnMoreHref, storageKey, accentClass</div>
+  <div class="card-meta">mission-control/src/components/field-ops/getting-started-card.tsx</div>
+</div>
+<div class="card">
+  <div class="card-title">MissionFormDialog <span class="badge-client">client</span></div>
+  <div class="component-props">props: open, onOpenChange, mission, projects, onSubmit, title, description, autonomyLevel, linkedProjectId</div>
+  <div class="card-meta">mission-control/src/components/field-ops/mission-form-dialog.tsx</div>
+</div>
+<div class="card">
+  <div class="card-title">RejectTaskDialog <span class="badge-client">client</span></div>
+  <div class="component-props">props: open, onOpenChange, taskTitle, onReject</div>
+  <div class="card-meta">mission-control/src/components/field-ops/reject-task-dialog.tsx</div>
+</div>
+<div class="card">
+  <div class="card-title">SetupGuideDialog <span class="badge-client">client</span></div>
+  <div class="component-props">props: service, open, onOpenChange</div>
+  <div class="card-meta">mission-control/src/components/field-ops/setup-guide-dialog.tsx</div>
+</div>
+<div class="card">
+  <div class="card-title">SignTransactionButton <span class="badge-client">client</span></div>
+  <div class="component-props">props: taskId, onComplete</div>
+  <div class="card-meta">mission-control/src/components/field-ops/sign-transaction-button.tsx</div>
+</div>
+<div class="card">
+  <div class="card-title">VaultUnlockDialog <span class="badge-client">client</span></div>
+  <div class="component-props">props: open, onOpenChange, onUnlock, context</div>
+  <div class="card-meta">mission-control/src/components/field-ops/vault-unlock-dialog.tsx</div>
+</div>
+<div class="card">
+  <div class="card-title">WalletBalanceCard <span class="badge-client">client</span></div>
+  <div class="component-props">props: onUnlockVault</div>
+  <div class="card-meta">mission-control/src/components/field-ops/wallet-balance-card.tsx</div>
+</div>
+<div class="card">
+  <div class="card-title">WalletConnectButton <span class="badge-client">client</span></div>
+  
+  <div class="card-meta">mission-control/src/components/field-ops/wallet-connect-button.tsx</div>
+</div>
+<div class="card">
+  <div class="card-title">GoalCard <span class="badge-client">client</span></div>
+  <div class="component-props">props: goal, tasks, projects, milestones, onEdit, onAddMilestone, onMarkComplete, onDelete</div>
+  <div class="card-meta">mission-control/src/components/goal-card.tsx</div>
+</div>
+<div class="card">
+  <div class="card-title">KeyboardShortcuts <span class="badge-client">client</span></div>
+  <div class="component-props">props: onCreateTask</div>
+  <div class="card-meta">mission-control/src/components/keyboard-shortcuts.tsx</div>
+</div>
+<div class="card">
+  <div class="card-title">LayoutShell <span class="badge-client">client</span></div>
+  
+  <div class="card-meta">mission-control/src/components/layout-shell.tsx</div>
+</div>
+<div class="card">
+  <div class="card-title">MarkdownContent <span class="badge-client">client</span></div>
+  <div class="component-props">props: content, className</div>
+  <div class="card-meta">mission-control/src/components/markdown-content.tsx</div>
+</div>
+<div class="card">
+  <div class="card-title">MentionTextarea <span class="badge-client">client</span></div>
+  <div class="component-props">props: value, onChange, agents, placeholder, className, onSubmit, stagedFiles, onFilesChange</div>
+  <div class="card-meta">mission-control/src/components/mention-textarea.tsx</div>
+</div>
+<div class="card">
+  <div class="card-title">ProjectRunProgress <span class="badge-client">client</span></div>
+  <div class="component-props">props: projectRun, runs, onStop</div>
+  <div class="card-meta">mission-control/src/components/mission-progress.tsx</div>
+</div>
+<div class="card">
+  <div class="card-title">OnboardingDialog <span class="badge-client">client</span></div>
+  
+  <div class="card-meta">mission-control/src/components/onboarding-dialog.tsx</div>
+</div>
+<div class="card">
+  <div class="card-title">ProjectCardLarge <span class="badge-client">client</span></div>
+  <div class="component-props">props: project, tasks, goals, isRunning, isProjectRunActive, onRun, onStop, onEdit, onArchive, onDelete</div>
+  <div class="card-meta">mission-control/src/components/project-card-large.tsx</div>
+</div>
+<div class="card">
+  <div class="card-title">ProjectDetailPage <span class="badge-client">client</span></div>
+  <div class="component-props">props: parentLabel, parentHref</div>
+  <div class="card-meta">mission-control/src/components/project-detail-page.tsx</div>
+</div>
+<div class="card">
+  <div class="card-title">RunButton <span class="badge-client">client</span></div>
+  <div class="component-props">props: isRunning, onClick, size, disabled, title, isProjectRunActive, onStop</div>
+  <div class="card-meta">mission-control/src/components/run-button.tsx</div>
+</div>
+<div class="card">
+  <div class="card-title">SearchDialog <span class="badge-client">client</span></div>
+  
+  <div class="card-meta">mission-control/src/components/search-dialog.tsx</div>
+</div>
+<div class="card">
+  <div class="card-title">SidebarFooter <span class="badge-client">client</span></div>
+  <div class="component-props">props: collapsed</div>
+  <div class="card-meta">mission-control/src/components/sidebar-footer.tsx</div>
+</div>
+<div class="card">
+  <div class="card-title">SidebarNav <span class="badge-client">client</span></div>
+  
+  <div class="card-meta">mission-control/src/components/sidebar-nav.tsx</div>
+</div>
+<div class="card">
+  <div class="card-title">TaskCardSkeleton </div>
+  
+  <div class="card-meta">mission-control/src/components/skeletons.tsx</div>
+</div>
+<div class="card">
+  <div class="card-title">TaskCard <span class="badge-client">client</span></div>
+  <div class="component-props">props: task, project, agents, className, isDragging, onClick, allTasks, pendingDecisionTaskIds, isRunning, onRun</div>
+  <div class="card-meta">mission-control/src/components/task-card.tsx</div>
+</div>
+<div class="card">
+  <div class="card-title">TaskDetailPanel <span class="badge-client">client</span></div>
+  <div class="component-props">props: task, projects, goals, allTasks, onUpdate, onDelete, onClose</div>
+  <div class="card-meta">mission-control/src/components/task-detail-panel.tsx</div>
+</div>
+<div class="card">
+  <div class="card-title">TaskForm <span class="badge-client">client</span></div>
+  <div class="component-props">props: initial, projects, goals, allTasks, currentTaskId, onSubmit, onCancel, submitLabel</div>
+  <div class="card-meta">mission-control/src/components/task-form.tsx</div>
+</div>
+<div class="card">
+  <div class="card-title">ThemeProvider <span class="badge-client">client</span></div>
+  
+  <div class="card-meta">mission-control/src/components/theme-provider.tsx</div>
+</div>
+<div class="card">
+  <div class="card-title">ThemeToggle <span class="badge-client">client</span></div>
+  
+  <div class="card-meta">mission-control/src/components/theme-toggle.tsx</div>
+</div>
+<div class="card">
+  <div class="card-title">VaultSecurityDetails <span class="badge-client">client</span></div>
+  <div class="component-props">props: onComplete, onSkip, compact</div>
+  <div class="card-meta">mission-control/src/components/vault-setup-wizard.tsx</div>
+</div>
+<div class="card">
+  <div class="card-title">WorkspaceSwitcher <span class="badge-client">client</span></div>
+  <div class="component-props">props: collapsed</div>
+  <div class="card-meta">mission-control/src/components/workspace-switcher.tsx</div>
+</div>
+<div class="card">
+  <div class="card-title">ActiveRunsProvider <span class="badge-client">client</span></div>
+  
+  <div class="card-meta">mission-control/src/providers/active-runs-provider.tsx</div>
+</div>
+</div>
+</div>
+
+
+<div class="section">
+<h2>Dependency Hot Files</h2>
+<div class="grid">
+<div class="card">
+  <div class="card-title" style="font-size:.9rem">mission-control/src/lib/paths.ts</div>
+  <div class="card-meta">imported by 20 files</div>
+  <div class="hot-bar" style="width:100%"></div>
+</div>
+<div class="card">
+  <div class="card-title" style="font-size:.9rem">mission-control/scripts/daemon/logger.ts</div>
+  <div class="card-meta">imported by 14 files</div>
+  <div class="hot-bar" style="width:70%"></div>
+</div>
+<div class="card">
+  <div class="card-title" style="font-size:.9rem">mission-control/scripts/daemon/types.ts</div>
+  <div class="card-meta">imported by 11 files</div>
+  <div class="hot-bar" style="width:55%"></div>
+</div>
+<div class="card">
+  <div class="card-title" style="font-size:.9rem">mission-control/scripts/daemon/security.ts</div>
+  <div class="card-meta">imported by 8 files</div>
+  <div class="hot-bar" style="width:40%"></div>
+</div>
+<div class="card">
+  <div class="card-title" style="font-size:.9rem">mission-control/scripts/daemon/runner.ts</div>
+  <div class="card-meta">imported by 7 files</div>
+  <div class="hot-bar" style="width:35%"></div>
+</div>
+<div class="card">
+  <div class="card-title" style="font-size:.9rem">mission-control/scripts/daemon/config.ts</div>
+  <div class="card-meta">imported by 6 files</div>
+  <div class="hot-bar" style="width:30%"></div>
+</div>
+<div class="card">
+  <div class="card-title" style="font-size:.9rem">mission-control/src/lib/adapters/registry.ts</div>
+  <div class="card-meta">imported by 6 files</div>
+  <div class="hot-bar" style="width:30%"></div>
+</div>
+<div class="card">
+  <div class="card-title" style="font-size:.9rem">mission-control/scripts/daemon/prompt-builder.ts</div>
+  <div class="card-meta">imported by 5 files</div>
+  <div class="hot-bar" style="width:25%"></div>
+</div>
+<div class="card">
+  <div class="card-title" style="font-size:.9rem">mission-control/src/lib/logger.ts</div>
+  <div class="card-meta">imported by 5 files</div>
+  <div class="hot-bar" style="width:25%"></div>
+</div>
+<div class="card">
+  <div class="card-title" style="font-size:.9rem">mission-control/src/lib/types.ts</div>
+  <div class="card-meta">imported by 5 files</div>
+  <div class="hot-bar" style="width:25%"></div>
+</div>
+<div class="card">
+  <div class="card-title" style="font-size:.9rem">mission-control/src/lib/adapters/types.ts</div>
+  <div class="card-meta">imported by 4 files</div>
+  <div class="hot-bar" style="width:20%"></div>
+</div>
+<div class="card">
+  <div class="card-title" style="font-size:.9rem">mission-control/scripts/daemon/health.ts</div>
+  <div class="card-meta">imported by 3 files</div>
+  <div class="hot-bar" style="width:15%"></div>
+</div>
+</div>
+</div>
+
+
+<div class="section">
+<h2>Environment Variables</h2>
+<table>
+<tr><th>Variable</th><th>Status</th><th>Source</th></tr>
+<tr>
+  <td><code>API_KEY</code></td>
+  <td><span class="env-required">required</span></td>
+  <td class="card-meta">mission-control/__tests__/daemon.test.ts</td>
+</tr>
+<tr>
+  <td><code>APPDATA</code></td>
+  <td><span class="env-required">required</span></td>
+  <td class="card-meta">mission-control/scripts/daemon/runner.ts</td>
+</tr>
+<tr>
+  <td><code>CLAUDE_CODE_OAUTH_TOKEN</code></td>
+  <td><span class="env-required">required</span></td>
+  <td class="card-meta">mission-control/scripts/daemon/security.ts</td>
+</tr>
+<tr>
+  <td><code>CMC_DATA_DIR</code></td>
+  <td><span class="env-required">required</span></td>
+  <td class="card-meta">mission-control/__tests__/helpers.ts</td>
+</tr>
+<tr>
+  <td><code>CMC_WORKSPACE_ID</code></td>
+  <td><span class="env-required">required</span></td>
+  <td class="card-meta">mission-control/scripts/daemon/run-action-comment.ts</td>
+</tr>
+<tr>
+  <td><code>COMSPEC</code></td>
+  <td><span class="env-required">required</span></td>
+  <td class="card-meta">mission-control/scripts/daemon/security.ts</td>
+</tr>
+<tr>
+  <td><code>HOME</code></td>
+  <td><span class="env-required">required</span></td>
+  <td class="card-meta">mission-control/scripts/daemon/runner.ts</td>
+</tr>
+<tr>
+  <td><code>LOCALAPPDATA</code></td>
+  <td><span class="env-required">required</span></td>
+  <td class="card-meta">mission-control/scripts/daemon/runner.ts</td>
+</tr>
+<tr>
+  <td><code>MC_API_TOKEN</code></td>
+  <td><span class="env-required">required</span></td>
+  <td class="card-meta">mission-control/src/middleware.ts</td>
+</tr>
+<tr>
+  <td><code>NEXT_PUBLIC_MC_API_TOKEN</code></td>
+  <td><span class="env-required">required</span></td>
+  <td class="card-meta">mission-control/src/lib/api-client.ts</td>
+</tr>
+<tr>
+  <td><code>NEXT_RUNTIME</code></td>
+  <td><span class="env-required">required</span></td>
+  <td class="card-meta">mission-control/src/instrumentation.ts</td>
+</tr>
+<tr>
+  <td><code>NODE_ENV</code></td>
+  <td><span class="env-required">required</span></td>
+  <td class="card-meta">mission-control/src/instrumentation.ts</td>
+</tr>
+<tr>
+  <td><code>P</code></td>
+  <td><span class="env-required">required</span></td>
+  <td class="card-meta">mission-control/scripts/daemon/security.ts</td>
+</tr>
+<tr>
+  <td><code>PATH</code></td>
+  <td><span class="env-required">required</span></td>
+  <td class="card-meta">mission-control/scripts/daemon/security.ts</td>
+</tr>
+<tr>
+  <td><code>PATHEXT</code></td>
+  <td><span class="env-required">required</span></td>
+  <td class="card-meta">mission-control/scripts/daemon/security.ts</td>
+</tr>
+<tr>
+  <td><code>S</code></td>
+  <td><span class="env-required">required</span></td>
+  <td class="card-meta">mission-control/scripts/daemon/security.ts</td>
+</tr>
+<tr>
+  <td><code>SYSTEMROOT</code></td>
+  <td><span class="env-required">required</span></td>
+  <td class="card-meta">mission-control/scripts/daemon/security.ts</td>
+</tr>
+<tr>
+  <td><code>TEMP</code></td>
+  <td><span class="env-required">required</span></td>
+  <td class="card-meta">mission-control/scripts/daemon/security.ts</td>
+</tr>
+<tr>
+  <td><code>TMP</code></td>
+  <td><span class="env-required">required</span></td>
+  <td class="card-meta">mission-control/scripts/daemon/security.ts</td>
+</tr>
+<tr>
+  <td><code>USERPROFILE</code></td>
+  <td><span class="env-required">required</span></td>
+  <td class="card-meta">mission-control/scripts/daemon/runner.ts</td>
+</tr>
+<tr>
+  <td><code>WINDIR</code></td>
+  <td><span class="env-required">required</span></td>
+  <td class="card-meta">mission-control/scripts/daemon/security.ts</td>
+</tr>
+</table>
+</div>
+
+
+<div class="section">
+<h2>Middleware</h2>
+<div class="grid">
+<div class="card">
+  <div class="card-title">generate-context <span class="tag tag-custom">custom</span></div>
+  <div class="card-meta">mission-control/scripts/generate-context.ts</div>
+</div>
+<div class="card">
+  <div class="card-title">migrate-to-initiatives <span class="tag tag-validation">validation</span></div>
+  <div class="card-meta">mission-control/scripts/migrate-to-initiatives.ts</div>
+</div>
+<div class="card">
+  <div class="card-title">owner-guard <span class="tag tag-auth">auth</span></div>
+  <div class="card-meta">mission-control/src/lib/owner-guard.ts</div>
+</div>
+<div class="card">
+  <div class="card-title">middleware <span class="tag tag-auth">auth</span></div>
+  <div class="card-meta">mission-control/src/middleware.ts</div>
+</div>
+</div>
+</div>
+
+<div class="footer">
+  Generated by <a href="https://github.com/Houseofmvps/codesight">codesight</a> — see your codebase clearly
+</div>
+
+</body>
+</html>

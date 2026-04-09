@@ -1,0 +1,82 @@
+# Routes
+
+## CRUD Resources
+
+- **`/api/actions`** GET | POST | PUT/:id | DELETE/:id → Action
+- **`/api/activity-log`** GET | POST | DELETE/:id → Activity-log
+- **`/api/agents`** GET | POST | PUT/:id | DELETE/:id → Agent
+- **`/api/brain-dump`** GET | POST | PUT/:id | DELETE/:id → Brain-dump
+- **`/api/checkpoints`** GET | POST | DELETE/:id → Checkpoint
+- **`/api/daemon`** GET | POST | PUT/:id → Daemon
+- **`/api/decisions`** GET | POST | PUT/:id | DELETE/:id → Decision
+- **`/api/field-ops/missions`** GET | POST | PUT/:id | DELETE/:id → Mission
+- **`/api/field-ops/services`** GET | POST | PUT/:id | DELETE/:id → Service
+- **`/api/field-ops/tasks`** GET | POST | PUT/:id | DELETE/:id → Task
+- **`/api/field-ops/templates`** GET | POST | DELETE/:id → Template
+- **`/api/field-ops/vault`** GET | POST | DELETE/:id → Vault
+- **`/api/field-ops/vault/session`** GET | POST | DELETE/:id → Session
+- **`/api/goals`** GET | POST | PUT/:id | DELETE/:id → Goal
+- **`/api/inbox`** GET | POST | PUT/:id | DELETE/:id → Inbox
+- **`/api/initiatives`** GET | POST | PUT/:id | DELETE/:id → Initiative
+- **`/api/projects`** GET | POST | PUT/:id | DELETE/:id → Project
+- **`/api/skills`** GET | POST | PUT/:id | DELETE/:id → Skill
+- **`/api/tasks`** GET | POST | PUT/:id | DELETE/:id → Task
+- **`/api/ventures`** GET | POST | PUT/:id | DELETE/:id → Venture
+- **`/api/workspaces`** GET | POST | PUT/:id | DELETE/:id → Workspace
+
+## Other Routes
+
+- `POST` `/api/actions/[id]/comment` params(id) → out: { error } [auth, upload]
+- `DELETE` `/api/actions/[id]/comment` params(id) → out: { error } [auth, upload]
+- `POST` `/api/brain-dump/automate` → out: { error }
+- `GET` `/api/checkpoints/export` → out: { error }
+- `POST` `/api/checkpoints/import` → out: { error }
+- `POST` `/api/checkpoints/load` → out: { error }
+- `POST` `/api/checkpoints/new` → out: { ok }
+- `GET` `/api/dashboard` [cache]
+- `POST` `/api/emergency-stop` → out: { ok, results } [auth]
+- `GET` `/api/field-ops/activity` → out: { data, events, meta }
+- `GET` `/api/field-ops/approval-config` → out: { data, config }
+- `PUT` `/api/field-ops/approval-config` → out: { data, config }
+- `POST` `/api/field-ops/batch` → out: { error } [auth]
+- `GET` `/api/field-ops/catalog` → out: { error }
+- `POST` `/api/field-ops/execute/prepare` → out: { error } [payment]
+- `POST` `/api/field-ops/execute` → out: { error } [auth, db, cache, payment]
+- `POST` `/api/field-ops/execute/submit-signature` → out: { error }
+- `GET` `/api/field-ops/financials` → out: { vaultLocked, snapshots, availableIntegrations } [auth, payment]
+- `GET` `/api/field-ops/safety-limits` → out: { ...data, spendSummary } [auth]
+- `PUT` `/api/field-ops/safety-limits` → out: { ...data, spendSummary } [auth]
+- `POST` `/api/field-ops/services/activate` → out: { error } [auth]
+- `POST` `/api/field-ops/services/save-from-catalog` → out: { error } [auth]
+- `POST` `/api/field-ops/services/test` → out: { error } [auth, payment]
+- `POST` `/api/field-ops/templates/instantiate` → out: { error }
+- `POST` `/api/field-ops/vault/decrypt` → out: { error } [auth]
+- `POST` `/api/field-ops/vault/reset` → out: { error } [auth]
+- `POST` `/api/field-ops/vault/setup` → out: { error } [auth]
+- `GET` `/api/field-ops/wallet` → out: { error, wallets } [auth, db, cache]
+- `POST` `/api/inbox/respond` → out: { error }
+- `GET` `/api/inbox/respond/status` → out: { runs }
+- `POST` `/api/inbox/respond/stop` → out: { error }
+- `GET` `/api/logs/app` → out: { lines, error }
+- `GET` `/api/logs/daemon` → out: { lines, error }
+- `GET` `/api/logs/stream` [cache, queue]
+- `GET` `/api/missions` → out: { missions }
+- `POST` `/api/projects/[id]/run` params(id) → out: { error, missionId } [queue]
+- `POST` `/api/projects/[id]/stop` params(id) → out: { error }
+- `GET` `/api/runs`
+- `GET` `/api/runs/stream` [cache, queue]
+- `GET` `/api/server-status` → out: { mode, uptimeSeconds, pid }
+- `GET` `/api/sidebar` → out: { tasks, unreadInbox, pendingDecisions, pendingFieldApprovals, pendingActionApprovals, agents } [cache]
+- `POST` `/api/sync` → out: { ok, message } [ai]
+- `POST` `/api/tasks/[id]/comment` params(id) → out: { error } [auth, upload]
+- `DELETE` `/api/tasks/[id]/comment` params(id) → out: { error } [auth, upload]
+- `POST` `/api/tasks/[id]/run` params(id) → out: { error }
+- `POST` `/api/tasks/[id]/stop` params(id) → out: { error }
+- `GET` `/api/tasks/archive` → out: { data, tasks, archived, meta, filtered }
+- `POST` `/api/tasks/archive` → out: { data, tasks, archived, meta, filtered }
+- `PUT` `/api/tasks/bulk` → out: { error }
+- `DELETE` `/api/tasks/bulk` → out: { error }
+- `POST` `/api/upload` → out: { error } [upload]
+- `POST` `/api/ventures/[id]/run` params(id) → out: { error, missionId } [queue]
+- `POST` `/api/ventures/[id]/stop` params(id) → out: { error }
+- `GET` `/uploads/[filename]` params(filename) → out: { error } [cache, upload]
