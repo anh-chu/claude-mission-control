@@ -1,6 +1,6 @@
 import { readFile, writeFile } from "fs/promises";
 import path from "path";
-import { DATA_DIR } from "../src/lib/paths";
+import { getWorkspaceDir } from "../src/lib/paths";
 
 interface Task {
   id: string;
@@ -77,7 +77,9 @@ interface DecisionItem {
   createdAt: string;
 }
 
-const FIELD_OPS_DIR = path.join(DATA_DIR, "field-ops");
+const workspaceId = process.argv[2] ?? process.env.CMC_WORKSPACE_ID ?? "default";
+const WORKSPACE_DIR = getWorkspaceDir(workspaceId);
+const FIELD_OPS_DIR = path.join(WORKSPACE_DIR, "field-ops");
 
 interface FieldMission {
   id: string;
@@ -119,7 +121,7 @@ interface FieldActivityEvent {
 }
 
 async function readJSON<T>(filename: string): Promise<T> {
-  const raw = await readFile(path.join(DATA_DIR, filename), "utf-8");
+  const raw = await readFile(path.join(WORKSPACE_DIR, filename), "utf-8");
   return JSON.parse(raw) as T;
 }
 
@@ -426,8 +428,8 @@ async function main(): Promise<void> {
   }
 
   const content = lines.join("\n") + "\n";
-  await writeFile(path.join(DATA_DIR, "ai-context.md"), content, "utf-8");
-  console.log(`Generated ai-context.md (${content.length} bytes)`);
+  await writeFile(path.join(WORKSPACE_DIR, "ai-context.md"), content, "utf-8");
+  console.log(`Generated ai-context.md for workspace '${workspaceId}' (${content.length} bytes)`);
 }
 
 main().catch((err) => {

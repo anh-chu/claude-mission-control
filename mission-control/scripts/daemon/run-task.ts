@@ -302,7 +302,8 @@ function handleTaskCompletion(taskId: string, agentId: string, stdout: string): 
   // 4. Regenerate ai-context.md
   try {
     const missionControlDir = path.resolve(__dirname, "../..");
-    execSync("npx tsx scripts/generate-context.ts", {
+    const workspaceId = process.env.CMC_WORKSPACE_ID ?? "default";
+    execSync(`${TSX_BIN} scripts/generate-context.ts ${workspaceId}`, {
       cwd: missionControlDir,
       timeout: 30_000,
       stdio: "ignore",
