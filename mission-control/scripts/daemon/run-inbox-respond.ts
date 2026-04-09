@@ -293,40 +293,38 @@ function postToInbox(msg: InboxMessage): void {
  * Extract a human-readable summary from Claude Code's stdout.
  */
 function extractSummary(stdout: string): string {
-  try {
-    const parsed = JSON.parse(stdout) as Record<string, unknown>;
+  const lines = stdout.trim().split("\n").filter(Boolean);
 
-    // Successful result with content
-    if (typeof parsed.result === "string" && parsed.result.length > 0) {
-      return parsed.result.slice(0, 1000);
+  // Scan JSONL lines in reverse for the result entry
+  for (let i = lines.length - 1; i >= 0; i--) {
+    try {
+      const parsed = JSON.parse(lines[i]) as Record<string, unknown>;
+      if (parsed.type === "result") {
+        if (typeof parsed.result === "string" && parsed.result.trim()) {
+          return parsed.result.slice(0, 2000);
+        }
+        if (parsed.subtype === "error_max_turns") {
+          return "I ran out of processing turns before I could finish. You can retry with a more focused request, or break the task into smaller steps.";
+        }
+        if (parsed.subtype === "error_timeout") {
+          return "I timed out before completing the task. Consider breaking it into smaller, more targeted requests.";
+        }
+        if (parsed.is_error) {
+          return "I encountered an error while processing your message. Please try again or rephrase your request.";
+        }
+        return "(Completed but produced no summary)";
+      }
+    } catch {
+      // not JSON, skip
     }
-
-    // Handle known error subtypes with human-readable messages
-    if (parsed.type === "result") {
-      if (parsed.subtype === "error_max_turns") {
-        return "I ran out of processing turns before I could finish. You can retry with a more focused request, or break the task into smaller steps.";
-      }
-      if (parsed.subtype === "error_timeout") {
-        return "I timed out before completing the task. Consider breaking it into smaller, more targeted requests.";
-      }
-      if (parsed.is_error) {
-        return "I encountered an error while processing your message. Please try again or rephrase your request.";
-      }
-      // Successful but no result text
-      return "(Completed but produced no summary)";
-    }
-  } catch {
-    // Not JSON — fall through to raw text
   }
 
-  // Fallback: last 10 lines of raw text, but reject raw JSON blobs
-  const trimmed = stdout.trim();
-  if (!trimmed) return "(no output)";
-  const lines = trimmed.split("\n");
-  const tail = lines.slice(-10).join("\n");
-  if (tail.startsWith("{") || tail.startsWith("[")) {
-    return "(Agent session ended without producing a readable reply)";
-  }
+  // Fallback: non-JSON lines only (filter out raw stream events)
+  const textLines = lines.filter((l) => {
+    try { JSON.parse(l); return false; } catch { return true; }
+  });
+  const tail = textLines.slice(-10).join("\n");
+  if (!tail) return "(no output)";
   if (tail.length > 500) return tail.slice(0, 497) + "...";
   return tail;
 }

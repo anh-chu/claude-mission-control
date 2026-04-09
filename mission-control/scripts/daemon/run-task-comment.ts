@@ -248,8 +248,11 @@ function extractResponse(stdout: string): string {
     }
   } catch { /* fall through */ }
 
-  // Fallback: last 10 lines of raw text
-  const textLines = stdout.trim().split("\n");
+  // Fallback: non-JSON lines only (filter out raw stream events)
+  const allLines = stdout.trim().split("\n").filter(Boolean);
+  const textLines = allLines.filter((l) => {
+    try { JSON.parse(l); return false; } catch { return true; }
+  });
   const tail = textLines.slice(-10).join("\n");
   return tail.length > 3000 ? tail.slice(0, 2997) + "..." : tail || "(no response)";
 }

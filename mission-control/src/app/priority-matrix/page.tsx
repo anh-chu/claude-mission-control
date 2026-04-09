@@ -54,7 +54,7 @@ export default function TasksPage() {
   const { runningTaskIds, runTask } = useActiveRuns();
   useFastTaskPoll(runningTaskIds.size > 0, refetch);
 
-  const [viewMode, setViewMode] = useState<ViewMode>("matrix");
+  const [viewMode, setViewMode] = useState<ViewMode>("board");
   const [filterProject, setFilterProject] = useState<string>("all");
   const [filterAssignee, setFilterAssignee] = useState<string>("all");
 

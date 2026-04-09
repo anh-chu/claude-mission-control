@@ -171,23 +171,29 @@ function writeProjectRuns(data: ProjectRunsFile): void {
 
 /**
  * Extract a human-readable summary from Claude Code's stdout.
- * Tries JSON parse first (Claude Code --output-format json has a `result` field),
- * falls back to the last 10 lines of raw text, truncated to 500 chars.
+ * Parses JSONL output looking for the final result line, then falls back
+ * to raw text (filtering out JSON stream lines).
  */
 function extractSummary(stdout: string): string {
-  // Try JSON output format first
-  try {
-    const parsed = JSON.parse(stdout);
-    if (typeof parsed.result === "string" && parsed.result.length > 0) {
-      return parsed.result.slice(0, 500);
+  const lines = stdout.trim().split("\n").filter(Boolean);
+
+  // Scan JSONL lines in reverse for the result entry
+  for (let i = lines.length - 1; i >= 0; i--) {
+    try {
+      const parsed = JSON.parse(lines[i]);
+      if (parsed.type === "result" && typeof parsed.result === "string" && parsed.result.trim()) {
+        return parsed.result.slice(0, 2000);
+      }
+    } catch {
+      // not JSON, skip
     }
-  } catch {
-    // Not JSON — fall through to raw text
   }
 
-  // Fall back to last 10 lines of raw text
-  const lines = stdout.trim().split("\n");
-  const tail = lines.slice(-10).join("\n");
+  // Fall back to non-JSON lines only (filter out raw stream events)
+  const textLines = lines.filter((l) => {
+    try { JSON.parse(l); return false; } catch { return true; }
+  });
+  const tail = textLines.slice(-10).join("\n");
   if (tail.length > 500) return tail.slice(0, 497) + "...";
   return tail || "(no output)";
 }

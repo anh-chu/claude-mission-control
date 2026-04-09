@@ -95,6 +95,67 @@
       ]
     }
   },
-  "hotPaths": [],
+  "hotPaths": [
+    {
+      "path": "mission-control/scripts/daemon/run-task.ts",
+      "accessCount": 6,
+      "lastAccessed": 1775760247602,
+      "type": "file"
+    },
+    {
+      "path": "mission-control/src/app/priority-matrix/page.tsx",
+      "accessCount": 5,
+      "lastAccessed": 1775751497483,
+      "type": "file"
+    },
+    {
+      "path": "mission-control/src/app/status-board/page.tsx",
+      "accessCount": 5,
+      "lastAccessed": 1775751499081,
+      "type": "file"
+    },
+    {
+      "path": "mission-control/src/app/api/emergency-stop/route.ts",
+      "accessCount": 4,
+      "lastAccessed": 1775751492134,
+      "type": "file"
+    },
+    {
+      "path": "mission-control/scripts/daemon/run-task-comment.ts",
+      "accessCount": 3,
+      "lastAccessed": 1775760257252,
+      "type": "file"
+    },
+    {
+      "path": "mission-control/scripts/daemon/run-inbox-respond.ts",
+      "accessCount": 3,
+      "lastAccessed": 1775760279547,
+      "type": "file"
+    },
+    {
+      "path": "mission-control/src/lib/types.ts",
+      "accessCount": 2,
+      "lastAccessed": 1775751478457,
+      "type": "file"
+    },
+    {
+      "path": "mission-control/src/components/agent-console.tsx",
+      "accessCount": 2,
+      "lastAccessed": 1775760222071,
+      "type": "file"
+    },
+    {
+      "path": "mission-control/src",
+      "accessCount": 1,
+      "lastAccessed": 1775760197404,
+      "type": "directory"
+    },
+    {
+      "path": "mission-control/scripts/daemon",
+      "accessCount": 1,
+      "lastAccessed": 1775760260862,
+      "type": "directory"
+    }
+  ],
   "userDirectives": []
 }

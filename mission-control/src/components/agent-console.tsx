@@ -16,90 +16,106 @@ interface AgentConsoleProps {
   onStop?: () => void;
 }
 
+// Content block types inside assistant/user messages
+interface TextBlock { type: "text"; text: string }
+interface ToolUseBlock { type: "tool_use"; id: string; name: string; input: unknown }
+interface ToolResultBlock { type: "tool_result"; tool_use_id: string; content: unknown }
+type ContentBlock = TextBlock | ToolUseBlock | ToolResultBlock | { type: string; [key: string]: unknown };
+
+function ToolUseEntry({ block }: { block: ToolUseBlock }) {
+  const [open, setOpen] = useState(false);
+  const input = block.input ? JSON.stringify(block.input, null, 2) : "";
+  return (
+    <Collapsible open={open} onOpenChange={setOpen}>
+      <CollapsibleTrigger className="flex items-center gap-1.5 py-1 px-2 w-full hover:bg-muted/50 rounded text-left">
+        {open ? <ChevronDown className="h-3 w-3 shrink-0 text-muted-foreground" /> : <ChevronRight className="h-3 w-3 shrink-0 text-muted-foreground" />}
+        <Wrench className="h-3 w-3 shrink-0 text-amber-400" />
+        <span className="text-xs font-mono text-amber-400">{block.name}</span>
+      </CollapsibleTrigger>
+      {input && (
+        <CollapsibleContent>
+          <pre className="text-[10px] text-muted-foreground font-mono px-7 py-1 overflow-x-auto max-h-40">
+            {input.length > 2000 ? input.slice(0, 2000) + "\n..." : input}
+          </pre>
+        </CollapsibleContent>
+      )}
+    </Collapsible>
+  );
+}
+
+function ToolResultEntry({ block }: { block: ToolResultBlock }) {
+  const [open, setOpen] = useState(false);
+  const raw = typeof block.content === "string"
+    ? block.content
+    : JSON.stringify(block.content, null, 2);
+  const hint = (() => {
+    const trimmed = raw.trim();
+    if (trimmed.startsWith("{") || trimmed.startsWith("[")) return `(${raw.length} bytes JSON)`;
+    const first = trimmed.split("\n")[0] ?? "";
+    return first.length > 60 ? first.slice(0, 60) + "…" : first;
+  })();
+  return (
+    <Collapsible open={open} onOpenChange={setOpen}>
+      <CollapsibleTrigger className="flex items-center gap-1.5 py-1 px-2 w-full hover:bg-muted/50 rounded text-left">
+        {open ? <ChevronDown className="h-3 w-3 shrink-0 text-muted-foreground" /> : <ChevronRight className="h-3 w-3 shrink-0 text-muted-foreground" />}
+        <CheckCircle2 className="h-3 w-3 shrink-0 text-green-400" />
+        <span className="text-xs font-mono text-green-400">result</span>
+        {hint && !open && <span className="text-[10px] text-muted-foreground truncate max-w-[300px]">{hint}</span>}
+      </CollapsibleTrigger>
+      {raw && (
+        <CollapsibleContent>
+          <pre className="text-[10px] text-muted-foreground font-mono px-7 py-1 overflow-x-auto max-h-40">
+            {raw.length > 2000 ? raw.slice(0, 2000) + "\n..." : raw}
+          </pre>
+        </CollapsibleContent>
+      )}
+    </Collapsible>
+  );
+}
+
 function StreamEntry({ line }: { line: StreamLine }) {
   const [open, setOpen] = useState(false);
 
+  // assistant: line.message.content[] has text/tool_use/thinking blocks
   if (line.type === "assistant") {
-    const content = typeof line.content === "string"
-      ? line.content
-      : Array.isArray(line.content)
-        ? (line.content as Array<{ type?: string; text?: string }>)
-            .filter((b) => b.type === "text")
-            .map((b) => b.text)
-            .join("")
-        : JSON.stringify(line.content);
-
-    if (!content?.trim()) return null;
-
-    return (
-      <div className="flex gap-2 py-1.5 px-2">
-        <MessageSquare className="h-3.5 w-3.5 mt-0.5 shrink-0 text-blue-400" />
-        <pre className="text-xs text-foreground/90 whitespace-pre-wrap break-words font-mono leading-relaxed">
-          {content}
-        </pre>
-      </div>
-    );
+    const blocks = ((line.message as { content?: ContentBlock[] })?.content ?? []);
+    const rendered = blocks.flatMap((block, i) => {
+      if (block.type === "text") {
+        const text = (block as TextBlock).text;
+        if (!text?.trim()) return [];
+        return [(
+          <div key={i} className="flex gap-2 py-1.5 px-2">
+            <MessageSquare className="h-3.5 w-3.5 mt-0.5 shrink-0 text-blue-400" />
+            <pre className="text-xs text-foreground/90 whitespace-pre-wrap break-words font-mono leading-relaxed">{text}</pre>
+          </div>
+        )];
+      }
+      if (block.type === "tool_use") {
+        return [<ToolUseEntry key={i} block={block as ToolUseBlock} />];
+      }
+      // skip thinking blocks
+      return [];
+    });
+    if (rendered.length === 0) return null;
+    return <>{rendered}</>;
   }
 
-  if (line.type === "tool_use") {
-    const toolName = (line.name as string) ?? "unknown";
-    const input = line.input ? JSON.stringify(line.input, null, 2) : "";
-
-    return (
-      <Collapsible open={open} onOpenChange={setOpen}>
-        <CollapsibleTrigger className="flex items-center gap-1.5 py-1 px-2 w-full hover:bg-muted/50 rounded text-left">
-          {open ? (
-            <ChevronDown className="h-3 w-3 shrink-0 text-muted-foreground" />
-          ) : (
-            <ChevronRight className="h-3 w-3 shrink-0 text-muted-foreground" />
-          )}
-          <Wrench className="h-3 w-3 shrink-0 text-amber-400" />
-          <span className="text-xs font-mono text-amber-400">{toolName}</span>
-        </CollapsibleTrigger>
-        {input && (
-          <CollapsibleContent>
-            <pre className="text-[10px] text-muted-foreground font-mono px-7 py-1 overflow-x-auto max-h-40">
-              {input.length > 2000 ? input.slice(0, 2000) + "\n..." : input}
-            </pre>
-          </CollapsibleContent>
-        )}
-      </Collapsible>
-    );
-  }
-
-  if (line.type === "tool_result") {
-    const content = typeof line.content === "string"
-      ? line.content
-      : JSON.stringify(line.content);
-
-    return (
-      <Collapsible open={open} onOpenChange={setOpen}>
-        <CollapsibleTrigger className="flex items-center gap-1.5 py-1 px-2 w-full hover:bg-muted/50 rounded text-left">
-          {open ? (
-            <ChevronDown className="h-3 w-3 shrink-0 text-muted-foreground" />
-          ) : (
-            <ChevronRight className="h-3 w-3 shrink-0 text-muted-foreground" />
-          )}
-          <CheckCircle2 className="h-3 w-3 shrink-0 text-green-400" />
-          <span className="text-xs font-mono text-green-400">result</span>
-        </CollapsibleTrigger>
-        {content && (
-          <CollapsibleContent>
-            <pre className="text-[10px] text-muted-foreground font-mono px-7 py-1 overflow-x-auto max-h-40">
-              {content.length > 2000 ? content.slice(0, 2000) + "\n..." : content}
-            </pre>
-          </CollapsibleContent>
-        )}
-      </Collapsible>
-    );
+  // user: line.message.content[] has tool_result blocks
+  if (line.type === "user") {
+    const blocks = ((line.message as { content?: ContentBlock[] })?.content ?? []);
+    const rendered = blocks.flatMap((block, i) => {
+      if (block.type === "tool_result") {
+        return [<ToolResultEntry key={i} block={block as ToolResultBlock} />];
+      }
+      return [];
+    });
+    if (rendered.length === 0) return null;
+    return <>{rendered}</>;
   }
 
   if (line.type === "result") {
-    const cost = typeof line.total_cost_usd === "number"
-      ? `$${line.total_cost_usd.toFixed(4)}`
-      : null;
+    const cost = typeof line.total_cost_usd === "number" ? `$${line.total_cost_usd.toFixed(4)}` : null;
     const turns = typeof line.num_turns === "number" ? line.num_turns : null;
-
     return (
       <div className="flex items-center gap-2 py-1.5 px-2 bg-muted/30 rounded">
         <CheckCircle2 className="h-3.5 w-3.5 shrink-0 text-green-500" />
@@ -112,14 +128,35 @@ function StreamEntry({ line }: { line: StreamLine }) {
     );
   }
 
-  // System or unknown types
+  // Skip system events (hook lifecycle, init, etc.)
+  if (line.type === "system") return null;
+
+  // Unknown type — collapsible with content on demand
+  const unknownContent = JSON.stringify(line, null, 2);
+  const unknownHint = (() => {
+    for (const key of ["subtype", "message", "content", "text", "error", "summary"]) {
+      const val = line[key];
+      if (typeof val === "string" && val.trim()) {
+        const s = val.trim().split("\n")[0] ?? "";
+        return s.length > 80 ? s.slice(0, 80) + "…" : s;
+      }
+    }
+    return null;
+  })();
   return (
-    <div className="flex gap-2 py-1 px-2">
-      <Terminal className="h-3 w-3 mt-0.5 shrink-0 text-muted-foreground" />
-      <pre className="text-[10px] text-muted-foreground font-mono whitespace-pre-wrap break-words">
-        {JSON.stringify(line).slice(0, 500)}
-      </pre>
-    </div>
+    <Collapsible open={open} onOpenChange={setOpen}>
+      <CollapsibleTrigger className="flex items-center gap-1.5 py-1 px-2 w-full hover:bg-muted/50 rounded text-left opacity-60">
+        {open ? <ChevronDown className="h-3 w-3 shrink-0 text-muted-foreground" /> : <ChevronRight className="h-3 w-3 shrink-0 text-muted-foreground" />}
+        <Terminal className="h-3 w-3 shrink-0 text-muted-foreground" />
+        <span className="text-[10px] text-muted-foreground font-mono">{line.type}</span>
+        {unknownHint && !open && <span className="text-[10px] text-muted-foreground truncate max-w-[300px]">{unknownHint}</span>}
+      </CollapsibleTrigger>
+      <CollapsibleContent>
+        <pre className="text-[10px] text-muted-foreground font-mono px-7 py-1 overflow-x-auto max-h-40">
+          {unknownContent.length > 2000 ? unknownContent.slice(0, 2000) + "\n..." : unknownContent}
+        </pre>
+      </CollapsibleContent>
+    </Collapsible>
   );
 }
 
