@@ -51,4 +51,12 @@
 - `POST` `/api/upload` → out: { error } [upload]
 - `POST` `/api/ventures/[id]/run` params(id) → out: { error, missionId } [queue]
 - `POST` `/api/ventures/[id]/stop` params(id) → out: { error }
+- `GET` `/api/wiki/content` → out: { error }
+- `PUT` `/api/wiki/content` → out: { error }
+- `GET` `/api/wiki/file` → out: { error } [cache]
+- `POST` `/api/wiki/folder` → out: { error }
+- `POST` `/api/wiki/move` → out: { error }
+- `GET` `/api/wiki` → out: { error }
+- `DELETE` `/api/wiki` → out: { error }
+- `POST` `/api/wiki/upload` → out: { error }
 - `GET` `/uploads/[filename]` params(filename) → out: { error } [cache, upload]

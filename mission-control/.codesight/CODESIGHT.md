@@ -2,7 +2,7 @@
 
 > **Stack:** next-app | none | react | typescript
 
-> 86 routes | 0 models | 96 components | 36 lib files | 21 env vars | 3 middleware
+> 94 routes | 0 models | 97 components | 36 lib files | 21 env vars | 3 middleware
 > **Token savings:** this file is ~0 tokens. Without it, AI exploration would cost ~0 tokens. **Saves ~0 tokens per conversation.**
 
 ---
@@ -60,6 +60,14 @@
 - `POST` `/api/upload` → out: { error } [upload]
 - `POST` `/api/ventures/[id]/run` params(id) → out: { error, missionId } [queue]
 - `POST` `/api/ventures/[id]/stop` params(id) → out: { error }
+- `GET` `/api/wiki/content` → out: { error }
+- `PUT` `/api/wiki/content` → out: { error }
+- `GET` `/api/wiki/file` → out: { error } [cache]
+- `POST` `/api/wiki/folder` → out: { error }
+- `POST` `/api/wiki/move` → out: { error }
+- `GET` `/api/wiki` → out: { error }
+- `DELETE` `/api/wiki` → out: { error }
+- `POST` `/api/wiki/upload` → out: { error }
 - `GET` `/uploads/[filename]` params(filename) → out: { error } [cache, upload]
 
 ---
@@ -77,6 +85,7 @@
 - **CrewPage** [client] — `src/app/crew/page.tsx`
 - **DaemonPage** — `src/app/daemon/page.tsx`
 - **DecisionsPage** [client] — `src/app/decisions/page.tsx`
+- **DocumentsPage** [client] — `src/app/documents/page.tsx`
 - **Error** [client] — props: error, reset — `src/app/error.tsx`
 - **GlobalError** [client] — props: error, reset — `src/app/global-error.tsx`
 - **GoalsPage** — `src/app/goals/page.tsx`
@@ -247,8 +256,9 @@
   - type LogLevel
 - `src/lib/paths.ts`
   - function getWorkspaceDir: (workspaceId) => string
+  - function getUploadsDir: (workspaceId) => string
+  - function getWikiDir: (workspaceId) => string
   - const DATA_DIR: string
-  - const UPLOADS_DIR: string
 - `src/lib/scheduled-jobs.ts`
   - function scheduleUploadsCleanup: () => void
   - function scheduleLogCleanup: () => void
@@ -349,38 +359,38 @@
 ## Most Imported Files (change these carefully)
 
 - `src/lib/types.ts` — imported by **72** files
-- `src/lib/utils.ts` — imported by **55** files
-- `src/components/ui/button.tsx` — imported by **45** files
-- `src/lib/paths.ts` — imported by **39** files
+- `src/lib/utils.ts` — imported by **56** files
+- `src/components/ui/button.tsx` — imported by **46** files
+- `src/lib/paths.ts` — imported by **45** files
 - `src/components/ui/badge.tsx` — imported by **31** files
-- `src/components/breadcrumb-nav.tsx` — imported by **30** files
+- `src/components/breadcrumb-nav.tsx` — imported by **31** files
 - `src/lib/data.ts` — imported by **27** files
 - `src/hooks/use-data.ts` — imported by **23** files
+- `src/components/ui/card.tsx` — imported by **20** files
 - `src/components/ui/input.tsx` — imported by **20** files
-- `src/components/ui/card.tsx` — imported by **19** files
 - `src/components/skeletons.tsx` — imported by **19** files
-- `src/lib/api-client.ts` — imported by **16** files
 - `src/components/ui/label.tsx` — imported by **15** files
 - `src/components/ui/tip.tsx` — imported by **15** files
+- `src/lib/api-client.ts` — imported by **15** files
 - `src/lib/validations.ts` — imported by **14** files
 - `src/components/error-state.tsx` — imported by **14** files
+- `src/components/ui/textarea.tsx` — imported by **14** files
 - `scripts/daemon/logger.ts` — imported by **13** files
-- `src/components/ui/textarea.tsx` — imported by **13** files
+- `src/lib/workspace-context.ts` — imported by **12** files
 - `src/lib/toast.ts` — imported by **11** files
-- `scripts/daemon/types.ts` — imported by **10** files
 
 ## Import Map (who imports what)
 
 - `src/lib/types.ts` ← `__tests__/data.test.ts`, `src/app/activity/page.tsx`, `src/app/activity/page.tsx`, `src/app/api/activity-log/route.ts`, `src/app/api/agents/route.ts` +67 more
-- `src/lib/utils.ts` ← `src/app/api/activity-log/route.ts`, `src/app/api/brain-dump/route.ts`, `src/app/api/decisions/route.ts`, `src/app/api/goals/route.ts`, `src/app/api/inbox/route.ts` +50 more
-- `src/components/ui/button.tsx` ← `src/app/autopilot/page.tsx`, `src/app/brain-dump/page.tsx`, `src/app/crew/[id]/edit/page.tsx`, `src/app/crew/[id]/page.tsx`, `src/app/crew/new/page.tsx` +40 more
-- `src/lib/paths.ts` ← `scripts/cleanup-uploads.ts`, `scripts/daemon/config.ts`, `scripts/daemon/dispatcher.ts`, `scripts/daemon/health.ts`, `scripts/daemon/index.ts` +34 more
+- `src/lib/utils.ts` ← `src/app/api/activity-log/route.ts`, `src/app/api/brain-dump/route.ts`, `src/app/api/decisions/route.ts`, `src/app/api/goals/route.ts`, `src/app/api/inbox/route.ts` +51 more
+- `src/components/ui/button.tsx` ← `src/app/autopilot/page.tsx`, `src/app/brain-dump/page.tsx`, `src/app/crew/[id]/edit/page.tsx`, `src/app/crew/[id]/page.tsx`, `src/app/crew/new/page.tsx` +41 more
+- `src/lib/paths.ts` ← `scripts/cleanup-uploads.ts`, `scripts/daemon/config.ts`, `scripts/daemon/dispatcher.ts`, `scripts/daemon/health.ts`, `scripts/daemon/index.ts` +40 more
 - `src/components/ui/badge.tsx` ← `src/app/activity/page.tsx`, `src/app/autopilot/page.tsx`, `src/app/brain-dump/page.tsx`, `src/app/crew/[id]/edit/page.tsx`, `src/app/crew/[id]/page.tsx` +26 more
-- `src/components/breadcrumb-nav.tsx` ← `src/app/activity/page.tsx`, `src/app/autopilot/page.tsx`, `src/app/brain-dump/loading.tsx`, `src/app/brain-dump/page.tsx`, `src/app/crew/[id]/edit/page.tsx` +25 more
+- `src/components/breadcrumb-nav.tsx` ← `src/app/activity/page.tsx`, `src/app/autopilot/page.tsx`, `src/app/brain-dump/loading.tsx`, `src/app/brain-dump/page.tsx`, `src/app/crew/[id]/edit/page.tsx` +26 more
 - `src/lib/data.ts` ← `__tests__/seeding.test.ts`, `src/app/api/activity-log/route.ts`, `src/app/api/agents/route.ts`, `src/app/api/brain-dump/route.ts`, `src/app/api/checkpoints/export/route.ts` +22 more
 - `src/hooks/use-data.ts` ← `src/app/activity/page.tsx`, `src/app/brain-dump/page.tsx`, `src/app/crew/[id]/edit/page.tsx`, `src/app/crew/[id]/page.tsx`, `src/app/crew/new/page.tsx` +18 more
+- `src/components/ui/card.tsx` ← `src/app/activity/page.tsx`, `src/app/autopilot/page.tsx`, `src/app/brain-dump/page.tsx`, `src/app/crew/[id]/page.tsx`, `src/app/decisions/page.tsx` +15 more
 - `src/components/ui/input.tsx` ← `src/app/autopilot/page.tsx`, `src/app/crew/[id]/edit/page.tsx`, `src/app/crew/[id]/page.tsx`, `src/app/crew/new/page.tsx`, `src/app/decisions/page.tsx` +15 more
-- `src/components/ui/card.tsx` ← `src/app/activity/page.tsx`, `src/app/autopilot/page.tsx`, `src/app/brain-dump/page.tsx`, `src/app/crew/[id]/page.tsx`, `src/app/decisions/page.tsx` +14 more
 
 ---
 

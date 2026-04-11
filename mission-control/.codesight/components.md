@@ -11,6 +11,7 @@
 - **CrewPage** [client] — `src/app/crew/page.tsx`
 - **DaemonPage** — `src/app/daemon/page.tsx`
 - **DecisionsPage** [client] — `src/app/decisions/page.tsx`
+- **DocumentsPage** [client] — `src/app/documents/page.tsx`
 - **Error** [client] — props: error, reset — `src/app/error.tsx`
 - **GlobalError** [client] — props: error, reset — `src/app/global-error.tsx`
 - **GoalsPage** — `src/app/goals/page.tsx`

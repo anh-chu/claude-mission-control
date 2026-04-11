@@ -80,8 +80,9 @@
   - type LogLevel
 - `src/lib/paths.ts`
   - function getWorkspaceDir: (workspaceId) => string
+  - function getUploadsDir: (workspaceId) => string
+  - function getWikiDir: (workspaceId) => string
   - const DATA_DIR: string
-  - const UPLOADS_DIR: string
 - `src/lib/scheduled-jobs.ts`
   - function scheduleUploadsCleanup: () => void
   - function scheduleLogCleanup: () => void
