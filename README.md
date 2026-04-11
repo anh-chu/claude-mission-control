@@ -15,7 +15,7 @@
 
 ## What This Is
 
-A self-hosted task manager that runs your work through AI agents. You add tasks, set priorities, and Autopilot handles execution: it spawns Claude Code or Codex CLI sessions, streams output live, and routes decisions back to you. Anything with real-world consequences, like posting to X or sending a payment, goes through an approval queue first.
+A self-hosted task manager that runs your work through AI agents. You add tasks, set priorities, and Autopilot handles execution: it spawns Claude Code or Codex CLI sessions, streams output live, and routes decisions back to you.
 
 Runs entirely on your machine. Data in `~/.cmc/`. No cloud.
 
@@ -28,15 +28,10 @@ Workspace
   ├── Objectives          (long-term outcomes)
   ├── Projects            (group related work)
   │     └── Initiatives   (active execution units, linked to an Objective)
-  │           ├── Tasks   (cognitive/execution work; agents run these)
-  │           └── Actions (real-world side-effects; require your approval)
+  │           └── Tasks   (work items; agents run these)
 ```
 
 **Tasks** are things agents *do*: research, write code, analyze, plan. They execute as Claude Code or Codex CLI sessions, stream output live, and mark themselves done.
-
-**Actions** are things agents *trigger in the world*: post to X, send ETH, call an API, send email. These flow through an approval queue; you approve or reject before anything happens.
-
-**Autonomy levels** cascade from workspace → initiative → action. Set it once at the workspace level, override per initiative or per action as needed.
 
 ---
 
@@ -79,7 +74,7 @@ The daemon (`pnpm daemon:start`) is the engine. It runs as a detached background
 - **Quick Capture:** Capture ideas instantly, triage into tasks later
 
 ### Agent Execution
-- **Autonomous Daemon:** 24/7 background process with concurrency control, retry queue, and live dashboard at `/daemon`
+- **Autonomous Daemon:** 24/7 background process with concurrency control, retry queue, and live dashboard at `/autopilot`
 - **One-Click Execution:** Press play on any task card to manually spawn an agent session
 - **Real-Time Streaming:** Watch agent output live: tool calls, responses, progress as it happens
 - **Multi-CLI Backend:** Claude Code or Codex CLI, configurable per agent
@@ -93,19 +88,11 @@ The daemon (`pnpm daemon:start`) is the engine. It runs as a detached background
 - **Crash Recovery Sweep:** Orphaned in-progress tasks detected on startup and reset for redispatch
 - **Persistent Retry Queue:** Survives daemon restarts; retries resume with correct backoff timing
 
-### Actions & Integrations
-- **Approval Queue:** Cross-initiative view of pending Actions; filter by risk, batch approve/reject
-- **3-Tier Autonomy:** Action-level → initiative-level → workspace-level autonomy cascade
-- **64-Service Catalog:** Pre-configured services across 16 categories
-- **Working Adapters:** X/Twitter, Ethereum (+ MetaMask wallet signing), Reddit
-- **Encrypted Vault:** AES-256-GCM, scrypt key derivation, session-locked
-- **Financial Safety Controls:** Per-service and global spend limits, circuit breaker, emergency stop
-
 ### Rich Task Detail
 - **Markdown Descriptions:** Full markdown rendering in task descriptions; click to edit
 - **File Attachments:** Attach images and files to task descriptions and comments; stored in `~/.cmc/uploads/`
 - **Inline Previews:** Images render inline in comments; other files as download links
-- **Comments on Actions:** Full comment thread and @-mention support on Actions, not just Tasks
+- **Comments:** Full comment thread and @-mention support on tasks
 
 ### Monitoring
 - **Cost & Token Tracking:** Input, output, cache read/write tokens per session, cumulative totals
@@ -155,7 +142,6 @@ Or start it from **Settings → Autopilot** in the UI. Once started, Autopilot w
 2. Click a task to open the detail panel and add a description, subtasks, or attach a file
 3. Press **Launch** on a task assigned to an agent and watch it execute live on the Automation page
 4. Check your **Inbox** for agent completion reports and questions
-5. Go to **Integrations** to set up real-world actions with approval workflows
 
 ---
 
@@ -221,14 +207,6 @@ POST /api/tasks/:id/run
 POST /api/projects/:id/run
 ```
 
-```bash
-# Actions & Integrations
-POST /api/field-ops/execute       # Execute an approved Action
-POST /api/field-ops/vault/setup   # Initialize encrypted vault
-GET  /api/field-ops/catalog       # Browse service catalog
-POST /api/field-ops/batch         # Bulk approve/reject Actions
-```
-
 All write endpoints use **Zod validation** and **async-mutex locking** for concurrent multi-agent safety.
 
 ---
@@ -256,8 +234,7 @@ Each agent can use Claude Code or Codex CLI as its backend, configurable from th
   workspaces.json                        Workspace registry
   workspaces/{id}/
     tasks.json                           Tasks (Eisenhower + kanban + agent assignment)
-    initiatives.json                     Initiatives (group Tasks + Actions)
-    actions.json                         Actions (real-world side-effects + approval state)
+    initiatives.json                     Initiatives (group related tasks)
     goals.json                           Long-term goals
     agents.json                          Agent registry (persona, instructions, backend)
     inbox.json                           Agent <-> human messages
@@ -265,7 +242,6 @@ Each agent can use Claude Code or Codex CLI as its backend, configurable from th
     activity-log.json                    Full event log
     daemon-config.json                   Autopilot config (concurrency, autoStart, schedule)
     daemon-session-recovery.json         Claude session IDs for crash resume
-    field-ops/                           Services, vault, safety controls
   agent-streams/                         Live JSONL output per active agent session
   uploads/                               File attachments (served at /uploads/[filename])
 
@@ -289,7 +265,7 @@ mission-control/                         Next.js 15 app (source only, no data he
 - **Agent-first API:** Every endpoint optimized for token-efficient agent reads and writes.
 - **Daemon-first execution:** Autopilot is the default path, not an optional add-on.
 - **Resilience by default:** Crash recovery, session resume, and retry queues built into the daemon.
-- **Defense in depth:** Encrypted vault, spend limits, autonomy levels, approval workflows, emergency stop.
+- **Defense in depth:** Emergency stop, human-in-the-loop decisions.
 
 ---
 
