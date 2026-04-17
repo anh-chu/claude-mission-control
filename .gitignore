@@ -67,3 +67,8 @@ research/
 **/state
 **/.omc/artifacts
 **/.omx/
+
+# Agent scratch / tooling local state
+.pi/
+.pi-lens/
+babysitter-diagnostic-report.html
