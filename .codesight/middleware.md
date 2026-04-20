@@ -1,6 +1,7 @@
 # Middleware
 
 ## custom
+- run-wiki-generate — `mission-control/scripts/daemon/run-wiki-generate.ts`
 - generate-context — `mission-control/scripts/generate-context.ts`
 
 ## validation

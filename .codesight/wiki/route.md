@@ -2,7 +2,7 @@
 
 > **Navigation aid.** Route list and file locations extracted via AST. Read the source files listed below before implementing or modifying this subsystem.
 
-The Route subsystem handles **94 routes** and touches: cache, auth, queue, ai.
+The Route subsystem handles **100 routes** and touches: cache, auth, queue, ai.
 
 ## Routes
 
@@ -176,12 +176,24 @@ The Route subsystem handles **94 routes** and touches: cache, auth, queue, ai.
   `mission-control/src/app/api/wiki/file/route.ts`
 - `POST` `/api/wiki/folder` → out: { error }
   `mission-control/src/app/api/wiki/folder/route.ts`
+- `POST` `/api/wiki/generate` → out: { runId, pid, workspaceId, startedAt }
+  `mission-control/src/app/api/wiki/generate/route.ts`
+- `POST` `/api/wiki/init` → out: { ok, workspaceId, pluginStatus }
+  `mission-control/src/app/api/wiki/init/route.ts`
 - `POST` `/api/wiki/move` → out: { error }
   `mission-control/src/app/api/wiki/move/route.ts`
+- `GET` `/api/wiki/prompt` → out: { content, isDefault }
+  `mission-control/src/app/api/wiki/prompt/route.ts`
+- `PUT` `/api/wiki/prompt` → out: { content, isDefault }
+  `mission-control/src/app/api/wiki/prompt/route.ts`
 - `GET` `/api/wiki` → out: { error }
   `mission-control/src/app/api/wiki/route.ts`
 - `DELETE` `/api/wiki` → out: { error }
   `mission-control/src/app/api/wiki/route.ts`
+- `GET` `/api/wiki/run-stream` → out: { error }
+  `mission-control/src/app/api/wiki/run-stream/route.ts`
+- `GET` `/api/wiki/runs` → out: { runs }
+  `mission-control/src/app/api/wiki/runs/route.ts`
 - `POST` `/api/wiki/upload` → out: { error }
   `mission-control/src/app/api/wiki/upload/route.ts`
 - `GET` `/api/workspaces` → out: { error }
@@ -243,8 +255,13 @@ Read these before implementing or modifying this subsystem:
 - `mission-control/src/app/api/wiki/content/route.ts`
 - `mission-control/src/app/api/wiki/file/route.ts`
 - `mission-control/src/app/api/wiki/folder/route.ts`
+- `mission-control/src/app/api/wiki/generate/route.ts`
+- `mission-control/src/app/api/wiki/init/route.ts`
 - `mission-control/src/app/api/wiki/move/route.ts`
+- `mission-control/src/app/api/wiki/prompt/route.ts`
 - `mission-control/src/app/api/wiki/route.ts`
+- `mission-control/src/app/api/wiki/run-stream/route.ts`
+- `mission-control/src/app/api/wiki/runs/route.ts`
 - `mission-control/src/app/api/wiki/upload/route.ts`
 - `mission-control/src/app/api/workspaces/route.ts`
 - `mission-control/src/app/uploads/[filename]/route.ts`

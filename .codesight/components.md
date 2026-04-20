@@ -38,7 +38,7 @@
 - **KanbanPage** [client] — `mission-control/src/app/status-board/page.tsx`
 - **VenturesDetailPage** — `mission-control/src/app/ventures/[id]/page.tsx`
 - **ProjectsPage** [client] — `mission-control/src/app/ventures/page.tsx`
-- **AgentConsole** [client] — props: runId, onStop — `mission-control/src/components/agent-console.tsx`
+- **StreamEntry** [client] — props: runId, onStop — `mission-control/src/components/agent-console.tsx`
 - **AppSidebar** [client] — props: href, label, icon, isActive, collapsed, onClick, size, badge, badgeDot, tooltipSuffix — `mission-control/src/components/app-sidebar.tsx`
 - **DraggableTaskCard** [client] — props: task, project, onClick, isSelected, onToggleSelect, isRunning, onRun, pendingDecisionTaskIds, onStatusChange, onDuplicate — `mission-control/src/components/board-view.tsx`
 - **BreadcrumbNav** [client] — props: items, className — `mission-control/src/components/breadcrumb-nav.tsx`

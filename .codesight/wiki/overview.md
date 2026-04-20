@@ -6,26 +6,26 @@
 
 ## Scale
 
-94 API routes · 79 UI components · 36 library files · 3 middleware layers · 21 environment variables
+100 API routes · 79 UI components · 37 library files · 4 middleware layers · 21 environment variables
 
 ## Subsystems
 
-- **[Route](./route.md)** — 94 routes — touches: cache, auth, queue, ai, upload
+- **[Route](./route.md)** — 100 routes — touches: cache, auth, queue, ai, upload
 
 **UI:** 79 components (react) — see [ui.md](./ui.md)
 
-**Libraries:** 36 files — see [libraries.md](./libraries.md)
+**Libraries:** 37 files — see [libraries.md](./libraries.md)
 
 ## High-Impact Files
 
 Changes to these files have the widest blast radius across the codebase:
 
-- `mission-control/src/lib/paths.ts` — imported by **19** files
-- `mission-control/scripts/daemon/logger.ts` — imported by **13** files
+- `mission-control/src/lib/paths.ts` — imported by **20** files
+- `mission-control/scripts/daemon/logger.ts` — imported by **14** files
 - `mission-control/scripts/daemon/types.ts` — imported by **10** files
 - `mission-control/scripts/daemon/security.ts` — imported by **7** files
+- `mission-control/scripts/daemon/runner.ts` — imported by **7** files
 - `mission-control/scripts/daemon/config.ts` — imported by **6** files
-- `mission-control/scripts/daemon/runner.ts` — imported by **6** files
 
 ## Required Environment Variables
 
@@ -44,4 +44,4 @@ Changes to these files have the widest blast radius across the codebase:
 - _...9 more_
 
 ---
-_Back to [index.md](./index.md) · Generated 2026-04-17_
+_Back to [index.md](./index.md) · Generated 2026-04-20_

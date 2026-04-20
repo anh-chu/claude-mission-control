@@ -1,6 +1,6 @@
 # ccmc — Wiki
 
-_Generated 2026-04-17 — re-run `npx codesight --wiki` if the codebase has changed._
+_Generated 2026-04-20 — re-run `npx codesight --wiki` if the codebase has changed._
 
 Structural map compiled from source code via AST. No LLM — deterministic, 200ms.
 
@@ -15,7 +15,7 @@ Structural map compiled from source code via AST. No LLM — deterministic, 200m
 
 ## Quick Stats
 
-- Routes: **94**
+- Routes: **100**
 - Models: **0**
 - Components: **79**
 - Env vars: **21** required, **0** with defaults
@@ -44,4 +44,4 @@ These exist in your codebase but are **not** reflected in wiki articles:
 When in doubt, search the source. The wiki is a starting point, not a complete inventory.
 
 ---
-_Last compiled: 2026-04-17 · 5 articles · [codesight](https://github.com/Houseofmvps/codesight)_
+_Last compiled: 2026-04-20 · 5 articles · [codesight](https://github.com/Houseofmvps/codesight)_

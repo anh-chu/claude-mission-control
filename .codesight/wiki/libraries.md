@@ -2,11 +2,11 @@
 
 > **Navigation aid.** Library inventory extracted via AST. Read the source files listed here before modifying exported functions.
 
-**36 library files** across 1 module
+**37 library files** across 1 module
 
-## Mission-control (36 files)
+## Mission-control (37 files)
 
-- `mission-control/src/lib/data.ts` — getCurrentWorkspace, setCurrentWorkspace, getWorkspaceDataDir, ensureWorkspaceDir, getCheckpointsDir, ensureCheckpointsDir, …
+- `mission-control/src/lib/data.ts` — getCurrentWorkspace, setCurrentWorkspace, getWorkspaceDataDir, ensureWorkspaceDir, initWikiDir, getCheckpointsDir, …
 - `mission-control/src/lib/types.ts` — getQuadrant, quadrantFromValues, valuesFromQuadrant, AgentDefinition, AgentsFile, SkillDefinition, …
 - `mission-control/src/lib/validations.ts` — validateBody, DEFAULT_LIMIT, LIMITS, taskCreateSchema, taskUpdateSchema, goalCreateSchema, …
 - `mission-control/src/hooks/use-data.ts` — useTasks, useInitiativeTasks, useGoals, useProjects, useBrainDump, useActivityLog, …
@@ -17,6 +17,7 @@
 - `mission-control/scripts/daemon/recovery.ts` — persistSessionRecord, clearSessionRecord, runCrashRecovery, SessionRecord, RecoveryResult
 - `mission-control/src/hooks/use-dashboard-data.ts` — useDashboardData, DashboardStats, DashboardAttention, DashboardEisenhowerCounts, DashboardData
 - `mission-control/src/lib/paths.ts` — getWorkspaceDir, getUploadsDir, getWikiDir, DATA_DIR
+- `mission-control/src/lib/wiki-plugin.ts` — ensureWikiPluginInstalledDetailed, ensureWikiPluginInstalled, WikiPluginInstall, WikiPluginStatus
 - `mission-control/scripts/daemon/config.ts` — loadConfig, saveConfig, getConfigPath
 - `mission-control/src/lib/log-reader.ts` — isAllowedLogPath, scrubLogLines, tailFile
 - `mission-control/src/lib/logger.ts` — createLogger, Logger, LogLevel
@@ -30,8 +31,7 @@
 - `mission-control/src/lib/api-client.ts` — apiFetch, ApiFetchInit
 - `mission-control/src/middleware.ts` — middleware, config
 - `mission-control/scripts/daemon/dispatcher.ts` — Dispatcher
-- `mission-control/scripts/daemon/health.ts` — HealthMonitor
-- _…and 11 more files_
+- _…and 12 more files_
 
 ---
 _Back to [overview.md](./overview.md)_

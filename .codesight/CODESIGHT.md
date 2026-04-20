@@ -2,9 +2,9 @@
 
 > **Stack:** next-app | none | react | typescript
 
-> 94 routes | 0 models | 79 components | 36 lib files | 21 env vars | 3 middleware | 0% test coverage
-> **Token savings:** this file is ~7,200 tokens. Without it, AI exploration would cost ~96,100 tokens. **Saves ~89,000 tokens per conversation.**
-> **Last scanned:** 2026-04-17 20:55 — re-run after significant changes
+> 100 routes | 0 models | 79 components | 37 lib files | 21 env vars | 4 middleware | 0% test coverage
+> **Token savings:** this file is ~7,400 tokens. Without it, AI exploration would cost ~100,200 tokens. **Saves ~92,800 tokens per conversation.**
+> **Last scanned:** 2026-04-20 03:15 — re-run after significant changes
 
 ---
 
@@ -65,9 +65,15 @@
 - `PUT` `/api/wiki/content` → out: { error }
 - `GET` `/api/wiki/file` → out: { error } [cache]
 - `POST` `/api/wiki/folder` → out: { error }
+- `POST` `/api/wiki/generate` → out: { runId, pid, workspaceId, startedAt }
+- `POST` `/api/wiki/init` → out: { ok, workspaceId, pluginStatus }
 - `POST` `/api/wiki/move` → out: { error }
+- `GET` `/api/wiki/prompt` → out: { content, isDefault }
+- `PUT` `/api/wiki/prompt` → out: { content, isDefault }
 - `GET` `/api/wiki` → out: { error }
 - `DELETE` `/api/wiki` → out: { error }
+- `GET` `/api/wiki/run-stream` → out: { error }
+- `GET` `/api/wiki/runs` → out: { runs }
 - `POST` `/api/wiki/upload` → out: { error }
 - `GET` `/uploads/[filename]` params(filename) → out: { error } [cache, upload]
 
@@ -113,7 +119,7 @@
 - **KanbanPage** [client] — `mission-control/src/app/status-board/page.tsx`
 - **VenturesDetailPage** — `mission-control/src/app/ventures/[id]/page.tsx`
 - **ProjectsPage** [client] — `mission-control/src/app/ventures/page.tsx`
-- **AgentConsole** [client] — props: runId, onStop — `mission-control/src/components/agent-console.tsx`
+- **StreamEntry** [client] — props: runId, onStop — `mission-control/src/components/agent-console.tsx`
 - **AppSidebar** [client] — props: href, label, icon, isActive, collapsed, onClick, size, badge, badgeDot, tooltipSuffix — `mission-control/src/components/app-sidebar.tsx`
 - **DraggableTaskCard** [client] — props: task, project, onClick, isSelected, onToggleSelect, isRunning, onRun, pendingDecisionTaskIds, onStatusChange, onDuplicate — `mission-control/src/components/board-view.tsx`
 - **BreadcrumbNav** [client] — props: items, className — `mission-control/src/components/breadcrumb-nav.tsx`
@@ -226,9 +232,9 @@
   - function setCurrentWorkspace: (id) => void
   - function getWorkspaceDataDir: (workspaceId) => string
   - function ensureWorkspaceDir: (workspaceId) => Promise<void>
+  - function initWikiDir: (workspaceId) => Promise<void>
   - function getCheckpointsDir: () => string
-  - function ensureCheckpointsDir: () => Promise<void>
-  - _...58 more_
+  - _...63 more_
 - `mission-control/src/lib/log-reader.ts`
   - function isAllowedLogPath: (filePath) => boolean
   - function scrubLogLines: (lines) => string[]
@@ -278,6 +284,11 @@
   - const taskUpdateSchema
   - const goalCreateSchema
   - _...17 more_
+- `mission-control/src/lib/wiki-plugin.ts`
+  - function ensureWikiPluginInstalledDetailed: (cwd) => WikiPluginInstall
+  - function ensureWikiPluginInstalled: (cwd) => WikiPluginStatus
+  - interface WikiPluginInstall
+  - type WikiPluginStatus
 - `mission-control/src/lib/workspace-context.ts` — function applyWorkspaceContext: () => Promise<string>
 - `mission-control/src/middleware.ts` — function middleware: (request) => void, const config
 
@@ -320,6 +331,7 @@
 # Middleware
 
 ## custom
+- run-wiki-generate — `mission-control/scripts/daemon/run-wiki-generate.ts`
 - generate-context — `mission-control/scripts/generate-context.ts`
 
 ## validation
@@ -334,12 +346,12 @@
 
 ## Most Imported Files (change these carefully)
 
-- `mission-control/src/lib/paths.ts` — imported by **19** files
-- `mission-control/scripts/daemon/logger.ts` — imported by **13** files
+- `mission-control/src/lib/paths.ts` — imported by **20** files
+- `mission-control/scripts/daemon/logger.ts` — imported by **14** files
 - `mission-control/scripts/daemon/types.ts` — imported by **10** files
 - `mission-control/scripts/daemon/security.ts` — imported by **7** files
+- `mission-control/scripts/daemon/runner.ts` — imported by **7** files
 - `mission-control/scripts/daemon/config.ts` — imported by **6** files
-- `mission-control/scripts/daemon/runner.ts` — imported by **6** files
 - `mission-control/scripts/daemon/prompt-builder.ts` — imported by **5** files
 - `mission-control/src/lib/logger.ts` — imported by **4** files
 - `mission-control/scripts/daemon/health.ts` — imported by **3** files
@@ -347,20 +359,22 @@
 - `mission-control/scripts/daemon/recovery.ts` — imported by **2** files
 - `mission-control/scripts/daemon/dispatcher.ts` — imported by **2** files
 - `mission-control/src/lib/scrub.ts` — imported by **2** files
+- `mission-control/scripts/daemon/run-wiki-generate.ts` — imported by **2** files
 - `mission-control/src/lib/data.ts` — imported by **2** files
 - `mission-control/src/lib/validations.ts` — imported by **1** files
 - `mission-control/scripts/daemon/scheduler.ts` — imported by **1** files
+- `mission-control/src/lib/wiki-plugin.ts` — imported by **1** files
 - `mission-control/src/instrumentation.node.ts` — imported by **1** files
 - `mission-control/src/lib/types.ts` — imported by **1** files
 
 ## Import Map (who imports what)
 
-- `mission-control/src/lib/paths.ts` ← `mission-control/scripts/cleanup-uploads.ts`, `mission-control/scripts/daemon/config.ts`, `mission-control/scripts/daemon/dispatcher.ts`, `mission-control/scripts/daemon/health.ts`, `mission-control/scripts/daemon/index.ts` +14 more
-- `mission-control/scripts/daemon/logger.ts` ← `mission-control/scripts/daemon/config.ts`, `mission-control/scripts/daemon/dispatcher.ts`, `mission-control/scripts/daemon/health.ts`, `mission-control/scripts/daemon/index.ts`, `mission-control/scripts/daemon/prompt-builder.ts` +8 more
+- `mission-control/src/lib/paths.ts` ← `mission-control/scripts/cleanup-uploads.ts`, `mission-control/scripts/daemon/config.ts`, `mission-control/scripts/daemon/dispatcher.ts`, `mission-control/scripts/daemon/health.ts`, `mission-control/scripts/daemon/index.ts` +15 more
+- `mission-control/scripts/daemon/logger.ts` ← `mission-control/scripts/daemon/config.ts`, `mission-control/scripts/daemon/dispatcher.ts`, `mission-control/scripts/daemon/health.ts`, `mission-control/scripts/daemon/index.ts`, `mission-control/scripts/daemon/prompt-builder.ts` +9 more
 - `mission-control/scripts/daemon/types.ts` ← `mission-control/scripts/daemon/config.ts`, `mission-control/scripts/daemon/dispatcher.ts`, `mission-control/scripts/daemon/health.ts`, `mission-control/scripts/daemon/prompt-builder.ts`, `mission-control/scripts/daemon/respond-runs.ts` +5 more
 - `mission-control/scripts/daemon/security.ts` ← `mission-control/__tests__/security.test.ts`, `mission-control/__tests__/security.test.ts`, `mission-control/scripts/daemon/health.ts`, `mission-control/scripts/daemon/prompt-builder.ts`, `mission-control/scripts/daemon/run-task-comment.ts` +2 more
+- `mission-control/scripts/daemon/runner.ts` ← `mission-control/scripts/daemon/dispatcher.ts`, `mission-control/scripts/daemon/index.ts`, `mission-control/scripts/daemon/run-brain-dump-triage.ts`, `mission-control/scripts/daemon/run-inbox-respond.ts`, `mission-control/scripts/daemon/run-task-comment.ts` +2 more
 - `mission-control/scripts/daemon/config.ts` ← `mission-control/__tests__/daemon.test.ts`, `mission-control/scripts/daemon/index.ts`, `mission-control/scripts/daemon/run-brain-dump-triage.ts`, `mission-control/scripts/daemon/run-inbox-respond.ts`, `mission-control/scripts/daemon/run-task.ts` +1 more
-- `mission-control/scripts/daemon/runner.ts` ← `mission-control/scripts/daemon/dispatcher.ts`, `mission-control/scripts/daemon/index.ts`, `mission-control/scripts/daemon/run-brain-dump-triage.ts`, `mission-control/scripts/daemon/run-inbox-respond.ts`, `mission-control/scripts/daemon/run-task-comment.ts` +1 more
 - `mission-control/scripts/daemon/prompt-builder.ts` ← `mission-control/__tests__/daemon.test.ts`, `mission-control/scripts/daemon/dispatcher.ts`, `mission-control/scripts/daemon/dispatcher.ts`, `mission-control/scripts/daemon/dispatcher.ts`, `mission-control/scripts/daemon/run-task.ts`
 - `mission-control/src/lib/logger.ts` ← `mission-control/scripts/daemon/logger.ts`, `mission-control/scripts/daemon/run-inbox-respond.ts`, `mission-control/scripts/daemon/run-task-comment.ts`, `mission-control/scripts/daemon/run-task.ts`
 - `mission-control/scripts/daemon/health.ts` ← `mission-control/scripts/daemon/dispatcher.ts`, `mission-control/scripts/daemon/index.ts`, `mission-control/scripts/daemon/scheduler.ts`

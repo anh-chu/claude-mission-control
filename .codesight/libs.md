@@ -67,9 +67,9 @@
   - function setCurrentWorkspace: (id) => void
   - function getWorkspaceDataDir: (workspaceId) => string
   - function ensureWorkspaceDir: (workspaceId) => Promise<void>
+  - function initWikiDir: (workspaceId) => Promise<void>
   - function getCheckpointsDir: () => string
-  - function ensureCheckpointsDir: () => Promise<void>
-  - _...58 more_
+  - _...63 more_
 - `mission-control/src/lib/log-reader.ts`
   - function isAllowedLogPath: (filePath) => boolean
   - function scrubLogLines: (lines) => string[]
@@ -119,5 +119,10 @@
   - const taskUpdateSchema
   - const goalCreateSchema
   - _...17 more_
+- `mission-control/src/lib/wiki-plugin.ts`
+  - function ensureWikiPluginInstalledDetailed: (cwd) => WikiPluginInstall
+  - function ensureWikiPluginInstalled: (cwd) => WikiPluginStatus
+  - interface WikiPluginInstall
+  - type WikiPluginStatus
 - `mission-control/src/lib/workspace-context.ts` — function applyWorkspaceContext: () => Promise<string>
 - `mission-control/src/middleware.ts` — function middleware: (request) => void, const config
