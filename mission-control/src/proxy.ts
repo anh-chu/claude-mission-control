@@ -23,7 +23,7 @@ function timingSafeEqual(a: string, b: string): boolean {
  * When MC_API_TOKEN is NOT set, all requests pass through (backwards
  * compatible for local-only development with zero configuration).
  */
-export function middleware(request: NextRequest) {
+export function proxy(request: NextRequest) {
   const startedAt = Date.now();
   const pathname = request.nextUrl.pathname;
 
