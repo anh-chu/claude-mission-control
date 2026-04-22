@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useRef, useState } from "react";
+import { MarkdownContent } from "@/components/markdown-content";
 import { useAgentStream, type StreamLine } from "@/hooks/use-agent-stream";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -59,6 +60,11 @@ interface ThinkingDisplayLine extends StreamLine {
 	thinking: string;
 }
 
+interface TextDisplayLine extends StreamLine {
+	type: "merged_text";
+	text: string;
+}
+
 interface ToolUseGroupDisplayLine extends StreamLine {
 	type: "merged_tool_use";
 	entries: Array<
@@ -75,6 +81,18 @@ function getThinkingFromBlock(block: ContentBlock): string {
 			: typeof (block as ThinkingBlock).text === "string"
 				? (block as ThinkingBlock).text
 				: "") ?? ""
+	);
+}
+
+function ResponseTextEntry({ text }: { text: string }) {
+	return (
+		<div className="flex gap-2 py-1.5 px-2">
+			<MessageSquare className="h-3.5 w-3.5 mt-0.5 shrink-0 text-blue-400" />
+			<MarkdownContent
+				content={text}
+				className="min-w-0 flex-1 text-sm text-foreground/90"
+			/>
+		</div>
 	);
 }
 
@@ -116,7 +134,12 @@ function ThinkingEntry({ thinking }: { thinking: string }) {
 
 export function prepareConsoleLines(
 	lines: StreamLine[],
-	): (StreamLine | ThinkingDisplayLine | ToolUseGroupDisplayLine)[] {
+): (
+	| StreamLine
+	| ThinkingDisplayLine
+	| TextDisplayLine
+	| ToolUseGroupDisplayLine
+)[] {
 	const rendered: StreamLine[] = [];
 	let thinking = "";
 
@@ -180,24 +203,32 @@ export function prepareConsoleLines(
 	const withThinking: (StreamLine | ThinkingDisplayLine)[] = !thinking.trim()
 		? rendered
 		: (() => {
-			const thinkingLine: ThinkingDisplayLine = {
-				type: "merged_thinking",
-				thinking,
-			};
-			const resultIndex = rendered.findIndex((line) => line.type === "result");
-			if (resultIndex === -1) {
-				return [...rendered, thinkingLine];
-			}
+				const thinkingLine: ThinkingDisplayLine = {
+					type: "merged_thinking",
+					thinking,
+				};
+				const resultIndex = rendered.findIndex(
+					(line) => line.type === "result",
+				);
+				if (resultIndex === -1) {
+					return [...rendered, thinkingLine];
+				}
 
-			return [
-				...rendered.slice(0, resultIndex),
-				thinkingLine,
-				...rendered.slice(resultIndex),
-			];
-		})();
+				return [
+					...rendered.slice(0, resultIndex),
+					thinkingLine,
+					...rendered.slice(resultIndex),
+				];
+			})();
 
-	const grouped: (StreamLine | ThinkingDisplayLine | ToolUseGroupDisplayLine)[] = [];
+	const grouped: (
+		| StreamLine
+		| ThinkingDisplayLine
+		| TextDisplayLine
+		| ToolUseGroupDisplayLine
+	)[] = [];
 	let pendingToolEntries: ToolUseGroupDisplayLine["entries"] = [];
+	let pendingText = "";
 
 	const flushToolUses = () => {
 		if (pendingToolEntries.length === 0) return;
@@ -208,13 +239,37 @@ export function prepareConsoleLines(
 		pendingToolEntries = [];
 	};
 
+	const flushText = () => {
+		if (!pendingText.trim()) return;
+		grouped.push({ type: "merged_text", text: pendingText });
+		pendingText = "";
+	};
+
 	for (const line of withThinking) {
+		if (
+			line.type === "system" ||
+			line.type === "rate_limit_event" ||
+			line.type === "stream_event"
+		) {
+			continue;
+		}
 		if (line.type === "assistant") {
 			const blocks =
-				(line.message as { content?: ContentBlock[] } | undefined)?.content ?? [];
+				(line.message as { content?: ContentBlock[] } | undefined)?.content ??
+				[];
+			const onlyText =
+				blocks.length > 0 && blocks.every((block) => block.type === "text");
+			if (onlyText) {
+				pendingText += (blocks as TextBlock[])
+					.map((block) => block.text)
+					.join("");
+				continue;
+			}
+
 			const onlyToolUses =
 				blocks.length > 0 && blocks.every((block) => block.type === "tool_use");
 			if (onlyToolUses) {
+				flushText();
 				pendingToolEntries.push(
 					...(blocks as ToolUseBlock[]).map((block) => ({
 						type: "tool_use" as const,
@@ -227,10 +282,13 @@ export function prepareConsoleLines(
 
 		if (line.type === "user") {
 			const blocks =
-				(line.message as { content?: ContentBlock[] } | undefined)?.content ?? [];
+				(line.message as { content?: ContentBlock[] } | undefined)?.content ??
+				[];
 			const onlyToolResults =
-				blocks.length > 0 && blocks.every((block) => block.type === "tool_result");
+				blocks.length > 0 &&
+				blocks.every((block) => block.type === "tool_result");
 			if (onlyToolResults && pendingToolEntries.length > 0) {
+				flushText();
 				pendingToolEntries.push(
 					...(blocks as ToolResultBlock[]).map((block) => ({
 						type: "tool_result" as const,
@@ -241,12 +299,32 @@ export function prepareConsoleLines(
 			}
 		}
 
+		flushText();
 		flushToolUses();
 		grouped.push(line);
 	}
 
+	flushText();
 	flushToolUses();
-	return grouped;
+	const mergedAdjacentToolGroups: (
+		| StreamLine
+		| ThinkingDisplayLine
+		| TextDisplayLine
+		| ToolUseGroupDisplayLine
+	)[] = [];
+	for (const line of grouped) {
+		const prev = mergedAdjacentToolGroups[mergedAdjacentToolGroups.length - 1];
+		if (line.type === "merged_tool_use" && prev?.type === "merged_tool_use") {
+			(prev as ToolUseGroupDisplayLine).entries.push(
+				...((line as ToolUseGroupDisplayLine)
+					.entries as ToolUseGroupDisplayLine["entries"]),
+			);
+			continue;
+		}
+		mergedAdjacentToolGroups.push(line);
+	}
+
+	return mergedAdjacentToolGroups;
 }
 
 function ToolUseGroupEntry({
@@ -272,10 +350,7 @@ function ToolUseGroupEntry({
 			<CollapsibleContent className="space-y-0.5">
 				{entries.map((entry, index) =>
 					entry.type === "tool_use" ? (
-						<ToolUseEntry
-							key={entry.block.id}
-							block={entry.block}
-						/>
+						<ToolUseEntry key={entry.block.id} block={entry.block} />
 					) : (
 						<ToolResultEntry
 							key={`${entry.block.tool_use_id}_${index}`}
@@ -355,6 +430,11 @@ function ToolResultEntry({ block }: { block: ToolResultBlock }) {
 
 export function StreamEntry({ line }: { line: StreamLine }) {
 	const [open, setOpen] = useState(false);
+	if (line.type === "merged_text") {
+		const text = typeof line.text === "string" ? line.text : "";
+		if (!text.trim()) return null;
+		return <ResponseTextEntry text={text} />;
+	}
 	if (line.type === "merged_thinking") {
 		const thinking = typeof line.thinking === "string" ? line.thinking : "";
 		if (!thinking.trim()) return null;
@@ -375,14 +455,7 @@ export function StreamEntry({ line }: { line: StreamLine }) {
 			if (block.type === "text") {
 				const text = (block as TextBlock).text;
 				if (!text?.trim()) return [];
-				return [
-					<div key={i} className="flex gap-2 py-1.5 px-2">
-						<MessageSquare className="h-3.5 w-3.5 mt-0.5 shrink-0 text-blue-400" />
-						<pre className="text-xs text-foreground/90 whitespace-pre-wrap break-words font-mono leading-relaxed">
-							{text}
-						</pre>
-					</div>,
-				];
+				return [<ResponseTextEntry key={i} text={text} />];
 			}
 			if (block.type === "tool_use") {
 				return [<ToolUseEntry key={i} block={block as ToolUseBlock} />];
@@ -429,7 +502,7 @@ export function StreamEntry({ line }: { line: StreamLine }) {
 		);
 	}
 	// Skip system events (hook lifecycle, init, etc.)
-	if (line.type === "system") return null;
+	if (line.type === "system" || line.type === "rate_limit_event") return null;
 	const unknownContent = JSON.stringify(line, null, 2);
 	const unknownHint = (() => {
 		for (const key of [
