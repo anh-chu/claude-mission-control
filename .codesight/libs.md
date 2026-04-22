@@ -120,9 +120,12 @@
   - const goalCreateSchema
   - _...17 more_
 - `mission-control/src/lib/wiki-plugin.ts`
-  - function ensureWikiPluginInstalledDetailed: (cwd) => WikiPluginInstall
+  - function ensureWikiPluginInstalledDetailed: (cwd, options?) => WikiPluginInstall
   - function ensureWikiPluginInstalled: (cwd) => WikiPluginStatus
+  - function ensureWikiBootstrappedFromPlugin: (wikiDir, pluginInstallPath, domain) => WikiBootstrapResult
+  - function reconcileWikiWithPlugin: (wikiDir, pluginInstallPath) => WikiReconcileResult
   - interface WikiPluginInstall
-  - type WikiPluginStatus
+  - interface WikiBootstrapResult
+  - _...3 more_
 - `mission-control/src/lib/workspace-context.ts` — function applyWorkspaceContext: () => Promise<string>
 - `mission-control/src/middleware.ts` — function middleware: (request) => void, const config

@@ -3,8 +3,8 @@
 > **Stack:** next-app | none | react | typescript
 
 > 100 routes | 0 models | 79 components | 37 lib files | 21 env vars | 4 middleware | 0% test coverage
-> **Token savings:** this file is ~7,400 tokens. Without it, AI exploration would cost ~100,200 tokens. **Saves ~92,800 tokens per conversation.**
-> **Last scanned:** 2026-04-20 03:15 — re-run after significant changes
+> **Token savings:** this file is ~7,500 tokens. Without it, AI exploration would cost ~100,000 tokens. **Saves ~92,500 tokens per conversation.**
+> **Last scanned:** 2026-04-21 19:12 — re-run after significant changes
 
 ---
 
@@ -66,7 +66,7 @@
 - `GET` `/api/wiki/file` → out: { error } [cache]
 - `POST` `/api/wiki/folder` → out: { error }
 - `POST` `/api/wiki/generate` → out: { runId, pid, workspaceId, startedAt }
-- `POST` `/api/wiki/init` → out: { ok, workspaceId, pluginStatus }
+- `POST` `/api/wiki/init` → out: { error }
 - `POST` `/api/wiki/move` → out: { error }
 - `GET` `/api/wiki/prompt` → out: { content, isDefault }
 - `PUT` `/api/wiki/prompt` → out: { content, isDefault }
@@ -285,10 +285,13 @@
   - const goalCreateSchema
   - _...17 more_
 - `mission-control/src/lib/wiki-plugin.ts`
-  - function ensureWikiPluginInstalledDetailed: (cwd) => WikiPluginInstall
+  - function ensureWikiPluginInstalledDetailed: (cwd, options?) => WikiPluginInstall
   - function ensureWikiPluginInstalled: (cwd) => WikiPluginStatus
+  - function ensureWikiBootstrappedFromPlugin: (wikiDir, pluginInstallPath, domain) => WikiBootstrapResult
+  - function reconcileWikiWithPlugin: (wikiDir, pluginInstallPath) => WikiReconcileResult
   - interface WikiPluginInstall
-  - type WikiPluginStatus
+  - interface WikiBootstrapResult
+  - _...3 more_
 - `mission-control/src/lib/workspace-context.ts` — function applyWorkspaceContext: () => Promise<string>
 - `mission-control/src/middleware.ts` — function middleware: (request) => void, const config
 
@@ -363,7 +366,6 @@
 - `mission-control/src/lib/data.ts` — imported by **2** files
 - `mission-control/src/lib/validations.ts` — imported by **1** files
 - `mission-control/scripts/daemon/scheduler.ts` — imported by **1** files
-- `mission-control/src/lib/wiki-plugin.ts` — imported by **1** files
 - `mission-control/src/instrumentation.node.ts` — imported by **1** files
 - `mission-control/src/lib/types.ts` — imported by **1** files
 

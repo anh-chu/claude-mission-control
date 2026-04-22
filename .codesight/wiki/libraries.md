@@ -11,13 +11,13 @@
 - `mission-control/src/lib/validations.ts` — validateBody, DEFAULT_LIMIT, LIMITS, taskCreateSchema, taskUpdateSchema, goalCreateSchema, …
 - `mission-control/src/hooks/use-data.ts` — useTasks, useInitiativeTasks, useGoals, useProjects, useBrainDump, useActivityLog, …
 - `mission-control/scripts/daemon/respond-runs.ts` — readRespondRuns, writeRespondRuns, isRunStopped, findRunningByMessage, getRunningRuns, createRespondRun, …
+- `mission-control/src/lib/wiki-plugin.ts` — ensureWikiPluginInstalledDetailed, ensureWikiPluginInstalled, ensureWikiBootstrappedFromPlugin, reconcileWikiWithPlugin, WikiPluginInstall, WikiBootstrapResult, …
 - `mission-control/scripts/daemon/prompt-builder.ts` — buildTaskPrompt, buildScheduledPrompt, getTask, getPendingTasks, isTaskUnblocked, hasPendingDecision
 - `mission-control/scripts/daemon/security.ts` — validatePathWithinWorkspace, escapeFenceContent, fenceTaskData, enforcePromptLimit, validateBinary, buildSafeEnv
 - `mission-control/src/lib/sync-commands.ts` — generateAgentCommandMarkdown, resolveLinkedSkills, syncAgentCommand, syncAllAgentCommands, syncSkillFile, syncAllSkillFiles
 - `mission-control/scripts/daemon/recovery.ts` — persistSessionRecord, clearSessionRecord, runCrashRecovery, SessionRecord, RecoveryResult
 - `mission-control/src/hooks/use-dashboard-data.ts` — useDashboardData, DashboardStats, DashboardAttention, DashboardEisenhowerCounts, DashboardData
 - `mission-control/src/lib/paths.ts` — getWorkspaceDir, getUploadsDir, getWikiDir, DATA_DIR
-- `mission-control/src/lib/wiki-plugin.ts` — ensureWikiPluginInstalledDetailed, ensureWikiPluginInstalled, WikiPluginInstall, WikiPluginStatus
 - `mission-control/scripts/daemon/config.ts` — loadConfig, saveConfig, getConfigPath
 - `mission-control/src/lib/log-reader.ts` — isAllowedLogPath, scrubLogLines, tailFile
 - `mission-control/src/lib/logger.ts` — createLogger, Logger, LogLevel

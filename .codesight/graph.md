@@ -19,7 +19,6 @@
 - `mission-control/src/lib/data.ts` — imported by **2** files
 - `mission-control/src/lib/validations.ts` — imported by **1** files
 - `mission-control/scripts/daemon/scheduler.ts` — imported by **1** files
-- `mission-control/src/lib/wiki-plugin.ts` — imported by **1** files
 - `mission-control/src/instrumentation.node.ts` — imported by **1** files
 - `mission-control/src/lib/types.ts` — imported by **1** files
 

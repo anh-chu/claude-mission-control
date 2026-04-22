@@ -56,7 +56,7 @@
 - `GET` `/api/wiki/file` → out: { error } [cache]
 - `POST` `/api/wiki/folder` → out: { error }
 - `POST` `/api/wiki/generate` → out: { runId, pid, workspaceId, startedAt }
-- `POST` `/api/wiki/init` → out: { ok, workspaceId, pluginStatus }
+- `POST` `/api/wiki/init` → out: { error }
 - `POST` `/api/wiki/move` → out: { error }
 - `GET` `/api/wiki/prompt` → out: { content, isDefault }
 - `PUT` `/api/wiki/prompt` → out: { content, isDefault }
