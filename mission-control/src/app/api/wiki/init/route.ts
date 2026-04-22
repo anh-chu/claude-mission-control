@@ -1,7 +1,11 @@
 import { NextResponse } from "next/server";
 import { initWikiDir } from "@/lib/data";
-import { getWikiDir } from "@/lib/paths";
-import { ensureWikiPluginInstalled } from "@/lib/wiki-plugin";
+import { getWikiDir, getWorkspaceDir } from "@/lib/paths";
+import {
+	ensureWikiBootstrappedFromPlugin,
+	ensureWikiPluginInstalledDetailed,
+	reconcileWikiWithPlugin,
+} from "@/lib/wiki-plugin";
 import { applyWorkspaceContext } from "@/lib/workspace-context";
 
 export async function POST() {
@@ -10,9 +14,29 @@ export async function POST() {
 		await initWikiDir(workspaceId);
 
 		const wikiDir = getWikiDir(workspaceId);
-		const pluginStatus = ensureWikiPluginInstalled(wikiDir);
+		const workspaceDir = getWorkspaceDir(workspaceId);
+		const plugin = ensureWikiPluginInstalledDetailed(workspaceDir, {
+			update: true,
+		});
+		const bootstrap = ensureWikiBootstrappedFromPlugin(
+			wikiDir,
+			plugin.installPath,
+			`Workspace ${workspaceId}`,
+			{ workspaceDir },
+		);
+		reconcileWikiWithPlugin(wikiDir, plugin.installPath);
 
-		return NextResponse.json({ ok: true, workspaceId, pluginStatus });
+		return NextResponse.json({
+			ok: true,
+			workspaceId,
+			pluginStatus: plugin.status,
+			pluginVersion: plugin.version,
+			pluginUpdated: plugin.updated,
+			bootstrapStatus: bootstrap.status,
+			hasLockFile: Boolean(bootstrap.lockFile),
+			hasCoverageReport: Boolean(bootstrap.coverageReport),
+			reconciled: true,
+		});
 	} catch (err) {
 		return NextResponse.json(
 			{
