@@ -10,7 +10,12 @@ import {
 	writeFile,
 } from "fs/promises";
 import path from "path";
-import { DATA_DIR, getDefaultWikiDir, getWikiDir, getWikiPathFile } from "./paths";
+import {
+	DATA_DIR,
+	getDefaultWikiDir,
+	getWikiDir,
+	getWikiPathFile,
+} from "./paths";
 import type {
 	ActiveRunsFile,
 	ActivityLogFile,
@@ -157,7 +162,11 @@ export async function initWikiDir(workspaceId: string): Promise<void> {
 	const sentinelPath = getWikiPathFile(workspaceId);
 	const defaultDir = getDefaultWikiDir(workspaceId);
 	try {
-		await writeFile(sentinelPath, `${wikiDir !== defaultDir ? wikiDir : defaultDir}\n`, "utf-8");
+		await writeFile(
+			sentinelPath,
+			`${wikiDir !== defaultDir ? wikiDir : defaultDir}\n`,
+			"utf-8",
+		);
 	} catch {
 		// non-fatal: plugin falls back to WIKI_PATH env var
 	}

@@ -108,7 +108,7 @@
   - interface AgentDefinition
   - interface AgentsFile
   - interface SkillDefinition
-  - _...51 more_
+  - _...50 more_
 - `src/lib/utils.ts`
   - function cn: (...inputs) => void
   - function generateId: (prefix) => string

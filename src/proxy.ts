@@ -6,12 +6,12 @@ import type { NextRequest } from "next/server";
  * Prevents timing side-channel attacks on token comparison.
  */
 function timingSafeEqual(a: string, b: string): boolean {
-  if (a.length !== b.length) return false;
-  let result = 0;
-  for (let i = 0; i < a.length; i++) {
-    result |= a.charCodeAt(i) ^ b.charCodeAt(i);
-  }
-  return result === 0;
+	if (a.length !== b.length) return false;
+	let result = 0;
+	for (let i = 0; i < a.length; i++) {
+		result |= a.charCodeAt(i) ^ b.charCodeAt(i);
+	}
+	return result === 0;
 }
 
 /**
@@ -24,85 +24,97 @@ function timingSafeEqual(a: string, b: string): boolean {
  * compatible for local-only development with zero configuration).
  */
 export function proxy(request: NextRequest) {
-  const startedAt = Date.now();
-  const pathname = request.nextUrl.pathname;
+	const startedAt = Date.now();
+	const pathname = request.nextUrl.pathname;
 
-  const finalize = (response: NextResponse) => {
-    if (!pathname.startsWith("/_next/")) {
-      console.log(JSON.stringify({
-        ts: new Date().toISOString(),
-        level: "INFO",
-        module: "http",
-        process: "app",
-        method: request.method,
-        path: pathname,
-        durationMs: Date.now() - startedAt,
-      }));
-    }
-    return response;
-  };
+	const finalize = (response: NextResponse) => {
+		if (!pathname.startsWith("/_next/")) {
+			console.log(
+				JSON.stringify({
+					ts: new Date().toISOString(),
+					level: "INFO",
+					module: "http",
+					process: "app",
+					method: request.method,
+					path: pathname,
+					durationMs: Date.now() - startedAt,
+				}),
+			);
+		}
+		return response;
+	};
 
-  // ── Workspace header injection ────────────────────────────────────────────
-  const workspaceId = request.cookies.get("workspace_id")?.value ?? "default";
-  const requestHeaders = new Headers(request.headers);
-  requestHeaders.set("x-workspace-id", workspaceId);
+	// ── Workspace header injection ────────────────────────────────────────────
+	const workspaceId = request.cookies.get("workspace_id")?.value ?? "default";
+	const requestHeaders = new Headers(request.headers);
+	requestHeaders.set("x-workspace-id", workspaceId);
 
-  // ── CSRF Protection: validate Origin on state-changing requests ──
-  const method = request.method.toUpperCase();
-  if (["POST", "PUT", "DELETE", "PATCH"].includes(method)) {
-    const origin = request.headers.get("origin");
-    const host = request.headers.get("host");
-    // Allow requests with no origin (server-to-server, CLI tools like curl)
-    // But reject requests where origin doesn't match host (cross-site)
-    if (origin && host) {
-      try {
-        const originHost = new URL(origin).host;
-        if (originHost !== host) {
-          return finalize(NextResponse.json(
-            { error: "Cross-origin request blocked" },
-            { status: 403 },
-          ));
-        }
-      } catch {
-        return finalize(NextResponse.json(
-          { error: "Invalid Origin header" },
-          { status: 403 },
-        ));
-      }
-    }
-  }
+	// ── CSRF Protection: validate Origin on state-changing requests ──
+	const method = request.method.toUpperCase();
+	if (["POST", "PUT", "DELETE", "PATCH"].includes(method)) {
+		const origin = request.headers.get("origin");
+		const host = request.headers.get("host");
+		// Allow requests with no origin (server-to-server, CLI tools like curl)
+		// But reject requests where origin doesn't match host (cross-site)
+		if (origin && host) {
+			try {
+				const originHost = new URL(origin).host;
+				if (originHost !== host) {
+					return finalize(
+						NextResponse.json(
+							{ error: "Cross-origin request blocked" },
+							{ status: 403 },
+						),
+					);
+				}
+			} catch {
+				return finalize(
+					NextResponse.json(
+						{ error: "Invalid Origin header" },
+						{ status: 403 },
+					),
+				);
+			}
+		}
+	}
 
-  const token = process.env.MC_API_TOKEN;
+	const token = process.env.MC_API_TOKEN;
 
-  // No token configured = open access (default local dev experience)
-  if (!token) return finalize(NextResponse.next({ request: { headers: requestHeaders } }));
+	// No token configured = open access (default local dev experience)
+	if (!token)
+		return finalize(
+			NextResponse.next({ request: { headers: requestHeaders } }),
+		);
 
-  const authHeader = request.headers.get("authorization");
-  if (!authHeader) {
-    return finalize(NextResponse.json(
-      { error: "Missing Authorization header" },
-      { status: 401 }
-    ));
-  }
+	const authHeader = request.headers.get("authorization");
+	if (!authHeader) {
+		return finalize(
+			NextResponse.json(
+				{ error: "Missing Authorization header" },
+				{ status: 401 },
+			),
+		);
+	}
 
-  const parts = authHeader.split(" ");
-  if (parts.length !== 2 || parts[0] !== "Bearer") {
-    return finalize(NextResponse.json(
-      { error: "Invalid Authorization format. Expected: Bearer <token>" },
-      { status: 401 }
-    ));
-  }
+	const parts = authHeader.split(" ");
+	if (parts.length !== 2 || parts[0] !== "Bearer") {
+		return finalize(
+			NextResponse.json(
+				{ error: "Invalid Authorization format. Expected: Bearer <token>" },
+				{ status: 401 },
+			),
+		);
+	}
 
-  if (!timingSafeEqual(parts[1], token)) {
-    return finalize(NextResponse.json(
-      { error: "Invalid API token" },
-      { status: 401 }
-    ));
-  }
+	if (!timingSafeEqual(parts[1], token)) {
+		return finalize(
+			NextResponse.json({ error: "Invalid API token" }, { status: 401 }),
+		);
+	}
 
-  return finalize(NextResponse.next({ request: { headers: requestHeaders } }));
+	return finalize(NextResponse.next({ request: { headers: requestHeaders } }));
 }
 
 export const config = {
-  matcher: "/api/:path*",
+	matcher: "/api/:path*",
 };

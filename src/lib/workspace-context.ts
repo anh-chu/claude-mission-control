@@ -7,8 +7,8 @@ import { setCurrentWorkspace } from "./data";
  * header injected by middleware.
  */
 export async function applyWorkspaceContext(): Promise<string> {
-  const headersList = await headers();
-  const workspaceId = headersList.get("x-workspace-id") ?? "default";
-  setCurrentWorkspace(workspaceId);
-  return workspaceId;
+	const headersList = await headers();
+	const workspaceId = headersList.get("x-workspace-id") ?? "default";
+	setCurrentWorkspace(workspaceId);
+	return workspaceId;
 }

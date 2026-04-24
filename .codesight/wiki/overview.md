@@ -20,9 +20,9 @@
 
 Changes to these files have the widest blast radius across the codebase:
 
-- `src/lib/types.ts` — imported by **72** files
+- `src/lib/types.ts` — imported by **68** files
 - `src/lib/utils.ts` — imported by **56** files
-- `src/lib/paths.ts` — imported by **50** files
+- `src/lib/paths.ts` — imported by **49** files
 - `src/components/ui/button.tsx` — imported by **45** files
 - `src/components/ui/badge.tsx` — imported by **31** files
 - `src/components/breadcrumb-nav.tsx` — imported by **31** files

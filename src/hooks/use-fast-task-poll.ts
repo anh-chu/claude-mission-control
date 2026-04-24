@@ -10,16 +10,16 @@ const FAST_POLL_INTERVAL = 5_000; // 5 seconds when tasks are running
  * so subtask progress appears more responsive on the UI.
  */
 export function useFastTaskPoll(
-  hasRunningTasks: boolean,
-  refetchTasks: () => Promise<void> | void,
+	hasRunningTasks: boolean,
+	refetchTasks: () => Promise<void> | void,
 ) {
-  useEffect(() => {
-    if (!hasRunningTasks) return;
-    const interval = setInterval(() => {
-      if (document.visibilityState === "visible") {
-        refetchTasks();
-      }
-    }, FAST_POLL_INTERVAL);
-    return () => clearInterval(interval);
-  }, [hasRunningTasks, refetchTasks]);
+	useEffect(() => {
+		if (!hasRunningTasks) return;
+		const interval = setInterval(() => {
+			if (document.visibilityState === "visible") {
+				refetchTasks();
+			}
+		}, FAST_POLL_INTERVAL);
+		return () => clearInterval(interval);
+	}, [hasRunningTasks, refetchTasks]);
 }
