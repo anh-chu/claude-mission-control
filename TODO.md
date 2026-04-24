@@ -31,7 +31,7 @@ Open questions: review/approval model for agent edits, conflict handling when mu
 Deferred cleanup items from the component audit. Low priority but worth tracking.
 
 - [ ] **Sidebar nav rationalization**: 12 hidden vs 7 visible routes. Rebalance.
-- [ ] **Skeleton consolidation**: 14 variants → 3-4 generic loading placeholders.
+- [x] **Skeleton consolidation**: 14 variants → 3-4 generic loading placeholders.
 - [ ] **Context menu shared wrapper**: 5 variants following same pattern. Extract shared wrapper.
 - [ ] **Dialog merge**: create/edit pairs that differ only by mode. Merge into single form dialog.
 - [ ] **Onboarding dialog evaluation**: 253 lines for a first-run flow with a single import. Evaluate if it still pulls its weight.
@@ -54,4 +54,4 @@ Deferred cleanup items from the component audit. Low priority but worth tracking
 
 ---
 
-*Section 3 items don't require immediate action. Tackle them when refactoring the relevant area.*
+_Section 3 items don't require immediate action. Tackle them when refactoring the relevant area._

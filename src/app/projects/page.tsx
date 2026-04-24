@@ -9,7 +9,7 @@ import { EditProjectDialog } from "@/components/edit-project-dialog";
 import { EmptyState } from "@/components/empty-state";
 import { ErrorState } from "@/components/error-state";
 import { ProjectCardLarge } from "@/components/project-card-large";
-import { ProjectCardSkeleton } from "@/components/skeletons";
+import { CardSkeleton, GridSkeleton, Skeleton } from "@/components/skeletons";
 import { Button } from "@/components/ui/button";
 import { Tip } from "@/components/ui/tip";
 import { useAgents, useProjects, useTasks } from "@/hooks/use-data";
@@ -96,11 +96,28 @@ export default function ProjectsPage() {
 		return (
 			<div className="space-y-6">
 				<BreadcrumbNav items={[{ label: "Projects" }]} />
-				<div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-					<ProjectCardSkeleton />
-					<ProjectCardSkeleton />
-					<ProjectCardSkeleton />
-				</div>
+				<GridSkeleton
+					className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3"
+					count={3}
+					renderItem={() => (
+						<CardSkeleton
+							className="p-6 space-y-3"
+							lines={[
+								{ key: "summary", className: "h-3 w-full" },
+								{ key: "progress", className: "h-1.5 w-full rounded-full" },
+								{ key: "meta", className: "h-3 w-24" },
+							]}
+						>
+							<div className="flex items-center justify-between">
+								<div className="flex items-center gap-2">
+									<Skeleton className="h-3 w-3 rounded-full" />
+									<Skeleton className="h-5 w-32" />
+								</div>
+								<Skeleton className="h-5 w-14 rounded-full" />
+							</div>
+						</CardSkeleton>
+					)}
+				/>
 			</div>
 		);
 	}

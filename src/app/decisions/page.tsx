@@ -1,25 +1,25 @@
 "use client";
 
-import { useState } from "react";
 import {
-	HelpCircle,
-	CheckCircle2,
-	User,
-	Search,
-	Code,
-	Megaphone,
 	BarChart3,
 	Bot,
+	CheckCircle2,
+	Code,
+	HelpCircle,
+	Megaphone,
+	Search,
+	User,
 } from "lucide-react";
-import { Card, CardContent } from "@/components/ui/card";
+import { useState } from "react";
+import { BreadcrumbNav } from "@/components/breadcrumb-nav";
 import { EmptyState } from "@/components/empty-state";
+import { ErrorState } from "@/components/error-state";
+import { CardSkeleton, GridSkeleton } from "@/components/skeletons";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import { Card, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
-import { BreadcrumbNav } from "@/components/breadcrumb-nav";
 import { useDecisions, useTasks } from "@/hooks/use-data";
-import { DecisionCardSkeleton } from "@/components/skeletons";
-import { ErrorState } from "@/components/error-state";
 import type { DecisionItem } from "@/lib/types";
 import { AGENT_ROLES } from "@/lib/types";
 
@@ -75,10 +75,25 @@ export default function DecisionsPage() {
 		return (
 			<div className="space-y-6">
 				<BreadcrumbNav items={[{ label: "Decisions" }]} />
-				<div className="space-y-3">
-					<DecisionCardSkeleton />
-					<DecisionCardSkeleton />
-				</div>
+				<GridSkeleton
+					className="space-y-3"
+					count={2}
+					renderItem={() => (
+						<CardSkeleton
+							className="p-4 space-y-3"
+							lines={[
+								{ key: "title", className: "h-5 w-3/4" },
+								{ key: "line-1", className: "h-3 w-full" },
+								{ key: "line-2", className: "h-3 w-2/3" },
+							]}
+							footer={[
+								{ key: "approve", className: "h-8 w-24 rounded-md" },
+								{ key: "reject", className: "h-8 w-24 rounded-md" },
+							]}
+							footerClassName="flex gap-2 pt-1"
+						/>
+					)}
+				/>
 			</div>
 		);
 	}
@@ -166,9 +181,9 @@ export default function DecisionsPage() {
 										{/* Option buttons */}
 										{dec.options.length > 0 && (
 											<div className="flex flex-wrap gap-2">
-												{dec.options.map((opt, i) => (
+												{dec.options.map((opt) => (
 													<Button
-														key={i}
+														key={opt}
 														variant="outline"
 														size="sm"
 														className="text-xs"
@@ -198,7 +213,9 @@ export default function DecisionsPage() {
 												className="h-8 text-xs"
 												disabled={!customAnswers[dec.id]?.trim()}
 												onClick={() => {
-													handleAnswer(dec, customAnswers[dec.id]!.trim());
+													const answer = customAnswers[dec.id]?.trim();
+													if (!answer) return;
+													handleAnswer(dec, answer);
 													setCustomAnswers((prev) => ({
 														...prev,
 														[dec.id]: "",

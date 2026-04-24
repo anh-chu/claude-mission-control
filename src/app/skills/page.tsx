@@ -1,19 +1,19 @@
 "use client";
 
-import { useState } from "react";
+import { BookOpen, Check, Copy, Plus, Tag, Terminal } from "lucide-react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { Plus, BookOpen, Tag, Terminal, Copy, Check } from "lucide-react";
-import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
-import { EmptyState } from "@/components/empty-state";
+import { useState } from "react";
 import { BreadcrumbNav } from "@/components/breadcrumb-nav";
-import { Tip } from "@/components/ui/tip";
-import { useSkills, useAgents } from "@/hooks/use-data";
-import { SkillCardSkeleton } from "@/components/skeletons";
+import { EmptyState } from "@/components/empty-state";
 import { ErrorState } from "@/components/error-state";
-import { SKILLS } from "@/lib/types";
+import { CardSkeleton, GridSkeleton, Skeleton } from "@/components/skeletons";
+import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
+import { Tip } from "@/components/ui/tip";
+import { useAgents, useSkills } from "@/hooks/use-data";
 import type { SkillDefinition } from "@/lib/types";
+import { SKILLS } from "@/lib/types";
 
 function CopyButton({ text }: { text: string }) {
 	const [copied, setCopied] = useState(false);
@@ -115,11 +115,29 @@ export default function SkillsPage() {
 		return (
 			<div className="space-y-6">
 				<BreadcrumbNav items={[{ label: "Skills Library" }]} />
-				<div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-					<SkillCardSkeleton />
-					<SkillCardSkeleton />
-					<SkillCardSkeleton />
-				</div>
+				<GridSkeleton
+					className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3"
+					count={3}
+					renderItem={() => (
+						<CardSkeleton
+							className="p-5 space-y-3"
+							footer={[
+								{ key: "tag-1", className: "h-4 w-14 rounded-full" },
+								{ key: "tag-2", className: "h-4 w-18 rounded-full" },
+							]}
+							footerClassName="flex gap-1"
+						>
+							<div className="space-y-1.5">
+								<Skeleton className="h-5 w-32" />
+								<Skeleton className="h-3 w-48" />
+							</div>
+							<div className="flex gap-1.5">
+								<Skeleton className="h-5 w-5 rounded-full" />
+								<Skeleton className="h-5 w-5 rounded-full" />
+							</div>
+						</CardSkeleton>
+					)}
+				/>
 			</div>
 		);
 	}

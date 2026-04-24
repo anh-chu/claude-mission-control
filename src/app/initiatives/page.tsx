@@ -233,6 +233,8 @@ function InitiativeCard({
 	onArchive?: (initiativeId: string) => void;
 	onDelete?: (initiativeId: string) => void;
 }) {
+	const router = useRouter();
+
 	return (
 		<ContextMenu>
 			<ContextMenuTrigger asChild>
@@ -282,7 +284,6 @@ function InitiativeCard({
 export default function InitiativesPage() {
 	const { initiatives, loading, create, update, remove } = useInitiatives();
 	const { projects } = useProjects();
-	const router = useRouter();
 	const [createOpen, setCreateOpen] = useState(false);
 
 	async function handleTogglePause(initiative: Initiative) {

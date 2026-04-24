@@ -16,7 +16,7 @@ import { AgentContextMenuContent } from "@/components/context-menus/agent-contex
 import { CreateTaskDialog } from "@/components/create-task-dialog";
 import { EmptyState } from "@/components/empty-state";
 import { ErrorState } from "@/components/error-state";
-import { AgentCardSkeleton } from "@/components/skeletons";
+import { CardSkeleton, GridSkeleton, Skeleton } from "@/components/skeletons";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { ContextMenu, ContextMenuTrigger } from "@/components/ui/context-menu";
@@ -214,11 +214,33 @@ export default function CrewPage() {
 		return (
 			<div className="space-y-6">
 				<BreadcrumbNav items={[{ label: "Agents" }]} />
-				<div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-					<AgentCardSkeleton />
-					<AgentCardSkeleton />
-					<AgentCardSkeleton />
-				</div>
+				<GridSkeleton
+					className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3"
+					count={3}
+					renderItem={() => (
+						<CardSkeleton className="p-5 space-y-3">
+							<div className="flex items-start justify-between">
+								<div className="flex items-center gap-3">
+									<Skeleton className="h-10 w-10 rounded-full" />
+									<div className="space-y-1.5">
+										<Skeleton className="h-4 w-28" />
+										<Skeleton className="h-3 w-40" />
+									</div>
+								</div>
+								<Skeleton className="h-3 w-3 rounded-full" />
+							</div>
+							<div className="flex gap-1">
+								<Skeleton className="h-4 w-16 rounded-full" />
+								<Skeleton className="h-4 w-20 rounded-full" />
+								<Skeleton className="h-4 w-14 rounded-full" />
+							</div>
+							<div className="flex items-center justify-between pt-3 border-t">
+								<Skeleton className="h-3 w-20" />
+								<Skeleton className="h-3 w-16" />
+							</div>
+						</CardSkeleton>
+					)}
+				/>
 			</div>
 		);
 	}

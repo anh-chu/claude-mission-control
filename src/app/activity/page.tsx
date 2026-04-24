@@ -1,24 +1,21 @@
 "use client";
 
-import { useState } from "react";
 import {
 	Activity,
-	User,
-	Search,
-	Code,
-	Megaphone,
 	BarChart3,
 	Bot,
+	Code,
+	Megaphone,
+	Search,
+	User,
 } from "lucide-react";
-import { Card, CardContent } from "@/components/ui/card";
-import { EmptyState } from "@/components/empty-state";
-import { Badge } from "@/components/ui/badge";
+import { useState } from "react";
 import { BreadcrumbNav } from "@/components/breadcrumb-nav";
-import { useActivityLog } from "@/hooks/use-data";
-import { EventRowSkeleton } from "@/components/skeletons";
+import { EmptyState } from "@/components/empty-state";
 import { ErrorState } from "@/components/error-state";
-import type { EventType, ActivityEvent } from "@/lib/types";
-import { AGENT_ROLES } from "@/lib/types";
+import { GridSkeleton, RowSkeleton } from "@/components/skeletons";
+import { Badge } from "@/components/ui/badge";
+import { Card, CardContent } from "@/components/ui/card";
 import {
 	Select,
 	SelectContent,
@@ -26,6 +23,9 @@ import {
 	SelectTrigger,
 	SelectValue,
 } from "@/components/ui/select";
+import { useActivityLog } from "@/hooks/use-data";
+import type { ActivityEvent, EventType } from "@/lib/types";
+import { AGENT_ROLES } from "@/lib/types";
 
 const agentIcons: Record<string, typeof User> = {
 	me: User,
@@ -82,7 +82,7 @@ function groupByDate(events: ActivityEvent[]): Map<string, ActivityEvent[]> {
 			});
 
 		if (!groups.has(label)) groups.set(label, []);
-		groups.get(label)!.push(event);
+		groups.get(label)?.push(event);
 	}
 	return groups;
 }
@@ -109,13 +109,22 @@ export default function ActivityPage() {
 		return (
 			<div className="space-y-6">
 				<BreadcrumbNav items={[{ label: "Activity" }]} />
-				<div className="space-y-2">
-					<EventRowSkeleton />
-					<EventRowSkeleton />
-					<EventRowSkeleton />
-					<EventRowSkeleton />
-					<EventRowSkeleton />
-				</div>
+				<GridSkeleton
+					className="space-y-2"
+					count={5}
+					renderItem={() => (
+						<RowSkeleton
+							className="items-start py-2"
+							leading={[{ key: "label", className: "h-5 w-16 rounded-full" }]}
+							lines={[
+								{ key: "title", className: "h-4 w-3/4" },
+								{ key: "subtitle", className: "h-3 w-1/3" },
+							]}
+							linesClassName="flex-1 space-y-1"
+							trailing={[{ key: "time", className: "h-3 w-16" }]}
+						/>
+					)}
+				/>
 			</div>
 		);
 	}

@@ -13,7 +13,7 @@ import {
 } from "@/components/board-view";
 import { BreadcrumbNav } from "@/components/breadcrumb-nav";
 import { ErrorState } from "@/components/error-state";
-import { EisenhowerSkeleton, KanbanSkeleton } from "@/components/skeletons";
+import { CardSkeleton, GridSkeleton, Skeleton } from "@/components/skeletons";
 import { Button } from "@/components/ui/button";
 import {
 	Select,
@@ -216,7 +216,72 @@ export default function TasksPage() {
 		return (
 			<div className="space-y-6">
 				<BreadcrumbNav items={[{ label: "Tasks" }]} />
-				{viewMode === "matrix" ? <EisenhowerSkeleton /> : <KanbanSkeleton />}
+				{viewMode === "matrix" ? (
+					<GridSkeleton
+						className="grid grid-cols-1 sm:grid-cols-2 gap-3"
+						count={4}
+						renderItem={() => (
+							<CardSkeleton className="bg-card/50 p-4 min-h-[200px] space-y-2">
+								<Skeleton className="h-5 w-24" />
+								<Skeleton className="h-3 w-32" />
+								<GridSkeleton
+									className="space-y-2 pt-2"
+									count={2}
+									renderItem={() => (
+										<CardSkeleton
+											className="p-3 space-y-2"
+											lines={[
+												{ key: "line-1", className: "h-3 w-full" },
+												{ key: "line-2", className: "h-3 w-2/3" },
+											]}
+											footer={[
+												{ key: "tag-1", className: "h-4 w-16 rounded-full" },
+												{ key: "tag-2", className: "h-4 w-14 rounded-full" },
+											]}
+										>
+											<div className="flex items-start justify-between gap-2">
+												<Skeleton className="h-4 w-3/4" />
+												<Skeleton className="h-2 w-2 rounded-full" />
+											</div>
+										</CardSkeleton>
+									)}
+								/>
+							</CardSkeleton>
+						)}
+					/>
+				) : (
+					<GridSkeleton
+						className="grid grid-cols-1 sm:grid-cols-3 gap-3"
+						count={3}
+						renderItem={(index) => (
+							<CardSkeleton className="bg-card/50 p-4 min-h-[300px] space-y-2">
+								<Skeleton className="h-5 w-24" />
+								<GridSkeleton
+									className="space-y-2 pt-2"
+									count={index === 0 ? 3 : 2}
+									renderItem={() => (
+										<CardSkeleton
+											className="p-3 space-y-2"
+											lines={[
+												{ key: "line-1", className: "h-3 w-full" },
+												{ key: "line-2", className: "h-3 w-2/3" },
+											]}
+											footer={[
+												{ key: "tag-1", className: "h-4 w-16 rounded-full" },
+												{ key: "tag-2", className: "h-4 w-14 rounded-full" },
+											]}
+										>
+											<div className="flex items-start justify-between gap-2">
+												<Skeleton className="h-4 w-3/4" />
+												<Skeleton className="h-2 w-2 rounded-full" />
+											</div>
+										</CardSkeleton>
+									)}
+								/>
+							</CardSkeleton>
+						)}
+					/>
+				)}
 			</div>
 		);
 	}

@@ -48,7 +48,6 @@ const CreateProjectDialog = dynamic(
 
 import Link from "next/link";
 import { ErrorState } from "@/components/error-state";
-import { DashboardSkeleton } from "@/components/skeletons";
 import type { TaskFormData } from "@/components/task-form";
 import { Tip } from "@/components/ui/tip";
 import { useDaemon } from "@/hooks/use-daemon";
@@ -60,6 +59,7 @@ import type { AgentRole } from "@/lib/types";
 import { AGENT_ROLES } from "@/lib/types";
 import { cn } from "@/lib/utils";
 import { useActiveRunsContext as useActiveRuns } from "@/providers/active-runs-provider";
+import DashboardLoading from "./loading";
 
 function formatRelativeTime(isoString: string): string {
 	const diff = Date.now() - new Date(isoString).getTime();
@@ -278,12 +278,7 @@ export default function CommandCenterPage() {
 	};
 
 	if (loading) {
-		return (
-			<div className="space-y-6">
-				<BreadcrumbNav items={[]} />
-				<DashboardSkeleton />
-			</div>
-		);
+		return <DashboardLoading />;
 	}
 
 	if (error) {
@@ -475,8 +470,7 @@ export default function CommandCenterPage() {
 			</Link>
 
 			{/* Stats Bar */}
-			<div
-				role="region"
+			<section
 				aria-label="Stats overview"
 				className="grid grid-cols-2 gap-3 sm:grid-cols-4"
 			>
@@ -545,7 +539,7 @@ export default function CommandCenterPage() {
 						</CardContent>
 					</Card>
 				</Link>
-			</div>
+			</section>
 
 			{/* Attention Required */}
 			{attentionItems.length > 0 && (
@@ -578,8 +572,7 @@ export default function CommandCenterPage() {
 			)}
 
 			{/* ─── Comms: Inbox + Decisions ──────────────────────────────────────── */}
-			<div
-				role="region"
+			<section
 				aria-label="Communications"
 				className="grid gap-4 lg:grid-cols-2"
 			>
@@ -688,11 +681,10 @@ export default function CommandCenterPage() {
 						</CardContent>
 					</Card>
 				</Link>
-			</div>
+			</section>
 
 			{/* ─── Activity Feed + Agent Workload ────────────────────────────────── */}
-			<div
-				role="region"
+			<section
 				aria-label="Activity and agent workload"
 				className="grid gap-4 lg:grid-cols-2"
 			>
@@ -838,10 +830,10 @@ export default function CommandCenterPage() {
 						</div>
 					</CardContent>
 				</Card>
-			</div>
+			</section>
 
 			{/* Projects Section */}
-			<section role="region" aria-label="Projects">
+			<section aria-label="Projects">
 				<div className="flex items-center justify-between mb-3">
 					<h2 className="text-lg font-semibold flex items-center gap-2">
 						<Sparkles className="h-4 w-4 text-primary" />
@@ -883,8 +875,7 @@ export default function CommandCenterPage() {
 			</section>
 
 			{/* Eisenhower + Quick Capture row */}
-			<div
-				role="region"
+			<section
 				aria-label="Eisenhower matrix and quick capture"
 				className="grid gap-4 lg:grid-cols-2"
 			>
@@ -922,7 +913,7 @@ export default function CommandCenterPage() {
 						</Card>
 					</Link>
 				)}
-			</div>
+			</section>
 
 			{/* Dialogs */}
 			<CreateTaskDialog

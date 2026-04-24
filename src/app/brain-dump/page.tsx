@@ -14,7 +14,7 @@ import { BreadcrumbNav } from "@/components/breadcrumb-nav";
 import { ConfirmDialog } from "@/components/confirm-dialog";
 import { CreateTaskDialog } from "@/components/create-task-dialog";
 import { ErrorState } from "@/components/error-state";
-import { EntryRowSkeleton } from "@/components/skeletons";
+import { GridSkeleton, RowSkeleton } from "@/components/skeletons";
 import type { TaskFormData } from "@/components/task-form";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -156,11 +156,25 @@ export default function BrainDumpPage() {
 		return (
 			<div className="space-y-6">
 				<BreadcrumbNav items={[{ label: "Quick Capture" }]} />
-				<div className="space-y-2">
-					<EntryRowSkeleton />
-					<EntryRowSkeleton />
-					<EntryRowSkeleton />
-				</div>
+				<GridSkeleton
+					className="space-y-2"
+					count={3}
+					renderItem={() => (
+						<RowSkeleton
+							className="rounded-xl border bg-card/50 p-3 items-start justify-between"
+							lines={[
+								{ key: "title", className: "h-4 w-4/5" },
+								{ key: "meta", className: "h-3 w-24" },
+							]}
+							linesClassName="flex-1 space-y-2"
+							trailing={[
+								{ key: "primary-action", className: "h-7 w-14 rounded-md" },
+								{ key: "secondary-action", className: "h-7 w-7 rounded-md" },
+								{ key: "tertiary-action", className: "h-7 w-7 rounded-md" },
+							]}
+						/>
+					)}
+				/>
 			</div>
 		);
 	}

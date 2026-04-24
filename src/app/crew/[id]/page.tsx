@@ -25,7 +25,7 @@ import { useState } from "react";
 import { BreadcrumbNav } from "@/components/breadcrumb-nav";
 import { EmptyState } from "@/components/empty-state";
 import { ErrorState } from "@/components/error-state";
-import { TaskCardSkeleton } from "@/components/skeletons";
+import { CardSkeleton, GridSkeleton, Skeleton } from "@/components/skeletons";
 import { TaskCard } from "@/components/task-card";
 import { TaskDetailPanel } from "@/components/task-detail-panel";
 import type { TaskFormData } from "@/components/task-form";
@@ -116,11 +116,28 @@ export default function AgentPage() {
 				<BreadcrumbNav
 					items={[{ label: "Agents", href: "/crew" }, { label: id }]}
 				/>
-				<div className="grid gap-3 sm:grid-cols-2">
-					<TaskCardSkeleton />
-					<TaskCardSkeleton />
-					<TaskCardSkeleton />
-				</div>
+				<GridSkeleton
+					className="grid gap-3 sm:grid-cols-2"
+					count={3}
+					renderItem={() => (
+						<CardSkeleton
+							className="p-3 space-y-2"
+							lines={[
+								{ key: "line-1", className: "h-3 w-full" },
+								{ key: "line-2", className: "h-3 w-2/3" },
+							]}
+							footer={[
+								{ key: "tag-1", className: "h-4 w-16 rounded-full" },
+								{ key: "tag-2", className: "h-4 w-14 rounded-full" },
+							]}
+						>
+							<div className="flex items-start justify-between gap-2">
+								<Skeleton className="h-4 w-3/4" />
+								<Skeleton className="h-2 w-2 rounded-full" />
+							</div>
+						</CardSkeleton>
+					)}
+				/>
 			</div>
 		);
 	}
@@ -308,8 +325,9 @@ export default function AgentPage() {
 							</Button>
 						</div>
 					) : (
-						<p
-							className="text-sm text-muted-foreground cursor-pointer hover:text-foreground transition-colors mt-0.5"
+						<button
+							type="button"
+							className="text-sm text-muted-foreground cursor-pointer hover:text-foreground transition-colors mt-0.5 text-left w-full"
 							onClick={() => {
 								setDescriptionText(agent.description);
 								setEditingDescription(true);
@@ -317,7 +335,7 @@ export default function AgentPage() {
 							title="Click to edit"
 						>
 							{agent.description || "Click to add a description..."}
-						</p>
+						</button>
 					)}
 				</div>
 			</div>
@@ -417,6 +435,7 @@ export default function AgentPage() {
 						<Badge key={cap} variant="secondary" className="gap-1 pr-1">
 							{cap}
 							<button
+								type="button"
 								onClick={() => removeCapability(cap)}
 								className="rounded-full hover:bg-muted-foreground/20 p-0.5"
 							>
@@ -491,6 +510,7 @@ export default function AgentPage() {
 								.filter((s) => !agent.skillIds.includes(s.id))
 								.map((skill) => (
 									<button
+										type="button"
 										key={skill.id}
 										onClick={() => addSkill(skill.id)}
 										className="inline-flex items-center gap-1 rounded-full border px-2.5 py-0.5 text-xs hover:bg-primary/10 hover:border-primary/30 transition-colors"

@@ -1,46 +1,42 @@
 "use client";
 
-import { useState, useCallback, useMemo, useEffect } from "react";
 import {
-	Inbox,
-	Send,
-	User,
-	Search,
-	Code,
-	Megaphone,
+	Archive,
 	BarChart3,
+	Bot,
+	ChevronDown,
+	ChevronRight,
+	Code,
+	Inbox,
+	Loader2,
 	Mail,
 	MailOpen,
-	Archive,
+	Megaphone,
+	MessageSquare,
 	Plus,
 	Reply,
-	MessageSquare,
-	ChevronRight,
-	ChevronDown,
-	Loader2,
-	Bot,
+	Search,
+	Send,
 	Square,
+	User,
 } from "lucide-react";
-import { Card, CardContent } from "@/components/ui/card";
+import { useCallback, useEffect, useMemo, useState } from "react";
+import { BreadcrumbNav } from "@/components/breadcrumb-nav";
 import { EmptyState } from "@/components/empty-state";
+import { ErrorState } from "@/components/error-state";
+import { GridSkeleton, RowSkeleton } from "@/components/skeletons";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { BreadcrumbNav } from "@/components/breadcrumb-nav";
-import { useInbox, useTasks } from "@/hooks/use-data";
-import { MessageRowSkeleton } from "@/components/skeletons";
-import { ErrorState } from "@/components/error-state";
-import { Tip } from "@/components/ui/tip";
-import { showInfo, showError as showErrorToast } from "@/lib/toast";
-import type { AgentRole, InboxMessage, MessageType } from "@/lib/types";
-import { AGENT_ROLES } from "@/lib/types";
+import { Card, CardContent } from "@/components/ui/card";
 import {
 	Dialog,
 	DialogContent,
+	DialogFooter,
 	DialogHeader,
 	DialogTitle,
-	DialogFooter,
 } from "@/components/ui/dialog";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
 import {
 	Select,
 	SelectContent,
@@ -48,7 +44,11 @@ import {
 	SelectTrigger,
 	SelectValue,
 } from "@/components/ui/select";
-import { Label } from "@/components/ui/label";
+import { Tip } from "@/components/ui/tip";
+import { useInbox, useTasks } from "@/hooks/use-data";
+import { showError as showErrorToast, showInfo } from "@/lib/toast";
+import type { AgentRole, InboxMessage, MessageType } from "@/lib/types";
+import { AGENT_ROLES } from "@/lib/types";
 
 // ─── Constants ──────────────────────────────────────────────────────────────
 
@@ -103,7 +103,7 @@ function groupIntoThreads(messages: InboxMessage[]): Thread[] {
 		if (!threadMap.has(key)) {
 			threadMap.set(key, []);
 		}
-		threadMap.get(key)!.push(msg);
+		threadMap.get(key)?.push(msg);
 	}
 
 	const threads: Thread[] = [];
@@ -305,11 +305,12 @@ export default function InboxPage() {
 						messageId: string;
 					};
 					showInfo(`${agentName} is composing a reply...`);
-					if (threadKey && data.runId) {
+					const runId = data.runId;
+					if (threadKey && runId) {
 						setRespondingThreads((prev) => {
 							const next = new Map(prev);
 							next.set(threadKey, {
-								runId: data.runId!,
+								runId,
 								agent: agentName,
 								since: Date.now(),
 								sessionIndex: 0,
@@ -413,12 +414,22 @@ export default function InboxPage() {
 		return (
 			<div className="space-y-6">
 				<BreadcrumbNav items={[{ label: "Inbox" }]} />
-				<div className="space-y-2">
-					<MessageRowSkeleton />
-					<MessageRowSkeleton />
-					<MessageRowSkeleton />
-					<MessageRowSkeleton />
-				</div>
+				<GridSkeleton
+					className="space-y-2"
+					count={4}
+					renderItem={() => (
+						<RowSkeleton
+							className="rounded-xl border bg-card/50 p-3"
+							leading={[
+								{ key: "icon", className: "h-4 w-4 rounded" },
+								{ key: "badge", className: "h-5 w-16 rounded-full" },
+							]}
+							lines={[{ key: "title", className: "h-4 w-full" }]}
+							linesClassName="flex-1"
+							trailing={[{ key: "meta", className: "h-3 w-20" }]}
+						/>
+					)}
+				/>
 			</div>
 		);
 	}
@@ -571,7 +582,8 @@ export default function InboxPage() {
 										{/* Responding indicator with stop button */}
 										{respondingThreads.has(thread.key) &&
 											(() => {
-												const rInfo = respondingThreads.get(thread.key)!;
+												const rInfo = respondingThreads.get(thread.key);
+												if (!rInfo) return null;
 												const sessionLabel =
 													rInfo.sessionIndex > 0
 														? ` (session ${rInfo.sessionIndex + 1})`
@@ -583,6 +595,7 @@ export default function InboxPage() {
 															{rInfo.agent} composing{sessionLabel}…
 														</span>
 														<button
+															type="button"
 															className="ml-0.5 p-0.5 rounded hover:bg-destructive/20 hover:text-destructive transition-colors"
 															title="Stop agent response"
 															onClick={(e) => {
