@@ -418,6 +418,7 @@ export default function LogsPage() {
 						<TabsTrigger value="daemon">Daemon</TabsTrigger>
 						<TabsTrigger value="app">App</TabsTrigger>
 						<TabsTrigger value="runs">Runs</TabsTrigger>
+						<TabsTrigger value="activity">Activity</TabsTrigger>
 					</TabsList>
 				</Tabs>
 				<Input
