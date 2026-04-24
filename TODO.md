@@ -30,7 +30,7 @@ Open questions: review/approval model for agent edits, conflict handling when mu
 
 Deferred cleanup items from the component audit. Low priority but worth tracking.
 
-- [ ] **Sidebar nav rationalization**: 12 hidden vs 7 visible routes. Rebalance.
+- [x] **Sidebar nav rationalization**: merged /activity into /logs (Activity tab), removed /initiatives duplicate, deleted empty stub dirs.
 - [x] **Context menu shared wrapper**: 5 variants following same pattern. Extract shared wrapper.
 - [x] **Dialog merge**: create/edit pairs that differ only by mode. Merge into single form dialog.
 - [x] **Crew (agent) form merge**: `crew/new/page.tsx` (483 lines) and `crew/[id]/edit/page.tsx` (560 lines) are ~80% identical. Extract `AgentForm` component, thin create/edit page wrappers.

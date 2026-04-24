@@ -98,7 +98,7 @@ The daemon (`pnpm daemon:start`) is the engine. It runs as a detached background
 - **Cost & Token Tracking:** Input, output, cache read/write tokens per session, cumulative totals
 - **Live Session Console:** Expandable stream view for active sessions on the Automation page
 - **SSE Stream API:** `GET /api/runs/stream?runId=X` for programmatic live output access
-- **Activity Logbook:** Timestamped event log of all agent and system activity
+- **Activity Logbook:** Timestamped event log of all agent and system activity — accessible via the Activity tab in Logs
 
 ---
 
