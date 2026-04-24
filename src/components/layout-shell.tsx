@@ -5,7 +5,6 @@ import { useCallback, useEffect, useState } from "react";
 import { AppSidebar } from "@/components/app-sidebar";
 import { CommandBar } from "@/components/command-bar";
 import { KeyboardShortcuts } from "@/components/keyboard-shortcuts";
-import { OnboardingDialog } from "@/components/onboarding-dialog";
 import { SearchDialog } from "@/components/search-dialog";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { useConnection } from "@/hooks/use-connection";
@@ -40,6 +39,7 @@ export function LayoutShell({ children }: LayoutShellProps) {
 	}, []);
 
 	// Auto-close sidebar on mobile when navigating
+	// biome-ignore lint/correctness/useExhaustiveDependencies: pathname is intentional trigger for route changes
 	useEffect(() => {
 		if (isMobile) setSidebarOpen(false);
 	}, [pathname, isMobile]);
@@ -71,7 +71,6 @@ export function LayoutShell({ children }: LayoutShellProps) {
 					Skip to content
 				</a>
 				<KeyboardShortcuts />
-				<OnboardingDialog />
 				<SearchDialog />
 				<CommandBar
 					onCapture={handleCapture}
@@ -87,7 +86,9 @@ export function LayoutShell({ children }: LayoutShellProps) {
 
 				{/* Mobile sidebar backdrop */}
 				{isMobile && sidebarOpen && (
-					<div
+					<button
+						type="button"
+						aria-label="Close sidebar"
 						className="fixed inset-0 z-40 bg-black/50 backdrop-blur-sm"
 						onClick={() => setSidebarOpen(false)}
 					/>

@@ -31,12 +31,10 @@ Open questions: review/approval model for agent edits, conflict handling when mu
 Deferred cleanup items from the component audit. Low priority but worth tracking.
 
 - [ ] **Sidebar nav rationalization**: 12 hidden vs 7 visible routes. Rebalance.
-- [x] **Skeleton consolidation**: 14 variants → 3-4 generic loading placeholders.
 - [x] **Context menu shared wrapper**: 5 variants following same pattern. Extract shared wrapper.
 - [x] **Dialog merge**: create/edit pairs that differ only by mode. Merge into single form dialog.
 - [x] **Crew (agent) form merge**: `crew/new/page.tsx` (483 lines) and `crew/[id]/edit/page.tsx` (560 lines) are ~80% identical. Extract `AgentForm` component, thin create/edit page wrappers.
 - [x] **Skills form merge**: `skills/new/page.tsx` (226 lines) and `skills/[id]/page.tsx` (277 lines) same pattern. Extract `SkillForm` component.
-- [ ] **Onboarding dialog evaluation**: 253 lines for a first-run flow with a single import. Evaluate if it still pulls its weight.
 - [ ] **Checkpoints system evaluation**: 5 API routes (~400 LOC) for snapshot/restore. Only used by Settings backup/restore. Consider removal.
 
 ## Done
@@ -54,6 +52,8 @@ Deferred cleanup items from the component audit. Low priority but worth tracking
 - ~~Evaluate missions route~~ (kept, used by project runs)
 - ~~Remove ventures, status-board, guide, objectives/goals, redirect stubs, dead code~~ (-3,900 LOC, 73 files)
 - ~~Convert TaskDetailPanel slide-in to full page `/tasks/[id]`~~ (-716 LOC, consistent UX)
+- ~~Skeleton consolidation: 14 variants → 3-4 generic loading placeholders~~
+- ~~Onboarding dialog evaluation: removed, 239 lines of stale first-run flow~~
 
 ---
 
