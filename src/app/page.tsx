@@ -38,10 +38,10 @@ const CreateTaskDialog = dynamic(
 		})),
 	{ ssr: false },
 );
-const CreateProjectDialog = dynamic(
+const ProjectDialog = dynamic(
 	() =>
-		import("@/components/create-project-dialog").then((mod) => ({
-			default: mod.CreateProjectDialog,
+		import("@/components/project-dialog").then((mod) => ({
+			default: mod.ProjectDialog,
 		})),
 	{ ssr: false },
 );
@@ -52,6 +52,7 @@ import type { TaskFormData } from "@/components/task-form";
 import { Tip } from "@/components/ui/tip";
 import { useDaemon } from "@/hooks/use-daemon";
 import { useDashboardData } from "@/hooks/use-dashboard-data";
+import { useAgents } from "@/hooks/use-data";
 import { useFastTaskPoll } from "@/hooks/use-fast-task-poll";
 import { apiFetch } from "@/lib/api-client";
 import { showError, showSuccess } from "@/lib/toast";
@@ -81,6 +82,7 @@ const agentIcons: Record<AgentRole, typeof User> = {
 
 export default function CommandCenterPage() {
 	const { data, loading, error, refetch } = useDashboardData();
+	const { agents } = useAgents();
 	const {
 		isRunning: daemonRunning,
 		status: daemonStatus,
@@ -250,8 +252,9 @@ export default function CommandCenterPage() {
 		name: string;
 		description: string;
 		color: string;
-		tags: string;
+		tags: string[];
 		teamMembers?: string[];
+		status?: string;
 	}) => {
 		try {
 			const res = await apiFetch("/api/projects", {
@@ -260,13 +263,10 @@ export default function CommandCenterPage() {
 				body: JSON.stringify({
 					name: formData.name,
 					description: formData.description,
-					status: "active",
+					status: formData.status ?? "active",
 					color: formData.color,
 					teamMembers: formData.teamMembers ?? [],
-					tags: formData.tags
-						.split(",")
-						.map((t) => t.trim())
-						.filter(Boolean),
+					tags: formData.tags,
 				}),
 			});
 			if (!res.ok) throw new Error("Failed to create project");
@@ -372,9 +372,10 @@ export default function CommandCenterPage() {
 					projects={projects}
 					onSubmit={handleCreateTask}
 				/>
-				<CreateProjectDialog
+				<ProjectDialog
 					open={showCreateProject}
 					onOpenChange={setShowCreateProject}
+					agents={agents}
 					onSubmit={handleCreateProject}
 				/>
 			</div>
@@ -922,9 +923,10 @@ export default function CommandCenterPage() {
 				projects={projects}
 				onSubmit={handleCreateTask}
 			/>
-			<CreateProjectDialog
+			<ProjectDialog
 				open={showCreateProject}
 				onOpenChange={setShowCreateProject}
+				agents={agents}
 				onSubmit={handleCreateProject}
 			/>
 		</div>

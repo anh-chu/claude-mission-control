@@ -4,11 +4,10 @@ import { Eye, EyeOff, FolderOpen, Plus } from "lucide-react";
 import { useState } from "react";
 import { BreadcrumbNav } from "@/components/breadcrumb-nav";
 import { ConfirmDialog } from "@/components/confirm-dialog";
-import { CreateProjectDialog } from "@/components/create-project-dialog";
-import { EditProjectDialog } from "@/components/edit-project-dialog";
 import { EmptyState } from "@/components/empty-state";
 import { ErrorState } from "@/components/error-state";
 import { ProjectCardLarge } from "@/components/project-card-large";
+import { ProjectDialog } from "@/components/project-dialog";
 import { CardSkeleton, GridSkeleton, Skeleton } from "@/components/skeletons";
 import { Button } from "@/components/ui/button";
 import { Tip } from "@/components/ui/tip";
@@ -42,20 +41,18 @@ export default function ProjectsPage() {
 		name: string;
 		description: string;
 		color: string;
-		tags: string;
-		teamMembers?: string[];
+		status: ProjectStatus;
+		teamMembers: string[];
+		tags: string[];
 	}) => {
 		await createProject({
 			id: `proj_${Date.now()}`,
 			name: data.name,
 			description: data.description,
-			status: "active",
+			status: data.status,
 			color: data.color,
 			teamMembers: data.teamMembers ?? [],
-			tags: data.tags
-				.split(",")
-				.map((t) => t.trim())
-				.filter(Boolean),
+			tags: data.tags,
 			createdAt: new Date().toISOString(),
 		});
 	};
@@ -196,14 +193,15 @@ export default function ProjectsPage() {
 				</div>
 			)}
 
-			<CreateProjectDialog
+			<ProjectDialog
 				open={showCreateProject}
 				onOpenChange={setShowCreateProject}
+				agents={agents}
 				onSubmit={handleCreateProject}
 			/>
 
 			{editingProject && (
-				<EditProjectDialog
+				<ProjectDialog
 					open={!!editingProject}
 					onOpenChange={(open) => {
 						if (!open) setEditingProject(null);
