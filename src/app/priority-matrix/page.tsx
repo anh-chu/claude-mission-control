@@ -2,6 +2,7 @@
 
 import type { DragEndEvent } from "@dnd-kit/core";
 import { Columns3, Filter, Grid2x2, Plus } from "lucide-react";
+import { useRouter } from "next/navigation";
 import { useState } from "react";
 import {
 	BoardColumn,
@@ -103,6 +104,7 @@ export default function TasksPage() {
 		error: tasksError,
 		refetch,
 	} = useTasks();
+	const router = useRouter();
 	const { projects } = useProjects();
 	const { agents } = useAgents();
 	const { decisions } = useDecisions();
@@ -122,15 +124,11 @@ export default function TasksPage() {
 
 	const {
 		activeTask,
-		selectedTask,
-		setSelectedTask,
 		showCreateTask,
 		setShowCreateTask,
 		handleDragStart,
 		handleDragEnd: baseDragEnd,
-		handleUpdateTask,
 		handleCreateTask,
-		handleDeleteTask,
 	} = useTaskHandlers(tasks, updateTask, createTask, deleteTask);
 
 	// Matrix view: only active tasks, grouped by quadrant
@@ -392,7 +390,7 @@ export default function TasksPage() {
 								config={q}
 								tasks={groupedByQuadrant[q.id as EisenhowerQuadrant]}
 								projects={projects}
-								onTaskClick={setSelectedTask}
+								onTaskClick={(task) => router.push(`/tasks/${task.id}`)}
 								maxHeight="max-h-[calc(100vh-320px)]"
 								selected={selection.selected}
 								onToggleSelect={selection.toggle}
@@ -420,7 +418,7 @@ export default function TasksPage() {
 								config={col}
 								tasks={groupedByKanban[col.id as KanbanStatus]}
 								projects={projects}
-								onTaskClick={setSelectedTask}
+								onTaskClick={(task) => router.push(`/tasks/${task.id}`)}
 								minHeight="min-h-[400px]"
 								selected={selection.selected}
 								onToggleSelect={selection.toggle}
@@ -437,13 +435,8 @@ export default function TasksPage() {
 			)}
 
 			<BoardPanels
-				tasks={tasks}
 				projects={projects}
-				selectedTask={selectedTask}
 				showCreateTask={showCreateTask}
-				onUpdate={handleUpdateTask}
-				onDelete={handleDeleteTask}
-				onCloseDetail={() => setSelectedTask(null)}
 				onCloseCreate={setShowCreateTask}
 				onSubmitCreate={handleCreateTask}
 			/>

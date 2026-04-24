@@ -27,8 +27,7 @@ import { EmptyState } from "@/components/empty-state";
 import { ErrorState } from "@/components/error-state";
 import { CardSkeleton, GridSkeleton, Skeleton } from "@/components/skeletons";
 import { TaskCard } from "@/components/task-card";
-import { TaskDetailPanel } from "@/components/task-detail-panel";
-import type { TaskFormData } from "@/components/task-form";
+
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
@@ -98,7 +97,6 @@ export default function AgentPage() {
 			.filter((d) => d.status === "pending" && d.taskId)
 			.map((d) => d.taskId as string),
 	);
-	const [selectedTask, setSelectedTask] = useState<Task | null>(null);
 
 	// Profile editing state
 	const [editingInstructions, setEditingInstructions] = useState(false);
@@ -179,28 +177,6 @@ export default function AgentPage() {
 	const agentEvents = events.filter((e) => e.actor === agent.id).slice(0, 5);
 	const linkedSkills = allSkills.filter((s) => agent.skillIds.includes(s.id));
 
-	const handleUpdateTask = async (data: TaskFormData) => {
-		if (!selectedTask) return;
-		await updateTask(selectedTask.id, {
-			...data,
-			tags: data.tags
-				.split(",")
-				.map((t) => t.trim())
-				.filter(Boolean),
-			acceptanceCriteria: data.acceptanceCriteria
-				.split("\n")
-				.map((s) => s.trim())
-				.filter(Boolean),
-		});
-		setSelectedTask(null);
-	};
-
-	const handleDeleteTask = async () => {
-		if (!selectedTask) return;
-		await deleteTask(selectedTask.id);
-		setSelectedTask(null);
-	};
-
 	const handleStatusChange = async (taskId: string, status: KanbanStatus) => {
 		await updateTask(taskId, { kanban: status });
 		refetchTasks();
@@ -219,7 +195,6 @@ export default function AgentPage() {
 
 	const handleDeleteById = async (taskId: string) => {
 		await deleteTask(taskId);
-		if (selectedTask?.id === taskId) setSelectedTask(null);
 		refetchTasks();
 	};
 
@@ -537,7 +512,7 @@ export default function AgentPage() {
 								key={task.id}
 								task={task}
 								project={getProject(task.projectId)}
-								onClick={() => setSelectedTask(task)}
+								onClick={() => router.push(`/tasks/${task.id}`)}
 								isRunning={isTaskRunning(task.id)}
 								onRun={runTask}
 								allTasks={tasks}
@@ -563,7 +538,7 @@ export default function AgentPage() {
 								key={task.id}
 								task={task}
 								project={getProject(task.projectId)}
-								onClick={() => setSelectedTask(task)}
+								onClick={() => router.push(`/tasks/${task.id}`)}
 								isRunning={isTaskRunning(task.id)}
 								onRun={runTask}
 								allTasks={tasks}
@@ -589,7 +564,7 @@ export default function AgentPage() {
 								key={task.id}
 								task={task}
 								project={getProject(task.projectId)}
-								onClick={() => setSelectedTask(task)}
+								onClick={() => router.push(`/tasks/${task.id}`)}
 								className="opacity-60"
 								isRunning={isTaskRunning(task.id)}
 								onRun={runTask}
@@ -668,18 +643,6 @@ export default function AgentPage() {
 						))}
 					</div>
 				</section>
-			)}
-
-			{/* Task Detail Panel */}
-			{selectedTask && (
-				<TaskDetailPanel
-					task={selectedTask}
-					projects={projects}
-					allTasks={tasks}
-					onUpdate={handleUpdateTask}
-					onDelete={handleDeleteTask}
-					onClose={() => setSelectedTask(null)}
-				/>
 			)}
 		</div>
 	);

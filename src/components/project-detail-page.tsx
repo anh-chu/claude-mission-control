@@ -13,18 +13,16 @@ import {
 	useSensors,
 } from "@dnd-kit/core";
 import { Plus, Users, X } from "lucide-react";
-import { useParams } from "next/navigation";
+import { useParams, useRouter } from "next/navigation";
 import { useCallback, useState } from "react";
 import { BreadcrumbNav } from "@/components/breadcrumb-nav";
 import { CreateTaskDialog } from "@/components/create-task-dialog";
 import { ProjectRunProgress } from "@/components/mission-progress";
 import { RunButton } from "@/components/run-button";
 import { TaskCard } from "@/components/task-card";
-import { TaskDetailPanel } from "@/components/task-detail-panel";
 import type { TaskFormData } from "@/components/task-form";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import {
 	useAgents,
@@ -178,6 +176,7 @@ export function ProjectDetailPage({
 	parentHref,
 }: ProjectDetailPageProps) {
 	const params = useParams();
+	const router = useRouter();
 	const projectId = params.id as string;
 
 	const {
@@ -214,7 +213,6 @@ export function ProjectDetailPage({
 		useSensor(PointerSensor, { activationConstraint: { distance: 8 } }),
 	);
 
-	const [selectedTask, setSelectedTask] = useState<Task | null>(null);
 	const [activeTask, setActiveTask] = useState<Task | null>(null);
 	const [showCreateTask, setShowCreateTask] = useState(false);
 
@@ -283,7 +281,7 @@ export function ProjectDetailPage({
 		await updateTask(task.id, { importance, urgency });
 	}
 
-	async function handleKanbanDragEnd(event: DragEndEvent) {
+	async function _handleKanbanDragEnd(event: DragEndEvent) {
 		setActiveTask(null);
 		const { active, over } = event;
 		if (!over) return;
@@ -293,22 +291,6 @@ export function ProjectDetailPage({
 		if (task.kanban === targetStatus) return;
 		await updateTask(task.id, { kanban: targetStatus });
 	}
-
-	const handleUpdateTask = async (data: TaskFormData) => {
-		if (!selectedTask) return;
-		await updateTask(selectedTask.id, {
-			...data,
-			tags: data.tags
-				.split(",")
-				.map((t) => t.trim())
-				.filter(Boolean),
-			acceptanceCriteria: data.acceptanceCriteria
-				.split("\n")
-				.map((s) => s.trim())
-				.filter(Boolean),
-		});
-		setSelectedTask(null);
-	};
 
 	const handleCreateTask = async (data: TaskFormData) => {
 		await createTask({
@@ -511,7 +493,7 @@ export function ProjectDetailPage({
 								label="DO"
 								dotColor="bg-quadrant-do"
 								tasks={eGrouped.do}
-								onTaskClick={setSelectedTask}
+								onTaskClick={(t) => router.push(`/tasks/${t.id}`)}
 								isTaskRunning={isTaskRunning}
 								onRunTask={runTask}
 								pendingDecisionTaskIds={pendingDecisionTaskIds}
@@ -524,7 +506,7 @@ export function ProjectDetailPage({
 								label="SCHEDULE"
 								dotColor="bg-quadrant-schedule"
 								tasks={eGrouped.schedule}
-								onTaskClick={setSelectedTask}
+								onTaskClick={(t) => router.push(`/tasks/${t.id}`)}
 								isTaskRunning={isTaskRunning}
 								onRunTask={runTask}
 								pendingDecisionTaskIds={pendingDecisionTaskIds}
@@ -537,7 +519,7 @@ export function ProjectDetailPage({
 								label="DELEGATE"
 								dotColor="bg-quadrant-delegate"
 								tasks={eGrouped.delegate}
-								onTaskClick={setSelectedTask}
+								onTaskClick={(t) => router.push(`/tasks/${t.id}`)}
 								isTaskRunning={isTaskRunning}
 								onRunTask={runTask}
 								pendingDecisionTaskIds={pendingDecisionTaskIds}
@@ -550,7 +532,7 @@ export function ProjectDetailPage({
 								label="ELIMINATE"
 								dotColor="bg-quadrant-eliminate"
 								tasks={eGrouped.eliminate}
-								onTaskClick={setSelectedTask}
+								onTaskClick={(t) => router.push(`/tasks/${t.id}`)}
 								isTaskRunning={isTaskRunning}
 								onRunTask={runTask}
 								pendingDecisionTaskIds={pendingDecisionTaskIds}
@@ -567,21 +549,6 @@ export function ProjectDetailPage({
 					</DndContext>
 				</TabsContent>
 			</Tabs>
-
-			{/* Task Detail Panel */}
-			{selectedTask && (
-				<TaskDetailPanel
-					task={selectedTask}
-					projects={projects}
-					allTasks={tasks}
-					onUpdate={handleUpdateTask}
-					onDelete={async () => {
-						await deleteTask(selectedTask.id);
-						setSelectedTask(null);
-					}}
-					onClose={() => setSelectedTask(null)}
-				/>
-			)}
 
 			<CreateTaskDialog
 				open={showCreateTask}

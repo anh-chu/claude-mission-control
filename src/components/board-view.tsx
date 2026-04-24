@@ -17,7 +17,6 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import { CreateTaskDialog } from "@/components/create-task-dialog";
 import { EmptyState } from "@/components/empty-state";
 import { TaskCard } from "@/components/task-card";
-import { TaskDetailPanel } from "@/components/task-detail-panel";
 import type { TaskFormData } from "@/components/task-form";
 import { Badge } from "@/components/ui/badge";
 import type { KanbanStatus, Project, Task } from "@/lib/types";
@@ -249,12 +248,11 @@ export function BoardColumn({
 
 export function useTaskHandlers(
 	tasks: Task[],
-	updateTask: (id: string, updates: Partial<Task>) => Promise<Task>,
+	_updateTask: (id: string, updates: Partial<Task>) => Promise<Task>,
 	createTask: (item: Partial<Task>) => Promise<Task>,
-	deleteTask: (id: string) => Promise<void>,
+	_deleteTask: (id: string) => Promise<void>,
 ) {
 	const [activeTask, setActiveTask] = useState<Task | null>(null);
-	const [selectedTask, setSelectedTask] = useState<Task | null>(null);
 	const [showCreateTask, setShowCreateTask] = useState(false);
 
 	function handleDragStart(event: DragStartEvent) {
@@ -265,22 +263,6 @@ export function useTaskHandlers(
 		setActiveTask(null);
 	}
 
-	const handleUpdateTask = async (data: TaskFormData) => {
-		if (!selectedTask) return;
-		await updateTask(selectedTask.id, {
-			...data,
-			tags: data.tags
-				.split(",")
-				.map((t) => t.trim())
-				.filter(Boolean),
-			acceptanceCriteria: data.acceptanceCriteria
-				.split("\n")
-				.map((s) => s.trim())
-				.filter(Boolean),
-		});
-		setSelectedTask(null);
-	};
-
 	const handleCreateTask = async (data: TaskFormData) => {
 		await createTask({
 			...data,
@@ -289,31 +271,21 @@ export function useTaskHandlers(
 				.split(",")
 				.map((t) => t.trim())
 				.filter(Boolean),
-			acceptanceCriteria: data.acceptanceCriteria
+			acceptanceCriteria: (data.acceptanceCriteria ?? "")
 				.split("\n")
 				.map((s) => s.trim())
 				.filter(Boolean),
 		});
 	};
 
-	const handleDeleteTask = async () => {
-		if (!selectedTask) return;
-		await deleteTask(selectedTask.id);
-		setSelectedTask(null);
-	};
-
 	return {
 		activeTask,
 		setActiveTask,
-		selectedTask,
-		setSelectedTask,
 		showCreateTask,
 		setShowCreateTask,
 		handleDragStart,
 		handleDragEnd,
-		handleUpdateTask,
 		handleCreateTask,
-		handleDeleteTask,
 	};
 }
 
@@ -352,49 +324,25 @@ export function useSelection() {
 // ─── Shared panels (detail + create) ────────────────────────────────────────
 
 export function BoardPanels({
-	tasks,
 	projects,
-	selectedTask,
 	showCreateTask,
-	onUpdate,
-	onDelete,
-	onCloseDetail,
 	onCloseCreate,
 	onSubmitCreate,
 }: {
-	tasks: Task[];
 	projects: Project[];
-	selectedTask: Task | null;
 	showCreateTask: boolean;
-	onUpdate: (data: TaskFormData) => void;
-	onDelete: () => void;
-	onCloseDetail: () => void;
 	onCloseCreate: (open: boolean) => void;
 	onSubmitCreate: (data: TaskFormData) => void;
 }) {
 	return (
-		<>
-			{selectedTask && (
-				<TaskDetailPanel
-					task={selectedTask}
-					projects={projects}
-					allTasks={tasks}
-					onUpdate={onUpdate}
-					onDelete={onDelete}
-					onClose={onCloseDetail}
-				/>
-			)}
-			<CreateTaskDialog
-				open={showCreateTask}
-				onOpenChange={onCloseCreate}
-				projects={projects}
-				onSubmit={onSubmitCreate}
-			/>
-		</>
+		<CreateTaskDialog
+			open={showCreateTask}
+			onOpenChange={onCloseCreate}
+			projects={projects}
+			onSubmit={onSubmitCreate}
+		/>
 	);
 }
-
-// ─── Shared DnD wrapper ─────────────────────────────────────────────────────
 
 export function BoardDndWrapper({
 	activeTask,
