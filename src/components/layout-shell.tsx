@@ -1,19 +1,19 @@
 "use client";
 
-import { useState, useCallback, useEffect } from "react";
 import { usePathname, useRouter } from "next/navigation";
-import { CommandBar } from "@/components/command-bar";
-import { SearchDialog } from "@/components/search-dialog";
+import { useCallback, useEffect, useState } from "react";
 import { AppSidebar } from "@/components/app-sidebar";
+import { CommandBar } from "@/components/command-bar";
 import { KeyboardShortcuts } from "@/components/keyboard-shortcuts";
 import { OnboardingDialog } from "@/components/onboarding-dialog";
-import { useSidebar } from "@/hooks/use-sidebar";
-import { useConnection } from "@/hooks/use-connection";
-import { apiFetch } from "@/lib/api-client";
-import { showSuccess, showError } from "@/lib/toast";
+import { SearchDialog } from "@/components/search-dialog";
 import { TooltipProvider } from "@/components/ui/tooltip";
-import { ActiveRunsProvider } from "@/providers/active-runs-provider";
+import { useConnection } from "@/hooks/use-connection";
+import { useSidebar } from "@/hooks/use-sidebar";
+import { apiFetch } from "@/lib/api-client";
+import { showError, showSuccess } from "@/lib/toast";
 import { cn } from "@/lib/utils";
+import { ActiveRunsProvider } from "@/providers/active-runs-provider";
 
 interface LayoutShellProps {
 	children: React.ReactNode;
@@ -80,8 +80,8 @@ export function LayoutShell({ children }: LayoutShellProps) {
 					isMobile={isMobile}
 					tasks={tasks}
 					onTaskClick={() => {
-						// Navigate to Status Board view which shows the task in context
-						router.push("/status-board");
+						// Navigate to Priority Matrix view which shows the task in context
+						router.push("/priority-matrix");
 					}}
 				/>
 

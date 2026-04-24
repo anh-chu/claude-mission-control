@@ -1,16 +1,16 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { Flag, Rocket, Zap } from "lucide-react";
 import Link from "next/link";
-import { Rocket, Zap, Flag } from "lucide-react";
+import { useEffect, useState } from "react";
+import { Button } from "@/components/ui/button";
 import {
 	Dialog,
 	DialogContent,
+	DialogDescription,
 	DialogHeader,
 	DialogTitle,
-	DialogDescription,
 } from "@/components/ui/dialog";
-import { Button } from "@/components/ui/button";
 
 const STORAGE_KEY = "mc-onboarded";
 
@@ -168,20 +168,6 @@ export function OnboardingDialog() {
 									?
 								</kbd>{" "}
 								to see all keyboard shortcuts
-							</span>
-						</li>
-						<li className="flex items-start gap-2 text-sm text-muted-foreground">
-							<span className="text-primary mt-1 shrink-0">&bull;</span>
-							<span>
-								Read the full{" "}
-								<Link
-									href="/guide"
-									className="text-primary hover:underline"
-									onClick={handleClose}
-								>
-									Guide
-								</Link>{" "}
-								for a complete walkthrough of all features
 							</span>
 						</li>
 						<li className="flex items-start gap-2 text-sm text-muted-foreground">

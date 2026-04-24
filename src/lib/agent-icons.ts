@@ -1,22 +1,22 @@
+import type { LucideIcon } from "lucide-react";
 import {
-	User,
-	Search,
-	Code,
-	Megaphone,
 	BarChart3,
+	BookOpen,
 	Bot,
 	Brain,
-	Palette,
-	Shield,
+	Briefcase,
+	Code,
 	Database,
 	Globe,
-	Wrench,
-	BookOpen,
 	HeartPulse,
+	Megaphone,
+	Palette,
 	Scale,
-	Briefcase,
+	Search,
+	Shield,
+	User,
+	Wrench,
 } from "lucide-react";
-import type { LucideIcon } from "lucide-react";
 
 /** Map of known icon names to Lucide components */
 const iconMap: Record<string, LucideIcon> = {
@@ -54,9 +54,4 @@ const builtInAgentIcons: Record<string, LucideIcon> = {
 export function getAgentIcon(agentId: string, iconName?: string): LucideIcon {
 	if (iconName && iconMap[iconName]) return iconMap[iconName];
 	return builtInAgentIcons[agentId] ?? Bot;
-}
-
-/** Get a Lucide icon by name string, with fallback */
-export function getIconByName(name: string): LucideIcon {
-	return iconMap[name] ?? Bot;
 }

@@ -1,20 +1,22 @@
 "use client";
 
-import { useState, useRef, useCallback } from "react";
 import {
-	Plus,
-	X,
-	CheckSquare,
-	Square,
-	Link2,
-	Clock,
 	CalendarDays,
+	CheckSquare,
+	Clock,
+	Link2,
 	Paperclip,
+	Plus,
+	Square,
+	Users,
+	X,
 } from "lucide-react";
-import { Input } from "@/components/ui/input";
-import { Textarea } from "@/components/ui/textarea";
-import { Label } from "@/components/ui/label";
+import { useCallback, useRef, useState } from "react";
+import { MarkdownContent } from "@/components/markdown-content";
+import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
 import {
 	Select,
 	SelectContent,
@@ -22,25 +24,22 @@ import {
 	SelectTrigger,
 	SelectValue,
 } from "@/components/ui/select";
+import { Textarea } from "@/components/ui/textarea";
+import { useAgents, useInitiatives } from "@/hooks/use-data";
+import { getAgentIcon } from "@/lib/agent-icons";
 import type {
-	Project,
-	Goal,
-	Importance,
-	Urgency,
-	KanbanStatus,
 	AgentRole,
-	Task,
+	Importance,
+	KanbanStatus,
+	Project,
 	Subtask,
+	Task,
+	Urgency,
 } from "@/lib/types";
+import { cn } from "@/lib/utils";
 // AGENT_ROLES kept for backward compat reference
 // import { AGENT_ROLES } from "@/lib/types";
 import { LIMITS } from "@/lib/validations";
-import { cn } from "@/lib/utils";
-import { MarkdownContent } from "@/components/markdown-content";
-import { useAgents, useInitiatives } from "@/hooks/use-data";
-import { getAgentIcon } from "@/lib/agent-icons";
-import { Badge } from "@/components/ui/badge";
-import { Users } from "lucide-react";
 
 export interface TaskFormData {
 	title: string;
@@ -65,7 +64,6 @@ export interface TaskFormData {
 interface TaskFormProps {
 	initial?: Partial<TaskFormData>;
 	projects: Project[];
-	goals: Goal[];
 	allTasks?: Task[];
 	currentTaskId?: string;
 	onSubmit: (data: TaskFormData) => void;
@@ -73,7 +71,7 @@ interface TaskFormProps {
 	submitLabel?: string;
 }
 
-// projects and goals kept in props for backward compat with callers
+// projects kept in props for backward compat with callers
 export function TaskForm({
 	initial,
 	allTasks,

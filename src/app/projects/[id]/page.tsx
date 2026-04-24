@@ -1,5 +1,5 @@
 import { ProjectDetailPage } from "@/components/project-detail-page";
 
 export default function ProjectsDetailPage() {
-	return <ProjectDetailPage parentLabel="Ventures" parentHref="/projects" />;
+	return <ProjectDetailPage parentLabel="Projects" parentHref="/projects" />;
 }

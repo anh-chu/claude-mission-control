@@ -1,46 +1,43 @@
 "use client";
 
-import { useState, useCallback } from "react";
-import { useParams } from "next/navigation";
 import {
+	closestCenter,
 	DndContext,
+	type DragEndEvent,
 	DragOverlay,
+	type DragStartEvent,
 	PointerSensor,
 	useDraggable,
 	useDroppable,
 	useSensor,
 	useSensors,
-	closestCenter,
-	type DragStartEvent,
-	type DragEndEvent,
 } from "@dnd-kit/core";
-import { Plus } from "lucide-react";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Plus, Users, X } from "lucide-react";
+import { useParams } from "next/navigation";
+import { useCallback, useState } from "react";
+import { BreadcrumbNav } from "@/components/breadcrumb-nav";
+import { CreateTaskDialog } from "@/components/create-task-dialog";
+import { ProjectRunProgress } from "@/components/mission-progress";
+import { RunButton } from "@/components/run-button";
+import { TaskCard } from "@/components/task-card";
+import { TaskDetailPanel } from "@/components/task-detail-panel";
+import type { TaskFormData } from "@/components/task-form";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
-import { BreadcrumbNav } from "@/components/breadcrumb-nav";
-import { TaskCard } from "@/components/task-card";
-import { TaskDetailPanel } from "@/components/task-detail-panel";
-import { CreateTaskDialog } from "@/components/create-task-dialog";
-import { GoalCard } from "@/components/goal-card";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import {
-	useTasks,
-	useGoals,
-	useProjects,
 	useAgents,
 	useDecisions,
+	useProjects,
+	useTasks,
 } from "@/hooks/use-data";
-import { useActiveRunsContext as useActiveRuns } from "@/providers/active-runs-provider";
 import { useFastTaskPoll } from "@/hooks/use-fast-task-poll";
-import type { Task, EisenhowerQuadrant, KanbanStatus } from "@/lib/types";
-import { getQuadrant, valuesFromQuadrant } from "@/lib/types";
-import type { TaskFormData } from "@/components/task-form";
 import { getAgentIcon } from "@/lib/agent-icons";
+import type { EisenhowerQuadrant, KanbanStatus, Task } from "@/lib/types";
+import { getQuadrant, valuesFromQuadrant } from "@/lib/types";
 import { cn } from "@/lib/utils";
-import { Users, X } from "lucide-react";
-import { RunButton } from "@/components/run-button";
-import { ProjectRunProgress } from "@/components/mission-progress";
+import { useActiveRunsContext as useActiveRuns } from "@/providers/active-runs-provider";
 
 function DraggableTask({
 	task,
@@ -190,7 +187,7 @@ export function ProjectDetailPage({
 		remove: deleteTask,
 		refetch,
 	} = useTasks();
-	const { goals, update: updateGoal, remove: deleteGoal } = useGoals();
+
 	const { projects, update: updateProject } = useProjects();
 	const { agents } = useAgents();
 	const { decisions } = useDecisions();
@@ -223,9 +220,6 @@ export function ProjectDetailPage({
 
 	const project = projects.find((p) => p.id === projectId);
 	const projectTasks = tasks.filter((t) => t.projectId === projectId);
-	const projectGoals = goals.filter((g) => g.projectId === projectId);
-	const longTermGoals = projectGoals.filter((g) => g.type === "long-term");
-	const milestones = projectGoals.filter((g) => g.type === "medium-term");
 
 	if (!project) {
 		return (
@@ -353,14 +347,6 @@ export function ProjectDetailPage({
 
 	const handleDeleteById = async (taskId: string) => {
 		await deleteTask(taskId);
-	};
-
-	const handleMarkGoalComplete = async (goalId: string) => {
-		await updateGoal(goalId, { status: "completed" });
-	};
-
-	const handleDeleteGoal = async (goalId: string) => {
-		await deleteGoal(goalId);
 	};
 
 	return (
@@ -510,8 +496,6 @@ export function ProjectDetailPage({
 			<Tabs defaultValue="priority-matrix" className="space-y-4">
 				<TabsList>
 					<TabsTrigger value="priority-matrix">Priority Matrix</TabsTrigger>
-					<TabsTrigger value="status-board">Status Board</TabsTrigger>
-					<TabsTrigger value="milestones">Milestones</TabsTrigger>
 				</TabsList>
 
 				<TabsContent value="priority-matrix">
@@ -582,99 +566,6 @@ export function ProjectDetailPage({
 						</DragOverlay>
 					</DndContext>
 				</TabsContent>
-
-				<TabsContent value="status-board">
-					<DndContext
-						sensors={sensors}
-						collisionDetection={closestCenter}
-						onDragStart={handleDragStart}
-						onDragEnd={handleKanbanDragEnd}
-					>
-						<div className="grid grid-cols-3 gap-3">
-							<DroppableZone
-								id="not-started"
-								label="Not Started"
-								dotColor="bg-status-not-started"
-								tasks={kGrouped["not-started"]}
-								onTaskClick={setSelectedTask}
-								isTaskRunning={isTaskRunning}
-								onRunTask={runTask}
-								pendingDecisionTaskIds={pendingDecisionTaskIds}
-								onStatusChange={handleStatusChange}
-								onDuplicate={handleDuplicate}
-								onDelete={handleDeleteById}
-							/>
-							<DroppableZone
-								id="in-progress"
-								label="In Progress"
-								dotColor="bg-status-in-progress"
-								tasks={kGrouped["in-progress"]}
-								onTaskClick={setSelectedTask}
-								isTaskRunning={isTaskRunning}
-								onRunTask={runTask}
-								pendingDecisionTaskIds={pendingDecisionTaskIds}
-								onStatusChange={handleStatusChange}
-								onDuplicate={handleDuplicate}
-								onDelete={handleDeleteById}
-							/>
-							<DroppableZone
-								id="done"
-								label="Done"
-								dotColor="bg-status-done"
-								tasks={kGrouped.done}
-								onTaskClick={setSelectedTask}
-								isTaskRunning={isTaskRunning}
-								onRunTask={runTask}
-								pendingDecisionTaskIds={pendingDecisionTaskIds}
-								onStatusChange={handleStatusChange}
-								onDuplicate={handleDuplicate}
-								onDelete={handleDeleteById}
-							/>
-						</div>
-						<DragOverlay>
-							{activeTask ? (
-								<TaskCard task={activeTask} className="shadow-xl" />
-							) : null}
-						</DragOverlay>
-					</DndContext>
-				</TabsContent>
-
-				<TabsContent value="milestones">
-					{longTermGoals.length === 0 && milestones.length === 0 ? (
-						<Card className="border-dashed">
-							<CardContent className="py-8 text-center text-sm text-muted-foreground">
-								No goals linked to this project yet.
-							</CardContent>
-						</Card>
-					) : (
-						<div className="space-y-3">
-							{longTermGoals.map((g) => (
-								<GoalCard
-									key={g.id}
-									goal={g}
-									tasks={tasks}
-									projects={projects}
-									milestones={milestones}
-									onMarkComplete={handleMarkGoalComplete}
-									onDelete={handleDeleteGoal}
-								/>
-							))}
-							{milestones
-								.filter((m) => !m.parentGoalId)
-								.map((m) => (
-									<GoalCard
-										key={m.id}
-										goal={m}
-										tasks={tasks}
-										projects={projects}
-										milestones={[]}
-										onMarkComplete={handleMarkGoalComplete}
-										onDelete={handleDeleteGoal}
-									/>
-								))}
-						</div>
-					)}
-				</TabsContent>
 			</Tabs>
 
 			{/* Task Detail Panel */}
@@ -682,7 +573,6 @@ export function ProjectDetailPage({
 				<TaskDetailPanel
 					task={selectedTask}
 					projects={projects}
-					goals={goals}
 					allTasks={tasks}
 					onUpdate={handleUpdateTask}
 					onDelete={async () => {
@@ -697,7 +587,6 @@ export function ProjectDetailPage({
 				open={showCreateTask}
 				onOpenChange={setShowCreateTask}
 				projects={projects}
-				goals={goals}
 				onSubmit={handleCreateTask}
 				defaultValues={{ projectId }}
 			/>

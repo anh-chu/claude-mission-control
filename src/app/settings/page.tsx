@@ -1,8 +1,24 @@
 "use client";
 
-import { useState, useEffect, useCallback, useRef } from "react";
+import {
+	Download,
+	FileJson,
+	FolderOpen,
+	Loader2,
+	Plus,
+	Rocket,
+	Save,
+	Square,
+	Trash2,
+	Upload,
+	X,
+} from "lucide-react";
 import { useRouter } from "next/navigation";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { BreadcrumbNav } from "@/components/breadcrumb-nav";
+import { ConfirmDialog } from "@/components/confirm-dialog";
+import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
 import {
 	Card,
 	CardContent,
@@ -10,13 +26,6 @@ import {
 	CardHeader,
 	CardTitle,
 } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import { Textarea } from "@/components/ui/textarea";
-import { Badge } from "@/components/ui/badge";
-import { Switch } from "@/components/ui/switch";
-import { ConfirmDialog } from "@/components/confirm-dialog";
 import {
 	Dialog,
 	DialogContent,
@@ -25,22 +34,13 @@ import {
 	DialogHeader,
 	DialogTitle,
 } from "@/components/ui/dialog";
-import { useWorkspace } from "@/hooks/use-workspace";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Switch } from "@/components/ui/switch";
+import { Textarea } from "@/components/ui/textarea";
 import { useDaemon } from "@/hooks/use-daemon";
-import { showSuccess, showError } from "@/lib/toast";
-import {
-	Save,
-	Trash2,
-	FolderOpen,
-	Download,
-	Upload,
-	Plus,
-	Loader2,
-	FileJson,
-	Square,
-	Rocket,
-	X,
-} from "lucide-react";
+import { useWorkspace } from "@/hooks/use-workspace";
+import { showError, showSuccess } from "@/lib/toast";
 
 const COLORS = [
 	"#6366f1",
@@ -64,7 +64,6 @@ interface CheckpointMeta {
 	stats: {
 		tasks: number;
 		projects: number;
-		goals: number;
 		brainDump: number;
 		inbox: number;
 		decisions: number;

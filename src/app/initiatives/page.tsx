@@ -1,22 +1,23 @@
 "use client";
 
-import { useState } from "react";
+import { Lightbulb, Plus } from "lucide-react";
 import { useRouter } from "next/navigation";
-import { Plus, Lightbulb } from "lucide-react";
-import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
-import { Card, CardContent } from "@/components/ui/card";
+import { useState } from "react";
 import { BreadcrumbNav } from "@/components/breadcrumb-nav";
+import { InitiativeContextMenuContent } from "@/components/context-menus/initiative-context-menu";
+import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
+import { Card, CardContent } from "@/components/ui/card";
+import { ContextMenu, ContextMenuTrigger } from "@/components/ui/context-menu";
 import {
 	Dialog,
 	DialogContent,
+	DialogFooter,
 	DialogHeader,
 	DialogTitle,
-	DialogFooter,
 } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Textarea } from "@/components/ui/textarea";
 import {
 	Select,
 	SelectContent,
@@ -25,16 +26,15 @@ import {
 	SelectValue,
 } from "@/components/ui/select";
 import { Skeleton } from "@/components/ui/skeleton";
-import { useInitiatives, useGoals } from "@/hooks/use-data";
-import { ContextMenu, ContextMenuTrigger } from "@/components/ui/context-menu";
-import { InitiativeContextMenuContent } from "@/components/context-menus/initiative-context-menu";
+import { Textarea } from "@/components/ui/textarea";
+import { useInitiatives, useProjects } from "@/hooks/use-data";
 
 import type { Initiative, InitiativeStatus } from "@/lib/types";
 
 interface InitiativeStats {
 	activeInitiatives: number;
 	totalTasks: number;
-	linkedGoals: number;
+	linkedProjects: number;
 }
 
 const STATUS_GROUPS: { status: InitiativeStatus; label: string }[] = [
@@ -92,19 +92,19 @@ interface CreateInitiativeDialogProps {
 	open: boolean;
 	onOpenChange: (open: boolean) => void;
 	onSubmit: (data: Partial<Initiative>) => Promise<unknown>;
-	parentGoalOptions: { id: string; title: string }[];
+	projectOptions: { id: string; name: string }[];
 }
 
 function CreateInitiativeDialog({
 	open,
 	onOpenChange,
 	onSubmit,
-	parentGoalOptions,
+	projectOptions,
 }: CreateInitiativeDialogProps) {
 	const [title, setTitle] = useState("");
 	const [description, setDescription] = useState("");
 	const [color, setColor] = useState(COLOR_SWATCHES[0]);
-	const [parentGoalId, setParentGoalId] = useState<string>("none");
+	const [projectId, setProjectId] = useState<string>("none");
 	const [saving, setSaving] = useState(false);
 
 	async function handleSubmit(e: React.FormEvent) {
@@ -116,7 +116,7 @@ function CreateInitiativeDialog({
 				title: title.trim(),
 				description: description.trim(),
 				color,
-				parentGoalId: parentGoalId === "none" ? null : parentGoalId,
+				projectId: projectId === "none" ? null : projectId,
 				status: "active",
 				taskIds: [],
 				tags: [],
@@ -125,7 +125,7 @@ function CreateInitiativeDialog({
 			setTitle("");
 			setDescription("");
 			setColor(COLOR_SWATCHES[0]);
-			setParentGoalId("none");
+			setProjectId("none");
 			onOpenChange(false);
 		} finally {
 			setSaving(false);
@@ -183,18 +183,18 @@ function CreateInitiativeDialog({
 						</div>
 					</div>
 
-					{parentGoalOptions.length > 0 && (
+					{projectOptions.length > 0 && (
 						<div className="space-y-1.5">
-							<Label htmlFor="parentGoal">Parent Goal</Label>
-							<Select value={parentGoalId} onValueChange={setParentGoalId}>
-								<SelectTrigger id="parentGoal">
+							<Label htmlFor="project">Project</Label>
+							<Select value={projectId} onValueChange={setProjectId}>
+								<SelectTrigger id="project">
 									<SelectValue placeholder="None" />
 								</SelectTrigger>
 								<SelectContent>
 									<SelectItem value="none">None</SelectItem>
-									{parentGoalOptions.map((g) => (
-										<SelectItem key={g.id} value={g.id}>
-											{g.title}
+									{projectOptions.map((p) => (
+										<SelectItem key={p.id} value={p.id}>
+											{p.name}
 										</SelectItem>
 									))}
 								</SelectContent>
@@ -222,18 +222,17 @@ function CreateInitiativeDialog({
 
 function InitiativeCard({
 	initiative,
-	parentGoalTitle,
+	projectTitle,
 	onTogglePause,
 	onArchive,
 	onDelete,
 }: {
 	initiative: Initiative;
-	parentGoalTitle?: string;
+	projectTitle?: string;
 	onTogglePause?: (initiative: Initiative) => void;
 	onArchive?: (initiativeId: string) => void;
 	onDelete?: (initiativeId: string) => void;
 }) {
-	const router = useRouter();
 	return (
 		<ContextMenu>
 			<ContextMenuTrigger asChild>
@@ -263,8 +262,8 @@ function InitiativeCard({
 
 						<div className="flex items-center gap-4 text-xs text-muted-foreground ml-5">
 							<span>{initiative.taskIds.length} tasks</span>
-							{parentGoalTitle && (
-								<span className="truncate">Goal: {parentGoalTitle}</span>
+							{projectTitle && (
+								<span className="truncate">Project: {projectTitle}</span>
 							)}
 						</div>
 					</CardContent>
@@ -282,9 +281,9 @@ function InitiativeCard({
 
 export default function InitiativesPage() {
 	const { initiatives, loading, create, update, remove } = useInitiatives();
-	const { goals } = useGoals();
-	const [createOpen, setCreateOpen] = useState(false);
+	const { projects } = useProjects();
 	const router = useRouter();
+	const [createOpen, setCreateOpen] = useState(false);
 
 	async function handleTogglePause(initiative: Initiative) {
 		const newStatus = initiative.status === "paused" ? "active" : "paused";
@@ -307,21 +306,19 @@ export default function InitiativesPage() {
 			(sum, initiative) => sum + initiative.taskIds.length,
 			0,
 		),
-		linkedGoals: new Set(
-			visible.map((initiative) => initiative.parentGoalId).filter(Boolean),
+		linkedProjects: new Set(
+			visible.map((initiative) => initiative.projectId).filter(Boolean),
 		).size,
 	};
 
-	const goalOptions = goals
-		.filter((g) => g.type === "long-term")
-		.map((g) => ({ id: g.id, title: g.title }));
+	const projectOptions = projects.map((p) => ({ id: p.id, name: p.name }));
 
-	const goalMap = new Map(goals.map((g) => [g.id, g.title]));
+	const projectMap = new Map(projects.map((p) => [p.id, p.name]));
 
 	const statCards = [
 		{ label: "Active Initiatives", value: stats.activeInitiatives },
 		{ label: "Total Tasks", value: stats.totalTasks },
-		{ label: "Linked Goals", value: stats.linkedGoals },
+		{ label: "Linked Projects", value: stats.linkedProjects },
 	];
 
 	return (
@@ -374,10 +371,7 @@ export default function InitiativesPage() {
 								</p>
 							</div>
 							<div className="flex gap-2">
-								<Button variant="outline" onClick={() => router.push("/guide")}>
-									Open Guide
-								</Button>
-								<Button className="gap-1.5" onClick={() => setCreateOpen(true)}>
+								<Button variant="outline" onClick={() => setCreateOpen(true)}>
 									<Plus className="h-4 w-4" /> Create Initiative
 								</Button>
 							</div>
@@ -399,9 +393,9 @@ export default function InitiativesPage() {
 										<InitiativeCard
 											key={initiative.id}
 											initiative={initiative}
-											parentGoalTitle={
-												initiative.parentGoalId
-													? goalMap.get(initiative.parentGoalId)
+											projectTitle={
+												initiative.projectId
+													? projectMap.get(initiative.projectId)
 													: undefined
 											}
 											onTogglePause={handleTogglePause}
@@ -420,7 +414,7 @@ export default function InitiativesPage() {
 				open={createOpen}
 				onOpenChange={setCreateOpen}
 				onSubmit={create}
-				parentGoalOptions={goalOptions}
+				projectOptions={projectOptions}
 			/>
 		</div>
 	);

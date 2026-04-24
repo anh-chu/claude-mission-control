@@ -1,36 +1,36 @@
 "use client";
 
+import {
+	Crosshair,
+	FileText,
+	FolderKanban,
+	Grid2x2,
+	HelpCircle,
+	Inbox,
+	Layers,
+	LayoutDashboard,
+	Lightbulb,
+	Terminal,
+	User,
+	Users,
+	X,
+	Zap,
+} from "lucide-react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import {
-	LayoutDashboard,
-	Grid2x2,
-	Crosshair,
-	Lightbulb,
-	User,
-	Inbox,
-	HelpCircle,
-	X,
-	Users,
-	Zap,
-	Layers,
-	FolderKanban,
-	Terminal,
-	FileText,
-} from "lucide-react";
-import { cn } from "@/lib/utils";
+import { SidebarFooter } from "@/components/sidebar-footer";
+import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Separator } from "@/components/ui/separator";
 import {
 	Tooltip,
 	TooltipContent,
-	TooltipTrigger,
 	TooltipProvider,
+	TooltipTrigger,
 } from "@/components/ui/tooltip";
-import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
-import { SidebarFooter } from "@/components/sidebar-footer";
 import { WorkspaceSwitcher } from "@/components/workspace-switcher";
+import { cn } from "@/lib/utils";
 
 const mainLinks = [
 	{ href: "/", label: "Dashboard", icon: LayoutDashboard },
@@ -39,8 +39,8 @@ const mainLinks = [
 ];
 
 const workbenchLinks = [
-	{ href: "/ventures", label: "Projects", icon: FolderKanban },
-	{ href: "/objectives", label: "Objectives", icon: Crosshair },
+	{ href: "/projects", label: "Projects", icon: FolderKanban },
+	{ href: "/initiatives", label: "Initiatives", icon: Crosshair },
 	{ href: "/initiatives", label: "Initiatives", icon: Layers },
 	{ href: "/priority-matrix", label: "Tasks", icon: Grid2x2 },
 	{ href: "/crew", label: "Agents", icon: Users },

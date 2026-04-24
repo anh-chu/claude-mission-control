@@ -1,10 +1,19 @@
 "use client";
 
-import { useState } from "react";
 import type { DragEndEvent } from "@dnd-kit/core";
-import { Plus, Filter, Grid2x2, Columns3 } from "lucide-react";
+import { Columns3, Filter, Grid2x2, Plus } from "lucide-react";
+import { useState } from "react";
+import {
+	BoardColumn,
+	BoardDndWrapper,
+	BoardPanels,
+	type ColumnConfig,
+	useSelection,
+	useTaskHandlers,
+} from "@/components/board-view";
 import { BreadcrumbNav } from "@/components/breadcrumb-nav";
-import { Tip } from "@/components/ui/tip";
+import { ErrorState } from "@/components/error-state";
+import { EisenhowerSkeleton, KanbanSkeleton } from "@/components/skeletons";
 import { Button } from "@/components/ui/button";
 import {
 	Select,
@@ -13,28 +22,18 @@ import {
 	SelectTrigger,
 	SelectValue,
 } from "@/components/ui/select";
+import { Tip } from "@/components/ui/tip";
 import {
-	BoardColumn,
-	BoardDndWrapper,
-	BoardPanels,
-	useTaskHandlers,
-	useSelection,
-	type ColumnConfig,
-} from "@/components/board-view";
-import {
-	useTasks,
-	useGoals,
-	useProjects,
 	useAgents,
 	useDecisions,
+	useProjects,
+	useTasks,
 } from "@/hooks/use-data";
-import { useActiveRunsContext as useActiveRuns } from "@/providers/active-runs-provider";
 import { useFastTaskPoll } from "@/hooks/use-fast-task-poll";
-import type { Task, EisenhowerQuadrant, KanbanStatus } from "@/lib/types";
+import type { EisenhowerQuadrant, KanbanStatus, Task } from "@/lib/types";
 import { getQuadrant, valuesFromQuadrant } from "@/lib/types";
-import { EisenhowerSkeleton, KanbanSkeleton } from "@/components/skeletons";
-import { ErrorState } from "@/components/error-state";
 import { cn } from "@/lib/utils";
+import { useActiveRunsContext as useActiveRuns } from "@/providers/active-runs-provider";
 
 type ViewMode = "matrix" | "board";
 
@@ -104,7 +103,6 @@ export default function TasksPage() {
 		error: tasksError,
 		refetch,
 	} = useTasks();
-	const { goals } = useGoals();
 	const { projects } = useProjects();
 	const { agents } = useAgents();
 	const { decisions } = useDecisions();
@@ -376,7 +374,6 @@ export default function TasksPage() {
 			<BoardPanels
 				tasks={tasks}
 				projects={projects}
-				goals={goals}
 				selectedTask={selectedTask}
 				showCreateTask={showCreateTask}
 				onUpdate={handleUpdateTask}

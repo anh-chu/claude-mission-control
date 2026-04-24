@@ -1,13 +1,18 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { Users, X } from "lucide-react";
+import { useEffect, useState } from "react";
+import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
 import {
 	Dialog,
 	DialogContent,
+	DialogDescription,
 	DialogHeader,
 	DialogTitle,
-	DialogDescription,
 } from "@/components/ui/dialog";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
 import {
 	Select,
 	SelectContent,
@@ -15,14 +20,9 @@ import {
 	SelectTrigger,
 	SelectValue,
 } from "@/components/ui/select";
-import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
-import { Label } from "@/components/ui/label";
-import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
-import { X, Users } from "lucide-react";
 import { getAgentIcon } from "@/lib/agent-icons";
-import type { Project, ProjectStatus, AgentDefinition } from "@/lib/types";
+import type { AgentDefinition, Project, ProjectStatus } from "@/lib/types";
 
 const PROJECT_COLORS = [
 	"#6366f1",
@@ -105,9 +105,9 @@ export function EditProjectDialog({
 		<Dialog open={open} onOpenChange={onOpenChange}>
 			<DialogContent className="max-w-md">
 				<DialogHeader>
-					<DialogTitle>Edit Venture</DialogTitle>
+					<DialogTitle>Edit Project</DialogTitle>
 					<DialogDescription>
-						Update venture details and team.
+						Update project details and team.
 					</DialogDescription>
 				</DialogHeader>
 				<form onSubmit={handleSubmit} className="space-y-4">
@@ -117,7 +117,7 @@ export function EditProjectDialog({
 							id="edit-proj-name"
 							value={name}
 							onChange={(e) => setName(e.target.value)}
-							placeholder="Venture name"
+							placeholder="Project name"
 							autoFocus
 						/>
 					</div>
@@ -127,7 +127,7 @@ export function EditProjectDialog({
 							id="edit-proj-desc"
 							value={description}
 							onChange={(e) => setDescription(e.target.value)}
-							placeholder="What is this venture about?"
+							placeholder="What is this project about?"
 							rows={3}
 						/>
 					</div>

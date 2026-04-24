@@ -1,18 +1,13 @@
 import { NextResponse } from "next/server";
-import {
-	getProjects,
-	mutateProjects,
-	mutateTasks,
-	mutateGoals,
-} from "@/lib/data";
+import { getProjects, mutateProjects, mutateTasks } from "@/lib/data";
 import type { Project } from "@/lib/types";
+import { generateId } from "@/lib/utils";
 import {
+	DEFAULT_LIMIT,
 	projectCreateSchema,
 	projectUpdateSchema,
 	validateBody,
-	DEFAULT_LIMIT,
 } from "@/lib/validations";
-import { generateId } from "@/lib/utils";
 
 export async function GET(request: Request) {
 	const { searchParams } = new URL(request.url);
@@ -135,19 +130,11 @@ export async function DELETE(request: Request) {
 			return NextResponse.json({ error: "Project not found" }, { status: 404 });
 		}
 
-		// Referential integrity: clear projectId on tasks and goals that referenced this project
+		// Referential integrity: clear projectId on tasks that referenced this project
 		await mutateTasks(async (data) => {
 			for (const task of data.tasks) {
 				if (task.projectId === id) {
 					task.projectId = null;
-				}
-			}
-		});
-
-		await mutateGoals(async (data) => {
-			for (const goal of data.goals) {
-				if (goal.projectId === id) {
-					goal.projectId = null;
 				}
 			}
 		});

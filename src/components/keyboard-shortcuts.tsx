@@ -1,14 +1,14 @@
 "use client";
 
-import { useEffect, useState, useCallback } from "react";
+import { Keyboard } from "lucide-react";
 import { useRouter } from "next/navigation";
+import { useCallback, useEffect, useState } from "react";
 import {
 	Dialog,
 	DialogContent,
 	DialogHeader,
 	DialogTitle,
 } from "@/components/ui/dialog";
-import { Keyboard } from "lucide-react";
 
 const shortcuts = [
 	{ key: "?", label: "Show keyboard shortcuts" },
@@ -59,16 +59,16 @@ export function KeyboardShortcuts({ onCreateTask }: KeyboardShortcutsProps) {
 						router.push("/priority-matrix");
 						return;
 					case "k":
-						router.push("/status-board");
+						router.push("/priority-matrix");
 						return;
 					case "o":
-						router.push("/objectives");
+						router.push("/initiatives");
 						return;
 					case "b":
 						router.push("/brain-dump");
 						return;
 					case "p":
-						router.push("/ventures");
+						router.push("/projects");
 						return;
 					case "i":
 						router.push("/inbox");

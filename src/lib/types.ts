@@ -5,8 +5,7 @@ export type KanbanStatus =
 	| "in-progress"
 	| "done"
 	| "awaiting-decision";
-export type GoalType = "long-term" | "medium-term";
-export type GoalStatus = "not-started" | "in-progress" | "completed";
+
 export type ProjectStatus = "active" | "paused" | "completed" | "archived";
 // AgentRole is now a string validated against the agent registry at runtime.
 // Built-in roles are kept as a type for backward compatibility.
@@ -247,24 +246,6 @@ export interface TasksFile {
 }
 
 // ─── Goals ────────────────────────────────────────────────────────────────────
-
-export interface Goal {
-	id: string;
-	title: string;
-	type: GoalType;
-	timeframe: string;
-	parentGoalId: string | null;
-	projectId: string | null;
-	status: GoalStatus;
-	milestones: string[];
-	tasks: string[];
-	createdAt: string;
-	deletedAt: string | null;
-}
-
-export interface GoalsFile {
-	goals: Goal[];
-}
 
 // ─── Projects ─────────────────────────────────────────────────────────────────
 
@@ -529,7 +510,7 @@ export interface Initiative {
 	title: string;
 	description: string;
 	status: InitiativeStatus;
-	parentGoalId: string | null;
+	projectId: string | null;
 	color: string;
 	teamMembers: string[];
 	taskIds: string[];

@@ -1,32 +1,32 @@
 "use client";
 
-import { useState } from "react";
-import Link from "next/link";
-import { useRouter } from "next/navigation";
 import {
-	Plus,
-	Users,
 	CircleDot,
+	Plus,
 	Shield,
 	ShieldAlert,
 	ShieldOff,
+	Users,
 } from "lucide-react";
-import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
-import { EmptyState } from "@/components/empty-state";
+import Link from "next/link";
+import { useRouter } from "next/navigation";
+import { useState } from "react";
 import { BreadcrumbNav } from "@/components/breadcrumb-nav";
-import { useAgents, useTasks, useProjects, useGoals } from "@/hooks/use-data";
-import { useDaemon } from "@/hooks/use-daemon";
-import { AgentCardSkeleton } from "@/components/skeletons";
-import { ErrorState } from "@/components/error-state";
-import { Tip } from "@/components/ui/tip";
-import { cn } from "@/lib/utils";
-import { getAgentIcon } from "@/lib/agent-icons";
-import { apiFetch } from "@/lib/api-client";
-import { ContextMenu, ContextMenuTrigger } from "@/components/ui/context-menu";
 import { AgentContextMenuContent } from "@/components/context-menus/agent-context-menu";
 import { CreateTaskDialog } from "@/components/create-task-dialog";
+import { EmptyState } from "@/components/empty-state";
+import { ErrorState } from "@/components/error-state";
+import { AgentCardSkeleton } from "@/components/skeletons";
+import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
+import { ContextMenu, ContextMenuTrigger } from "@/components/ui/context-menu";
+import { Tip } from "@/components/ui/tip";
+import { useDaemon } from "@/hooks/use-daemon";
+import { useAgents, useProjects, useTasks } from "@/hooks/use-data";
+import { getAgentIcon } from "@/lib/agent-icons";
+import { apiFetch } from "@/lib/api-client";
 import type { AgentDefinition } from "@/lib/types";
+import { cn } from "@/lib/utils";
 
 function AgentCard({
 	agent,
@@ -163,7 +163,6 @@ export default function CrewPage() {
 	const { agents, loading, error: agentsError, refetch } = useAgents();
 	const { tasks, create: createTask } = useTasks();
 	const { projects } = useProjects();
-	const { goals } = useGoals();
 	const { config, updateConfig } = useDaemon();
 	const router = useRouter();
 	const [filter, setFilter] = useState<"all" | "active" | "inactive">("all");
@@ -336,8 +335,6 @@ export default function CrewPage() {
 						if (!open) setNewTaskForAgentId(null);
 					}}
 					projects={projects}
-					goals={goals}
-					defaultValues={{ assignedTo: newTaskForAgentId }}
 					onSubmit={async (data) => {
 						await createTask({
 							id: `task_${Date.now()}`,

@@ -1,27 +1,26 @@
 "use client";
 
+import { Archive, MoreHorizontal, Pencil, Trash2 } from "lucide-react";
 import Link from "next/link";
-import { MoreHorizontal, Archive, Trash2, Pencil } from "lucide-react";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { ProjectContextMenuContent } from "@/components/context-menus/project-context-menu";
+import { RunButton } from "@/components/run-button";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { ContextMenu, ContextMenuTrigger } from "@/components/ui/context-menu";
 import {
 	DropdownMenu,
 	DropdownMenuContent,
 	DropdownMenuItem,
 	DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { cn } from "@/lib/utils";
-import type { Project, Task, Goal } from "@/lib/types";
+import type { Project, Task } from "@/lib/types";
 import { getQuadrant } from "@/lib/types";
-import { RunButton } from "@/components/run-button";
-import { ContextMenu, ContextMenuTrigger } from "@/components/ui/context-menu";
-import { ProjectContextMenuContent } from "@/components/context-menus/project-context-menu";
+import { cn } from "@/lib/utils";
 
 interface ProjectCardLargeProps {
 	project: Project;
 	tasks: Task[];
-	goals: Goal[];
 	isRunning?: boolean;
 	isProjectRunActive?: boolean;
 	onRun?: (projectId: string) => void;
@@ -34,7 +33,6 @@ interface ProjectCardLargeProps {
 export function ProjectCardLarge({
 	project,
 	tasks,
-	goals,
 	isRunning,
 	isProjectRunActive,
 	onRun,
@@ -62,13 +60,6 @@ export function ProjectCardLarge({
 			qCounts[getQuadrant(t)]++;
 		});
 
-	const activeMilestone = goals.find(
-		(g) =>
-			g.projectId === project.id &&
-			g.type === "medium-term" &&
-			g.status === "in-progress",
-	);
-
 	// Check if project has tasks eligible to run (not done, has AI agent)
 	const hasEligibleTasks = projectTasks.some(
 		(t) => t.kanban !== "done" && t.assignedTo && t.assignedTo !== "me",
@@ -77,7 +68,7 @@ export function ProjectCardLarge({
 	return (
 		<ContextMenu>
 			<ContextMenuTrigger asChild>
-				<Link href={`/ventures/${project.id}`}>
+				<Link href={`/projects/${project.id}`}>
 					<Card
 						className={cn(
 							"group cursor-pointer transition-all hover:shadow-lg hover:border-primary/30 hover:-translate-y-0.5 animate-fade-in-up",
@@ -247,14 +238,6 @@ export function ProjectCardLarge({
 								))}
 							</div>
 
-							{/* Active milestone */}
-							{activeMilestone && (
-								<div className="text-xs text-muted-foreground border-t pt-2">
-									<span className="text-primary">▸</span>{" "}
-									{activeMilestone.title}
-								</div>
-							)}
-
 							{/* Tags */}
 							{project.tags.length > 0 && (
 								<div className="flex flex-wrap gap-1">
@@ -275,7 +258,7 @@ export function ProjectCardLarge({
 			</ContextMenuTrigger>
 			<ProjectContextMenuContent
 				project={project}
-				href={`/ventures/${project.id}`}
+				href={`/projects/${project.id}`}
 				onEdit={onEdit}
 				onRun={hasEligibleTasks ? onRun : undefined}
 				onArchive={onArchive}

@@ -1,22 +1,20 @@
 "use client";
 
-import { useState, useEffect, useCallback, useRef } from "react";
-import type {
-	Task,
-	Goal,
-	Project,
-	BrainDumpEntry,
-	InboxMessage,
-	DecisionItem,
-	ActivityEvent,
-} from "@/lib/types";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { apiFetch } from "@/lib/api-client";
+import type {
+	ActivityEvent,
+	BrainDumpEntry,
+	DecisionItem,
+	InboxMessage,
+	Project,
+	Task,
+} from "@/lib/types";
 
 export interface DashboardStats {
 	totalTasks: number;
 	inProgressTasks: number;
 	doneTasks: number;
-	totalGoals: number;
 	completedMilestones: number;
 	totalMilestones: number;
 	activeProjects: number;
@@ -44,7 +42,6 @@ export interface DashboardData {
 	pendingDecisionsList: DecisionItem[];
 	recentActivity: ActivityEvent[];
 	tasks: Task[];
-	goals: Goal[];
 	projects: Project[];
 	entries: BrainDumpEntry[];
 	messages: InboxMessage[];

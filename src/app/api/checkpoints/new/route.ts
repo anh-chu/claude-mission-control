@@ -1,17 +1,16 @@
-import { NextResponse } from "next/server";
-import {
-	saveTasks,
-	saveGoals,
-	saveProjects,
-	saveBrainDump,
-	saveInbox,
-	saveDecisions,
-	saveAgents,
-	saveSkillsLibrary,
-	saveActivityLog,
-} from "@/lib/data";
 import { exec } from "child_process";
+import { NextResponse } from "next/server";
 import { promisify } from "util";
+import {
+	saveActivityLog,
+	saveAgents,
+	saveBrainDump,
+	saveDecisions,
+	saveInbox,
+	saveProjects,
+	saveSkillsLibrary,
+	saveTasks,
+} from "@/lib/data";
 
 const execAsync = promisify(exec);
 
@@ -84,7 +83,6 @@ const DEFAULT_AGENTS = [
 export async function POST() {
 	try {
 		await saveTasks({ tasks: [] });
-		await saveGoals({ goals: [] });
 		await saveProjects({ projects: [] });
 		await saveBrainDump({ entries: [] });
 		await saveInbox({ messages: [] });

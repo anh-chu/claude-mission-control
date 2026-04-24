@@ -1,52 +1,51 @@
 "use client";
 
-import { useState } from "react";
-import { useParams, useRouter } from "next/navigation";
 import {
-	User,
-	Search,
-	Code,
-	Megaphone,
 	BarChart3,
-	Send,
+	BookOpen,
 	Bot,
-	Save,
+	Brain,
+	Code,
+	Globe,
+	HeartPulse,
+	Megaphone,
+	Palette,
 	Plus,
+	Save,
+	Search,
+	Send,
+	Shield,
+	User,
+	Wrench,
 	X,
 	Zap,
-	Shield,
-	Wrench,
-	BookOpen,
-	Globe,
-	Brain,
-	Palette,
-	HeartPulse,
 } from "lucide-react";
-import { Card, CardContent } from "@/components/ui/card";
-import { EmptyState } from "@/components/empty-state";
-import { Badge } from "@/components/ui/badge";
+import { useParams, useRouter } from "next/navigation";
+import { useState } from "react";
 import { BreadcrumbNav } from "@/components/breadcrumb-nav";
+import { EmptyState } from "@/components/empty-state";
+import { ErrorState } from "@/components/error-state";
+import { TaskCardSkeleton } from "@/components/skeletons";
 import { TaskCard } from "@/components/task-card";
 import { TaskDetailPanel } from "@/components/task-detail-panel";
+import type { TaskFormData } from "@/components/task-form";
+import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import { Card, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import {
-	useTasks,
-	useGoals,
-	useProjects,
-	useInbox,
 	useActivityLog,
 	useAgents,
-	useSkills,
 	useDecisions,
+	useInbox,
+	useProjects,
+	useSkills,
+	useTasks,
 } from "@/hooks/use-data";
-import { useActiveRunsContext as useActiveRuns } from "@/providers/active-runs-provider";
 import { useFastTaskPoll } from "@/hooks/use-fast-task-poll";
-import { TaskCardSkeleton } from "@/components/skeletons";
-import { ErrorState } from "@/components/error-state";
-import type { Task, KanbanStatus } from "@/lib/types";
-import type { TaskFormData } from "@/components/task-form";
+import type { KanbanStatus, Task } from "@/lib/types";
+import { useActiveRunsContext as useActiveRuns } from "@/providers/active-runs-provider";
 
 const iconMap: Record<string, typeof User> = {
 	User,
@@ -81,7 +80,6 @@ export default function AgentPage() {
 		remove: deleteTask,
 		refetch: refetchTasks,
 	} = useTasks();
-	const { goals } = useGoals();
 	const { projects } = useProjects();
 	const { messages } = useInbox();
 	const { events } = useActivityLog();
@@ -657,7 +655,6 @@ export default function AgentPage() {
 				<TaskDetailPanel
 					task={selectedTask}
 					projects={projects}
-					goals={goals}
 					allTasks={tasks}
 					onUpdate={handleUpdateTask}
 					onDelete={handleDeleteTask}

@@ -1,48 +1,48 @@
 "use client";
 
-import { useEffect, useCallback, useState, useRef } from "react";
 import {
-	X,
-	Trash2,
-	ListChecks,
-	Link2,
+	Activity,
 	CheckCircle2,
+	Clock,
+	Link2,
+	ListChecks,
+	MessageSquare,
 	Rocket,
 	Send,
-	Clock,
-	MessageSquare,
-	Activity,
+	Trash2,
+	X,
 } from "lucide-react";
-import { Button } from "@/components/ui/button";
+import { useCallback, useEffect, useRef, useState } from "react";
+import { toast } from "sonner";
+import { ConfirmDialog } from "@/components/confirm-dialog";
+import { MarkdownContent } from "@/components/markdown-content";
+import { MentionTextarea } from "@/components/mention-textarea";
 import { TaskForm, type TaskFormData } from "@/components/task-form";
 import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
+import {
+	Collapsible,
+	CollapsibleContent,
+	CollapsibleTrigger,
+} from "@/components/ui/collapsible";
 import {
 	DropdownMenu,
 	DropdownMenuContent,
 	DropdownMenuItem,
 	DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import {
-	Collapsible,
-	CollapsibleContent,
-	CollapsibleTrigger,
-} from "@/components/ui/collapsible";
-import type { Task, Project, Goal, AgentRole } from "@/lib/types";
-import { getQuadrant } from "@/lib/types";
+import { Tip } from "@/components/ui/tip";
 import {
 	useActivityLog,
-	useInbox,
 	useAgents,
 	useDecisions,
+	useInbox,
 } from "@/hooks/use-data";
 import { getAgentIcon } from "@/lib/agent-icons";
-import { ConfirmDialog } from "@/components/confirm-dialog";
-import { Tip } from "@/components/ui/tip";
-import { cn, parseAgentMentions } from "@/lib/utils";
-import { toast } from "sonner";
-import { MentionTextarea } from "@/components/mention-textarea";
-import { MarkdownContent } from "@/components/markdown-content";
 import { apiFetch } from "@/lib/api-client";
+import type { AgentRole, Project, Task } from "@/lib/types";
+import { getQuadrant } from "@/lib/types";
+import { cn, parseAgentMentions } from "@/lib/utils";
 
 const quadrantLabels: Record<string, { label: string; color: string }> = {
 	do: {
@@ -69,7 +69,6 @@ const quadrantLabels: Record<string, { label: string; color: string }> = {
 interface TaskDetailPanelProps {
 	task: Task;
 	projects: Project[];
-	goals: Goal[];
 	allTasks?: Task[];
 	onUpdate: (data: TaskFormData) => void;
 	onDelete: () => void;
@@ -79,7 +78,6 @@ interface TaskDetailPanelProps {
 export function TaskDetailPanel({
 	task,
 	projects,
-	goals,
 	allTasks,
 	onUpdate,
 	onDelete,
@@ -482,7 +480,6 @@ export function TaskDetailPanel({
 							acceptanceCriteria: (task.acceptanceCriteria ?? []).join("\n"),
 						}}
 						projects={projects}
-						goals={goals}
 						allTasks={allTasks}
 						currentTaskId={task.id}
 						onSubmit={handleUpdate}

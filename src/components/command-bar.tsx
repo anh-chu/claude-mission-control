@@ -1,24 +1,22 @@
 "use client";
 
-import { useState, useRef, useEffect, useCallback, useMemo } from "react";
-import Link from "next/link";
 import {
-	Zap,
-	Search,
-	PanelLeftClose,
-	PanelLeft,
-	Lightbulb,
 	Bot,
-	X,
+	Lightbulb,
 	Menu,
-	BookOpen,
+	PanelLeft,
+	PanelLeftClose,
+	Search,
+	X,
+	Zap,
 } from "lucide-react";
-import { Input } from "@/components/ui/input";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
 import { Tip } from "@/components/ui/tip";
-import { cn } from "@/lib/utils";
-import { SKILLS } from "@/lib/types";
 import type { Task } from "@/lib/types";
+import { SKILLS } from "@/lib/types";
+import { cn } from "@/lib/utils";
 
 interface CommandBarProps {
 	onCapture: (content: string) => void;
@@ -292,20 +290,6 @@ export function CommandBar({
 					</div>
 				)}
 			</div>
-
-			<Tip content="Guide">
-				<Button
-					variant="ghost"
-					size="icon"
-					className="shrink-0 text-muted-foreground hover:text-foreground"
-					aria-label="Open guide"
-					asChild
-				>
-					<Link href="/guide">
-						<BookOpen className="h-5 w-5" />
-					</Link>
-				</Button>
-			</Tip>
 		</header>
 	);
 }

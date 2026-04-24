@@ -1,20 +1,19 @@
 "use client";
 
-import { useState, useEffect, useCallback, useRef } from "react";
-import type {
-	Task,
-	Goal,
-	Project,
-	BrainDumpEntry,
-	ActivityEvent,
-	InboxMessage,
-	DecisionItem,
-	AgentDefinition,
-	SkillDefinition,
-	Initiative,
-} from "@/lib/types";
-import { showSuccess, showError } from "@/lib/toast";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { apiFetch } from "@/lib/api-client";
+import { showError, showSuccess } from "@/lib/toast";
+import type {
+	ActivityEvent,
+	AgentDefinition,
+	BrainDumpEntry,
+	DecisionItem,
+	InboxMessage,
+	Initiative,
+	Project,
+	SkillDefinition,
+	Task,
+} from "@/lib/types";
 
 // Generic hook factory for CRUD operations
 // pollInterval: optional polling interval in ms (e.g. 10_000 for 10s)
@@ -294,18 +293,9 @@ export function useInitiativeTasks(initiativeId: string) {
 	return { tasks, loading, error, refetch };
 }
 
-export function useGoals() {
-	const { items: goals, ...rest } = useDataResource<Goal>(
-		"goals",
-		"goals",
-		"Goal",
-	);
-	return { goals, ...rest };
-}
-
 export function useProjects() {
 	const { items: projects, ...rest } = useDataResource<Project>(
-		"ventures",
+		"projects",
 		"projects",
 		"Project",
 	);

@@ -1,16 +1,16 @@
 import type { Metadata } from "next";
 import { Inter } from "next/font/google";
 import "./globals.css";
+import { Toaster } from "sonner";
 import { LayoutShell } from "@/components/layout-shell";
 import { ThemeProvider } from "@/components/theme-provider";
-import { Toaster } from "sonner";
 
 const inter = Inter({ subsets: ["latin"] });
 
 export const metadata: Metadata = {
 	title: "Task Control",
 	description:
-		"AI agent orchestration hub — Eisenhower matrix, Kanban, objectives, and multi-agent task execution",
+		"AI agent orchestration hub — Eisenhower matrix, Kanban, initiatives, and multi-agent task execution",
 };
 
 export default function RootLayout({

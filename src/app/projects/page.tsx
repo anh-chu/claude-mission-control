@@ -1,20 +1,20 @@
 "use client";
 
+import { Eye, EyeOff, FolderOpen, Plus } from "lucide-react";
 import { useState } from "react";
-import { Plus, FolderOpen, Eye, EyeOff } from "lucide-react";
-import { Button } from "@/components/ui/button";
-import { EmptyState } from "@/components/empty-state";
 import { BreadcrumbNav } from "@/components/breadcrumb-nav";
-import { ProjectCardLarge } from "@/components/project-card-large";
+import { ConfirmDialog } from "@/components/confirm-dialog";
 import { CreateProjectDialog } from "@/components/create-project-dialog";
 import { EditProjectDialog } from "@/components/edit-project-dialog";
-import { ConfirmDialog } from "@/components/confirm-dialog";
-import { useTasks, useGoals, useProjects, useAgents } from "@/hooks/use-data";
+import { EmptyState } from "@/components/empty-state";
+import { ErrorState } from "@/components/error-state";
+import { ProjectCardLarge } from "@/components/project-card-large";
+import { ProjectCardSkeleton } from "@/components/skeletons";
+import { Button } from "@/components/ui/button";
 import { Tip } from "@/components/ui/tip";
+import { useAgents, useProjects, useTasks } from "@/hooks/use-data";
 import type { Project, ProjectStatus } from "@/lib/types";
 import { useActiveRunsContext as useActiveRuns } from "@/providers/active-runs-provider";
-import { ProjectCardSkeleton } from "@/components/skeletons";
-import { ErrorState } from "@/components/error-state";
 
 export default function ProjectsPage() {
 	const {
@@ -27,7 +27,6 @@ export default function ProjectsPage() {
 		refetch: refetchProjects,
 	} = useProjects();
 	const { tasks } = useTasks();
-	const { goals } = useGoals();
 	const { agents } = useAgents();
 	const { isProjectRunning, isProjectRunActive, runProject, stopProject } =
 		useActiveRuns();
@@ -96,7 +95,7 @@ export default function ProjectsPage() {
 	if (loading) {
 		return (
 			<div className="space-y-6">
-				<BreadcrumbNav items={[{ label: "Ventures" }]} />
+				<BreadcrumbNav items={[{ label: "Projects" }]} />
 				<div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
 					<ProjectCardSkeleton />
 					<ProjectCardSkeleton />
@@ -109,7 +108,7 @@ export default function ProjectsPage() {
 	if (projectsError) {
 		return (
 			<div className="space-y-6">
-				<BreadcrumbNav items={[{ label: "Ventures" }]} />
+				<BreadcrumbNav items={[{ label: "Projects" }]} />
 				<ErrorState message={projectsError} onRetry={refetchProjects} />
 			</div>
 		);
@@ -117,12 +116,12 @@ export default function ProjectsPage() {
 
 	return (
 		<div className="space-y-6">
-			<BreadcrumbNav items={[{ label: "Ventures" }]} />
+			<BreadcrumbNav items={[{ label: "Projects" }]} />
 			<div className="flex items-center justify-between">
 				<div className="flex items-center gap-3">
-					<h1 className="text-xl font-bold">Ventures</h1>
+					<h1 className="text-xl font-bold">Projects</h1>
 					{archivedCount > 0 && (
-						<Tip content="Toggle archived ventures">
+						<Tip content="Toggle archived projects">
 							<Button
 								variant="ghost"
 								size="sm"
@@ -139,13 +138,13 @@ export default function ProjectsPage() {
 						</Tip>
 					)}
 				</div>
-				<Tip content="Create a new venture">
+				<Tip content="Create a new project">
 					<Button
 						size="sm"
 						onClick={() => setShowCreateProject(true)}
 						className="gap-1.5"
 					>
-						<Plus className="h-3.5 w-3.5" /> New Venture
+						<Plus className="h-3.5 w-3.5" /> New Project
 					</Button>
 				</Tip>
 			</div>
@@ -153,9 +152,9 @@ export default function ProjectsPage() {
 			{visibleProjects.length === 0 ? (
 				<EmptyState
 					icon={FolderOpen}
-					title="No ventures yet"
-					description="Ventures help you organize tasks and track progress across your businesses and products."
-					actionLabel="Create a venture"
+					title="No projects yet"
+					description="Projects help you organize tasks and track progress across your work."
+					actionLabel="Create a project"
 					onAction={() => setShowCreateProject(true)}
 				/>
 			) : (
@@ -165,7 +164,6 @@ export default function ProjectsPage() {
 							key={project.id}
 							project={project}
 							tasks={tasks}
-							goals={goals}
 							isRunning={isProjectRunning(project.id)}
 							isProjectRunActive={isProjectRunActive(project.id)}
 							onRun={runProject}
@@ -204,8 +202,8 @@ export default function ProjectsPage() {
 				onOpenChange={(open) => {
 					if (!open) setDeletingProjectId(null);
 				}}
-				title="Delete venture"
-				description="This will permanently delete this venture and unlink all associated tasks. This action cannot be undone."
+				title="Delete project"
+				description="This will permanently delete this project and unlink all associated tasks. This action cannot be undone."
 				confirmLabel="Delete"
 				onConfirm={handleDeleteProject}
 			/>

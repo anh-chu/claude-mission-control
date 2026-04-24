@@ -1,26 +1,26 @@
 "use client";
 
-import { useState, useCallback, useEffect, useRef } from "react";
 import {
+	closestCenter,
 	DndContext,
+	type DragEndEvent,
 	DragOverlay,
+	type DragStartEvent,
 	PointerSensor,
 	useDraggable,
 	useDroppable,
 	useSensor,
 	useSensors,
-	closestCenter,
-	type DragStartEvent,
-	type DragEndEvent,
 } from "@dnd-kit/core";
 import { Plus } from "lucide-react";
+import { useCallback, useEffect, useRef, useState } from "react";
+import { CreateTaskDialog } from "@/components/create-task-dialog";
 import { EmptyState } from "@/components/empty-state";
 import { TaskCard } from "@/components/task-card";
 import { TaskDetailPanel } from "@/components/task-detail-panel";
-import { CreateTaskDialog } from "@/components/create-task-dialog";
-import { Badge } from "@/components/ui/badge";
-import type { Task, Project, Goal, KanbanStatus } from "@/lib/types";
 import type { TaskFormData } from "@/components/task-form";
+import { Badge } from "@/components/ui/badge";
+import type { KanbanStatus, Project, Task } from "@/lib/types";
 import { cn } from "@/lib/utils";
 
 // ─── Shared types ───────────────────────────────────────────────────────────
@@ -354,7 +354,6 @@ export function useSelection() {
 export function BoardPanels({
 	tasks,
 	projects,
-	goals,
 	selectedTask,
 	showCreateTask,
 	onUpdate,
@@ -365,7 +364,6 @@ export function BoardPanels({
 }: {
 	tasks: Task[];
 	projects: Project[];
-	goals: Goal[];
 	selectedTask: Task | null;
 	showCreateTask: boolean;
 	onUpdate: (data: TaskFormData) => void;
@@ -380,7 +378,6 @@ export function BoardPanels({
 				<TaskDetailPanel
 					task={selectedTask}
 					projects={projects}
-					goals={goals}
 					allTasks={tasks}
 					onUpdate={onUpdate}
 					onDelete={onDelete}
@@ -391,7 +388,6 @@ export function BoardPanels({
 				open={showCreateTask}
 				onOpenChange={onCloseCreate}
 				projects={projects}
-				goals={goals}
 				onSubmit={onSubmitCreate}
 			/>
 		</>

@@ -1,9 +1,9 @@
 "use client";
 
-import { useState, useEffect, useCallback, useMemo, useRef } from "react";
-import type { ActiveRun, DecisionItem, ProjectRun } from "@/lib/types";
-import { showSuccess, showError } from "@/lib/toast";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { apiFetch } from "@/lib/api-client";
+import { showError, showSuccess } from "@/lib/toast";
+import type { ActiveRun, DecisionItem, ProjectRun } from "@/lib/types";
 
 const POLL_INTERVAL = 5000; // 5 seconds
 
@@ -181,7 +181,7 @@ export function useActiveRuns() {
 	const runProject = useCallback(
 		async (projectId: string) => {
 			try {
-				const res = await apiFetch(`/api/ventures/${projectId}/run`, {
+				const res = await apiFetch(`/api/projects/${projectId}/run`, {
 					method: "POST",
 				});
 				if (!res.ok) {
@@ -214,7 +214,7 @@ export function useActiveRuns() {
 	const stopProject = useCallback(
 		async (projectId: string) => {
 			try {
-				const res = await apiFetch(`/api/ventures/${projectId}/stop`, {
+				const res = await apiFetch(`/api/projects/${projectId}/stop`, {
 					method: "POST",
 				});
 				if (!res.ok) {

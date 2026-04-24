@@ -2,10 +2,10 @@ import { NextResponse } from "next/server";
 import { getInitiatives, mutateInitiatives } from "@/lib/data";
 import type { Initiative } from "@/lib/types";
 import {
+	DEFAULT_LIMIT,
 	initiativeCreateSchema,
 	initiativeUpdateSchema,
 	validateBody,
-	DEFAULT_LIMIT,
 } from "@/lib/validations";
 import { applyWorkspaceContext } from "@/lib/workspace-context";
 
@@ -14,7 +14,7 @@ export async function GET(request: Request) {
 
 	const { searchParams } = new URL(request.url);
 	const id = searchParams.get("id");
-	const goalId = searchParams.get("goalId");
+	const projectId = searchParams.get("projectId");
 	const status = searchParams.get("status");
 	const includeDeleted = searchParams.get("includeDeleted") === "true";
 
@@ -30,8 +30,8 @@ export async function GET(request: Request) {
 	if (id) {
 		initiatives = initiatives.filter((i) => i.id === id);
 	}
-	if (goalId) {
-		initiatives = initiatives.filter((i) => i.parentGoalId === goalId);
+	if (projectId) {
+		initiatives = initiatives.filter((i) => i.projectId === projectId);
 	}
 	if (status) {
 		initiatives = initiatives.filter((i) => i.status === status);
@@ -79,7 +79,8 @@ export async function POST(request: Request) {
 			title: body.title,
 			description: body.description,
 			status: body.status,
-			parentGoalId: body.parentGoalId,
+			projectId:
+				(body as typeof body & { projectId?: string | null }).projectId ?? null,
 			color: body.color,
 			teamMembers: body.teamMembers,
 			taskIds: [],

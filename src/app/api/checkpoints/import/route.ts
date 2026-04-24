@@ -1,5 +1,5 @@
-import { NextRequest, NextResponse } from "next/server";
-import { saveCheckpoint, type CheckpointFile } from "@/lib/data";
+import { type NextRequest, NextResponse } from "next/server";
+import { type CheckpointFile, saveCheckpoint } from "@/lib/data";
 
 // POST /api/checkpoints/import — Import a checkpoint file (adds to list, does NOT auto-load)
 export async function POST(request: NextRequest) {
@@ -31,7 +31,6 @@ export async function POST(request: NextRequest) {
 		const data = snap.data as Record<string, unknown>;
 		const requiredKeys = [
 			"tasks",
-			"goals",
 			"projects",
 			"brainDump",
 			"inbox",

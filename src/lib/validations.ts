@@ -1,5 +1,5 @@
-import { z } from "zod";
 import { NextResponse } from "next/server";
+import { z } from "zod";
 
 // ─── Shared enums ──────────────────────────────────────────────────────────────
 
@@ -11,8 +11,6 @@ const kanbanEnum = z.enum([
 	"done",
 	"awaiting-decision",
 ]);
-const goalTypeEnum = z.enum(["long-term", "medium-term"]);
-const goalStatusEnum = z.enum(["not-started", "in-progress", "completed"]);
 const projectStatusEnum = z.enum(["active", "paused", "completed", "archived"]);
 // Relaxed from fixed enum to string — validated against agent registry at runtime.
 const agentRoleEnum = z.string().min(1).max(50);
@@ -64,7 +62,6 @@ export const LIMITS = {
 	MAX_BLOCKED_BY: 50,
 	MAX_CRITERIA: 50,
 	MAX_TAGS: 50,
-	MAX_MILESTONES: 50,
 	MAX_TASKS: 50,
 	MAX_OPTIONS: 20,
 	MAX_MINUTES: 99999,
@@ -210,37 +207,6 @@ export const taskUpdateSchema = z.object({
 	dueDate: z.string().max(30).nullable().optional(),
 	deletedAt: z.string().nullable().optional(),
 	initiativeId: z.string().nullable().optional(),
-});
-
-// ─── Goal schemas ──────────────────────────────────────────────────────────────
-
-export const goalCreateSchema = z.object({
-	title: z.string().min(1, "Title is required").max(LIMITS.TITLE),
-	type: goalTypeEnum.optional().default("medium-term"),
-	timeframe: z.string().max(100).optional().default(""),
-	parentGoalId: z.string().nullable().optional().default(null),
-	projectId: z.string().nullable().optional().default(null),
-	status: goalStatusEnum.optional().default("not-started"),
-	milestones: z
-		.array(z.string())
-		.max(LIMITS.MAX_MILESTONES)
-		.optional()
-		.default([]),
-	tasks: z.array(z.string()).max(LIMITS.MAX_TASKS).optional().default([]),
-	deletedAt: z.string().nullable().optional().default(null),
-});
-
-export const goalUpdateSchema = z.object({
-	id: z.string().min(1, "Goal ID is required"),
-	title: z.string().min(1).max(LIMITS.TITLE).optional(),
-	type: goalTypeEnum.optional(),
-	timeframe: z.string().max(100).optional(),
-	parentGoalId: z.string().nullable().optional(),
-	projectId: z.string().nullable().optional(),
-	status: goalStatusEnum.optional(),
-	milestones: z.array(z.string()).max(LIMITS.MAX_MILESTONES).optional(),
-	tasks: z.array(z.string()).max(LIMITS.MAX_TASKS).optional(),
-	deletedAt: z.string().nullable().optional(),
 });
 
 // ─── Project schemas ───────────────────────────────────────────────────────────
@@ -487,7 +453,7 @@ export const initiativeCreateSchema = z.object({
 	title: z.string().min(1, "Title is required").max(LIMITS.TITLE),
 	description: z.string().max(LIMITS.DESCRIPTION).optional().default(""),
 	status: initiativeStatusEnum.optional().default("active"),
-	parentGoalId: z.string().nullable().optional().default(null),
+	projectId: z.string().nullable().optional().default(null),
 	color: z.string().max(20).optional().default("#6366f1"),
 	teamMembers: z.array(z.string().max(50)).max(20).optional().default([]),
 	tags: z
@@ -502,7 +468,7 @@ export const initiativeUpdateSchema = z.object({
 	title: z.string().min(1).max(LIMITS.TITLE).optional(),
 	description: z.string().max(LIMITS.DESCRIPTION).optional(),
 	status: initiativeStatusEnum.optional(),
-	parentGoalId: z.string().nullable().optional(),
+	projectId: z.string().nullable().optional(),
 	color: z.string().max(20).optional(),
 	teamMembers: z.array(z.string().max(50)).max(20).optional(),
 	taskIds: z.array(z.string()).max(200).optional(),

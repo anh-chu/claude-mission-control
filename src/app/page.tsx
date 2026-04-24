@@ -1,37 +1,35 @@
 "use client";
 
-import { useState } from "react";
 import {
-	Plus,
-	CheckSquare,
-	Target,
-	Lightbulb,
-	FolderOpen,
-	Sparkles,
-	Mail,
-	HelpCircle,
 	Activity,
-	User,
-	Search,
-	Code,
-	Megaphone,
-	BarChart3,
 	AlertTriangle,
+	BarChart3,
+	CheckSquare,
 	CircleDot,
-	ShieldAlert,
+	Code,
+	FolderOpen,
+	HelpCircle,
+	Lightbulb,
+	Mail,
+	Megaphone,
+	Plus,
 	Rocket,
+	Search,
+	ShieldAlert,
+	Sparkles,
+	Square,
+	User,
 	Users,
 	Zap,
-	Square,
 } from "lucide-react";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
-import { BreadcrumbNav } from "@/components/breadcrumb-nav";
-import { ProjectCardLarge } from "@/components/project-card-large";
-import { GoalCard } from "@/components/goal-card";
-import { EisenhowerSummary } from "@/components/eisenhower-summary";
 import dynamic from "next/dynamic";
+import { useState } from "react";
+import { BreadcrumbNav } from "@/components/breadcrumb-nav";
+import { EisenhowerSummary } from "@/components/eisenhower-summary";
+import { ProjectCardLarge } from "@/components/project-card-large";
+import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 
 const CreateTaskDialog = dynamic(
 	() =>
@@ -47,27 +45,21 @@ const CreateProjectDialog = dynamic(
 		})),
 	{ ssr: false },
 );
-const CreateGoalDialog = dynamic(
-	() =>
-		import("@/components/create-goal-dialog").then((mod) => ({
-			default: mod.CreateGoalDialog,
-		})),
-	{ ssr: false },
-);
-import { useDashboardData } from "@/hooks/use-dashboard-data";
-import { useDaemon } from "@/hooks/use-daemon";
-import { useActiveRunsContext as useActiveRuns } from "@/providers/active-runs-provider";
-import { useFastTaskPoll } from "@/hooks/use-fast-task-poll";
-import { DashboardSkeleton } from "@/components/skeletons";
-import { ErrorState } from "@/components/error-state";
-import { Tip } from "@/components/ui/tip";
-import { AGENT_ROLES } from "@/lib/types";
-import type { AgentRole } from "@/lib/types";
-import type { TaskFormData } from "@/components/task-form";
-import { apiFetch } from "@/lib/api-client";
-import { showSuccess, showError } from "@/lib/toast";
+
 import Link from "next/link";
+import { ErrorState } from "@/components/error-state";
+import { DashboardSkeleton } from "@/components/skeletons";
+import type { TaskFormData } from "@/components/task-form";
+import { Tip } from "@/components/ui/tip";
+import { useDaemon } from "@/hooks/use-daemon";
+import { useDashboardData } from "@/hooks/use-dashboard-data";
+import { useFastTaskPoll } from "@/hooks/use-fast-task-poll";
+import { apiFetch } from "@/lib/api-client";
+import { showError, showSuccess } from "@/lib/toast";
+import type { AgentRole } from "@/lib/types";
+import { AGENT_ROLES } from "@/lib/types";
 import { cn } from "@/lib/utils";
+import { useActiveRunsContext as useActiveRuns } from "@/providers/active-runs-provider";
 
 function formatRelativeTime(isoString: string): string {
 	const diff = Date.now() - new Date(isoString).getTime();
@@ -106,20 +98,15 @@ export default function CommandCenterPage() {
 
 	const [showCreateTask, setShowCreateTask] = useState(false);
 	const [showCreateProject, setShowCreateProject] = useState(false);
-	const [showCreateGoal, setShowCreateGoal] = useState(false);
 
 	// Derived data from batched /api/dashboard response
 	const tasks = data?.tasks ?? [];
-	const goals = data?.goals ?? [];
 	const projects = data?.projects ?? [];
 	const unprocessedEntries = data?.entries ?? [];
 	const unreadMessages = data?.messages ?? [];
 	const pendingDecisions = data?.decisions ?? [];
 	const recentEvents = data?.recentActivity ?? [];
 	const stats = data?.stats;
-
-	const longTermGoals = goals.filter((g) => g.type === "long-term");
-	const milestones = goals.filter((g) => g.type === "medium-term");
 
 	// Agent workload (enhanced)
 	const pendingDecisionTaskIds = new Set(
@@ -226,7 +213,7 @@ export default function CommandCenterPage() {
 						key: "completions",
 						icon: CheckSquare,
 						label: `${recentCompletions.length} completed task${recentCompletions.length > 1 ? "s" : ""} to review`,
-						href: "/status-board",
+						href: "/priority-matrix",
 						color: "text-green-400",
 					},
 				]
@@ -267,7 +254,7 @@ export default function CommandCenterPage() {
 		teamMembers?: string[];
 	}) => {
 		try {
-			const res = await apiFetch("/api/ventures", {
+			const res = await apiFetch("/api/projects", {
 				method: "POST",
 				headers: { "Content-Type": "application/json" },
 				body: JSON.stringify({
@@ -287,36 +274,6 @@ export default function CommandCenterPage() {
 			refetch();
 		} catch {
 			showError("Failed to create project");
-		}
-	};
-
-	const handleCreateGoal = async (formData: {
-		title: string;
-		type: "long-term" | "medium-term";
-		timeframe: string;
-		projectId: string | null;
-		parentGoalId: string | null;
-	}) => {
-		try {
-			const res = await apiFetch("/api/goals", {
-				method: "POST",
-				headers: { "Content-Type": "application/json" },
-				body: JSON.stringify({
-					title: formData.title,
-					type: formData.type,
-					timeframe: formData.timeframe,
-					parentGoalId: formData.parentGoalId,
-					projectId: formData.projectId,
-					status: "not-started",
-					milestones: [],
-					tasks: [],
-				}),
-			});
-			if (!res.ok) throw new Error("Failed to create goal");
-			showSuccess("Goal created");
-			refetch();
-		} catch {
-			showError("Failed to create goal");
 		}
 	};
 
@@ -369,7 +326,7 @@ export default function CommandCenterPage() {
 										<FolderOpen className="h-4 w-4 text-blue-500" />
 									</div>
 									<div>
-										<p className="text-sm font-medium">Create a venture</p>
+										<p className="text-sm font-medium">Create a project</p>
 										<p className="text-xs text-muted-foreground mt-0.5">
 											Organize your work into projects
 										</p>
@@ -418,7 +375,6 @@ export default function CommandCenterPage() {
 					open={showCreateTask}
 					onOpenChange={setShowCreateTask}
 					projects={projects}
-					goals={goals}
 					onSubmit={handleCreateTask}
 				/>
 				<CreateProjectDialog
@@ -554,32 +510,6 @@ export default function CommandCenterPage() {
 					<CardContent className="p-4">
 						<div className="flex items-center gap-3">
 							<div className="h-9 w-9 rounded-lg bg-primary/10 flex items-center justify-center">
-								<Target className="h-4 w-4 text-primary" />
-							</div>
-							<div>
-								<p className="text-2xl font-bold tabular-nums">
-									{stats?.totalGoals ?? longTermGoals.length}
-								</p>
-								<p className="text-xs text-muted-foreground">
-									{stats?.completedMilestones ?? 0}/
-									{stats?.totalMilestones ?? milestones.length} milestones
-								</p>
-							</div>
-						</div>
-						<Button
-							size="sm"
-							variant="ghost"
-							className="mt-2 h-6 text-xs gap-1 text-muted-foreground hover:text-foreground w-full justify-start"
-							onClick={() => setShowCreateGoal(true)}
-						>
-							<Plus className="h-3 w-3" /> New Objective
-						</Button>
-					</CardContent>
-				</Card>
-				<Card className="bg-card/50">
-					<CardContent className="p-4">
-						<div className="flex items-center gap-3">
-							<div className="h-9 w-9 rounded-lg bg-primary/10 flex items-center justify-center">
 								<FolderOpen className="h-4 w-4 text-primary" />
 							</div>
 							<div>
@@ -587,7 +517,7 @@ export default function CommandCenterPage() {
 									{stats?.activeProjects ??
 										projects.filter((p) => p.status === "active").length}
 								</p>
-								<p className="text-xs text-muted-foreground">active ventures</p>
+								<p className="text-xs text-muted-foreground">active projects</p>
 							</div>
 						</div>
 						<Button
@@ -596,7 +526,7 @@ export default function CommandCenterPage() {
 							className="mt-2 h-6 text-xs gap-1 text-muted-foreground hover:text-foreground w-full justify-start"
 							onClick={() => setShowCreateProject(true)}
 						>
-							<Plus className="h-3 w-3" /> New Venture
+							<Plus className="h-3 w-3" /> New Project
 						</Button>
 					</CardContent>
 				</Card>
@@ -910,15 +840,15 @@ export default function CommandCenterPage() {
 				</Card>
 			</div>
 
-			{/* Ventures Section */}
-			<section role="region" aria-label="Ventures">
+			{/* Projects Section */}
+			<section role="region" aria-label="Projects">
 				<div className="flex items-center justify-between mb-3">
 					<h2 className="text-lg font-semibold flex items-center gap-2">
 						<Sparkles className="h-4 w-4 text-primary" />
-						Ventures
+						Projects
 					</h2>
 					<Link
-						href="/ventures"
+						href="/projects"
 						className="text-xs text-muted-foreground hover:text-foreground"
 					>
 						View all →
@@ -932,7 +862,6 @@ export default function CommandCenterPage() {
 								key={project.id}
 								project={project}
 								tasks={tasks}
-								goals={goals}
 								isRunning={isProjectRunning(project.id)}
 								isProjectRunActive={isProjectRunActive(project.id)}
 								onRun={runProject}
@@ -952,35 +881,6 @@ export default function CommandCenterPage() {
 					)}
 				</div>
 			</section>
-
-			{/* Objectives Section */}
-			{longTermGoals.length > 0 && (
-				<section role="region" aria-label="Long-term objectives">
-					<div className="flex items-center justify-between mb-3">
-						<h2 className="text-lg font-semibold flex items-center gap-2">
-							<Target className="h-4 w-4 text-primary" />
-							Long-Term Objectives
-						</h2>
-						<Link
-							href="/objectives"
-							className="text-xs text-muted-foreground hover:text-foreground"
-						>
-							View all →
-						</Link>
-					</div>
-					<div className="grid gap-3 sm:grid-cols-2">
-						{longTermGoals.map((goal) => (
-							<GoalCard
-								key={goal.id}
-								goal={goal}
-								tasks={tasks}
-								projects={projects}
-								milestones={milestones}
-							/>
-						))}
-					</div>
-				</section>
-			)}
 
 			{/* Eisenhower + Quick Capture row */}
 			<div
@@ -1029,20 +929,12 @@ export default function CommandCenterPage() {
 				open={showCreateTask}
 				onOpenChange={setShowCreateTask}
 				projects={projects}
-				goals={goals}
 				onSubmit={handleCreateTask}
 			/>
 			<CreateProjectDialog
 				open={showCreateProject}
 				onOpenChange={setShowCreateProject}
 				onSubmit={handleCreateProject}
-			/>
-			<CreateGoalDialog
-				open={showCreateGoal}
-				onOpenChange={setShowCreateGoal}
-				projects={projects}
-				goals={goals}
-				onSubmit={handleCreateGoal}
 			/>
 		</div>
 	);

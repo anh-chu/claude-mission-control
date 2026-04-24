@@ -1,20 +1,19 @@
 "use client";
 
+import { TaskForm, type TaskFormData } from "@/components/task-form";
 import {
 	Dialog,
 	DialogContent,
+	DialogDescription,
 	DialogHeader,
 	DialogTitle,
-	DialogDescription,
 } from "@/components/ui/dialog";
-import { TaskForm, type TaskFormData } from "@/components/task-form";
-import type { Project, Goal } from "@/lib/types";
+import type { Project } from "@/lib/types";
 
 interface CreateTaskDialogProps {
 	open: boolean;
 	onOpenChange: (open: boolean) => void;
 	projects: Project[];
-	goals: Goal[];
 	onSubmit: (data: TaskFormData) => void;
 	defaultValues?: Partial<TaskFormData>;
 }
@@ -23,7 +22,6 @@ export function CreateTaskDialog({
 	open,
 	onOpenChange,
 	projects,
-	goals,
 	onSubmit,
 	defaultValues,
 }: CreateTaskDialogProps) {
@@ -39,7 +37,6 @@ export function CreateTaskDialog({
 				<TaskForm
 					initial={defaultValues}
 					projects={projects}
-					goals={goals}
 					onSubmit={(data) => {
 						onSubmit(data);
 						onOpenChange(false);

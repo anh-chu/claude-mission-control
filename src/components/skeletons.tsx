@@ -54,20 +54,6 @@ export function ProjectCardSkeleton() {
 	);
 }
 
-export function GoalCardSkeleton() {
-	return (
-		<div className="rounded-xl border bg-card p-5 space-y-3">
-			<div className="flex items-center justify-between">
-				<Shimmer className="h-5 w-48" />
-				<Shimmer className="h-5 w-20 rounded-full" />
-			</div>
-			<Shimmer className="h-3 w-32" />
-			<Shimmer className="h-1.5 w-full rounded-full" />
-			<Shimmer className="h-3 w-20" />
-		</div>
-	);
-}
-
 export function MessageRowSkeleton() {
 	return (
 		<div className="rounded-xl border bg-card/50 p-3 flex items-center gap-3">

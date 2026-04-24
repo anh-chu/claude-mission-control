@@ -1,19 +1,19 @@
 "use client";
 
+import { Users, X } from "lucide-react";
 import { useState } from "react";
+import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
 import {
 	Dialog,
 	DialogContent,
+	DialogDescription,
 	DialogHeader,
 	DialogTitle,
-	DialogDescription,
 } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
-import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
-import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
-import { X, Users } from "lucide-react";
+import { Textarea } from "@/components/ui/textarea";
 import { useAgents } from "@/hooks/use-data";
 import { getAgentIcon } from "@/lib/agent-icons";
 
@@ -78,9 +78,9 @@ export function CreateProjectDialog({
 		<Dialog open={open} onOpenChange={onOpenChange}>
 			<DialogContent className="max-w-md">
 				<DialogHeader>
-					<DialogTitle>Create Venture</DialogTitle>
+					<DialogTitle>Create Project</DialogTitle>
 					<DialogDescription>
-						A venture is a business, product, or initiative you&apos;re
+						A project is a business, product, or initiative you&apos;re
 						building. Group related tasks, assign agents, and track progress.
 					</DialogDescription>
 				</DialogHeader>
@@ -91,7 +91,7 @@ export function CreateProjectDialog({
 							id="proj-name"
 							value={name}
 							onChange={(e) => setName(e.target.value)}
-							placeholder="Venture name"
+							placeholder="Project name"
 							autoFocus
 						/>
 					</div>
@@ -101,7 +101,7 @@ export function CreateProjectDialog({
 							id="proj-desc"
 							value={description}
 							onChange={(e) => setDescription(e.target.value)}
-							placeholder="What is this venture about?"
+							placeholder="What is this project about?"
 							rows={3}
 						/>
 					</div>
@@ -201,7 +201,7 @@ export function CreateProjectDialog({
 							Cancel
 						</Button>
 						<Button type="submit" disabled={!name.trim()}>
-							Create Venture
+							Create Project
 						</Button>
 					</div>
 				</form>

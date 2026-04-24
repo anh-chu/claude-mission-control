@@ -1,22 +1,21 @@
 import { NextResponse } from "next/server";
 import {
+	getInitiatives,
 	getTasks,
 	getTasksArchive,
-	mutateTasks,
-	mutateInbox,
 	mutateActivityLog,
-	mutateGoals,
+	mutateInbox,
 	mutateInitiatives,
-	getInitiatives,
+	mutateTasks,
 } from "@/lib/data";
-import type { Task, AgentRole, InboxMessage, ActivityEvent } from "@/lib/types";
+import type { ActivityEvent, AgentRole, InboxMessage, Task } from "@/lib/types";
+import { generateId } from "@/lib/utils";
 import {
+	DEFAULT_LIMIT,
 	taskCreateSchema,
 	taskUpdateSchema,
 	validateBody,
-	DEFAULT_LIMIT,
 } from "@/lib/validations";
-import { generateId } from "@/lib/utils";
 import { applyWorkspaceContext } from "@/lib/workspace-context";
 
 // ─── Side-effect helpers (now atomic via mutate*) ───────────────────────────
@@ -466,13 +465,6 @@ export async function DELETE(request: Request) {
 				}
 			}
 			data.tasks = data.tasks.filter((t) => t.id !== id);
-		});
-
-		// Clean up goal task references (best-effort)
-		await mutateGoals(async (goalsData) => {
-			for (const goal of goalsData.goals) {
-				goal.tasks = goal.tasks.filter((tid) => tid !== id);
-			}
 		});
 
 		return NextResponse.json({ ok: true });

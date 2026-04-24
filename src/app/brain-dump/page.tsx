@@ -1,34 +1,29 @@
 "use client";
 
-import { useState, useEffect } from "react";
-import { Card, CardContent } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
-import { Textarea } from "@/components/ui/textarea";
-import { Badge } from "@/components/ui/badge";
-import { BreadcrumbNav } from "@/components/breadcrumb-nav";
-import { CreateTaskDialog } from "@/components/create-task-dialog";
-import { ConfirmDialog } from "@/components/confirm-dialog";
 import {
-	Lightbulb,
-	Trash2,
-	ArrowRight,
 	Archive,
-	Pencil,
-	Zap,
+	ArrowRight,
+	Lightbulb,
 	Loader2,
+	Pencil,
+	Trash2,
+	Zap,
 } from "lucide-react";
-import { Tip } from "@/components/ui/tip";
-import {
-	useBrainDump,
-	useTasks,
-	useProjects,
-	useGoals,
-} from "@/hooks/use-data";
-import { useProcessingEntries } from "@/hooks/use-processing-entries";
-import { EntryRowSkeleton } from "@/components/skeletons";
+import { useEffect, useState } from "react";
+import { BreadcrumbNav } from "@/components/breadcrumb-nav";
+import { ConfirmDialog } from "@/components/confirm-dialog";
+import { CreateTaskDialog } from "@/components/create-task-dialog";
 import { ErrorState } from "@/components/error-state";
-import type { BrainDumpEntry } from "@/lib/types";
+import { EntryRowSkeleton } from "@/components/skeletons";
 import type { TaskFormData } from "@/components/task-form";
+import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
+import { Card, CardContent } from "@/components/ui/card";
+import { Textarea } from "@/components/ui/textarea";
+import { Tip } from "@/components/ui/tip";
+import { useBrainDump, useProjects, useTasks } from "@/hooks/use-data";
+import { useProcessingEntries } from "@/hooks/use-processing-entries";
+import type { BrainDumpEntry } from "@/lib/types";
 
 export default function BrainDumpPage() {
 	const {
@@ -42,7 +37,6 @@ export default function BrainDumpPage() {
 	} = useBrainDump();
 	const { create: createTask } = useTasks();
 	const { projects } = useProjects();
-	const { goals } = useGoals();
 	const [newContent, setNewContent] = useState("");
 	const [convertingEntry, setConvertingEntry] = useState<BrainDumpEntry | null>(
 		null,
@@ -420,7 +414,6 @@ export default function BrainDumpPage() {
 					if (!open) setConvertingEntry(null);
 				}}
 				projects={projects}
-				goals={goals}
 				onSubmit={handleConvertToTask}
 				defaultValues={
 					convertingEntry

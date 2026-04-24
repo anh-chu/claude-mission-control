@@ -2,14 +2,14 @@
  * Node.js-only instrumentation logic.
  * Imported dynamically from instrumentation.ts to avoid Edge bundling.
  */
-import { existsSync, mkdirSync, copyFileSync, cpSync, writeFileSync } from "fs";
-import path from "path";
+import { copyFileSync, cpSync, existsSync, mkdirSync, writeFileSync } from "fs";
 import os from "os";
+import path from "path";
 import { createLogger } from "@/lib/logger";
 import {
+	scheduleDaemonWatchdog,
 	scheduleLogCleanup,
 	scheduleUploadsCleanup,
-	scheduleDaemonWatchdog,
 } from "@/lib/scheduled-jobs";
 
 const DATA_DIR = process.env.CMC_DATA_DIR
@@ -62,7 +62,6 @@ if (!existsSync(wsDir)) {
 	const emptySeeds: Record<string, unknown> = {
 		"tasks.json": { tasks: [] },
 		"tasks-archive.json": { tasks: [] },
-		"goals.json": { goals: [] },
 		"initiatives.json": { initiatives: [] },
 		"projects.json": { projects: [] },
 		"brain-dump.json": { entries: [] },

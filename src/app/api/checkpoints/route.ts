@@ -1,10 +1,10 @@
-import { NextRequest, NextResponse } from "next/server";
+import { type NextRequest, NextResponse } from "next/server";
 import {
-	getAllCoreData,
-	saveCheckpoint,
-	listCheckpoints,
-	deleteCheckpoint,
 	type CheckpointFile,
+	deleteCheckpoint,
+	getAllCoreData,
+	listCheckpoints,
+	saveCheckpoint,
 } from "@/lib/data";
 
 // GET /api/checkpoints — List all saved checkpoints (metadata only)
@@ -60,7 +60,6 @@ export async function POST(request: NextRequest) {
 			stats: {
 				tasks: data.tasks.tasks.length,
 				projects: data.projects.projects.length,
-				goals: data.goals.goals.length,
 				brainDump: data.brainDump.entries.length,
 				inbox: data.inbox.messages.length,
 				decisions: data.decisions.decisions.length,

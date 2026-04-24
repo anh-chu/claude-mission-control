@@ -1,12 +1,11 @@
 import { NextResponse } from "next/server";
 import {
-	getTasks,
-	getGoals,
-	getProjects,
-	getBrainDump,
-	getInbox,
-	getDecisions,
 	getActivityLog,
+	getBrainDump,
+	getDecisions,
+	getInbox,
+	getProjects,
+	getTasks,
 } from "@/lib/data";
 
 export const dynamic = "force-dynamic";
@@ -15,7 +14,6 @@ export async function GET() {
 	// Read all data files in parallel (reads are safe, no locking needed)
 	const [
 		tasksData,
-		goalsData,
 		projectsData,
 		brainDumpData,
 		inboxData,
@@ -23,7 +21,6 @@ export async function GET() {
 		activityData,
 	] = await Promise.all([
 		getTasks(),
-		getGoals(),
 		getProjects(),
 		getBrainDump(),
 		getInbox(),
@@ -33,7 +30,6 @@ export async function GET() {
 
 	// Filter soft-deleted
 	const tasks = tasksData.tasks.filter((t) => !t.deletedAt);
-	const goals = goalsData.goals.filter((g) => !g.deletedAt);
 	const projects = projectsData.projects.filter((p) => !p.deletedAt);
 	const entries = brainDumpData.entries;
 	const messages = inboxData.messages;
@@ -44,8 +40,6 @@ export async function GET() {
 	const doneTasks = tasks.filter((t) => t.kanban === "done");
 	const inProgressTasks = tasks.filter((t) => t.kanban === "in-progress");
 	const unprocessedEntries = entries.filter((e) => !e.processed);
-	const longTermGoals = goals.filter((g) => g.type === "long-term");
-	const milestones = goals.filter((g) => g.type === "medium-term");
 	const activeProjects = projects.filter((p) => p.status === "active");
 
 	// Comms
@@ -104,10 +98,6 @@ export async function GET() {
 				totalTasks: tasks.length,
 				inProgressTasks: inProgressTasks.length,
 				doneTasks: doneTasks.length,
-				totalGoals: longTermGoals.length,
-				completedMilestones: milestones.filter((m) => m.status === "completed")
-					.length,
-				totalMilestones: milestones.length,
 				activeProjects: activeProjects.length,
 				unprocessedBrainDump: unprocessedEntries.length,
 			},
@@ -121,7 +111,6 @@ export async function GET() {
 			pendingDecisionsList: pendingDecisions.slice(0, 5),
 			recentActivity: recentEvents,
 			tasks,
-			goals,
 			projects,
 			entries: unprocessedEntries.slice(0, 5),
 			messages: unreadMessages,

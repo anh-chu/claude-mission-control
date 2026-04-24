@@ -19,17 +19,16 @@ import {
 import type {
 	ActiveRunsFile,
 	ActivityLogFile,
+	AgentDefinition,
 	AgentsFile,
 	BrainDumpFile,
 	DecisionsFile,
-	GoalsFile,
 	InboxFile,
 	InitiativesFile,
 	ProjectsFile,
 	SkillsLibraryFile,
 	TasksFile,
 	WorkspacesFile,
-	AgentDefinition,
 } from "./types";
 
 export const DOC_MAINTAINER_AGENT_ID = "doc-maintainer";
@@ -41,10 +40,6 @@ const CHECKPOINTS_DIR = path.join(DATA_DIR, "checkpoints");
 // ─── Workspace path helpers ───────────────────────────────────────────────────
 
 let _currentWorkspaceId = "default";
-
-export function getCurrentWorkspace(): string {
-	return _currentWorkspaceId;
-}
 
 export function setCurrentWorkspace(id: string): void {
 	_currentWorkspaceId = id;
@@ -95,7 +90,6 @@ export async function ensureWorkspaceDir(workspaceId: string): Promise<void> {
 	}> = [
 		{ name: "tasks.json", fallback: { tasks: [] } },
 		{ name: "tasks-archive.json", fallback: { tasks: [] } },
-		{ name: "goals.json", fallback: { goals: [] } },
 		{ name: "initiatives.json", fallback: { initiatives: [] } },
 		{ name: "projects.json", fallback: { projects: [] } },
 		{ name: "brain-dump.json", fallback: { entries: [] } },
@@ -172,11 +166,7 @@ export async function initWikiDir(workspaceId: string): Promise<void> {
 	}
 }
 
-export function getCheckpointsDir(): string {
-	return CHECKPOINTS_DIR;
-}
-
-export async function ensureCheckpointsDir(): Promise<void> {
+async function ensureCheckpointsDir(): Promise<void> {
 	await mkdir(CHECKPOINTS_DIR, { recursive: true });
 }
 
@@ -191,7 +181,6 @@ export interface CheckpointMeta {
 	stats: {
 		tasks: number;
 		projects: number;
-		goals: number;
 		brainDump: number;
 		inbox: number;
 		decisions: number;
@@ -208,7 +197,6 @@ export interface CheckpointFile {
 	version: number;
 	data: {
 		tasks: TasksFile;
-		goals: GoalsFile;
 		projects: ProjectsFile;
 		brainDump: BrainDumpFile;
 		inbox: InboxFile;
@@ -221,28 +209,18 @@ export interface CheckpointFile {
 // ─── Bulk checkpoint helpers ─────────────────────────────────────────────────
 
 export async function getAllCoreData(): Promise<CheckpointFile["data"]> {
-	const [
-		tasks,
-		goals,
-		projects,
-		brainDump,
-		inbox,
-		decisions,
-		agents,
-		skillsLibrary,
-	] = await Promise.all([
-		getTasks(),
-		getGoals(),
-		getProjects(),
-		getBrainDump(),
-		getInbox(),
-		getDecisions(),
-		getAgents(),
-		getSkillsLibrary(),
-	]);
+	const [tasks, projects, brainDump, inbox, decisions, agents, skillsLibrary] =
+		await Promise.all([
+			getTasks(),
+			getProjects(),
+			getBrainDump(),
+			getInbox(),
+			getDecisions(),
+			getAgents(),
+			getSkillsLibrary(),
+		]);
 	return {
 		tasks,
-		goals,
 		projects,
 		brainDump,
 		inbox,
@@ -257,7 +235,6 @@ export async function loadCoreData(
 ): Promise<void> {
 	// Write sequentially to avoid overwhelming mutexes
 	await saveTasks(data.tasks);
-	await saveGoals(data.goals);
 	await saveProjects(data.projects);
 	await saveBrainDump(data.brainDump);
 	await saveInbox(data.inbox);
@@ -288,7 +265,6 @@ export async function listCheckpoints(): Promise<CheckpointMeta[]> {
 				stats: {
 					tasks: snap.data.tasks.tasks.length,
 					projects: snap.data.projects.projects.length,
-					goals: snap.data.goals.goals.length,
 					brainDump: snap.data.brainDump.entries.length,
 					inbox: snap.data.inbox.messages.length,
 					decisions: snap.data.decisions.decisions.length,
@@ -334,7 +310,6 @@ async function _writeJson(name: string, data: unknown): Promise<void> {
 const fileMutexes = {
 	tasks: new Mutex(),
 	tasksArchive: new Mutex(),
-	goals: new Mutex(),
 	projects: new Mutex(),
 	brainDump: new Mutex(),
 	activityLog: new Mutex(),
@@ -386,10 +361,6 @@ export async function ensureDocMaintainerAgentForWorkspace(
 	});
 }
 
-export async function ensureDocMaintainerAgent(): Promise<void> {
-	await ensureDocMaintainerAgentForWorkspace(_currentWorkspaceId);
-}
-
 // ─── Read functions (no locking needed — reads are safe) ──────────────────────
 
 export async function getTasks(): Promise<TasksFile> {
@@ -407,15 +378,6 @@ export async function getTasksArchive(): Promise<TasksFile> {
 		return JSON.parse(raw) as TasksFile;
 	} catch {
 		return { tasks: [] };
-	}
-}
-
-export async function getGoals(): Promise<GoalsFile> {
-	try {
-		const raw = await readFile(filePath("goals.json"), "utf-8");
-		return JSON.parse(raw) as GoalsFile;
-	} catch {
-		return { goals: [] };
 	}
 }
 
@@ -540,18 +502,6 @@ export async function saveTasks(data: TasksFile): Promise<void> {
 	});
 }
 
-export async function saveTasksArchive(data: TasksFile): Promise<void> {
-	await fileMutexes.tasksArchive.runExclusive(async () => {
-		await _writeJson("tasks-archive.json", data);
-	});
-}
-
-export async function saveGoals(data: GoalsFile): Promise<void> {
-	await fileMutexes.goals.runExclusive(async () => {
-		await _writeJson("goals.json", data);
-	});
-}
-
 export async function saveProjects(data: ProjectsFile): Promise<void> {
 	await fileMutexes.projects.runExclusive(async () => {
 		await _writeJson("projects.json", data);
@@ -596,12 +546,6 @@ export async function saveSkillsLibrary(
 	});
 }
 
-export async function saveActiveRuns(data: ActiveRunsFile): Promise<void> {
-	await fileMutexes.activeRuns.runExclusive(async () => {
-		await _writeJson("active-runs.json", data);
-	});
-}
-
 // ─── Atomic read-modify-write helpers (legacy — read-only inside lock) ────────
 // NOTE: These do NOT write back. Calling save*() inside these will DEADLOCK
 // (async-mutex is not reentrant). Use mutate*() below for mutations instead.
@@ -615,100 +559,9 @@ export async function withTasks<T>(
 	});
 }
 
-export async function withTasksArchive<T>(
-	fn: (data: TasksFile) => Promise<T>,
-): Promise<T> {
-	return fileMutexes.tasksArchive.runExclusive(async () => {
-		const data = await getTasksArchive();
-		return fn(data);
-	});
-}
-
-export async function withGoals<T>(
-	fn: (data: GoalsFile) => Promise<T>,
-): Promise<T> {
-	return fileMutexes.goals.runExclusive(async () => {
-		const data = await getGoals();
-		return fn(data);
-	});
-}
-
-export async function withProjects<T>(
-	fn: (data: ProjectsFile) => Promise<T>,
-): Promise<T> {
-	return fileMutexes.projects.runExclusive(async () => {
-		const data = await getProjects();
-		return fn(data);
-	});
-}
-
-export async function withBrainDump<T>(
-	fn: (data: BrainDumpFile) => Promise<T>,
-): Promise<T> {
-	return fileMutexes.brainDump.runExclusive(async () => {
-		const data = await getBrainDump();
-		return fn(data);
-	});
-}
-
-export async function withActivityLog<T>(
-	fn: (data: ActivityLogFile) => Promise<T>,
-): Promise<T> {
-	return fileMutexes.activityLog.runExclusive(async () => {
-		const data = await getActivityLog();
-		return fn(data);
-	});
-}
-
-export async function withInbox<T>(
-	fn: (data: InboxFile) => Promise<T>,
-): Promise<T> {
-	return fileMutexes.inbox.runExclusive(async () => {
-		const data = await getInbox();
-		return fn(data);
-	});
-}
-
-export async function withDecisions<T>(
-	fn: (data: DecisionsFile) => Promise<T>,
-): Promise<T> {
-	return fileMutexes.decisions.runExclusive(async () => {
-		const data = await getDecisions();
-		return fn(data);
-	});
-}
-
-export async function withAgents<T>(
-	fn: (data: AgentsFile) => Promise<T>,
-): Promise<T> {
-	return fileMutexes.agents.runExclusive(async () => {
-		const data = await getAgents();
-		return fn(data);
-	});
-}
-
-export async function withSkillsLibrary<T>(
-	fn: (data: SkillsLibraryFile) => Promise<T>,
-): Promise<T> {
-	return fileMutexes.skillsLibrary.runExclusive(async () => {
-		const data = await getSkillsLibrary();
-		return fn(data);
-	});
-}
-
-export async function withActiveRuns<T>(
-	fn: (data: ActiveRunsFile) => Promise<T>,
-): Promise<T> {
-	return fileMutexes.activeRuns.runExclusive(async () => {
-		const data = await getActiveRuns();
-		return fn(data);
-	});
-}
-
-// ─── Atomic mutate helpers (lock → read → callback → auto-write → unlock) ────
-// Use these for ALL mutation operations. The callback mutates `data` in place,
-// and the file is automatically written after the callback returns.
-// If the callback throws, the file is NOT written (implicit rollback).
+// Mutation helpers (lock -> read -> callback -> auto-write -> unlock).
+// The callback mutates data in place. File is written after callback returns.
+// If callback throws, file is NOT written (implicit rollback).
 
 export async function mutateTasks<T>(
 	fn: (data: TasksFile) => Promise<T>,
@@ -735,18 +588,6 @@ export async function mutateTasksArchive<T>(
 		}
 		const result = await fn(data);
 		await _writeJson("tasks-archive.json", data);
-		return result;
-	});
-}
-
-export async function mutateGoals<T>(
-	fn: (data: GoalsFile) => Promise<T>,
-): Promise<T> {
-	return fileMutexes.goals.runExclusive(async () => {
-		const raw = await readFile(filePath("goals.json"), "utf-8");
-		const data = JSON.parse(raw) as GoalsFile;
-		const result = await fn(data);
-		await _writeJson("goals.json", data);
 		return result;
 	});
 }

@@ -1,44 +1,43 @@
 "use client";
 
-import { useState } from "react";
-import { useParams, useRouter } from "next/navigation";
-import Link from "next/link";
 import {
-	Plus,
+	Activity,
 	ArrowLeft,
 	Check,
 	CheckCircle2,
-	Activity,
+	Loader2,
 	Pause,
 	Play,
+	Plus,
 	Rocket,
-	Loader2,
 	Trash2,
 } from "lucide-react";
-import { Button } from "@/components/ui/button";
+import Link from "next/link";
+import { useParams, useRouter } from "next/navigation";
+import { useState } from "react";
+import { BreadcrumbNav } from "@/components/breadcrumb-nav";
+import { ConfirmDialog } from "@/components/confirm-dialog";
+import { MarkdownContent } from "@/components/markdown-content";
+import { TaskForm, type TaskFormData } from "@/components/task-form";
 import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Skeleton } from "@/components/ui/skeleton";
 import {
 	Dialog,
 	DialogContent,
 	DialogHeader,
 	DialogTitle,
 } from "@/components/ui/dialog";
-import { ConfirmDialog } from "@/components/confirm-dialog";
-import { BreadcrumbNav } from "@/components/breadcrumb-nav";
-import { TaskForm, type TaskFormData } from "@/components/task-form";
-import { MarkdownContent } from "@/components/markdown-content";
+import { Skeleton } from "@/components/ui/skeleton";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import {
-	useInitiatives,
-	useGoals,
-	useInitiativeTasks,
 	useActivityLog,
+	useInitiatives,
+	useInitiativeTasks,
 	useProjects,
 } from "@/hooks/use-data";
 import { apiFetch } from "@/lib/api-client";
-import { showSuccess, showError } from "@/lib/toast";
+import { showError, showSuccess } from "@/lib/toast";
 import type { InitiativeStatus, Task } from "@/lib/types";
 
 function kanbanBadge(kanban: Task["kanban"]) {
@@ -139,7 +138,6 @@ export default function InitiativeDetailPage() {
 		remove,
 		loading: loadingInitiatives,
 	} = useInitiatives();
-	const { goals } = useGoals();
 	const {
 		tasks,
 		loading: loadingTasks,
@@ -159,8 +157,8 @@ export default function InitiativeDetailPage() {
 
 	const initiative = initiatives.find((i) => i.id === initiativeId);
 
-	const parentGoal = initiative?.parentGoalId
-		? goals.find((g) => g.id === initiative.parentGoalId)
+	const project = initiative?.projectId
+		? projects.find((p) => p.id === initiative.projectId)
 		: null;
 
 	const doneCount = tasks.filter((t) => t.kanban === "done").length;
@@ -347,14 +345,14 @@ export default function InitiativeDetailPage() {
 								)}
 							</div>
 						)}
-						{parentGoal && (
+						{project && (
 							<p className="text-xs text-muted-foreground">
-								Goal:{" "}
+								Project:{" "}
 								<Link
-									href="/objectives"
+									href={`/projects/${project.id}`}
 									className="hover:underline text-primary"
 								>
-									{parentGoal.title}
+									{project.name}
 								</Link>
 							</p>
 						)}
@@ -526,7 +524,6 @@ export default function InitiativeDetailPage() {
 					<TaskForm
 						initial={{ initiativeId }}
 						projects={projects}
-						goals={goals}
 						allTasks={tasks}
 						onSubmit={async (data: TaskFormData) => {
 							const res = await apiFetch("/api/tasks", {

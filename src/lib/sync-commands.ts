@@ -1,4 +1,4 @@
-import { writeFile, mkdir } from "fs/promises";
+import { mkdir, writeFile } from "fs/promises";
 import path from "path";
 import { getAgents, getSkillsLibrary } from "./data";
 import type { AgentDefinition, SkillDefinition } from "./types";
@@ -62,35 +62,16 @@ export function generateAgentCommandMarkdown(
  * 2. Skills that list the agent in their `agentIds` array
  * Returns deduplicated skills in stable order.
  */
-export function resolveLinkedSkills(
-	agent: AgentDefinition,
-	allSkills: SkillDefinition[],
-): SkillDefinition[] {
-	const seen = new Set<string>();
-	const result: SkillDefinition[] = [];
-
-	for (const skill of allSkills) {
-		const linkedByAgent = agent.skillIds.includes(skill.id);
-		const linkedBySkill = skill.agentIds.includes(agent.id);
-		if ((linkedByAgent || linkedBySkill) && !seen.has(skill.id)) {
-			seen.add(skill.id);
-			result.push(skill);
-		}
-	}
-
-	return result;
-}
-
-/**
- * Writes/updates `.claude/commands/<agent.id>/user.md` from agent data.
- * Skills are resolved from both directions: agent.skillIds and skill.agentIds.
- */
 export async function syncAgentCommand(agent: AgentDefinition): Promise<void> {
 	// Skip "me" — no command file needed for the human
 	if (agent.id === "me") return;
 
 	const skillsData = await getSkillsLibrary();
-	const linkedSkills = resolveLinkedSkills(agent, skillsData.skills);
+	const allSkills = skillsData.skills;
+	const linkedSkills = allSkills.filter(
+		(skill) =>
+			agent.skillIds.includes(skill.id) || skill.agentIds.includes(agent.id),
+	);
 
 	const content = generateAgentCommandMarkdown(agent, linkedSkills);
 	const dir = path.join(COMMANDS_DIR, agent.id);
