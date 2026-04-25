@@ -1,6 +1,5 @@
 "use client";
 
-import { useMemo } from "react";
 import {
 	Activity,
 	AlertTriangle,
@@ -10,11 +9,12 @@ import {
 	Square,
 	XCircle,
 } from "lucide-react";
-import { Card, CardContent } from "@/components/ui/card";
+import { useMemo } from "react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import { Card, CardContent } from "@/components/ui/card";
 import { Tip } from "@/components/ui/tip";
-import type { ProjectRun, ActiveRun } from "@/lib/types";
+import type { ActiveRun, ProjectRun } from "@/lib/types";
 
 interface ProjectRunProgressProps {
 	projectRun: ProjectRun;
@@ -172,8 +172,8 @@ export function ProjectRunProgress({
 						<AlertTriangle className="h-4 w-4 text-amber-500 mt-0.5 shrink-0" />
 						<p className="text-xs text-amber-700 dark:text-amber-400">
 							Run stalled — remaining tasks are blocked by dependencies, pending
-							decisions, or repeated failures. Check the Decisions page for
-							items that need your input.
+							decisions, or repeated failures. Review blocked tasks for items
+							that need your input.
 						</p>
 					</div>
 				)}

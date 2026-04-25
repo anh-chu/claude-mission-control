@@ -44,7 +44,7 @@ const workbenchLinks = [
 ];
 
 const opsLinks = [
-	{ href: "/logs", label: "Logs", icon: Terminal },
+	{ href: "/logs", label: "Debug Logs", icon: Terminal },
 	{ href: "/activity", label: "Activity", icon: Activity },
 ];
 
