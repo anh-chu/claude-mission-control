@@ -26,12 +26,6 @@ A living knowledge base that agents read from and write back to. Pages evolve as
 
 Open questions: review/approval model for agent edits, conflict handling when multiple agents touch the same page, embedding search vs plain grep.
 
-## 3. Minimalization — next targets
-
-From codebase audit 2026-04-24. All types in `src/lib/types.ts`. All routes under `src/app/api/`.
-
----
-
 ## 4. Simplification candidates (older audit)
 
 Deferred cleanup items from the component audit. Low priority but worth tracking.
