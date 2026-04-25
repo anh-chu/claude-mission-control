@@ -1,18 +1,23 @@
 import { NextResponse } from "next/server";
 import { getInbox, mutateInbox } from "@/lib/data";
+import {
+	CACHE_HEADERS,
+	paginateItems,
+	parsePaginationParams,
+} from "@/lib/paginate";
 import type { InboxMessage } from "@/lib/types";
+import { generateId } from "@/lib/utils";
 import {
 	inboxCreateSchema,
 	inboxUpdateSchema,
 	validateBody,
-	DEFAULT_LIMIT,
 } from "@/lib/validations";
-import { generateId } from "@/lib/utils";
 
 export async function GET(request: Request) {
 	const { searchParams } = new URL(request.url);
 	const agent = searchParams.get("agent");
 	const status = searchParams.get("status");
+	const pagination = parsePaginationParams(searchParams);
 	const data = await getInbox();
 
 	const total = data.messages.length;
@@ -34,32 +39,15 @@ export async function GET(request: Request) {
 	);
 
 	// Pagination
-	const limitParam = searchParams.get("limit");
-	const offsetParam = searchParams.get("offset");
-	const totalFiltered = messages.length;
-	const limit = limitParam
-		? Math.max(1, parseInt(limitParam, 10) || 50)
-		: DEFAULT_LIMIT;
-	const offset = Math.max(0, parseInt(offsetParam ?? "0", 10));
-	messages = messages.slice(offset, offset + limit);
+	const result = paginateItems(messages, pagination, total);
 
 	return NextResponse.json(
 		{
-			data: messages,
-			messages,
-			meta: {
-				total,
-				filtered: totalFiltered,
-				returned: messages.length,
-				limit,
-				offset,
-			},
+			data: result.data,
+			messages: result.data,
+			meta: result.meta,
 		},
-		{
-			headers: {
-				"Cache-Control": "private, max-age=2, stale-while-revalidate=5",
-			},
-		},
+		{ headers: CACHE_HEADERS },
 	);
 }
 

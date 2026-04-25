@@ -1,16 +1,18 @@
 import { NextResponse } from "next/server";
 import { getActivityLog, mutateActivityLog } from "@/lib/data";
-import type { ActivityEvent } from "@/lib/types";
 import {
-	activityEventCreateSchema,
-	validateBody,
-	DEFAULT_LIMIT,
-} from "@/lib/validations";
+	CACHE_HEADERS,
+	paginateItems,
+	parsePaginationParams,
+} from "@/lib/paginate";
+import type { ActivityEvent } from "@/lib/types";
 import { generateId } from "@/lib/utils";
+import { activityEventCreateSchema, validateBody } from "@/lib/validations";
 
 export async function GET(request: Request) {
 	const { searchParams } = new URL(request.url);
 	const actor = searchParams.get("actor");
+	const pagination = parsePaginationParams(searchParams);
 	const data = await getActivityLog();
 
 	const total = data.events.length;
@@ -27,32 +29,15 @@ export async function GET(request: Request) {
 	);
 
 	// Pagination
-	const limitParam = searchParams.get("limit");
-	const offsetParam = searchParams.get("offset");
-	const totalFiltered = events.length;
-	const limit = limitParam
-		? Math.max(1, parseInt(limitParam, 10) || 50)
-		: DEFAULT_LIMIT;
-	const offset = Math.max(0, parseInt(offsetParam ?? "0", 10));
-	events = events.slice(offset, offset + limit);
+	const result = paginateItems(events, pagination, total);
 
 	return NextResponse.json(
 		{
-			data: events,
-			events,
-			meta: {
-				total,
-				filtered: totalFiltered,
-				returned: events.length,
-				limit,
-				offset,
-			},
+			data: result.data,
+			events: result.data,
+			meta: result.meta,
 		},
-		{
-			headers: {
-				"Cache-Control": "private, max-age=2, stale-while-revalidate=5",
-			},
-		},
+		{ headers: CACHE_HEADERS },
 	);
 }
 
