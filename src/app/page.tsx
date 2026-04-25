@@ -97,6 +97,7 @@ export default function CommandCenterPage() {
 
 	const [showCreateTask, setShowCreateTask] = useState(false);
 	const [showCreateProject, setShowCreateProject] = useState(false);
+	const [loadingItems, setLoadingItems] = useState<Set<string>>(new Set());
 
 	// Derived data from batched /api/dashboard response
 	const tasks = data?.tasks ?? [];
@@ -173,52 +174,57 @@ export default function CommandCenterPage() {
 			t.completedAt &&
 			Date.now() - new Date(t.completedAt).getTime() < 7 * 24 * 60 * 60 * 1000,
 	);
-	const attentionItems = [
-		...(pendingDecisions.length > 0
-			? [
-					{
-						key: "decisions",
-						icon: HelpCircle,
-						label: `${pendingDecisions.length} pending decision${pendingDecisions.length > 1 ? "s" : ""}`,
-						href: "/decisions",
-						color: "text-yellow-500",
-					},
-				]
-			: []),
-		...(unreadReports.length > 0
-			? [
-					{
-						key: "reports",
-						icon: Mail,
-						label: `${unreadReports.length} agent report${unreadReports.length > 1 ? "s" : ""} to review`,
-						href: "/inbox",
-						color: "text-blue-400",
-					},
-				]
-			: []),
-		...(doQuadrantMyTasks.length > 0
-			? [
-					{
-						key: "do-tasks",
-						icon: ShieldAlert,
-						label: `${doQuadrantMyTasks.length} DO-quadrant task${doQuadrantMyTasks.length > 1 ? "s" : ""} not started`,
-						href: "/priority-matrix",
-						color: "text-red-400",
-					},
-				]
-			: []),
-		...(recentCompletions.length > 0
-			? [
-					{
-						key: "completions",
-						icon: CheckSquare,
-						label: `${recentCompletions.length} completed task${recentCompletions.length > 1 ? "s" : ""} to review`,
-						href: "/priority-matrix",
-						color: "text-green-400",
-					},
-				]
-			: []),
-	];
+	// Action handlers for inline attention items
+	const markItemLoading = (id: string) =>
+		setLoadingItems((s) => new Set(s).add(id));
+	const clearItemLoading = (id: string) =>
+		setLoadingItems((s) => {
+			const next = new Set(s);
+			next.delete(id);
+			return next;
+		});
+
+	const handleDecisionAnswer = async (id: string, answer: string) => {
+		markItemLoading(id);
+		try {
+			const res = await apiFetch("/api/decisions", {
+				method: "PUT",
+				headers: { "Content-Type": "application/json" },
+				body: JSON.stringify({ id, answer, status: "answered" }),
+			});
+			if (!res.ok) throw new Error("Failed to answer decision");
+			showSuccess(`Decision answered: ${answer}`);
+			refetch();
+		} catch {
+			showError("Failed to answer decision");
+		} finally {
+			clearItemLoading(id);
+		}
+	};
+
+	const handleAckReport = async (id: string) => {
+		markItemLoading(id);
+		try {
+			const res = await apiFetch("/api/inbox", {
+				method: "PUT",
+				headers: { "Content-Type": "application/json" },
+				body: JSON.stringify({ id, status: "read" }),
+			});
+			if (!res.ok) throw new Error("Failed to mark as read");
+			showSuccess("Report acknowledged");
+			refetch();
+		} catch {
+			showError("Failed to acknowledge report");
+		} finally {
+			clearItemLoading(id);
+		}
+	};
+
+	const totalAttentionCount =
+		pendingDecisions.length +
+		unreadReports.length +
+		unprocessedEntries.length +
+		doQuadrantMyTasks.length;
 
 	const handleCreateTask = async (formData: TaskFormData) => {
 		try {
@@ -468,35 +474,196 @@ export default function CommandCenterPage() {
 				</Card>
 			</Link>
 
-			{/* Attention Required */}
-			{attentionItems.length > 0 && (
-				<Card className="border-yellow-500/20 bg-yellow-500/5">
-					<CardContent className="p-4">
-						<div className="flex items-center gap-2 mb-3">
-							<AlertTriangle className="h-4 w-4 text-yellow-500" />
-							<h3 className="text-sm font-semibold text-yellow-500">
-								Attention Required
-							</h3>
+			{/* Attention Required — primary inbox */}
+			<Card className="border-yellow-500/20 bg-yellow-500/5">
+				<CardContent className="p-4">
+					<div className="flex items-center gap-2 mb-3">
+						<AlertTriangle className="h-4 w-4 text-yellow-500" />
+						<h3 className="text-sm font-semibold text-yellow-500">
+							Attention Required
+						</h3>
+						{totalAttentionCount > 0 && (
 							<Badge
 								variant="secondary"
 								className="text-xs tabular-nums border-yellow-500/30 text-yellow-500 ml-auto"
 							>
-								{attentionItems.length}
+								{totalAttentionCount}
 							</Badge>
-						</div>
-						<div className="grid gap-2 sm:grid-cols-2">
-							{attentionItems.map((item) => (
-								<Link key={item.key} href={item.href}>
-									<div className="flex items-center gap-2 text-sm rounded-lg px-3 py-2 hover:bg-accent/50 transition-colors">
-										<item.icon className={cn("h-4 w-4 shrink-0", item.color)} />
-										<span className="text-foreground">{item.label}</span>
+						)}
+					</div>
+
+					{totalAttentionCount === 0 ? (
+						<p className="text-sm text-muted-foreground py-2">
+							Nothing needs your attention
+						</p>
+					) : (
+						<div className="space-y-2">
+							{/* Pending decisions — inline answer buttons */}
+							{pendingDecisions.map((decision) => (
+								<div
+									key={decision.id}
+									className="rounded-lg border border-border/50 bg-background/60 p-3 space-y-2"
+								>
+									<div className="flex items-start gap-2">
+										<span className="text-base leading-none mt-0.5">🔴</span>
+										<div className="flex-1 min-w-0">
+											<p className="text-xs font-medium text-foreground leading-snug">
+												{decision.question}
+											</p>
+											{decision.context && (
+												<p className="text-[11px] text-muted-foreground mt-0.5 line-clamp-2">
+													{decision.context}
+												</p>
+											)}
+										</div>
+									</div>
+									<div className="flex items-center gap-1.5 ml-6 flex-wrap">
+										{decision.options.length > 0 ? (
+											decision.options.slice(0, 4).map((opt) => (
+												<Button
+													key={opt}
+													size="sm"
+													variant="outline"
+													className="text-xs h-6 px-2"
+													disabled={loadingItems.has(decision.id)}
+													onClick={() => handleDecisionAnswer(decision.id, opt)}
+												>
+													{loadingItems.has(decision.id) ? "…" : opt}
+												</Button>
+											))
+										) : (
+											<>
+												<Button
+													size="sm"
+													variant="outline"
+													className="text-xs h-6 px-2 text-green-600 border-green-500/30 hover:bg-green-500/10"
+													disabled={loadingItems.has(decision.id)}
+													onClick={() =>
+														handleDecisionAnswer(decision.id, "approved")
+													}
+												>
+													{loadingItems.has(decision.id) ? "…" : "Approve"}
+												</Button>
+												<Button
+													size="sm"
+													variant="outline"
+													className="text-xs h-6 px-2 text-red-600 border-red-500/30 hover:bg-red-500/10"
+													disabled={loadingItems.has(decision.id)}
+													onClick={() =>
+														handleDecisionAnswer(decision.id, "rejected")
+													}
+												>
+													{loadingItems.has(decision.id) ? "…" : "Reject"}
+												</Button>
+											</>
+										)}
+										<Link
+											href="/decisions"
+											className="text-[11px] text-muted-foreground hover:text-foreground ml-auto"
+										>
+											Details →
+										</Link>
+									</div>
+								</div>
+							))}
+
+							{/* Unread agent reports — Ack button */}
+							{unreadReports.map((msg) => (
+								<div
+									key={msg.id}
+									className="rounded-lg border border-border/50 bg-background/60 p-3 space-y-2"
+								>
+									<div className="flex items-start gap-2">
+										<span className="text-base leading-none mt-0.5">🟡</span>
+										<div className="flex-1 min-w-0">
+											<p className="text-xs font-medium text-foreground leading-snug">
+												{msg.subject}
+											</p>
+											<p className="text-[11px] text-muted-foreground mt-0.5 line-clamp-2">
+												{msg.body}
+											</p>
+										</div>
+									</div>
+									<div className="flex items-center gap-1.5 ml-6">
+										<Button
+											size="sm"
+											variant="outline"
+											className="text-xs h-6 px-2"
+											disabled={loadingItems.has(msg.id)}
+											onClick={() => handleAckReport(msg.id)}
+										>
+											{loadingItems.has(msg.id) ? "…" : "Ack"}
+										</Button>
+										<Link
+											href="/inbox"
+											className="text-[11px] text-muted-foreground hover:text-foreground ml-auto"
+										>
+											Open →
+										</Link>
+									</div>
+								</div>
+							))}
+
+							{/* Unprocessed brain dump entries — Triage link */}
+							{unprocessedEntries.map((entry) => (
+								<div
+									key={entry.id}
+									className="rounded-lg border border-border/50 bg-background/60 p-3 space-y-2"
+								>
+									<div className="flex items-start gap-2">
+										<span className="text-base leading-none mt-0.5">🟡</span>
+										<div className="flex-1 min-w-0">
+											<p className="text-[11px] text-muted-foreground font-medium">
+												Brain dump
+											</p>
+											<p className="text-xs text-foreground leading-snug line-clamp-2 mt-0.5">
+												{entry.content}
+											</p>
+										</div>
+									</div>
+									<div className="flex items-center gap-1.5 ml-6">
+										<Link href="/brain-dump">
+											<Button
+												size="sm"
+												variant="outline"
+												className="text-xs h-6 px-2"
+											>
+												Triage
+											</Button>
+										</Link>
+									</div>
+								</div>
+							))}
+
+							{/* DO-quadrant tasks — link only */}
+							{doQuadrantMyTasks.length > 0 && (
+								<Link href="/priority-matrix">
+									<div className="flex items-center gap-2 rounded-lg px-3 py-2 hover:bg-accent/50 transition-colors">
+										<ShieldAlert className="h-4 w-4 shrink-0 text-red-400" />
+										<span className="text-foreground text-xs">
+											{doQuadrantMyTasks.length} DO-quadrant task
+											{doQuadrantMyTasks.length > 1 ? "s" : ""} not started
+										</span>
 									</div>
 								</Link>
-							))}
+							)}
+
+							{/* Recent completions to review — link only */}
+							{recentCompletions.length > 0 && (
+								<Link href="/priority-matrix">
+									<div className="flex items-center gap-2 rounded-lg px-3 py-2 hover:bg-accent/50 transition-colors">
+										<CheckSquare className="h-4 w-4 shrink-0 text-green-400" />
+										<span className="text-foreground text-xs">
+											{recentCompletions.length} completed task
+											{recentCompletions.length > 1 ? "s" : ""} to review
+										</span>
+									</div>
+								</Link>
+							)}
 						</div>
-					</CardContent>
-				</Card>
-			)}
+					)}
+				</CardContent>
+			</Card>
 
 			{/* Crew Status — exceptions only */}
 			<Card className="bg-card/50">
