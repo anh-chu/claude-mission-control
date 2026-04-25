@@ -16,9 +16,11 @@
 import { existsSync, mkdirSync, readFileSync, writeFileSync } from "fs";
 import path from "path";
 import { createLogger } from "../../src/lib/logger";
+import { ActiveRunEntry, readActiveRuns, writeActiveRuns } from "./active-runs";
 import { logger } from "./logger";
 import { AgentRunner, parseClaudeOutput } from "./runner";
 import { enforcePromptLimit, fenceTaskData } from "./security";
+import { extractSummary } from "./spawn-utils";
 import type { AgentBackend } from "./types";
 
 const taskLogger = createLogger("task", { sync: true });
@@ -226,80 +228,12 @@ function buildCommentPrompt(
 	return enforcePromptLimit(fenceTaskData(raw));
 }
 
-// ─── Active Runs Tracking ───────────────────────────────────────────────────
-
-interface ActiveRunEntry {
-	id: string;
-	taskId: string;
-	agentId: string;
-	source?:
-		| "manual"
-		| "project-run"
-		| "mission-chain"
-		| "scheduled"
-		| "webhook"
-		| "inbox-respond"
-		| "comment";
-	projectId: string | null;
-	missionId: string | null;
-	pid: number;
-	status: "running" | "completed" | "failed" | "timeout" | "stopped";
-	startedAt: string;
-	completedAt: string | null;
-	exitCode: number | null;
-	error: string | null;
-	costUsd: number | null;
-	numTurns: number | null;
-	continuationIndex: number;
-	streamFile?: string | null;
-}
-
-function readActiveRuns(): { runs: ActiveRunEntry[] } {
-	try {
-		if (!existsSync(ACTIVE_RUNS_FILE)) return { runs: [] };
-		return JSON.parse(readFileSync(ACTIVE_RUNS_FILE, "utf-8"));
-	} catch {
-		return { runs: [] };
-	}
-}
-
-function writeActiveRuns(data: { runs: ActiveRunEntry[] }): void {
-	writeFileSync(ACTIVE_RUNS_FILE, JSON.stringify(data, null, 2), "utf-8");
-}
+// ─── Active Runs Tracking ─── (ActiveRunEntry, readActiveRuns, writeActiveRuns imported from ./active-runs) ───
 
 // ─── Side Effects ───────────────────────────────────────────────────────────
 
-function extractResponse(stdout: string): string {
-	// Try to get the result text from stream-json output
-	try {
-		const lines = stdout.trim().split("\n").filter(Boolean);
-		for (let i = lines.length - 1; i >= 0; i--) {
-			try {
-				const parsed = JSON.parse(lines[i]);
-				if (parsed.type === "result" && typeof parsed.result === "string") {
-					return parsed.result.slice(0, 3000);
-				}
-			} catch {}
-		}
-	} catch {
-		/* fall through */
-	}
-
-	// Fallback: non-JSON lines only (filter out raw stream events)
-	const allLines = stdout.trim().split("\n").filter(Boolean);
-	const textLines = allLines.filter((l) => {
-		try {
-			JSON.parse(l);
-			return false;
-		} catch {
-			return true;
-		}
-	});
-	const tail = textLines.slice(-10).join("\n");
-	return tail.length > 3000
-		? tail.slice(0, 2997) + "..."
-		: tail || "(no response)";
-}
+// extractResponse replaced by extractSummary (imported from ./spawn-utils)
+// Note: extractResponse used 3000-char limit; extractSummary uses 2000 — minor behavioral difference accepted.
 
 function appendAgentComment(
 	taskId: string,
@@ -503,7 +437,7 @@ async function main() {
 	const streamFile = path.join(STREAMS_DIR, `${runId}.jsonl`);
 	mkdirSync(STREAMS_DIR, { recursive: true });
 
-	const activeRuns = readActiveRuns();
+	const activeRuns = readActiveRuns(ACTIVE_RUNS_FILE);
 	activeRuns.runs.push({
 		id: runId,
 		taskId,
@@ -522,7 +456,7 @@ async function main() {
 		continuationIndex: 0,
 		streamFile,
 	});
-	writeActiveRuns(activeRuns);
+	writeActiveRuns(ACTIVE_RUNS_FILE, activeRuns);
 
 	// 6. Spawn agent
 	const backend: AgentBackend = agent.backend ?? "claude";
@@ -545,11 +479,11 @@ async function main() {
 					pid,
 				});
 				try {
-					const runs = readActiveRuns();
+					const runs = readActiveRuns(ACTIVE_RUNS_FILE);
 					const run = runs.runs.find((r) => r.id === runId);
 					if (run) {
 						run.pid = pid;
-						writeActiveRuns(runs);
+						writeActiveRuns(ACTIVE_RUNS_FILE, runs);
 					}
 				} catch {
 					/* non-fatal */
@@ -568,7 +502,7 @@ async function main() {
 		const meta = parseClaudeOutput(result.stdout);
 
 		// 8. Update active-runs entry
-		const runs = readActiveRuns();
+		const runs = readActiveRuns(ACTIVE_RUNS_FILE);
 		const run = runs.runs.find((r) => r.id === runId);
 		const errorMsg =
 			result.stderr?.trim().slice(0, 500) || `Exit code: ${result.exitCode}`;
@@ -581,12 +515,12 @@ async function main() {
 			if (result.exitCode !== 0) {
 				run.error = errorMsg;
 			}
-			writeActiveRuns(runs);
+			writeActiveRuns(ACTIVE_RUNS_FILE, runs);
 		}
 
 		// 9. Handle success vs failure
 		if (result.exitCode === 0) {
-			const response = extractResponse(result.stdout);
+			const response = extractSummary(result.stdout);
 
 			// Append agent's response as a comment
 			appendAgentComment(taskId, agentId, response);
@@ -655,13 +589,13 @@ async function main() {
 		);
 	} catch (err) {
 		// Update run as failed
-		const runs = readActiveRuns();
+		const runs = readActiveRuns(ACTIVE_RUNS_FILE);
 		const run = runs.runs.find((r) => r.id === runId);
 		if (run) {
 			run.status = "failed";
 			run.error = err instanceof Error ? err.message : String(err);
 			run.completedAt = new Date().toISOString();
-			writeActiveRuns(runs);
+			writeActiveRuns(ACTIVE_RUNS_FILE, runs);
 		}
 
 		logger.error(

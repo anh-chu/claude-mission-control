@@ -11,9 +11,10 @@
  *   4. Spawns Claude Code to process the entries
  */
 
-import { existsSync, readFileSync } from "node:fs";
+// existsSync and readFileSync no longer needed (readJSON moved to ./data-io)
 import path from "node:path";
 import { loadConfig } from "./config";
+import { readJSON } from "./data-io";
 import { logger } from "./logger";
 import { AgentRunner } from "./runner";
 
@@ -61,28 +62,22 @@ interface AgentDef {
 
 // ─── Data Reading ───────────────────────────────────────────────────────────
 
-function readJSON<T>(filename: string): T | null {
-	try {
-		const filePath = path.join(WORKSPACE_DIR, filename);
-		if (!existsSync(filePath)) return null;
-		return JSON.parse(readFileSync(filePath, "utf-8")) as T;
-	} catch {
-		return null;
-	}
-}
+// readJSON imported from ./data-io
 
 // ─── Prompt Construction ────────────────────────────────────────────────────
 
 function buildTriagePrompt(entries: BrainDumpEntry[]): string {
 	const projects =
-		readJSON<{ projects: ProjectDef[] }>("projects.json")?.projects.filter(
-			(p) => p.status === "active",
-		) ?? [];
-	const goals = readJSON<{ goals: GoalDef[] }>("goals.json")?.goals ?? [];
+		readJSON<{ projects: ProjectDef[] }>(
+			path.join(WORKSPACE_DIR, "projects.json"),
+		)?.projects.filter((p) => p.status === "active") ?? [];
+	const goals =
+		readJSON<{ goals: GoalDef[] }>(path.join(WORKSPACE_DIR, "goals.json"))
+			?.goals ?? [];
 	const agents =
-		readJSON<{ agents: AgentDef[] }>("agents.json")?.agents.filter(
-			(a) => a.status === "active",
-		) ?? [];
+		readJSON<{ agents: AgentDef[] }>(
+			path.join(WORKSPACE_DIR, "agents.json"),
+		)?.agents.filter((a) => a.status === "active") ?? [];
 
 	const lines: string[] = [];
 
@@ -224,7 +219,9 @@ async function main() {
 	);
 
 	// 1. Read entries
-	const dumpData = readJSON<{ entries: BrainDumpEntry[] }>("brain-dump.json");
+	const dumpData = readJSON<{ entries: BrainDumpEntry[] }>(
+		path.join(WORKSPACE_DIR, "brain-dump.json"),
+	);
 	if (!dumpData) {
 		logger.error("brain-dump-triage", "Could not read brain-dump.json");
 		process.exit(1);

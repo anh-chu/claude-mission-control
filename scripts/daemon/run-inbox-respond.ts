@@ -18,6 +18,7 @@ import { existsSync, readFileSync, writeFileSync } from "fs";
 import path from "path";
 import { createLogger } from "../../src/lib/logger";
 import { loadConfig } from "./config";
+import { readJSON } from "./data-io";
 import { logger } from "./logger";
 import {
 	accumulateRunCost,
@@ -26,6 +27,7 @@ import {
 	updateRespondRun,
 } from "./respond-runs";
 import { AgentRunner, parseClaudeOutput } from "./runner";
+import { extractSummary } from "./spawn-utils";
 import type { RespondRunEntry } from "./types";
 
 const taskLogger = createLogger("task", { sync: true });
@@ -79,23 +81,19 @@ interface TaskDef {
 
 // ─── Data Reading ───────────────────────────────────────────────────────────
 
-function readJSON<T>(filename: string): T | null {
-	try {
-		const filePath = path.join(WORKSPACE_DIR, filename);
-		if (!existsSync(filePath)) return null;
-		return JSON.parse(readFileSync(filePath, "utf-8")) as T;
-	} catch {
-		return null;
-	}
-}
+// readJSON imported from ./data-io
 
 function getAgent(agentId: string): AgentDef | null {
-	const data = readJSON<{ agents: AgentDef[] }>("agents.json");
+	const data = readJSON<{ agents: AgentDef[] }>(
+		path.join(WORKSPACE_DIR, "agents.json"),
+	);
 	return data?.agents.find((a) => a.id === agentId) ?? null;
 }
 
 function getLinkedSkills(agent: AgentDef): SkillDef[] {
-	const data = readJSON<{ skills: SkillDef[] }>("skills-library.json");
+	const data = readJSON<{ skills: SkillDef[] }>(
+		path.join(WORKSPACE_DIR, "skills-library.json"),
+	);
 	if (!data) return [];
 
 	const result: SkillDef[] = [];
@@ -114,13 +112,17 @@ function getLinkedSkills(agent: AgentDef): SkillDef[] {
 }
 
 function getMessage(messageId: string): InboxMessage | null {
-	const data = readJSON<{ messages: InboxMessage[] }>("inbox.json");
+	const data = readJSON<{ messages: InboxMessage[] }>(
+		path.join(WORKSPACE_DIR, "inbox.json"),
+	);
 	return data?.messages.find((m) => m.id === messageId) ?? null;
 }
 
 /** Get the conversation thread for a message (by subject thread + taskId). */
 function getConversationThread(message: InboxMessage): InboxMessage[] {
-	const data = readJSON<{ messages: InboxMessage[] }>("inbox.json");
+	const data = readJSON<{ messages: InboxMessage[] }>(
+		path.join(WORKSPACE_DIR, "inbox.json"),
+	);
 	if (!data) return [];
 
 	// Normalize subject: strip leading "Re: " prefixes for matching
@@ -226,7 +228,9 @@ function buildRespondPrompt(
 
 	// Task context if linked
 	if (message.taskId) {
-		const tasksData = readJSON<{ tasks: TaskDef[] }>("tasks.json");
+		const tasksData = readJSON<{ tasks: TaskDef[] }>(
+			path.join(WORKSPACE_DIR, "tasks.json"),
+		);
 		const task = tasksData?.tasks.find((t) => t.id === message.taskId);
 		if (task) {
 			lines.push("**Linked Task:**");
@@ -321,50 +325,7 @@ function postToInbox(msg: InboxMessage): void {
 	}
 }
 
-/**
- * Extract a human-readable summary from Claude Code's stdout.
- */
-function extractSummary(stdout: string): string {
-	const lines = stdout.trim().split("\n").filter(Boolean);
-
-	// Scan JSONL lines in reverse for the result entry
-	for (let i = lines.length - 1; i >= 0; i--) {
-		try {
-			const parsed = JSON.parse(lines[i]) as Record<string, unknown>;
-			if (parsed.type === "result") {
-				if (typeof parsed.result === "string" && parsed.result.trim()) {
-					return parsed.result.slice(0, 2000);
-				}
-				if (parsed.subtype === "error_max_turns") {
-					return "I ran out of processing turns before I could finish. You can retry with a more focused request, or break the task into smaller steps.";
-				}
-				if (parsed.subtype === "error_timeout") {
-					return "I timed out before completing the task. Consider breaking it into smaller, more targeted requests.";
-				}
-				if (parsed.is_error) {
-					return "I encountered an error while processing your message. Please try again or rephrase your request.";
-				}
-				return "(Completed but produced no summary)";
-			}
-		} catch {
-			// not JSON, skip
-		}
-	}
-
-	// Fallback: non-JSON lines only (filter out raw stream events)
-	const textLines = lines.filter((l) => {
-		try {
-			JSON.parse(l);
-			return false;
-		} catch {
-			return true;
-		}
-	});
-	const tail = textLines.slice(-10).join("\n");
-	if (!tail) return "(no output)";
-	if (tail.length > 500) return tail.slice(0, 497) + "...";
-	return tail;
-}
+// extractSummary imported from ./spawn-utils
 
 /**
  * Ensure a reply was posted to inbox.json after the agent session completes.

@@ -20,6 +20,11 @@ import { execSync, spawn } from "child_process";
 import { existsSync, readFileSync, unlinkSync, writeFileSync } from "fs";
 import path from "path";
 import { createLogger } from "../../src/lib/logger";
+import {
+	type ActiveRunEntry,
+	readActiveRuns,
+	writeActiveRuns,
+} from "./active-runs";
 import { loadConfig } from "./config";
 import { logger } from "./logger";
 import {
@@ -29,6 +34,7 @@ import {
 	isTaskUnblocked,
 } from "./prompt-builder";
 import { AgentRunner, parseClaudeOutput } from "./runner";
+import { extractSummary } from "./spawn-utils";
 import type { AgentBackend, ProjectRun, ProjectRunsFile } from "./types";
 
 const taskLogger = createLogger("task", { sync: true });
@@ -66,51 +72,7 @@ function getAgentBackend(agentId: string): AgentBackend {
 	}
 }
 
-// ─── Active Runs File I/O ───────────────────────────────────────────────────
-
-interface ActiveRunEntry {
-	id: string;
-	taskId: string;
-	agentId: string;
-	source?:
-		| "manual"
-		| "project-run"
-		| "mission-chain"
-		| "scheduled"
-		| "webhook"
-		| "inbox-respond"
-		| "comment";
-	projectId: string | null;
-	missionId: string | null;
-	pid: number;
-	status: "running" | "completed" | "failed" | "timeout" | "stopped";
-	startedAt: string;
-	completedAt: string | null;
-	exitCode: number | null;
-	error: string | null;
-	costUsd: number | null;
-	numTurns: number | null;
-	continuationIndex: number;
-	streamFile?: string | null;
-}
-
-interface ActiveRunsData {
-	runs: ActiveRunEntry[];
-}
-
-function readActiveRuns(): ActiveRunsData {
-	try {
-		if (!existsSync(ACTIVE_RUNS_FILE)) return { runs: [] };
-		const raw = readFileSync(ACTIVE_RUNS_FILE, "utf-8");
-		return JSON.parse(raw) as ActiveRunsData;
-	} catch {
-		return { runs: [] };
-	}
-}
-
-function writeActiveRuns(data: ActiveRunsData): void {
-	writeFileSync(ACTIVE_RUNS_FILE, JSON.stringify(data, null, 2), "utf-8");
-}
+// ─── Active Runs File I/O ─── (ActiveRunEntry, readActiveRuns, writeActiveRuns imported from ./active-runs) ───
 
 // ─── Decision Session Persistence ────────────────────────────────────────────
 
@@ -206,43 +168,7 @@ function writeProjectRuns(data: ProjectRunsFile): void {
 
 // ─── Post-Completion Side Effects ───────────────────────────────────────────
 
-/**
- * Extract a human-readable summary from Claude Code's stdout.
- * Parses JSONL output looking for the final result line, then falls back
- * to raw text (filtering out JSON stream lines).
- */
-function extractSummary(stdout: string): string {
-	const lines = stdout.trim().split("\n").filter(Boolean);
-
-	// Scan JSONL lines in reverse for the result entry
-	for (let i = lines.length - 1; i >= 0; i--) {
-		try {
-			const parsed = JSON.parse(lines[i]);
-			if (
-				parsed.type === "result" &&
-				typeof parsed.result === "string" &&
-				parsed.result.trim()
-			) {
-				return parsed.result.slice(0, 2000);
-			}
-		} catch {
-			// not JSON, skip
-		}
-	}
-
-	// Fall back to non-JSON lines only (filter out raw stream events)
-	const textLines = lines.filter((l) => {
-		try {
-			JSON.parse(l);
-			return false;
-		} catch {
-			return true;
-		}
-	});
-	const tail = textLines.slice(-10).join("\n");
-	if (tail.length > 500) return tail.slice(0, 497) + "...";
-	return tail || "(no output)";
-}
+// extractSummary imported from ./spawn-utils
 
 /**
  * Post-completion side effects: mark task done, post inbox message, log activity.
@@ -896,7 +822,7 @@ function handleProjectRunContinuation(
 	}
 
 	// 6. Find dispatchable tasks
-	const activeRuns = readActiveRuns();
+	const activeRuns = readActiveRuns(ACTIVE_RUNS_FILE);
 	const runningTaskIds = new Set(
 		activeRuns.runs.filter((r) => r.status === "running").map((r) => r.taskId),
 	);
@@ -1108,7 +1034,7 @@ async function main() {
 
 	// 4. Check not already running (skip for continuations — previous session just ended)
 	if (!isContinuation) {
-		const currentRuns = readActiveRuns();
+		const currentRuns = readActiveRuns(ACTIVE_RUNS_FILE);
 		const alreadyRunning = currentRuns.runs.find(
 			(r) => r.taskId === taskId && r.status === "running",
 		);
@@ -1187,7 +1113,7 @@ async function main() {
 
 	// 8. Write "running" entry
 	const runId = existingRunId ?? `run_${Date.now()}`;
-	const currentRuns = readActiveRuns();
+	const currentRuns = readActiveRuns(ACTIVE_RUNS_FILE);
 	const activeRunId = isContinuation ? `${runId}_c${continuationIndex}` : runId;
 	const streamFile = path.join(STREAMS_DIR, `${activeRunId}.jsonl`);
 
@@ -1233,7 +1159,7 @@ async function main() {
 		};
 		currentRuns.runs.push(runEntry);
 	}
-	writeActiveRuns(pruneOldRuns(currentRuns));
+	writeActiveRuns(ACTIVE_RUNS_FILE, pruneOldRuns(currentRuns));
 	logger.info(
 		"run-task",
 		`Run ${activeRunId} created for task ${taskId} (agent: ${task.assignedTo}, session ${continuationIndex + 1})`,
@@ -1330,11 +1256,11 @@ This is session ${continuationIndex + 1}. Previous session(s) ran out of turns o
 				taskLogger.info("run-task", "Agent spawned", { taskId, pid });
 				// Update the PID in active-runs immediately after spawn
 				try {
-					const runs = readActiveRuns();
+					const runs = readActiveRuns(ACTIVE_RUNS_FILE);
 					const run = runs.runs.find((r) => r.id === activeRunId);
 					if (run) {
 						run.pid = pid;
-						writeActiveRuns(runs);
+						writeActiveRuns(ACTIVE_RUNS_FILE, runs);
 					}
 				} catch {
 					/* non-fatal */
@@ -1411,11 +1337,11 @@ This is session ${continuationIndex + 1}. Previous session(s) ran out of turns o
 				onSpawned: (pid) => {
 					spawnedPid = pid;
 					try {
-						const runs = readActiveRuns();
+						const runs = readActiveRuns(ACTIVE_RUNS_FILE);
 						const run = runs.runs.find((r) => r.id === activeRunId);
 						if (run) {
 							run.pid = pid;
-							writeActiveRuns(runs);
+							writeActiveRuns(ACTIVE_RUNS_FILE, runs);
 						}
 					} catch {
 						/* non-fatal */
@@ -1438,7 +1364,7 @@ This is session ${continuationIndex + 1}. Previous session(s) ran out of turns o
 		// ── Awaiting-decision path: agent was killed because it wrote a pending decision ──
 		if (pendingDecisionFound) {
 			// Update run as completed (graceful stop)
-			const runs = readActiveRuns();
+			const runs = readActiveRuns(ACTIVE_RUNS_FILE);
 			const run = runs.runs.find((r) => r.id === activeRunId);
 			if (run) {
 				run.status = "completed";
@@ -1446,7 +1372,7 @@ This is session ${continuationIndex + 1}. Previous session(s) ran out of turns o
 				run.exitCode = result.exitCode;
 				run.costUsd = meta.totalCostUsd;
 				run.numTurns = meta.numTurns;
-				writeActiveRuns(pruneOldRuns(runs));
+				writeActiveRuns(ACTIVE_RUNS_FILE, pruneOldRuns(runs));
 			}
 
 			// Set task kanban to awaiting-decision
@@ -1512,7 +1438,7 @@ This is session ${continuationIndex + 1}. Previous session(s) ran out of turns o
 		}
 
 		// Update run entry with final status + cost
-		const runs = readActiveRuns();
+		const runs = readActiveRuns(ACTIVE_RUNS_FILE);
 		const run = runs.runs.find((r) => r.id === activeRunId);
 		let finalStatus: "completed" | "failed" | "timeout" = "failed";
 		let errorMsg = "";
@@ -1565,7 +1491,7 @@ This is session ${continuationIndex + 1}. Previous session(s) ran out of turns o
 
 			run.completedAt = new Date().toISOString();
 			run.exitCode = result.exitCode;
-			writeActiveRuns(pruneOldRuns(runs));
+			writeActiveRuns(ACTIVE_RUNS_FILE, pruneOldRuns(runs));
 		}
 
 		const costStr =
@@ -1713,13 +1639,13 @@ This is session ${continuationIndex + 1}. Previous session(s) ran out of turns o
 		}
 	} catch (err) {
 		// Update run as failed
-		const runs = readActiveRuns();
+		const runs = readActiveRuns(ACTIVE_RUNS_FILE);
 		const run = runs.runs.find((r) => r.id === activeRunId);
 		if (run) {
 			run.status = "failed";
 			run.error = err instanceof Error ? err.message : String(err);
 			run.completedAt = new Date().toISOString();
-			writeActiveRuns(pruneOldRuns(runs));
+			writeActiveRuns(ACTIVE_RUNS_FILE, pruneOldRuns(runs));
 		}
 
 		logger.error(
