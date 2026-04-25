@@ -7,8 +7,6 @@ import {
 	CircleDot,
 	Code,
 	FolderOpen,
-	HelpCircle,
-	Mail,
 	Megaphone,
 	Plus,
 	Rocket,
