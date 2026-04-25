@@ -26,19 +26,9 @@ A living knowledge base that agents read from and write back to. Pages evolve as
 
 Open questions: review/approval model for agent edits, conflict handling when multiple agents touch the same page, embedding search vs plain grep.
 
-## 4. Simplification candidates (older audit)
-
-Deferred cleanup items from the component audit. Low priority but worth tracking.
-
-- [x] **Sidebar nav rationalization**: merged /activity into /logs (Activity tab), removed /initiatives duplicate, deleted empty stub dirs.
-- [x] **Context menu shared wrapper**: 5 variants following same pattern. Extract shared wrapper.
-- [x] **Dialog merge**: create/edit pairs that differ only by mode. Merge into single form dialog.
-- [x] **Crew (agent) form merge**: `crew/new/page.tsx` (483 lines) and `crew/[id]/edit/page.tsx` (560 lines) are ~80% identical. Extract `AgentForm` component, thin create/edit page wrappers.
-- [x] **Skills form merge**: `skills/new/page.tsx` (226 lines) and `skills/[id]/page.tsx` (277 lines) same pattern. Extract `SkillForm` component.
-- [x] **Checkpoints system evaluation**: removed. File-based system means users can back up the data dir directly.
-
 ## Done
 
+- ~~Component simplification pass~~: sidebar nav rationalized, context menu wrapper extracted, dialog create/edit pairs merged, AgentForm and SkillForm extracted, checkpoints system removed.
 - ~~Verify brain-dump/automate~~: called by `brain-dump/page.tsx` (lines 68, 83). Keep route and daemon script.
 - ~~Inbox/ActivityLog pagination dedup~~: shared pagination helper extracted. Full stream merge ruled out (bilateral vs unidirectional, daemon bypasses API).
 - ~~Notes + comments unification~~: dropped `Task.notes`, added `TaskComment.type`. Daemon, API, UI, validation all updated.
