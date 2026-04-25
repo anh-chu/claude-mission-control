@@ -10,8 +10,9 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Skeleton } from "@/components/ui/skeleton";
-import { useActivityLog } from "@/hooks/use-data";
-import type { ActivityEvent, EventType } from "@/lib/types";
+import { useActivityLog, useDecisions } from "@/hooks/use-data";
+import { showError, showSuccess } from "@/lib/toast";
+import type { ActivityEvent, DecisionItem, EventType } from "@/lib/types";
 
 type Actor = string;
 
@@ -111,9 +112,129 @@ function dayLabel(key: string): string {
 	});
 }
 
-function EventRow({ event }: { event: ActivityEvent }) {
+function DecisionActions({
+	decisionId,
+	onAnswer,
+}: {
+	decisionId: string;
+	onAnswer: () => void;
+}) {
+	const { decisions, refetch } = useDecisions();
+	const [customAnswer, setCustomAnswer] = useState("");
+	const [submitting, setSubmitting] = useState(false);
+
+	const decision = decisions.find((d) => d.id === decisionId);
+	const isPending = decision?.status === "pending";
+
+	const handleAnswer = async (answer: string) => {
+		if (!decision || submitting) return;
+		setSubmitting(true);
+		try {
+			const res = await fetch("/api/decisions", {
+				method: "PUT",
+				headers: { "Content-Type": "application/json" },
+				body: JSON.stringify({ id: decision.id, answer }),
+			});
+			if (!res.ok) throw new Error("Failed to submit answer");
+			showSuccess("Decision answered");
+			onAnswer();
+		} catch {
+			showError("Failed to submit answer");
+		} finally {
+			setSubmitting(false);
+		}
+	};
+
+	if (!decision) return null;
+	if (!isPending) {
+		return (
+			<div className="mt-1.5 text-[10px] text-muted-foreground/60">
+				Answered: <span className="text-foreground">{decision.answer}</span>
+			</div>
+		);
+	}
+
+	return (
+		<div className="mt-1.5 flex flex-wrap items-center gap-1.5">
+			{decision.options.map((opt) => (
+				<Button
+					key={opt}
+					size="sm"
+					variant="outline"
+					className="h-6 text-[10px] px-2 py-0 font-normal"
+					onClick={() => handleAnswer(opt)}
+					disabled={submitting}
+				>
+					{opt}
+				</Button>
+			))}
+			{decision.options.length > 0 && customAnswer && (
+				<span className="text-[10px] text-muted-foreground">or</span>
+			)}
+			{decision.options.length > 0 && (
+				<Input
+					value={customAnswer}
+					onChange={(e) => setCustomAnswer(e.target.value)}
+					placeholder="Custom..."
+					className="h-6 text-[10px] py-0 w-20"
+					onKeyDown={(e) => {
+						if (e.key === "Enter" && customAnswer.trim()) {
+							handleAnswer(customAnswer.trim());
+						}
+					}}
+					disabled={submitting}
+				/>
+			)}
+			{decision.options.length === 0 && (
+				<>
+					<Input
+						value={customAnswer}
+						onChange={(e) => setCustomAnswer(e.target.value)}
+						placeholder="Your answer..."
+						className="h-6 text-[10px] py-0 w-28"
+						onKeyDown={(e) => {
+							if (e.key === "Enter" && customAnswer.trim()) {
+								handleAnswer(customAnswer.trim());
+							}
+						}}
+						disabled={submitting}
+					/>
+					<Button
+						size="sm"
+						variant="outline"
+						className="h-6 text-[10px] px-2 py-0"
+						onClick={() => {
+							if (customAnswer.trim()) {
+								handleAnswer(customAnswer.trim());
+							}
+						}}
+						disabled={submitting || !customAnswer.trim()}
+					>
+						Send
+					</Button>
+				</>
+			)}
+		</div>
+	);
+}
+
+function EventRow({
+	event,
+	onDecisionAnswered,
+}: {
+	event: ActivityEvent;
+	onDecisionAnswered?: () => void;
+}) {
 	const meta = EVENT_META[event.type];
 	const Icon = ACTOR_ICONS[event.actor] ?? Bot;
+	const { decisions, refetch } = useDecisions();
+
+	// For decision_requested events, find the matching decision by question text
+	const decisionId =
+		event.type === "decision_requested"
+			? decisions.find((d) => event.summary.includes(d.question.slice(0, 40)))
+					?.id
+			: null;
 
 	return (
 		<div className="flex gap-3 py-2.5 px-3 rounded-lg hover:bg-accent/30 transition-colors">
@@ -146,6 +267,15 @@ function EventRow({ event }: { event: ActivityEvent }) {
 					<p className="text-[11px] text-muted-foreground/70 leading-snug line-clamp-2">
 						{event.details}
 					</p>
+				)}
+				{decisionId && (
+					<DecisionActions
+						decisionId={decisionId}
+						onAnswer={() => {
+							refetch();
+							onDecisionAnswered?.();
+						}}
+					/>
 				)}
 			</div>
 		</div>
@@ -302,7 +432,11 @@ export default function ActivityPage() {
 							<Card>
 								<CardContent className="p-2 divide-y divide-border/30">
 									{dayEvents.map((event) => (
-										<EventRow key={event.id} event={event} />
+										<EventRow
+											key={event.id}
+											event={event}
+											onDecisionAnswered={refetch}
+										/>
 									))}
 								</CardContent>
 							</Card>

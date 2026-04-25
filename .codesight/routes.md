@@ -19,9 +19,6 @@
 - `POST` `/api/brain-dump/automate` → out: { error }
 - `GET` `/api/dashboard` [cache]
 - `POST` `/api/emergency-stop` → out: { ok, results }
-- `POST` `/api/inbox/respond` → out: { error }
-- `GET` `/api/inbox/respond/status` → out: { runs }
-- `POST` `/api/inbox/respond/stop` → out: { error }
 - `GET` `/api/logs/app` → out: { lines, error }
 - `GET` `/api/logs/daemon` → out: { lines, error }
 - `GET` `/api/logs/stream` [cache, queue]

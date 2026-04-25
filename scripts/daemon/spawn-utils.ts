@@ -1,7 +1,6 @@
 /**
  * spawn-utils.ts — Shared output-parsing helpers for agent spawn results.
- * Uses the most complete version of extractSummary (from run-inbox-respond.ts),
- * which includes special handling for error_max_turns and error_timeout subtypes.
+ * Includes special handling for error_max_turns and error_timeout subtypes.
  */
 
 /**

@@ -7,7 +7,6 @@ const nextConfig: NextConfig = {
 		// /goals and /objectives both redirect to /initiatives since objectives was renamed
 		{ source: "/goals", destination: "/initiatives", permanent: true },
 		{ source: "/objectives", destination: "/initiatives", permanent: true },
-		{ source: "/activity", destination: "/logs", permanent: true },
 	],
 	allowedDevOrigins: ["localhost", "devvm", "127.0.0.1"],
 	devIndicators: false,

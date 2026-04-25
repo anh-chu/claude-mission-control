@@ -1,6 +1,6 @@
 /**
  * data-io.ts — Shared JSON file reading helper.
- * Extracted from run-inbox-respond.ts and run-brain-dump-triage.ts (identical).
+ * Shared by multiple daemon scripts.
  */
 
 import { existsSync, readFileSync } from "fs";
