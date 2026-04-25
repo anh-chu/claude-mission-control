@@ -1,11 +1,11 @@
-import { readFileSync, existsSync } from "fs";
-import path from "path";
-import { logger } from "./logger";
-import { fenceTaskData, enforcePromptLimit } from "./security";
-import type { ProjectRunsFile, ProjectRunTaskEntry } from "./types";
-
+import { existsSync, readFileSync } from "node:fs";
+import path from "node:path";
 // Paths relative to project root
 import { getWorkspaceDir } from "../../src/lib/paths";
+import { logger } from "./logger";
+import { enforcePromptLimit, fenceTaskData } from "./security";
+import type { ProjectRunsFile } from "./types";
+
 const WORKSPACE_ROOT = path.resolve(__dirname, "../..");
 const COMMANDS_DIR = path.join(WORKSPACE_ROOT, ".claude", "commands");
 
@@ -39,7 +39,7 @@ interface TaskDef {
 	projectId: string | null;
 	collaborators: string[];
 	subtasks: Array<{ id: string; title: string; done: boolean }>;
-	acceptanceCriteria: string[];
+	acceptanceCriteria: string;
 	notes: string;
 	estimatedMinutes: number | null;
 }
@@ -91,9 +91,10 @@ function buildAgentPersona(agent: AgentDef, skills: SkillDef[]): string {
 		lines.push("");
 	}
 
-	if (agent.capabilities.length > 0) {
+	const capabilities = agent.capabilities ?? [];
+	if (capabilities.length > 0) {
 		lines.push("## Your Capabilities");
-		for (const cap of agent.capabilities) {
+		for (const cap of capabilities) {
 			lines.push(`- ${cap}`);
 		}
 		lines.push("");
@@ -138,12 +139,10 @@ function buildTaskInstructions(task: TaskDef): string {
 		}
 	}
 
-	if (task.acceptanceCriteria.length > 0) {
+	if (task.acceptanceCriteria) {
 		lines.push("");
 		lines.push("**Acceptance Criteria (Definition of Done):**");
-		for (const criteria of task.acceptanceCriteria) {
-			lines.push(`- ${criteria}`);
-		}
+		lines.push(task.acceptanceCriteria);
 	}
 
 	if (task.notes) {
@@ -387,8 +386,6 @@ function buildRetryContext(taskId: string): string | null {
 		return null;
 	}
 }
-
-// ─── Field Ops Context ──────────────────────────────────────────────────────
 
 // ─── Public API ──────────────────────────────────────────────────────────────
 

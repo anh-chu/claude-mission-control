@@ -104,7 +104,7 @@ After confirmation, create all resources via API:
      "subtasks": [{ "id": "sub_1", "title": "...", "done": false }],
      "blockedBy": ["<task IDs>"],
      "estimatedMinutes": <number>,
-     "acceptanceCriteria": ["criterion 1", "criterion 2"],
+     "acceptanceCriteria": "criterion 1\ncriterion 2",
      "tags": ["<feature-tag>"]
    }
    ```

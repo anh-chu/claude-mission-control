@@ -84,9 +84,9 @@ function AgentCard({
 						</div>
 
 						{/* Capabilities preview */}
-						{agent.capabilities.length > 0 && (
+						{(agent.capabilities ?? []).length > 0 && (
 							<div className="flex flex-wrap gap-1 mt-3">
-								{agent.capabilities.slice(0, 3).map((cap) => (
+								{(agent.capabilities ?? []).slice(0, 3).map((cap) => (
 									<Badge
 										key={cap}
 										variant="secondary"
@@ -95,9 +95,9 @@ function AgentCard({
 										{cap}
 									</Badge>
 								))}
-								{agent.capabilities.length > 3 && (
+								{(agent.capabilities ?? []).length > 3 && (
 									<Badge variant="outline" className="text-[10px] px-1.5 py-0">
-										+{agent.capabilities.length - 3}
+										+{(agent.capabilities ?? []).length - 3}
 									</Badge>
 								)}
 							</div>
@@ -361,15 +361,11 @@ export default function CrewPage() {
 						await createTask({
 							id: `task_${Date.now()}`,
 							...data,
-							dailyActions: [],
 							tags: data.tags
 								.split(",")
 								.map((t) => t.trim())
 								.filter(Boolean),
-							acceptanceCriteria: data.acceptanceCriteria
-								.split("\n")
-								.map((s) => s.trim())
-								.filter(Boolean),
+							acceptanceCriteria: data.acceptanceCriteria,
 							createdAt: new Date().toISOString(),
 							updatedAt: new Date().toISOString(),
 							completedAt: null,

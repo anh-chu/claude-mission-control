@@ -229,15 +229,11 @@ export default function CommandCenterPage() {
 				headers: { "Content-Type": "application/json" },
 				body: JSON.stringify({
 					...formData,
-					dailyActions: [],
 					tags: formData.tags
 						.split(",")
 						.map((t) => t.trim())
 						.filter(Boolean),
-					acceptanceCriteria: formData.acceptanceCriteria
-						.split("\n")
-						.map((s) => s.trim())
-						.filter(Boolean),
+					acceptanceCriteria: formData.acceptanceCriteria,
 				}),
 			});
 			if (!res.ok) throw new Error("Failed to create task");

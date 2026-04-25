@@ -69,13 +69,6 @@ export const LIMITS = {
 
 // ─── Sub-schemas ───────────────────────────────────────────────────────────────
 
-const dailyActionSchema = z.object({
-	id: z.string().max(100),
-	title: z.string().max(LIMITS.SUBTASK_TITLE),
-	done: z.boolean(),
-	date: z.string().max(30),
-});
-
 const subtaskSchema = z.object({
 	id: z.string().max(100),
 	title: z.string().max(LIMITS.SUBTASK_TITLE),
@@ -112,11 +105,6 @@ export const taskCreateSchema = z.object({
 	milestoneId: z.string().nullable().optional().default(null),
 	assignedTo: agentRoleEnum.nullable().optional().default(null),
 	collaborators: z.array(z.string().max(50)).max(20).optional().default([]),
-	dailyActions: z
-		.array(dailyActionSchema)
-		.max(LIMITS.MAX_DAILY_ACTIONS)
-		.optional()
-		.default([]),
 	subtasks: z
 		.array(subtaskSchema)
 		.max(LIMITS.MAX_SUBTASKS)
@@ -141,16 +129,7 @@ export const taskCreateSchema = z.object({
 		.nullable()
 		.optional()
 		.default(null),
-	acceptanceCriteria: z
-		.array(z.string().max(LIMITS.SUBTASK_TITLE))
-		.max(LIMITS.MAX_CRITERIA)
-		.optional()
-		.default([]),
-	fieldTaskIds: z
-		.array(z.string())
-		.max(LIMITS.MAX_BLOCKED_BY)
-		.optional()
-		.default([]),
+	acceptanceCriteria: z.string().max(LIMITS.DESCRIPTION).optional().default(""),
 	comments: z
 		.array(commentSchema)
 		.max(LIMITS.MAX_COMMENTS)
@@ -178,10 +157,6 @@ export const taskUpdateSchema = z.object({
 	milestoneId: z.string().nullable().optional(),
 	assignedTo: agentRoleEnum.nullable().optional(),
 	collaborators: z.array(z.string().max(50)).max(20).optional(),
-	dailyActions: z
-		.array(dailyActionSchema)
-		.max(LIMITS.MAX_DAILY_ACTIONS)
-		.optional(),
 	subtasks: z.array(subtaskSchema).max(LIMITS.MAX_SUBTASKS).optional(),
 	blockedBy: z.array(z.string()).max(LIMITS.MAX_BLOCKED_BY).optional(),
 	estimatedMinutes: z
@@ -196,11 +171,7 @@ export const taskUpdateSchema = z.object({
 		.max(LIMITS.MAX_MINUTES)
 		.nullable()
 		.optional(),
-	acceptanceCriteria: z
-		.array(z.string().max(LIMITS.SUBTASK_TITLE))
-		.max(LIMITS.MAX_CRITERIA)
-		.optional(),
-	fieldTaskIds: z.array(z.string()).max(LIMITS.MAX_BLOCKED_BY).optional(),
+	acceptanceCriteria: z.string().max(LIMITS.DESCRIPTION).optional(),
 	comments: z.array(commentSchema).max(LIMITS.MAX_COMMENTS).optional(),
 	tags: z.array(z.string().max(LIMITS.TAG)).max(LIMITS.MAX_TAGS).optional(),
 	notes: z.string().max(LIMITS.NOTES).optional(),

@@ -1,6 +1,6 @@
-import fs from "fs/promises";
-import os from "os";
-import path from "path";
+import fs from "node:fs/promises";
+import os from "node:os";
+import path from "node:path";
 
 // Mirror the path resolution in src/lib/paths.ts so backups hit the same files
 // that data.ts reads and writes during tests.
@@ -44,12 +44,11 @@ export function createTestTask(overrides: Record<string, unknown> = {}) {
 		milestoneId: null,
 		assignedTo: null,
 		collaborators: [],
-		dailyActions: [],
 		subtasks: [],
 		blockedBy: [],
 		estimatedMinutes: null,
 		actualMinutes: null,
-		acceptanceCriteria: [],
+		acceptanceCriteria: "",
 		comments: [],
 		tags: [],
 		notes: "",

@@ -296,15 +296,11 @@ export function ProjectDetailPage({
 		await createTask({
 			id: `task_${Date.now()}`,
 			...data,
-			dailyActions: [],
 			tags: data.tags
 				.split(",")
 				.map((t) => t.trim())
 				.filter(Boolean),
-			acceptanceCriteria: data.acceptanceCriteria
-				.split("\n")
-				.map((s) => s.trim())
-				.filter(Boolean),
+			acceptanceCriteria: data.acceptanceCriteria,
 			createdAt: new Date().toISOString(),
 			updatedAt: new Date().toISOString(),
 			completedAt: null,
@@ -392,13 +388,16 @@ export function ProjectDetailPage({
 			</div>
 
 			{/* Project Run Progress */}
-			{getProjectRun(projectId) && (
-				<ProjectRunProgress
-					projectRun={getProjectRun(projectId)!}
-					runs={runs}
-					onStop={() => stopProject(projectId)}
-				/>
-			)}
+			{(() => {
+				const run = getProjectRun(projectId);
+				return run ? (
+					<ProjectRunProgress
+						projectRun={run}
+						runs={runs}
+						onStop={() => stopProject(projectId)}
+					/>
+				) : null;
+			})()}
 
 			{/* Team Section */}
 			<div className="space-y-2">

@@ -48,14 +48,11 @@ describe("taskCreateSchema", () => {
 			milestoneId: "mile_456",
 			assignedTo: "developer",
 			collaborators: ["researcher"],
-			dailyActions: [
-				{ id: "da_1", title: "Write tests", done: false, date: "2026-02-21" },
-			],
 			subtasks: [{ id: "st_1", title: "Create form", done: false }],
 			blockedBy: ["task_001"],
 			estimatedMinutes: 120,
 			actualMinutes: 60,
-			acceptanceCriteria: ["Login form works", "Tests pass"],
+			acceptanceCriteria: "Login form works\nTests pass",
 			comments: [
 				{
 					id: "c_1",
