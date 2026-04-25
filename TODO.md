@@ -50,17 +50,11 @@ Original pitch (merge into single event stream) is not viable:
 
 ---
 
-### 3b. Task field trim
+### ~~3b. Task field trim~~
 
-**Types file**: `src/lib/types.ts` — `Task` interface, currently 21 fields.
+~~**Types file**: `src/lib/types.ts` — `Task` interface, currently 21 fields.~~
 
-Fields to cut/merge:
-- `fieldTaskIds: string[]` — no component reads it. Delete outright.
-- `dailyActions` (nested array) + `subtasks` (nested array) — same concept, two shapes. Merge into `steps: { type: 'daily' | 'subtask', ...}[]`.
-- `acceptanceCriteria: string[]` — only consumed in `src/components/task-form.tsx` (1 import). Make optional or inline into `description`.
-- Time tracking overlap: `estimatedMinutes` + `actualMinutes` on Task, `ActiveRun.costUsd`, `SessionHistoryEntry.durationMinutes` — 4 places. Decide canonical location, remove others.
-
-Check `src/lib/data.ts` and `src/lib/validations.ts` for downstream Zod schemas that need updating after field removal.
+Done. Removed `fieldTaskIds` (dead), `dailyActions`/`DailyAction` (always `[]`, never populated), changed `acceptanceCriteria: string[]` to `string`. Added `normalizeAcceptanceCriteria()` for persisted data compat. Time tracking fields kept (4 distinct concepts). See commit `refactor(types): trim dead Task fields`.
 
 ---
 
@@ -176,6 +170,45 @@ PROJECTS
 Expected: ~400 LOC (from 934), 4 data fetches (from 6), cleaner signal-to-noise.
 
 Note: Attention Required redesign requires adding inline action handlers — not a pure cut pass. Scope as two PRs: (1) cut the 6 widgets, (2) expand Attention Required with inline actions.
+
+---
+
+### 3h. Comms section lean pass
+
+From product audit 2026-04-25. Sidebar groups Inbox, Decisions, Logs under "Messages" (subtitle: "Agent reports, decisions, and activity").
+
+**Current state:**
+
+| Page | LOC | What it renders |
+|------|-----|-----------------|
+| Inbox | ~500 | Full email client: thread grouping, compose dialog, reply/archive, agent auto-respond with SSE polling |
+| Decisions | ~230 | Pending/answered queue with option buttons + custom text input |
+| Logs | ~450 | 5 tabs: Daemon tail, App tail, Runs + consoles, Activity feed. SSE live stream. |
+
+**Problems identified:**
+
+1. **Grouping broken.** Logs mixes ops debugging (daemon tails, run consoles) with communications (activity events). Daemon log tails are not "messages."
+2. **Inbox over-engineered.** Email metaphor wrong for AI agents. Threading, archive, unread, compose dialog, all model bilateral human communication. Agents respond to tasks/contexts, not mail threads. 500 LOC for a metaphor mismatch.
+3. **Decisions redundant as standalone page.** If 3g's Attention Required gets inline actions (approve/reject), Decisions page has no reason to exist.
+4. **Activity tab in Logs overlaps Inbox.** Both show "what agents did" in different shapes. Same data, two views.
+
+**PR 1, cut pass:**
+- Kill Inbox page (500 LOC). Agent communication already surfaces as activity events and decision requests.
+- Kill Decisions page (230 LOC). Fold pending decisions into dashboard Attention Required per 3g.
+- Extract ops tabs from Logs (Daemon, App, Runs) into dedicated Debug/Ops page.
+- Remove sidebar "Messages" group.
+
+**PR 2, restructure:**
+- Create single Activity page: unified chronological stream of agent events + interactions.
+  - Filters: by agent, by event type, by status.
+  - Inline actions for decisions (from 3g's Attention Required pattern).
+  - No threading, no email metaphor.
+- Sidebar becomes: ops page (logs/runs/consoles) separate from activity page.
+- Dashboard Attention Required pulls actionable items from same activity data.
+
+**Prerequisite:** 3g PR 1 (dashboard cut pass) should land first. Attention Required inline actions (3g PR 2) and this restructure share the same pattern.
+
+**Expected result:** ~730 LOC cut, cleaner nav grouping, one mental model for agent interactions instead of three overlapping ones.
 
 ---
 
