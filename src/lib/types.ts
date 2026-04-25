@@ -195,6 +195,7 @@ export interface CommentAttachment {
 export interface TaskComment {
 	id: string;
 	author: AgentRole | "system";
+	type?: "note" | "comment" | "system";
 	content: string;
 	createdAt: string;
 	attachments?: CommentAttachment[];
@@ -221,7 +222,6 @@ export interface Task {
 	acceptanceCriteria: string;
 	comments: TaskComment[];
 	tags: string[];
-	notes: string;
 	dueDate: string | null;
 	createdAt: string;
 	updatedAt: string;

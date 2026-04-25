@@ -53,7 +53,6 @@ export interface TaskFormData {
 	assignedTo: AgentRole | null;
 	collaborators: string[];
 	tags: string;
-	notes: string;
 	subtasks: Subtask[];
 	blockedBy: string[];
 	estimatedMinutes: number | null;
@@ -127,7 +126,6 @@ export function TaskForm({
 		assignedTo: initial?.assignedTo ?? null,
 		collaborators: initial?.collaborators ?? [],
 		tags: initial?.tags ?? "",
-		notes: initial?.notes ?? "",
 		subtasks: initial?.subtasks ?? [],
 		blockedBy: initial?.blockedBy ?? [],
 		estimatedMinutes: initial?.estimatedMinutes ?? null,
@@ -205,8 +203,6 @@ export function TaskForm({
 			errs.title = `Title must be under ${LIMITS.TITLE} characters`;
 		if (form.description.length > LIMITS.DESCRIPTION)
 			errs.description = `Description must be under ${LIMITS.DESCRIPTION} characters`;
-		if (form.notes.length > LIMITS.NOTES)
-			errs.notes = `Notes must be under ${LIMITS.NOTES} characters`;
 		if (form.acceptanceCriteria.length > LIMITS.DESCRIPTION)
 			errs.acceptanceCriteria = `Acceptance criteria must be under ${LIMITS.DESCRIPTION} characters`;
 		return errs;
@@ -321,8 +317,9 @@ export function TaskForm({
 						)}
 					/>
 				) : (
-					<div
-						className="cursor-text hover:bg-muted/40 rounded p-2 -mx-1 transition-colors min-h-[60px] border border-transparent hover:border-border/40"
+					<button
+						type="button"
+						className="cursor-text hover:bg-muted/40 rounded p-2 -mx-1 transition-colors min-h-[60px] border border-transparent hover:border-border/40 w-full text-left appearance-none bg-transparent"
 						onClick={() => setEditingDesc(true)}
 						title="Click to edit"
 					>
@@ -333,7 +330,7 @@ export function TaskForm({
 								Click to add description...
 							</p>
 						)}
-					</div>
+					</button>
 				)}
 				{errors.description && (
 					<p id="description-error" className="text-xs text-destructive">
@@ -787,42 +784,6 @@ export function TaskForm({
 					onChange={(e) => setForm({ ...form, tags: e.target.value })}
 					placeholder="ui, backend, planning..."
 				/>
-			</div>
-
-			<div className="space-y-2">
-				<div className="flex items-center justify-between">
-					<Label htmlFor="notes">Notes</Label>
-					<span
-						className={cn(
-							"text-[10px] tabular-nums",
-							form.notes.length > LIMITS.NOTES
-								? "text-destructive"
-								: "text-muted-foreground",
-						)}
-					>
-						{form.notes.length}/{LIMITS.NOTES}
-					</span>
-				</div>
-				<Textarea
-					id="notes"
-					value={form.notes}
-					onChange={(e) => {
-						setForm({ ...form, notes: e.target.value });
-						if (errors.notes) clearError("notes");
-					}}
-					placeholder="Additional notes..."
-					rows={2}
-					aria-invalid={!!errors.notes}
-					aria-describedby={errors.notes ? "notes-error" : undefined}
-					className={cn(
-						errors.notes && "border-destructive focus-visible:ring-destructive",
-					)}
-				/>
-				{errors.notes && (
-					<p id="notes-error" className="text-xs text-destructive">
-						{errors.notes}
-					</p>
-				)}
 			</div>
 
 			<div className="flex justify-end gap-2 pt-2">

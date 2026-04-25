@@ -1,11 +1,11 @@
-import { NextResponse } from "next/server";
 import { spawn } from "child_process";
-import { readFileSync, writeFileSync, existsSync, unlinkSync } from "fs";
+import { existsSync, readFileSync, unlinkSync, writeFileSync } from "fs";
+import { NextResponse } from "next/server";
 import path from "path";
-import { parseAgentMentions, generateId } from "@/lib/utils";
-import { applyWorkspaceContext } from "@/lib/workspace-context";
 import { getWorkspaceDataDir } from "@/lib/data";
 import { getUploadsDir } from "@/lib/paths";
+import { generateId, parseAgentMentions } from "@/lib/utils";
+import { applyWorkspaceContext } from "@/lib/workspace-context";
 
 function readJSON<T>(file: string): T | null {
 	try {
@@ -26,6 +26,7 @@ interface TaskEntry {
 		author: string;
 		content: string;
 		createdAt: string;
+		type?: "note" | "comment" | "system";
 		attachments?: Array<{
 			id: string;
 			type: string;
@@ -52,6 +53,7 @@ export async function POST(
 	let body: {
 		content: string;
 		author?: string;
+		type?: "note" | "comment" | "system";
 		attachments?: Array<{
 			id: string;
 			type: "image" | "file";
@@ -80,6 +82,10 @@ export async function POST(
 	}
 
 	const author = body.author ?? "me";
+	const VALID_TYPES = ["note", "comment", "system"] as const;
+	const type = VALID_TYPES.includes(body.type as (typeof VALID_TYPES)[number])
+		? body.type
+		: "comment";
 
 	const tasksPath = path.join(wsDir, "tasks.json");
 	const tasksData = readJSON<{ tasks: TaskEntry[] }>(tasksPath);
@@ -102,6 +108,7 @@ export async function POST(
 		id: generateId("cmt"),
 		author,
 		content,
+		type,
 		createdAt: new Date().toISOString(),
 		...(attachments.length > 0 ? { attachments } : {}),
 	};

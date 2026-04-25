@@ -5,6 +5,7 @@ import {
 	agentUpdateSchema,
 	brainDumpCreateSchema,
 	brainDumpUpdateSchema,
+	commentSchema,
 	decisionCreateSchema,
 	decisionUpdateSchema,
 	inboxCreateSchema,
@@ -17,6 +18,78 @@ import {
 	taskCreateSchema,
 	taskUpdateSchema,
 } from "@/lib/validations";
+
+// ─── Comment Schema ────────────────────────────────────────────────────────────
+
+describe("commentSchema", () => {
+	it("accepts a valid comment with all fields", () => {
+		const result = commentSchema.safeParse({
+			id: "c_1",
+			author: "developer",
+			type: "comment",
+			content: "Working on this",
+			createdAt: "2026-02-21T00:00:00Z",
+		});
+		expect(result.success).toBe(true);
+		if (result.success) {
+			expect(result.data.id).toBe("c_1");
+			expect(result.data.author).toBe("developer");
+			expect(result.data.type).toBe("comment");
+		}
+	});
+
+	it("accepts type 'note'", () => {
+		const result = commentSchema.safeParse({
+			id: "c_1",
+			author: "developer",
+			type: "note",
+			content: "Important note",
+			createdAt: "2026-02-21T00:00:00Z",
+		});
+		expect(result.success).toBe(true);
+		if (result.success) {
+			expect(result.data.type).toBe("note");
+		}
+	});
+
+	it("accepts type 'system'", () => {
+		const result = commentSchema.safeParse({
+			id: "c_1",
+			author: "system",
+			type: "system",
+			content: "Task created",
+			createdAt: "2026-02-21T00:00:00Z",
+		});
+		expect(result.success).toBe(true);
+		if (result.success) {
+			expect(result.data.type).toBe("system");
+		}
+	});
+
+	it("rejects invalid type value", () => {
+		const result = commentSchema.safeParse({
+			id: "c_1",
+			author: "developer",
+			type: "invalid",
+			content: "Test",
+			createdAt: "2026-02-21T00:00:00Z",
+		});
+		expect(result.success).toBe(false);
+	});
+
+	it("defaults type to 'comment' when omitted", () => {
+		const result = commentSchema.safeParse({
+			id: "c_1",
+			author: "developer",
+			content: "Working on this",
+			createdAt: "2026-02-21T00:00:00Z",
+		});
+		expect(result.success).toBe(true);
+		if (result.success) {
+			expect(result.data.type).toBe("comment");
+		}
+	});
+});
 
 // ─── Task Create Schema ────────────────────────────────────────────────────────
 
@@ -58,11 +131,11 @@ describe("taskCreateSchema", () => {
 					id: "c_1",
 					author: "developer",
 					content: "Started",
+					type: "note",
 					createdAt: "2026-02-21T00:00:00Z",
 				},
 			],
 			tags: ["frontend", "auth"],
-			notes: "Use shadcn/ui for components",
 		});
 		expect(result.success).toBe(true);
 		if (result.success) {
@@ -165,6 +238,13 @@ describe("taskCreateSchema", () => {
 			description: "x".repeat(LIMITS.DESCRIPTION + 1),
 		});
 		expect(result.success).toBe(false);
+	});
+
+	it("does not require notes field (notes removed)", () => {
+		const result = taskCreateSchema.safeParse({
+			title: "Test task",
+		});
+		expect(result.success).toBe(true);
 	});
 });
 

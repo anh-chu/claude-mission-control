@@ -51,7 +51,6 @@ export function createTestTask(overrides: Record<string, unknown> = {}) {
 		acceptanceCriteria: "",
 		comments: [],
 		tags: [],
-		notes: "",
 		...overrides,
 	};
 }

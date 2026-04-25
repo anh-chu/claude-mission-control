@@ -318,7 +318,7 @@ describe("isTaskUnblocked", () => {
 			collaborators: [],
 			subtasks: [],
 			acceptanceCriteria: "",
-			notes: "",
+			comments: [],
 			estimatedMinutes: null,
 			blockedBy: [] as string[],
 		};
@@ -337,7 +337,7 @@ describe("isTaskUnblocked", () => {
 			collaborators: [],
 			subtasks: [],
 			acceptanceCriteria: "",
-			notes: "",
+			comments: [],
 			estimatedMinutes: null,
 			blockedBy: undefined,
 		} as unknown as Parameters<typeof isTaskUnblocked>[0];

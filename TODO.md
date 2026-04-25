@@ -50,21 +50,9 @@ Original pitch (merge into single event stream) is not viable:
 
 ---
 
-### 3g. notes + comments unification
+### ~~3g. notes + comments unification~~ done
 
-**Types file**: `$T2` — `Task.notes: string` and `Task.comments: TaskComment[]`.
-
-Both carry daemon-generated text about a task, built at different times with different shapes:
-- `notes` — flat string, append-only scratchpad. Daemon writes mid-run progress, reads it back to resume. Also human-editable via form. No author, no timestamp.
-- `comments` — structured `{ author, content, createdAt, attachments? }` array. Daemon pushes post-run summaries via `run-task-comment.ts`. Rendered as a thread in UI.
-
-The split means users see two separate surfaces for daemon communication. A task has notes AND comments with no clear mental model for which is which.
-
-Proposed unification: drop `notes: string`, extend comments with `type: 'note' | 'comment' | 'system'`. `note`-type comments replace the scratchpad role. Mid-run append in `run-task.ts` becomes a push-as-object instead of string concat. Daemon reads back the latest `note`-type comment instead of `task.notes`.
-
-Files to update: `types.ts`, `validations.ts`, `tasks/route.ts`, `tasks/[id]/comment/route.ts`, `task-form.tsx`, `tasks/[id]/page.tsx`, `scripts/daemon/run-task.ts`, `scripts/daemon/run-task-comment.ts`, `scripts/daemon/prompt-builder.ts`.
-
-Not urgent — both fields work. Design debt from incremental buildup.
+Dropped `Task.notes`, added `TaskComment.type`. Daemon, API, UI, validation all updated.
 
 ---
 

@@ -20,7 +20,7 @@ import { AgentRunner } from "./runner";
 
 // ─── Paths ──────────────────────────────────────────────────────────────────
 
-import { DATA_DIR, getWorkspaceDir } from "../../src/lib/paths";
+import { getWorkspaceDir } from "../../src/lib/paths";
 import { getWorkspaceEnv } from "./workspace-env";
 
 const WORKSPACE_DIR = getWorkspaceDir(
@@ -174,7 +174,7 @@ function buildTriagePrompt(entries: BrainDumpEntry[]): string {
 		'   - `acceptanceCriteria`: `""` (newline-separated definition of done)',
 	);
 	lines.push("   - `tags`: Relevant tags");
-	lines.push('   - `notes`: `""`');
+	lines.push("   - `comments`: `[]`");
 	lines.push("   - `createdAt` and `updatedAt`: Current ISO timestamp");
 	lines.push("   - `completedAt`: `null`");
 	lines.push("");

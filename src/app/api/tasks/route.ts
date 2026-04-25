@@ -153,7 +153,16 @@ async function handleCompletion(task: Task, wasCompleted: boolean) {
 				type: "report",
 				taskId: task.id,
 				subject: `Completed: ${task.title}`,
-				body: `Task "${task.title}" has been completed.\n\n${task.notes || "No additional notes."}`,
+				body: `Task "${task.title}" has been completed.\n\n${
+					(task.comments ?? [])
+						.filter((c) => c.type === "note")
+						.sort(
+							(a, b) =>
+								new Date(a.createdAt).getTime() -
+								new Date(b.createdAt).getTime(),
+						)
+						.pop()?.content || "No additional notes."
+				}`,
 			});
 		}
 
@@ -228,18 +237,19 @@ export async function GET(request: Request) {
 		allTasks = allTasks.filter((t) => !t.deletedAt);
 	}
 
-	// Ensure backward compatibility
-	let tasks = allTasks.map((t) => ({
-		...t,
-		collaborators: t.collaborators ?? [],
-		subtasks: t.subtasks ?? [],
-		blockedBy: t.blockedBy ?? [],
-		estimatedMinutes: t.estimatedMinutes ?? null,
-		actualMinutes: t.actualMinutes ?? null,
-		acceptanceCriteria: normalizeAcceptanceCriteria(t.acceptanceCriteria),
-		comments: t.comments ?? [],
-		deletedAt: t.deletedAt ?? null,
-	}));
+	let tasks = allTasks.map((t) => {
+		return {
+			...t,
+			collaborators: t.collaborators ?? [],
+			subtasks: t.subtasks ?? [],
+			blockedBy: t.blockedBy ?? [],
+			estimatedMinutes: t.estimatedMinutes ?? null,
+			actualMinutes: t.actualMinutes ?? null,
+			acceptanceCriteria: normalizeAcceptanceCriteria(t.acceptanceCriteria),
+			comments: t.comments ?? [],
+			deletedAt: t.deletedAt ?? null,
+		};
+	});
 
 	// Apply filters
 	if (id) tasks = tasks.filter((t) => t.id === id);
@@ -344,7 +354,6 @@ export async function POST(request: Request) {
 			acceptanceCriteria: body.acceptanceCriteria,
 			comments: body.comments,
 			tags: body.tags,
-			notes: body.notes,
 			createdAt: new Date().toISOString(),
 			updatedAt: new Date().toISOString(),
 			dueDate: null,

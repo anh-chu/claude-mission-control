@@ -16,9 +16,9 @@
  *   9. Prunes completed runs older than 1 hour
  */
 
-import { execSync, spawn } from "child_process";
-import { existsSync, readFileSync, unlinkSync, writeFileSync } from "fs";
-import path from "path";
+import { execSync, spawn } from "node:child_process";
+import { existsSync, readFileSync, unlinkSync, writeFileSync } from "node:fs";
+import path from "node:path";
 import { createLogger } from "../../src/lib/logger";
 import {
 	type ActiveRunEntry,
@@ -41,7 +41,7 @@ const taskLogger = createLogger("task", { sync: true });
 
 // ─── Paths ──────────────────────────────────────────────────────────────────
 
-import { DATA_DIR, getWorkspaceDir } from "../../src/lib/paths";
+import { getWorkspaceDir } from "../../src/lib/paths";
 import { getWorkspaceEnv } from "./workspace-env";
 
 const WORKSPACE_DIR = getWorkspaceDir(
@@ -124,7 +124,9 @@ function consumeDecisionSession(taskId: string): string | null {
 /**
  * Prune completed/failed/timeout/stopped runs older than 1 hour.
  */
-function pruneOldRuns(data: ActiveRunsData): ActiveRunsData {
+function pruneOldRuns(data: { runs: ActiveRunEntry[] }): {
+	runs: ActiveRunEntry[];
+} {
 	const ONE_HOUR = 60 * 60 * 1000;
 	const now = Date.now();
 
@@ -438,11 +440,14 @@ function appendTaskProgress(
 		const timestamp = new Date().toISOString().slice(0, 19).replace("T", " ");
 		const progressNote = `[${timestamp}] Session ${sessionIndex + 1}: ${summary.slice(0, 300)}`;
 
-		// Append to notes
-		const existingNotes = typeof task.notes === "string" ? task.notes : "";
-		task.notes = existingNotes
-			? `${existingNotes}\n\n${progressNote}`
-			: progressNote;
+		if (!Array.isArray(task.comments)) task.comments = [];
+		(task.comments as Array<Record<string, unknown>>).push({
+			id: `cmt_${Date.now()}`,
+			type: "note",
+			author: (task.assignedTo as string) || "system",
+			content: progressNote,
+			createdAt: new Date().toISOString(),
+		});
 		task.updatedAt = new Date().toISOString();
 
 		writeFileSync(TASKS_FILE, JSON.stringify(tasksData, null, 2), "utf-8");
@@ -1213,7 +1218,7 @@ async function main() {
 This is session ${continuationIndex + 1}. Previous session(s) ran out of turns or time before finishing.
 
 **Important:**
-- Check the task's notes field above — your prior progress summaries are there.
+- Check the task's comments (type: note) for prior progress summaries.
 - Check the task's subtasks — some may already be marked done.
 - Continue where you left off. Do NOT redo completed work.
 - Focus on the remaining uncompleted items.
@@ -1289,7 +1294,7 @@ This is session ${continuationIndex + 1}. Previous session(s) ran out of turns o
 								"run-task",
 								`Task ${taskId} wrote a pending decision — stopping agent gracefully`,
 							);
-							clearInterval(decisionWatcher!);
+							if (decisionWatcher) clearInterval(decisionWatcher);
 							decisionWatcher = null;
 							runner.killSession(spawnedPid);
 						}

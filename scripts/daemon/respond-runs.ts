@@ -144,6 +144,6 @@ export function accumulateRunCost(
 
 /** Remove completed/failed/stopped entries older than 1 hour */
 export function pruneOldRuns(data: RespondRunsFile): RespondRunsFile {
-	data.runs = pruneOldEntries(data.runs);
+	data.runs = pruneOldEntries<RespondRunEntry>(data.runs);
 	return data;
 }

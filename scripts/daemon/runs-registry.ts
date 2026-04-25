@@ -44,9 +44,9 @@ export function atomicWriteJson<T>(filePath: string, data: T): void {
 /**
  * Entry with a status field and optional completedAt timestamp.
  */
-interface PrunableEntry {
+export interface PrunableEntry {
 	status?: string;
-	completedAt?: string;
+	completedAt?: string | null;
 }
 
 /**
@@ -56,7 +56,7 @@ interface PrunableEntry {
  * @param maxAgeMs - max age in milliseconds (default: 1 hour)
  * @returns new array with old completed entries removed
  */
-export function pruneOldEntries<T extends PrunableEntry>(
+export function pruneOldEntries<T extends PrunableEntry & { id: string }>(
 	entries: T[],
 	maxAgeMs: number = 60 * 60 * 1000,
 ): T[] {

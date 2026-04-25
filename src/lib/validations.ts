@@ -46,7 +46,6 @@ export const DEFAULT_LIMIT = 200;
 export const LIMITS = {
 	TITLE: 200,
 	DESCRIPTION: 5000,
-	NOTES: 5000,
 	BODY: 5000,
 	CONTENT: 5000,
 	CONTEXT: 5000,
@@ -82,9 +81,10 @@ const commentAttachmentSchema = z.object({
 	filename: z.string().max(255),
 });
 
-const commentSchema = z.object({
+export const commentSchema = z.object({
 	id: z.string().max(100),
 	author: actorEnum,
+	type: z.enum(["note", "comment", "system"]).optional().default("comment"),
 	content: z.string().max(LIMITS.COMMENT_CONTENT),
 	createdAt: z.string().max(30),
 	attachments: z.array(commentAttachmentSchema).max(10).optional(),
@@ -140,7 +140,6 @@ export const taskCreateSchema = z.object({
 		.max(LIMITS.MAX_TAGS)
 		.optional()
 		.default([]),
-	notes: z.string().max(LIMITS.NOTES).optional().default(""),
 	dueDate: z.string().max(30).nullable().optional().default(null),
 	deletedAt: z.string().nullable().optional().default(null),
 	initiativeId: z.string().nullable().optional().default(null),
@@ -174,7 +173,6 @@ export const taskUpdateSchema = z.object({
 	acceptanceCriteria: z.string().max(LIMITS.DESCRIPTION).optional(),
 	comments: z.array(commentSchema).max(LIMITS.MAX_COMMENTS).optional(),
 	tags: z.array(z.string().max(LIMITS.TAG)).max(LIMITS.MAX_TAGS).optional(),
-	notes: z.string().max(LIMITS.NOTES).optional(),
 	dueDate: z.string().max(30).nullable().optional(),
 	deletedAt: z.string().nullable().optional(),
 	initiativeId: z.string().nullable().optional(),

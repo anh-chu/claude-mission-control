@@ -40,7 +40,13 @@ interface TaskDef {
 	collaborators: string[];
 	subtasks: Array<{ id: string; title: string; done: boolean }>;
 	acceptanceCriteria: string;
-	notes: string;
+	comments?: Array<{
+		id: string;
+		author: string;
+		content: string;
+		createdAt: string;
+		type?: string;
+	}>;
 	estimatedMinutes: number | null;
 }
 
@@ -145,10 +151,13 @@ function buildTaskInstructions(task: TaskDef): string {
 		lines.push(task.acceptanceCriteria);
 	}
 
-	if (task.notes) {
+	const noteComments = (task.comments ?? []).filter((c) => c.type === "note");
+	if (noteComments.length > 0) {
 		lines.push("");
-		lines.push("**Notes:**");
-		lines.push(task.notes);
+		lines.push("**Progress Notes:**");
+		for (const nc of noteComments) {
+			lines.push(`[${nc.createdAt}] ${nc.content}`);
+		}
 	}
 
 	if (task.estimatedMinutes) {

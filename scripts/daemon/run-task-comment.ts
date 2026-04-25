@@ -53,12 +53,12 @@ interface TaskDef {
 	projectId: string | null;
 	subtasks: Array<{ id: string; title: string; done: boolean }>;
 	acceptanceCriteria: string;
-	notes: string;
 	comments?: Array<{
 		id: string;
 		author: string;
 		content: string;
 		createdAt: string;
+		type?: string;
 	}>;
 	estimatedMinutes: number | null;
 	updatedAt?: string;
@@ -163,10 +163,13 @@ function buildCommentPrompt(
 		}
 	}
 
-	if (task.notes) {
+	const noteComments = (task.comments ?? []).filter((c) => c.type === "note");
+	if (noteComments.length > 0) {
 		lines.push("");
-		lines.push("**Notes:**");
-		lines.push(task.notes);
+		lines.push("**Progress Notes:**");
+		for (const nc of noteComments) {
+			lines.push(`[${nc.createdAt}] ${nc.content}`);
+		}
 	}
 
 	// Recent comments for context (last 5)
