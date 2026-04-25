@@ -25,14 +25,6 @@ export function generateAgentCommandMarkdown(
 		lines.push("");
 	}
 
-	if (agent.capabilities.length > 0) {
-		lines.push("## Your Capabilities");
-		for (const cap of agent.capabilities) {
-			lines.push(`- ${cap}`);
-		}
-		lines.push("");
-	}
-
 	if (linkedSkills.length > 0) {
 		lines.push("## Your Skills");
 		lines.push("");

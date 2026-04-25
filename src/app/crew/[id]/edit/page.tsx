@@ -60,7 +60,6 @@ export default function EditAgentPage() {
 			icon: payload.icon,
 			description: payload.description,
 			instructions: payload.instructions,
-			capabilities: payload.capabilities,
 			skillIds: agent.skillIds,
 			status: payload.status,
 			backend: payload.backend,

@@ -103,9 +103,7 @@ export default function AgentPage() {
 	const [instructionsText, setInstructionsText] = useState("");
 	const [editingDescription, setEditingDescription] = useState(false);
 	const [descriptionText, setDescriptionText] = useState("");
-	const [capInput, setCapInput] = useState("");
 	const [savingProfile, setSavingProfile] = useState(false);
-
 	const agent = agents.find((a) => a.id === id);
 
 	if (loading) {
@@ -219,20 +217,6 @@ export default function AgentPage() {
 		} finally {
 			setSavingProfile(false);
 		}
-	};
-
-	const addCapability = async (cap: string) => {
-		if (!cap.trim() || agent.capabilities.includes(cap.trim())) return;
-		await updateAgent(agent.id, {
-			capabilities: [...agent.capabilities, cap.trim()],
-		});
-		setCapInput("");
-	};
-
-	const removeCapability = async (cap: string) => {
-		await updateAgent(agent.id, {
-			capabilities: agent.capabilities.filter((c) => c !== cap),
-		});
 	};
 
 	const addSkill = async (skillId: string) => {
@@ -400,51 +384,6 @@ export default function AgentPage() {
 							"No instructions set. Click Edit to add a system prompt."}
 					</pre>
 				)}
-			</section>
-
-			{/* Capabilities Section */}
-			<section className="rounded-xl border bg-card/50 p-4 space-y-3">
-				<h2 className="text-sm font-semibold">Capabilities</h2>
-				<div className="flex flex-wrap gap-1.5">
-					{agent.capabilities.map((cap) => (
-						<Badge key={cap} variant="secondary" className="gap-1 pr-1">
-							{cap}
-							<button
-								type="button"
-								onClick={() => removeCapability(cap)}
-								className="rounded-full hover:bg-muted-foreground/20 p-0.5"
-							>
-								<X className="h-3 w-3" />
-							</button>
-						</Badge>
-					))}
-					{agent.capabilities.length === 0 && (
-						<p className="text-xs text-muted-foreground">
-							No capabilities defined.
-						</p>
-					)}
-				</div>
-				<div className="flex gap-2">
-					<Input
-						placeholder="Add capability..."
-						value={capInput}
-						onChange={(e) => setCapInput(e.target.value)}
-						onKeyDown={(e) => {
-							if (e.key === "Enter") {
-								e.preventDefault();
-								addCapability(capInput);
-							}
-						}}
-						className="h-8 text-sm"
-					/>
-					<Button
-						size="sm"
-						variant="outline"
-						onClick={() => addCapability(capInput)}
-					>
-						<Plus className="h-3.5 w-3.5" />
-					</Button>
-				</div>
 			</section>
 
 			{/* Skills Section */}

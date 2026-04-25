@@ -3,17 +3,17 @@ import {
 	ensureDocMaintainerAgentForWorkspace,
 	getAgents,
 	mutateAgents,
-	mutateTasks,
 	mutateSkillsLibrary,
+	mutateTasks,
 } from "@/lib/data";
+import { syncAgentCommand } from "@/lib/sync-commands";
 import type { AgentDefinition } from "@/lib/types";
 import {
 	agentCreateSchema,
 	agentUpdateSchema,
-	validateBody,
 	DEFAULT_LIMIT,
+	validateBody,
 } from "@/lib/validations";
-import { syncAgentCommand } from "@/lib/sync-commands";
 import { applyWorkspaceContext } from "@/lib/workspace-context";
 
 export const dynamic = "force-dynamic";
@@ -84,7 +84,6 @@ export async function POST(request: Request) {
 			icon: body.icon,
 			description: body.description,
 			instructions: body.instructions,
-			capabilities: body.capabilities,
 			skillIds: body.skillIds,
 			status: body.status,
 			createdAt: now,

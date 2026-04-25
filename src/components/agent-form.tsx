@@ -40,7 +40,6 @@ export interface AgentFormPayload {
 	icon: string;
 	description: string;
 	instructions: string;
-	capabilities: string[];
 	status: "active" | "inactive";
 	backend: "claude" | "codex";
 	allowedTools: string[];
@@ -97,8 +96,6 @@ export function AgentForm({
 		skipPermissions: "inherit" as "inherit" | "on" | "off",
 		yolo: "inherit" as "inherit" | "on" | "off",
 	});
-	const [capabilities, setCapabilities] = useState<string[]>([]);
-	const [capInput, setCapInput] = useState("");
 	const [allowedTools, setAllowedTools] = useState<string[]>([]);
 	const [toolInput, setToolInput] = useState("");
 	const [saving, setSaving] = useState(false);
@@ -120,7 +117,6 @@ export function AgentForm({
 				skipPermissions: initialData.skipPermissions ?? "inherit",
 				yolo: initialData.yolo ?? "inherit",
 			});
-			setCapabilities(initialData.capabilities ?? []);
 			setAllowedTools(initialData.allowedTools ?? []);
 			setInitialized(true);
 		}
@@ -139,18 +135,6 @@ export function AgentForm({
 		} else {
 			setForm((prev) => ({ ...prev, name }));
 		}
-	};
-
-	const addCapability = () => {
-		const trimmed = capInput.trim();
-		if (trimmed && !capabilities.includes(trimmed)) {
-			setCapabilities((prev) => [...prev, trimmed]);
-			setCapInput("");
-		}
-	};
-
-	const removeCapability = (cap: string) => {
-		setCapabilities((prev) => prev.filter((c) => c !== cap));
 	};
 
 	const addTool = () => {
@@ -185,7 +169,7 @@ export function AgentForm({
 				icon: form.icon,
 				description: form.description,
 				instructions: form.instructions,
-				capabilities,
+
 				status: form.status,
 				backend: form.backend,
 				allowedTools,
@@ -450,48 +434,6 @@ export function AgentForm({
 					<p className="text-xs text-muted-foreground">
 						{form.instructions.length.toLocaleString()} characters
 					</p>
-				</div>
-
-				{/* Capabilities (tag input) */}
-				<div className="space-y-2">
-					<Label>Capabilities</Label>
-					<div className="flex gap-2">
-						<Input
-							placeholder="e.g. contract-review"
-							value={capInput}
-							onChange={(e) => setCapInput(e.target.value)}
-							onKeyDown={(e) => {
-								if (e.key === "Enter") {
-									e.preventDefault();
-									addCapability();
-								}
-							}}
-						/>
-						<Button
-							type="button"
-							variant="outline"
-							size="sm"
-							onClick={addCapability}
-						>
-							<Plus className="h-3.5 w-3.5" />
-						</Button>
-					</div>
-					{capabilities.length > 0 && (
-						<div className="flex flex-wrap gap-1.5 mt-2">
-							{capabilities.map((cap) => (
-								<Badge key={cap} variant="secondary" className="gap-1 pr-1">
-									{cap}
-									<button
-										type="button"
-										onClick={() => removeCapability(cap)}
-										className="rounded-full hover:bg-muted-foreground/20 p-0.5"
-									>
-										<X className="h-3 w-3" />
-									</button>
-								</Badge>
-							))}
-						</div>
-					)}
 				</div>
 
 				{/* Allowed Tools (tag input) */}

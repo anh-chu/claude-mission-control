@@ -491,7 +491,6 @@ describe("agentCreateSchema", () => {
 			expect(result.data.icon).toBe("Bot");
 			expect(result.data.description).toBe("");
 			expect(result.data.instructions).toBe("");
-			expect(result.data.capabilities).toEqual([]);
 			expect(result.data.skillIds).toEqual([]);
 			expect(result.data.status).toBe("active");
 		}
@@ -504,11 +503,11 @@ describe("agentCreateSchema", () => {
 			icon: "BarChart",
 			description: "Analyzes data and produces reports",
 			instructions: "You are a data analyst...",
-			capabilities: ["SQL queries", "Data visualization"],
 			skillIds: ["skill_sql", "skill_charts"],
 			status: "active",
 		});
 		expect(result.success).toBe(true);
+		expect(result.data).not.toHaveProperty("capabilities");
 	});
 
 	it("rejects missing id", () => {

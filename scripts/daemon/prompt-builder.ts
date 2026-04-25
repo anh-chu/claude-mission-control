@@ -1,11 +1,11 @@
-import { readFileSync, existsSync } from "fs";
+import { existsSync, readFileSync } from "fs";
 import path from "path";
-import { logger } from "./logger";
-import { fenceTaskData, enforcePromptLimit } from "./security";
-import type { ProjectRunsFile, ProjectRunTaskEntry } from "./types";
-
 // Paths relative to project root
 import { getWorkspaceDir } from "../../src/lib/paths";
+import { logger } from "./logger";
+import { enforcePromptLimit, fenceTaskData } from "./security";
+import type { ProjectRunsFile, ProjectRunTaskEntry } from "./types";
+
 const WORKSPACE_ROOT = path.resolve(__dirname, "../..");
 const COMMANDS_DIR = path.join(WORKSPACE_ROOT, ".claude", "commands");
 
@@ -16,7 +16,6 @@ interface AgentDef {
 	name: string;
 	description: string;
 	instructions: string;
-	capabilities: string[];
 	skillIds: string[];
 	status: string;
 }
@@ -88,14 +87,6 @@ function buildAgentPersona(agent: AgentDef, skills: SkillDef[]): string {
 	if (agent.instructions) {
 		lines.push("## Your Instructions");
 		lines.push(agent.instructions);
-		lines.push("");
-	}
-
-	if (agent.capabilities.length > 0) {
-		lines.push("## Your Capabilities");
-		for (const cap of agent.capabilities) {
-			lines.push(`- ${cap}`);
-		}
 		lines.push("");
 	}
 

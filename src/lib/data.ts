@@ -185,7 +185,6 @@ function buildDocMaintainerAgent(now: string): AgentDefinition {
 		icon: "BookOpen",
 		description: "Maintains workspace wiki using llm-wiki-pm skill",
 		instructions: DOC_MAINTAINER_AGENT_INSTRUCTIONS,
-		capabilities: ["wiki-maintenance", "documentation"],
 		skillIds: [],
 		status: "active",
 		createdAt: now,

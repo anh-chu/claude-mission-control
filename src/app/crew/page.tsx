@@ -83,28 +83,7 @@ function AgentCard({
 							</div>
 						</div>
 
-						{/* Capabilities preview */}
-						{agent.capabilities.length > 0 && (
-							<div className="flex flex-wrap gap-1 mt-3">
-								{agent.capabilities.slice(0, 3).map((cap) => (
-									<Badge
-										key={cap}
-										variant="secondary"
-										className="text-[10px] px-1.5 py-0"
-									>
-										{cap}
-									</Badge>
-								))}
-								{agent.capabilities.length > 3 && (
-									<Badge variant="outline" className="text-[10px] px-1.5 py-0">
-										+{agent.capabilities.length - 3}
-									</Badge>
-								)}
-							</div>
-						)}
-
-						{/* Footer stats */}
-						<div className="flex items-center justify-between mt-3 pt-3 border-t">
+						<div className="mt-3 pt-3 border-t flex items-center justify-between">
 							<span className="text-xs text-muted-foreground">
 								{taskCount} active task{taskCount !== 1 ? "s" : ""}
 							</span>

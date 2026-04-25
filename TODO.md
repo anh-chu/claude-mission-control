@@ -26,7 +26,119 @@ A living knowledge base that agents read from and write back to. Pages evolve as
 
 Open questions: review/approval model for agent edits, conflict handling when multiple agents touch the same page, embedding search vs plain grep.
 
-## 3. Simplification candidates from minimalization audit
+## 3. Minimalization — next targets
+
+From codebase audit 2026-04-24. All types in `src/lib/types.ts`. All routes under `src/app/api/`.
+
+---
+
+### 3a. Inbox + ActivityLog merge
+
+**Goal**: single event stream, remove triple-fetch on dashboard.
+
+- `src/app/inbox/` — agent-to-agent messages, types: `delegation | report | question`
+- `src/app/logs/` — has Activity tab (ActivityLog) + raw file stream tabs
+- `src/app/page.tsx` (840 LOC) — fetches Inbox, ActivityLog, and Logs separately, merges manually for dashboard widgets
+- `src/app/api/inbox/` and `src/app/api/activity/` — both have near-identical pagination/filter logic
+- Raw file log streaming (daemon stdout/stderr) stays as-is — different data shape, can't merge
+- Expected savings: 200-300 LOC, 2 API route groups collapse into 1
+
+---
+
+### 3b. Task field trim
+
+**Types file**: `src/lib/types.ts` — `Task` interface, currently 21 fields.
+
+Fields to cut/merge:
+- `fieldTaskIds: string[]` — no component reads it. Delete outright.
+- `dailyActions` (nested array) + `subtasks` (nested array) — same concept, two shapes. Merge into `steps: { type: 'daily' | 'subtask', ...}[]`.
+- `acceptanceCriteria: string[]` — only consumed in `src/components/task-form.tsx` (1 import). Make optional or inline into `description`.
+- Time tracking overlap: `estimatedMinutes` + `actualMinutes` on Task, `ActiveRun.costUsd`, `SessionHistoryEntry.durationMinutes` — 4 places. Decide canonical location, remove others.
+
+Check `src/lib/data.ts` and `src/lib/validations.ts` for downstream Zod schemas that need updating after field removal.
+
+---
+
+### 3c. Agent field consolidation
+
+**Types file**: `src/lib/types.ts` — `Agent` interface, currently 11 fields.
+
+Problems:
+- `capabilities: string[]` and `skillIds: string[]` both describe what an agent can do — different data model, same intent. Pick one. `skillIds` ties to the skills registry; `capabilities` is free-text. Recommend keeping `skillIds`, dropping `capabilities`.
+- `allowedTools: string[]`, `skipPermissions: 'inherit' | 'on' | 'off'`, `yolo: boolean` — execution-level knobs that belong in workspace or daemon config, not the agent definition. Only referenced in ~9 files. Move to `WorkspaceConfig` or daemon invocation options.
+- After trim: 11 fields → ~7
+
+Search usages before removing: `grep -r "allowedTools\|skipPermissions\|yolo\|capabilities" src/ scripts/`
+
+---
+
+### 3d. Missions route
+
+- `src/app/api/missions/` — 367 LOC, handles multi-agent orchestration with reconciliation loops
+- Only caller: `src/app/api/projects/[id]/run/route.ts`
+- `ProjectRun` (simpler model) and `Mission` (adds reconciliation) overlap in `src/lib/types.ts`
+- Options: inline mission logic into project run route, or add `ENABLE_MISSIONS=true` env flag
+- Not surfaced in sidebar nav — already hidden from users
+
+---
+
+### 3e. Daemon executor consolidation
+
+All scripts in `scripts/daemon/`:
+
+| File | Size | Purpose |
+|------|------|---------|
+| `run-task.ts` | ~55 KB | execute a task via Claude |
+| `run-inbox-respond.ts` | ~25 KB | respond to inbox message |
+| `run-task-comment.ts` | ~19 KB | generate task comment |
+| `run-brain-dump-triage.ts` | ~9 KB | triage brain dump input |
+| `run-wiki-generate.ts` | ~9 KB | generate wiki content |
+
+All 5 spawn a Claude Code subprocess with a prompt. Pattern is identical — load context, build prompt, spawn child, stream output, write result. Consolidate into `runner.ts` dispatcher with `{ actionType, payload }` input and a handler registry.
+
+`scripts/daemon/runner.ts` and `scripts/daemon/security.ts` already exist as shared infra — build on top of those.
+
+---
+
+### 3g. notes + comments unification
+
+**Types file**: `$T2` — `Task.notes: string` and `Task.comments: TaskComment[]`.
+
+Both carry daemon-generated text about a task, built at different times with different shapes:
+- `notes` — flat string, append-only scratchpad. Daemon writes mid-run progress, reads it back to resume. Also human-editable via form. No author, no timestamp.
+- `comments` — structured `{ author, content, createdAt, attachments? }` array. Daemon pushes post-run summaries via `run-task-comment.ts`. Rendered as a thread in UI.
+
+The split means users see two separate surfaces for daemon communication. A task has notes AND comments with no clear mental model for which is which.
+
+Proposed unification: drop `notes: string`, extend comments with `type: 'note' | 'comment' | 'system'`. `note`-type comments replace the scratchpad role. Mid-run append in `run-task.ts` becomes a push-as-object instead of string concat. Daemon reads back the latest `note`-type comment instead of `task.notes`.
+
+Files to update: `types.ts`, `validations.ts`, `tasks/route.ts`, `tasks/[id]/comment/route.ts`, `task-form.tsx`, `tasks/[id]/page.tsx`, `scripts/daemon/run-task.ts`, `scripts/daemon/run-task-comment.ts`, `scripts/daemon/prompt-builder.ts`.
+
+Not urgent — both fields work. Design debt from incremental buildup.
+
+---
+
+### 3f. API action consolidation
+
+Current task action routes (all thin wrappers, ~50 LOC each):
+- `POST /api/tasks/[id]/run`
+- `POST /api/tasks/[id]/stop`
+- `POST /api/tasks/[id]/comment`
+
+Consolidate into `POST /api/tasks/[id]/actions` with body `{ action: 'run' | 'stop' | 'comment', params?: {...} }`. Saves 3 route files, unifies auth/validation pattern.
+
+Check all UI callers before merging: `grep -r "tasks.*run\|tasks.*stop\|tasks.*comment" src/`
+
+---
+
+### Verify before cutting
+
+- `/api/brain-dump/automate` — route exists, daemon script exists. Confirm whether any UI surface triggers it. If not, cut both.
+- `/api/sync` — already evaluated in previous audit, kept (called by daemon). Do not remove.
+
+---
+
+## 4. Simplification candidates (older audit)
 
 Deferred cleanup items from the component audit. Low priority but worth tracking.
 

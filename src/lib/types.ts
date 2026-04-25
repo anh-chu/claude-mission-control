@@ -62,7 +62,6 @@ export interface AgentDefinition {
 	icon: string;
 	description: string;
 	instructions: string;
-	capabilities: string[];
 	skillIds: string[];
 	status: AgentStatus;
 	backend?: AgentBackend;

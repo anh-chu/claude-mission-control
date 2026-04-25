@@ -15,7 +15,6 @@ export default function NewAgentPage() {
 			icon: payload.icon,
 			description: payload.description,
 			instructions: payload.instructions,
-			capabilities: payload.capabilities,
 			skillIds: [],
 			status: payload.status,
 			backend: payload.backend,

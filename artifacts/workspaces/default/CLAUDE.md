@@ -168,7 +168,6 @@ Initiatives replace the old concepts of projects, milestones, and field-ops miss
 | icon | string | Lucide icon name |
 | description | string | What this agent handles |
 | instructions | string | Full system prompt (multi-line markdown) |
-| capabilities | string[] | What this agent can do |
 | skillIds | string[] | Links to skills-library entries |
 | status | `"active"` \| `"inactive"` | Agent lifecycle |
 | createdAt | ISO 8601 | When created |
