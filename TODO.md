@@ -56,7 +56,7 @@ Dropped `Task.notes`, added `TaskComment.type`. Daemon, API, UI, validation all 
 
 ---
 
-### 3f. API action consolidation
+### ~~3f. API action consolidation~~ done
 
 Current task action routes (all thin wrappers, ~50 LOC each):
 - `POST /api/tasks/[id]/run`
@@ -69,7 +69,7 @@ Check all UI callers before merging: `grep -r "tasks.*run\|tasks.*stop\|tasks.*c
 
 ---
 
-### 3h. Comms section restructure (next phase)
+### ~~3h. Comms section restructure~~ done
 
 Sidebar grouping done (`c3e3aa0`). Structural cuts still pending.
 
