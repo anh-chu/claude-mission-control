@@ -130,46 +130,13 @@ Check all UI callers before merging: `grep -r "tasks.*run\|tasks.*stop\|tasks.*c
 
 ---
 
-### 3g. Dashboard lean pass
+### ~~3g. Dashboard lean pass~~
 
-From product audit 2026-04-25. Current dashboard: 934 LOC, 10 widgets, 6 data file reads on every load.
+**Completed 2026-04-25.** Cut 6 widgets, crew status exceptions-only, attention required expanded with inline actions.
 
-**Cut (no replacement):**
-- Inbox preview widget — preview trap, can't act inline, adds a click instead of saving one
-- Decisions preview widget — same problem
-- Activity Feed widget — activity theater, "task_created" informs no decision
-- Eisenhower Matrix mini-view — decorative, DO tasks already surfaced in Attention Required
-- Stats bar (3 cards) — vanity metrics, counts inform no decision; move create buttons elsewhere
-- Quick Capture widget — merge brain dump entries into Attention Required as triage line items
+Result: 934 → 844 LOC (not 400 — inline actions added back ~176 LOC), 6 → 5 data fetches, 10 → 4 widgets. Net -90 LOC. Inline action UX (approve/reject decisions, ack reports, triage brain dump) justified the LOC trade-off over pure deletion.
 
-**Redesign (not cut):**
-- **Attention Required** — expand to THE primary inbox. Add inline actions: approve/reject decisions, ack agent reports, triage brain dump entries. Kill the 4 read-only preview widgets, replace with this one actionable section.
-- **Crew Status** — filter to exceptions only (stuck, errored, waiting). Zero-state: "All agents nominal." Full list stays on /crew.
-
-**Keep as-is:**
-- Automation control (daemon start/stop)
-- Projects grid (run/stop buttons, progress bars)
-
-**Target state:**
-```
-Daemon: ● Running  [Stop]
-
-NEEDS ATTENTION (3)
-  🔴 Decision: Approve API key rotation? [Y] [N]
-  🟡 Agent report: crawl-worker finished  [Ack]
-  🟡 Brain dump: "add metrics endpoint" [Triage]
-
-AGENTS (1 needs attention)
-  ⚠️ data-agent: Stuck on rate limit (2h)
-  ✓ 4 others nominal  [View all]
-
-PROJECTS
-  [cards with run/stop]
-```
-
-Expected: ~400 LOC (from 934), 4 data fetches (from 6), cleaner signal-to-noise.
-
-Note: Attention Required redesign requires adding inline action handlers — not a pure cut pass. Scope as two PRs: (1) cut the 6 widgets, (2) expand Attention Required with inline actions.
+Future: could drop inline actions and link out to `/decisions`, `/inbox`, `/brain-dump` to hit ~450 LOC if dashboard stays too heavy.
 
 ---
 
@@ -206,7 +173,7 @@ From product audit 2026-04-25. Sidebar groups Inbox, Decisions, Logs under "Mess
 - Sidebar becomes: ops page (logs/runs/consoles) separate from activity page.
 - Dashboard Attention Required pulls actionable items from same activity data.
 
-**Prerequisite:** 3g PR 1 (dashboard cut pass) should land first. Attention Required inline actions (3g PR 2) and this restructure share the same pattern.
+**Prerequisite:** ~~3g PR 1 (dashboard cut pass) should land first.~~ Done. Attention Required inline actions landed. This restructure can proceed independently.
 
 **Expected result:** ~730 LOC cut, cleaner nav grouping, one mental model for agent interactions instead of three overlapping ones.
 
