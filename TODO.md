@@ -50,17 +50,6 @@ Original pitch (merge into single event stream) is not viable:
 
 ---
 
-### 3c. Agent field consolidation
-
-**Types file**: `src/lib/types.ts` — `Agent` interface.
-
-- `capabilities` already removed from the type, but `src/app/crew/page.tsx` still references it (tsc error). Fix crew/page.tsx first.
-- `allowedTools: string[]`, `skipPermissions: 'inherit' | 'on' | 'off'`, `yolo: boolean` still in types. Move to `WorkspaceConfig` or daemon invocation options — they are execution knobs, not agent identity.
-
-Search before removing: `grep -r "allowedTools\|skipPermissions\|yolo" src/ scripts/`
-
----
-
 ### 3e. Daemon executor consolidation (partial)
 
 **Done 2026-04-25:** Extracted `getWorkspaceEnv()` (duplicated in 4 scripts) to `workspace-env.ts`. Extracted shared JSON I/O and prune logic to `runs-registry.ts`. `respond-runs.ts` and `recovery.ts` now import from it.
@@ -152,6 +141,7 @@ Deferred cleanup items from the component audit. Low priority but worth tracking
 - ~~Comms sidebar grouping~~: Inbox, Decisions, Logs grouped under Messages. Commit `c3e3aa0`.
 - ~~Daemon shared utils~~: `getWorkspaceEnv()` extracted to `workspace-env.ts` (was in 4 scripts). Shared JSON I/O in `runs-registry.ts`. Used by `respond-runs.ts` and `recovery.ts`.
 - ~~Missions route evaluated~~ — kept. Polled by `use-active-runs.ts`.
+- ~~Agent field consolidation~~: `capabilities` removed. `allowedTools`, `skipPermissions`, `yolo` kept on Agent type by design.
 - ~~Remove ventures (duplicate of projects)~~
 - ~~Remove status-board (subset of priority-matrix)~~
 - ~~Remove objectives/goals system, link initiatives to projects~~
