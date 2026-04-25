@@ -175,15 +175,6 @@ export const SKILLS: SkillInfo[] = [
 	},
 ];
 
-// ─── Daily Actions ────────────────────────────────────────────────────────────
-
-export interface DailyAction {
-	id: string;
-	title: string;
-	done: boolean;
-	date: string;
-}
-
 // ─── Subtasks ─────────────────────────────────────────────────────────────────
 
 export interface Subtask {
@@ -223,13 +214,11 @@ export interface Task {
 	initiativeId?: string | null;
 	assignedTo: AgentRole | null;
 	collaborators: string[];
-	dailyActions: DailyAction[];
 	subtasks: Subtask[];
 	blockedBy: string[];
 	estimatedMinutes: number | null;
 	actualMinutes: number | null;
-	acceptanceCriteria: string[];
-	fieldTaskIds?: string[];
+	acceptanceCriteria: string;
 	comments: TaskComment[];
 	tags: string[];
 	notes: string;

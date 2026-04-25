@@ -18,6 +18,13 @@ import {
 } from "@/lib/validations";
 import { applyWorkspaceContext } from "@/lib/workspace-context";
 
+// ─── Normalization helpers ──────────────────────────────────────────────────
+
+function normalizeAcceptanceCriteria(value: unknown): string {
+	if (Array.isArray(value)) return value.filter(Boolean).join("\n");
+	return typeof value === "string" ? value : "";
+}
+
 // ─── Side-effect helpers (now atomic via mutate*) ───────────────────────────
 
 async function addInboxMessage(
@@ -229,7 +236,7 @@ export async function GET(request: Request) {
 		blockedBy: t.blockedBy ?? [],
 		estimatedMinutes: t.estimatedMinutes ?? null,
 		actualMinutes: t.actualMinutes ?? null,
-		acceptanceCriteria: t.acceptanceCriteria ?? [],
+		acceptanceCriteria: normalizeAcceptanceCriteria(t.acceptanceCriteria),
 		comments: t.comments ?? [],
 		deletedAt: t.deletedAt ?? null,
 	}));
@@ -330,13 +337,11 @@ export async function POST(request: Request) {
 			milestoneId: body.milestoneId,
 			assignedTo: body.assignedTo,
 			collaborators: body.collaborators,
-			dailyActions: body.dailyActions,
 			subtasks: body.subtasks,
 			blockedBy: body.blockedBy,
 			estimatedMinutes: body.estimatedMinutes,
 			actualMinutes: body.actualMinutes,
 			acceptanceCriteria: body.acceptanceCriteria,
-			fieldTaskIds: body.fieldTaskIds,
 			comments: body.comments,
 			tags: body.tags,
 			notes: body.notes,

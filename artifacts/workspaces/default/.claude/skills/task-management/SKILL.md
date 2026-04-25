@@ -31,7 +31,6 @@ Required fields: `id`, `title`, `description`, `importance`, `urgency`, `kanban`
   "projectId": "proj_001",
   "milestoneId": "mile_001",
   "assignedTo": "developer",
-  "dailyActions": [],
   "tags": ["tag1"],
   "notes": "",
   "createdAt": "ISO-8601",

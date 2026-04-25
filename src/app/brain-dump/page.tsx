@@ -129,15 +129,11 @@ export default function BrainDumpPage() {
 		await createTask({
 			id: `task_${Date.now()}`,
 			...data,
-			dailyActions: [],
 			tags: data.tags
 				.split(",")
 				.map((t) => t.trim())
 				.filter(Boolean),
-			acceptanceCriteria: data.acceptanceCriteria
-				.split("\n")
-				.map((s) => s.trim())
-				.filter(Boolean),
+			acceptanceCriteria: data.acceptanceCriteria,
 			createdAt: new Date().toISOString(),
 			updatedAt: new Date().toISOString(),
 			completedAt: null,

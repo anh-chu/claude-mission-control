@@ -83,7 +83,28 @@ function AgentCard({
 							</div>
 						</div>
 
-						<div className="mt-3 pt-3 border-t flex items-center justify-between">
+						{/* Capabilities preview */}
+						{(agent.capabilities ?? []).length > 0 && (
+							<div className="flex flex-wrap gap-1 mt-3">
+								{(agent.capabilities ?? []).slice(0, 3).map((cap) => (
+									<Badge
+										key={cap}
+										variant="secondary"
+										className="text-[10px] px-1.5 py-0"
+									>
+										{cap}
+									</Badge>
+								))}
+								{(agent.capabilities ?? []).length > 3 && (
+									<Badge variant="outline" className="text-[10px] px-1.5 py-0">
+										+{(agent.capabilities ?? []).length - 3}
+									</Badge>
+								)}
+							</div>
+						)}
+
+						{/* Footer stats */}
+						<div className="flex items-center justify-between mt-3 pt-3 border-t">
 							<span className="text-xs text-muted-foreground">
 								{taskCount} active task{taskCount !== 1 ? "s" : ""}
 							</span>
@@ -340,15 +361,11 @@ export default function CrewPage() {
 						await createTask({
 							id: `task_${Date.now()}`,
 							...data,
-							dailyActions: [],
 							tags: data.tags
 								.split(",")
 								.map((t) => t.trim())
 								.filter(Boolean),
-							acceptanceCriteria: data.acceptanceCriteria
-								.split("\n")
-								.map((s) => s.trim())
-								.filter(Boolean),
+							acceptanceCriteria: data.acceptanceCriteria,
 							createdAt: new Date().toISOString(),
 							updatedAt: new Date().toISOString(),
 							completedAt: null,

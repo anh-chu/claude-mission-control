@@ -117,10 +117,7 @@ export default function TaskDetailPage() {
 					.split(",")
 					.map((t) => t.trim())
 					.filter(Boolean),
-				acceptanceCriteria: (data.acceptanceCriteria ?? "")
-					.split("\n")
-					.map((s) => s.trim())
-					.filter(Boolean),
+				acceptanceCriteria: data.acceptanceCriteria ?? "",
 			});
 			toast.success("Task saved");
 		},
@@ -147,7 +144,7 @@ export default function TaskDetailPage() {
 				blockedBy: task.blockedBy ?? [],
 				estimatedMinutes: task.estimatedMinutes ?? null,
 				dueDate: task.dueDate ?? null,
-				acceptanceCriteria: (task.acceptanceCriteria ?? []).join("\n"),
+				acceptanceCriteria: task.acceptanceCriteria ?? "",
 			};
 			const agent = agents.find((a) => a.id === role);
 			const agentLabel = agent?.name ?? role;
@@ -327,7 +324,10 @@ export default function TaskDetailPage() {
 	const hasAwaitingDecision = decisions.some(
 		(d) => d.taskId === task.id && d.status === "pending",
 	);
-	const criteriaCount = task.acceptanceCriteria?.length ?? 0;
+	const criteriaCount = (task.acceptanceCriteria ?? "")
+		.split("\n")
+		.map((s) => s.trim())
+		.filter(Boolean).length;
 
 	// Build breadcrumb based on project or initiative
 	const breadcrumbItems = [
@@ -432,7 +432,8 @@ export default function TaskDetailPage() {
 									{criteriaCount > 0 && (
 										<Badge variant="secondary" className="text-xs gap-1">
 											<CheckCircle2 className="h-3 w-3" />
-											{criteriaCount} criteria
+											{criteriaCount}{" "}
+											{criteriaCount === 1 ? "criterion" : "criteria"}
 										</Badge>
 									)}
 								</div>
@@ -508,9 +509,7 @@ export default function TaskDetailPage() {
 									blockedBy: task.blockedBy ?? [],
 									estimatedMinutes: task.estimatedMinutes ?? null,
 									dueDate: task.dueDate ?? null,
-									acceptanceCriteria: (task.acceptanceCriteria ?? []).join(
-										"\n",
-									),
+									acceptanceCriteria: task.acceptanceCriteria ?? "",
 								}}
 								projects={projects}
 								allTasks={tasks}

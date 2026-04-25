@@ -1,5 +1,5 @@
-import { readFile, writeFile } from "fs/promises";
-import path from "path";
+import { readFile, writeFile } from "node:fs/promises";
+import path from "node:path";
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
 import {
 	getActivityLog,
@@ -55,12 +55,11 @@ describe("getTasks / saveTasks", () => {
 			milestoneId: null,
 			assignedTo: null,
 			collaborators: [],
-			dailyActions: [],
 			subtasks: [],
 			blockedBy: [],
 			estimatedMinutes: null,
 			actualMinutes: null,
-			acceptanceCriteria: [],
+			acceptanceCriteria: "",
 			comments: [],
 			tags: ["test"],
 			notes: "",
@@ -239,12 +238,11 @@ describe("withTasks (mutex-protected read-modify-write)", () => {
 				milestoneId: null,
 				assignedTo: null,
 				collaborators: [],
-				dailyActions: [],
 				subtasks: [],
 				blockedBy: [],
 				estimatedMinutes: null,
 				actualMinutes: null,
-				acceptanceCriteria: [],
+				acceptanceCriteria: "",
 				comments: [],
 				tags: [],
 				notes: "",
@@ -271,12 +269,11 @@ describe("withTasks (mutex-protected read-modify-write)", () => {
 				milestoneId: null,
 				assignedTo: null,
 				collaborators: [],
-				dailyActions: [],
 				subtasks: [],
 				blockedBy: [],
 				estimatedMinutes: null,
 				actualMinutes: null,
-				acceptanceCriteria: [],
+				acceptanceCriteria: "",
 				comments: [],
 				tags: [],
 				notes: "",

@@ -1,5 +1,5 @@
-import { readFile, writeFile } from "fs/promises";
-import path from "path";
+import { readFile, writeFile } from "node:fs/promises";
+import path from "node:path";
 import { getWorkspaceDir } from "../src/lib/paths";
 
 interface Task {
@@ -13,7 +13,7 @@ interface Task {
 	subtasks: { id: string; title: string; done: boolean }[];
 	blockedBy: string[];
 	estimatedMinutes: number | null;
-	acceptanceCriteria: string[];
+	acceptanceCriteria: string;
 	tags: string[];
 	createdAt: string;
 	updatedAt: string;
@@ -153,9 +153,6 @@ async function main(): Promise<void> {
 
 	// Active Projects
 	lines.push("## Active Projects");
-	for (const proj of activeProjects) {
-		const projTasks = tasks.filter((t) => t.projectId === proj.id);
-	}
 	lines.push("");
 
 	// Inbox Summary

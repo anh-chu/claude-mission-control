@@ -74,12 +74,11 @@ templates/                       — Project templates
 | initiativeId | string \| null | Links to initiative |
 | assignedTo | AgentRole \| null | Lead agent assignment |
 | collaborators | string[] | Additional team members (agent IDs) |
-| dailyActions | `DailyAction[]` | Sub-steps: `{ id, title, done, date }` |
 | subtasks | `Subtask[]` | Checkable sub-items: `{ id, title, done }` |
 | blockedBy | string[] | Task IDs this depends on |
 | estimatedMinutes | number \| null | Estimated work time |
 | actualMinutes | number \| null | Actual work time |
-| acceptanceCriteria | string[] | Definition of done |
+| acceptanceCriteria | string | Definition of done (newline-separated) |
 | tags | string[] | Freeform labels |
 | notes | string | Additional context |
 | createdAt | ISO 8601 | When created |

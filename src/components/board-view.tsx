@@ -266,15 +266,11 @@ export function useTaskHandlers(
 	const handleCreateTask = async (data: TaskFormData) => {
 		await createTask({
 			...data,
-			dailyActions: [],
 			tags: data.tags
 				.split(",")
 				.map((t) => t.trim())
 				.filter(Boolean),
-			acceptanceCriteria: (data.acceptanceCriteria ?? "")
-				.split("\n")
-				.map((s) => s.trim())
-				.filter(Boolean),
+			acceptanceCriteria: data.acceptanceCriteria ?? "",
 		});
 	};
 

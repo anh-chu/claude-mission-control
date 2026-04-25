@@ -50,7 +50,7 @@ interface TaskDef {
 	assignedTo: string | null;
 	projectId: string | null;
 	subtasks: Array<{ id: string; title: string; done: boolean }>;
-	acceptanceCriteria: string[];
+	acceptanceCriteria: string;
 	notes: string;
 	comments?: Array<{
 		id: string;
@@ -68,6 +68,7 @@ interface AgentDef {
 	name: string;
 	description: string;
 	instructions: string;
+	capabilities: string[];
 	skillIds: string[];
 	backend?: AgentBackend;
 }
@@ -112,6 +113,15 @@ function buildCommentPrompt(
 	if (agent.instructions) {
 		lines.push("## Your Instructions");
 		lines.push(agent.instructions);
+		lines.push("");
+	}
+
+	const capabilities = agent.capabilities ?? [];
+	if (capabilities.length > 0) {
+		lines.push("## Your Capabilities");
+		for (const cap of capabilities) {
+			lines.push(`- ${cap}`);
+		}
 		lines.push("");
 	}
 

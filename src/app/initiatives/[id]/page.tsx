@@ -537,9 +537,7 @@ export default function InitiativeDetailPage() {
 												.map((t) => t.trim())
 												.filter(Boolean)
 										: [],
-									acceptanceCriteria: data.acceptanceCriteria
-										? data.acceptanceCriteria.split("\n").filter(Boolean)
-										: [],
+									acceptanceCriteria: data.acceptanceCriteria ?? "",
 									initiativeId,
 								}),
 							});
