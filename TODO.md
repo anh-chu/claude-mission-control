@@ -32,16 +32,21 @@ From codebase audit 2026-04-24. All types in `src/lib/types.ts`. All routes unde
 
 ---
 
-### 3a. Inbox + ActivityLog merge
+### 3a. ~~Inbox + ActivityLog merge~~ API pagination dedup only
 
-**Goal**: single event stream, remove triple-fetch on dashboard.
+**Investigated 2026-04-25. Original goal revised.**
 
-- `src/app/inbox/` — agent-to-agent messages, types: `delegation | report | question`
-- `src/app/logs/` — has Activity tab (ActivityLog) + raw file stream tabs
-- `src/app/page.tsx` (840 LOC) — fetches Inbox, ActivityLog, and Logs separately, merges manually for dashboard widgets
-- `src/app/api/inbox/` and `src/app/api/activity/` — both have near-identical pagination/filter logic
-- Raw file log streaming (daemon stdout/stderr) stays as-is — different data shape, can't merge
-- Expected savings: 200-300 LOC, 2 API route groups collapse into 1
+Original pitch (merge into single event stream) is not viable:
+- Inbox is bilateral (from → to), ActivityLog is unidirectional (actor only). from/to is load-bearing for threading and reply-to logic.
+- 5 daemon scripts bypass the API and write directly to inbox.json / activity-log.json. Merging storage = race conditions without a mutex-aware write layer first.
+- "Triple-fetch" doesn't exist — dashboard does 2 parallel reads, not 3.
+- Full merge requires daemon executor consolidation (3e) as prerequisite. Doing 3e to enable a low-value merge is backwards.
+
+**Revised scope — what's actually safe:**
+- Extract shared pagination/filter helper from `src/app/api/inbox/route.ts` and `src/app/api/activity-log/route.ts` — both have identical offset/limit/sort logic (~80 LOC saved)
+- Leave storage, types, and UI untouched
+
+**Do not merge** Inbox and ActivityLog at the data or UX layer — they serve different user mental models ("what needs my attention" vs "what happened") and different interaction patterns (threading + reply vs audit trail).
 
 ---
 
@@ -59,7 +64,7 @@ Check `src/lib/data.ts` and `src/lib/validations.ts` for downstream Zod schemas 
 
 ---
 
-### 3c. Agent field consolidation
+### ~~3c. Agent field consolidation~~
 
 **Types file**: `src/lib/types.ts` — `Agent` interface, currently 11 fields.
 
@@ -128,6 +133,49 @@ Current task action routes (all thin wrappers, ~50 LOC each):
 Consolidate into `POST /api/tasks/[id]/actions` with body `{ action: 'run' | 'stop' | 'comment', params?: {...} }`. Saves 3 route files, unifies auth/validation pattern.
 
 Check all UI callers before merging: `grep -r "tasks.*run\|tasks.*stop\|tasks.*comment" src/`
+
+---
+
+### 3g. Dashboard lean pass
+
+From product audit 2026-04-25. Current dashboard: 934 LOC, 10 widgets, 6 data file reads on every load.
+
+**Cut (no replacement):**
+- Inbox preview widget — preview trap, can't act inline, adds a click instead of saving one
+- Decisions preview widget — same problem
+- Activity Feed widget — activity theater, "task_created" informs no decision
+- Eisenhower Matrix mini-view — decorative, DO tasks already surfaced in Attention Required
+- Stats bar (3 cards) — vanity metrics, counts inform no decision; move create buttons elsewhere
+- Quick Capture widget — merge brain dump entries into Attention Required as triage line items
+
+**Redesign (not cut):**
+- **Attention Required** — expand to THE primary inbox. Add inline actions: approve/reject decisions, ack agent reports, triage brain dump entries. Kill the 4 read-only preview widgets, replace with this one actionable section.
+- **Crew Status** — filter to exceptions only (stuck, errored, waiting). Zero-state: "All agents nominal." Full list stays on /crew.
+
+**Keep as-is:**
+- Automation control (daemon start/stop)
+- Projects grid (run/stop buttons, progress bars)
+
+**Target state:**
+```
+Daemon: ● Running  [Stop]
+
+NEEDS ATTENTION (3)
+  🔴 Decision: Approve API key rotation? [Y] [N]
+  🟡 Agent report: crawl-worker finished  [Ack]
+  🟡 Brain dump: "add metrics endpoint" [Triage]
+
+AGENTS (1 needs attention)
+  ⚠️ data-agent: Stuck on rate limit (2h)
+  ✓ 4 others nominal  [View all]
+
+PROJECTS
+  [cards with run/stop]
+```
+
+Expected: ~400 LOC (from 934), 4 data fetches (from 6), cleaner signal-to-noise.
+
+Note: Attention Required redesign requires adding inline action handlers — not a pure cut pass. Scope as two PRs: (1) cut the 6 widgets, (2) expand Attention Required with inline actions.
 
 ---
 
