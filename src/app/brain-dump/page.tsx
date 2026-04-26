@@ -278,7 +278,7 @@ export default function BrainDumpPage() {
 													size="sm"
 													onClick={handleSaveEdit}
 													disabled={!editContent.trim()}
-													className="h-7 text-xs"
+
 												>
 													Save
 												</Button>
@@ -286,7 +286,7 @@ export default function BrainDumpPage() {
 													size="sm"
 													variant="ghost"
 													onClick={cancelEditing}
-													className="h-7 text-xs"
+
 												>
 													Cancel
 												</Button>
@@ -344,7 +344,7 @@ export default function BrainDumpPage() {
 														size="sm"
 														variant="outline"
 														onClick={() => setConvertingEntry(entry)}
-														className="h-7 gap-1 px-2 text-xs"
+														className="gap-1 px-2"
 													>
 														<ArrowRight className="h-3 w-3" /> Task
 													</Button>

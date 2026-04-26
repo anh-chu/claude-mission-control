@@ -954,7 +954,6 @@ export default function DocumentsPage() {
 						<Button
 							size="sm"
 							variant="outline"
-							className="h-7"
 							onClick={handleInitWiki}
 							disabled={initingWiki || running || promptLoading}
 						>
@@ -979,7 +978,7 @@ export default function DocumentsPage() {
 						</Button>
 						<Button
 							size="sm"
-							className="h-7 gap-1"
+							className="gap-1"
 							onClick={handleGenerate}
 							disabled={running || promptLoading || promptSaving}
 						>
@@ -1037,7 +1036,6 @@ export default function DocumentsPage() {
 							<Button
 								size="sm"
 								variant="ghost"
-								className="h-7"
 								onClick={() => void loadPrompt()}
 								disabled={promptLoading}
 							>
@@ -1045,7 +1043,6 @@ export default function DocumentsPage() {
 							</Button>
 							<Button
 								size="sm"
-								className="h-7"
 								onClick={() => void savePrompt()}
 								disabled={promptSaving || promptLoading}
 							>
@@ -1175,7 +1172,6 @@ export default function DocumentsPage() {
 						<Button
 							size="sm"
 							variant="ghost"
-							className="h-7"
 							onClick={() => setStreamRunId(null)}
 						>
 							Close
@@ -1393,7 +1389,6 @@ export default function DocumentsPage() {
 							<Button
 								size="sm"
 								variant="ghost"
-								className="h-7"
 								onClick={() => {
 									setEditing(false);
 									setSaveError(null);
@@ -1403,7 +1398,7 @@ export default function DocumentsPage() {
 							</Button>
 							<Button
 								size="sm"
-								className="h-7 gap-1"
+								className="gap-1"
 								onClick={handleSave}
 								disabled={saving}
 							>

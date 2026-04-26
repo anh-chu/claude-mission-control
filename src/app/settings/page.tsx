@@ -195,7 +195,7 @@ export default function SettingsPage() {
 							</div>
 						</div>
 
-						<Button onClick={handleSave} disabled={saving}>
+						<Button size="sm" onClick={handleSave} disabled={saving}>
 							{saved ? "Saved" : saving ? "Saving..." : "Save changes"}
 						</Button>
 					</CardContent>
@@ -265,6 +265,7 @@ export default function SettingsPage() {
 						</div>
 						<div className="flex items-center gap-3">
 							<Button
+								size="sm"
 								variant="outline"
 								className="gap-1.5"
 								onClick={() =>
@@ -274,9 +275,10 @@ export default function SettingsPage() {
 									])
 								}
 							>
-								<Plus className="h-4 w-4" /> Add variable
+								<Plus className="h-3.5 w-3.5" /> Add variable
 							</Button>
 							<Button
+								size="sm"
 								onClick={() => void handleEnvSave()}
 								disabled={envSaving}
 							>
@@ -357,6 +359,7 @@ export default function SettingsPage() {
 
 						<div className="flex items-center gap-3">
 							<Button
+								size="sm"
 								onClick={() => void handleDaemonSave()}
 								disabled={daemonSaving}
 							>
@@ -384,6 +387,7 @@ export default function SettingsPage() {
 								</p>
 							</div>
 							<Button
+								size="sm"
 								variant="destructive"
 								disabled={currentWorkspace?.isDefault}
 								onClick={() => setShowDeleteDialog(true)}

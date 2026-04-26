@@ -186,7 +186,7 @@ export function CommandBar({
 					<Button
 						size="sm"
 						onClick={handleSubmit}
-						className="h-7 gap-1.5 px-2.5 text-xs"
+						className="gap-1.5 px-2.5"
 					>
 						<Zap className="h-3 w-3" />
 						Capture
