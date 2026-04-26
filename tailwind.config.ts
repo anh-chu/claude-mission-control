@@ -80,6 +80,7 @@ const config: Config = {
 				warning: {
 					DEFAULT: "var(--warning)",
 					soft: "var(--warning-soft)",
+					ink: "var(--warning-ink)",
 				},
 				info: "var(--info)",
 				// Warm palette — direct use in Phase 2-4 components

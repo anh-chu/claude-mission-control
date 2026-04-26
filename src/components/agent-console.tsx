@@ -109,14 +109,14 @@ function ThinkingEntry({ thinking }: { thinking: string }) {
 				) : (
 					<ChevronRight className="h-3 w-3 mt-0.5 shrink-0 text-muted-foreground" />
 				)}
-				<Brain className="h-3.5 w-3.5 mt-0.5 shrink-0 text-sunshine-700" />
+				<Brain className="h-3.5 w-3.5 mt-0.5 shrink-0 text-warning-ink" />
 				<div className="min-w-0 flex-1">
 					<div className="flex items-center gap-2">
-						<span className="text-[10px] font-mono uppercase tracking-wide text-sunshine-700/80">
+						<span className="text-[10px] font-mono uppercase tracking-wide text-warning-ink">
 							Thinking
 						</span>
 						{!open && hint && (
-							<span className="text-[10px] text-sunshine-700/60 truncate">
+							<span className="text-[10px] text-warning-ink truncate">
 								{hint}
 							</span>
 						)}
@@ -124,7 +124,7 @@ function ThinkingEntry({ thinking }: { thinking: string }) {
 				</div>
 			</CollapsibleTrigger>
 			<CollapsibleContent>
-				<pre className="text-xs text-sunshine-700/90 whitespace-pre-wrap break-words font-mono leading-relaxed px-7 py-1.5">
+				<pre className="text-xs text-warning-ink whitespace-pre-wrap break-words font-mono leading-relaxed px-7 py-1.5">
 					{thinking}
 				</pre>
 			</CollapsibleContent>
@@ -344,8 +344,8 @@ function ToolUseGroupEntry({
 				) : (
 					<ChevronRight className="h-3 w-3 shrink-0 text-muted-foreground" />
 				)}
-				<Wrench className="h-3 w-3 shrink-0 text-warning" />
-				<span className="text-xs font-mono text-warning">{label}</span>
+				<Wrench className="h-3 w-3 shrink-0 text-warning-ink" />
+				<span className="text-xs font-mono text-warning-ink">{label}</span>
 			</CollapsibleTrigger>
 			<CollapsibleContent className="space-y-0.5">
 				{entries.map((entry, index) =>
@@ -374,8 +374,8 @@ function ToolUseEntry({ block }: { block: ToolUseBlock }) {
 				) : (
 					<ChevronRight className="h-3 w-3 shrink-0 text-muted-foreground" />
 				)}
-				<Wrench className="h-3 w-3 shrink-0 text-warning" />
-				<span className="text-xs font-mono text-warning">{block.name}</span>
+				<Wrench className="h-3 w-3 shrink-0 text-warning-ink" />
+				<span className="text-xs font-mono text-warning-ink">{block.name}</span>
 			</CollapsibleTrigger>
 			{input && (
 				<CollapsibleContent>

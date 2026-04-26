@@ -28,6 +28,7 @@
 	--destructive-foreground: #ffffff;
 	--destructive-soft: #f5c4c4;
 	--warning-soft: #ffe8a8;
+	--warning-ink: #a85800;
 	--border: #dfcc9f;
 	--input: hsl(40, 25%, 80%);
 	--ring: #fa520f;
@@ -117,6 +118,7 @@
 	--destructive-foreground: #ffffff;
 	--destructive-soft: #78212b;
 	--warning-soft: #634b22;
+	--warning-ink: #ffa110;
 	--border: hsl(28, 18%, 22%);
 	--input: hsl(28, 15%, 20%);
 	--ring: #fa520f;

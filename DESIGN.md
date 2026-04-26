@@ -37,6 +37,7 @@ Pre-mixed solid tints for state highlights, icon halos, status blocks, drag-over
 | Primary Soft | `--primary-soft` | `bg-primary-soft` | `#ececec` | `#3a2818` | Drag-over zones, board drop targets, primary halos |
 | Destructive Soft| `--destructive-soft`| `bg-destructive-soft`| `#fbe7e7` | `#3a2424` | Error blocks, error message boxes, DO status pills |
 | Warning Soft | `--warning-soft` | `bg-warning-soft` | `#fff3d6` | `#3d3320` | Warning panels, scheduled-status indicators |
+| Warning Ink  | `--warning-ink`  | `text-warning-ink`   | `#a85800` | `#ffa110` | Amber text/icon on light surfaces (Thinking, tool calls). Light mode uses deepened amber for AA on cream. |
 
 ### Typography
 - **Family**: `Arial, ui-sans-serif, system-ui`
