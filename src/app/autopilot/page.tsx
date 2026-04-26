@@ -255,8 +255,8 @@ export default function AutopilotPage() {
 			{/* Status Bar */}
 			<div className="flex items-center justify-between">
 				<div className="flex items-center gap-3">
-					<Rocket className="h-6 w-6" />
-					<h2 className="text-section font-normal">Automation</h2>
+					<Rocket className="h-5 w-5" />
+					<h1 className="text-xl font-normal">Automation</h1>
 					<Badge
 						variant={isRunning ? "default" : "secondary"}
 						className={isRunning ? "bg-sunshine-700" : ""}
