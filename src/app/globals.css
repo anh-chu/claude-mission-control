@@ -3,31 +3,31 @@
 @tailwind utilities;
 
 :root {
-	--background: #fdf3da;
+	--background: #fdecbe;
 	--foreground: #1f1f1f;
-	--card: #fffaeb;
+	--card: #fff7df;
 	--card-foreground: #1f1f1f;
 	--popover: #ffffff;
 	--popover-foreground: #1f1f1f;
 	--primary: #1f1f1f;
 	--primary-foreground: #ffffff;
-	--secondary: #fce7b0;
+	--secondary: #fffaee;
 	--secondary-foreground: #1f1f1f;
-	--muted: #f2deb0;
+	--muted: #fdf5d4;
 	--muted-foreground: hsl(0, 0%, 24%);
 	--accent: #fa520f;
 	--accent-foreground: #ffffff;
-	--accent-soft: #fde9d4;
-	--primary-soft: #ececec;
-	--success-soft: #dcf5e3;
-	--quadrant-do-soft: #fde9d4;
-	--quadrant-schedule-soft: #fff0d0;
-	--quadrant-delegate-soft: #fee8c4;
-	--quadrant-eliminate-soft: hsl(30, 10%, 90%);
+	--accent-soft: #fbd9b4;
+	--primary-soft: #e8dcc4;
+	--success-soft: #c4e8c8;
+	--quadrant-do-soft: #fbd9b4;
+	--quadrant-schedule-soft: #ffd9a0;
+	--quadrant-delegate-soft: #fdd9a8;
+	--quadrant-eliminate-soft: #d8d0c4;
 	--destructive: #dc2626;
 	--destructive-foreground: #ffffff;
-	--destructive-soft: #fbe7e7;
-	--warning-soft: #fff3d6;
+	--destructive-soft: #f5c4c4;
+	--warning-soft: #ffe8a8;
 	--border: #dfcc9f;
 	--input: hsl(40, 25%, 80%);
 	--ring: #fa520f;
@@ -39,7 +39,7 @@
 	--chart-4: #ffd06a;
 	--chart-5: #1f1f1f;
 
-	--sidebar-background: #fff0c2;
+	--sidebar-background: #f4db9a;
 	--sidebar-foreground: #1f1f1f;
 	--sidebar-primary: #fa520f;
 	--sidebar-primary-foreground: #ffffff;
