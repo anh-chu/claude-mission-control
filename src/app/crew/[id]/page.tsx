@@ -301,7 +301,7 @@ export default function AgentPage() {
 
 			{/* Stats */}
 			<div className="grid grid-cols-3 gap-4">
-				<Card className="bg-card/50">
+				<Card className="bg-card">
 					<CardContent className="p-4 text-center">
 						<p className="text-2xl font-normal tabular-nums">
 							{agentTasks.length}
@@ -309,7 +309,7 @@ export default function AgentPage() {
 						<p className="text-xs text-muted-foreground">Total Tasks</p>
 					</CardContent>
 				</Card>
-				<Card className="bg-card/50">
+				<Card className="bg-card">
 					<CardContent className="p-4 text-center">
 						<p className="text-2xl font-normal tabular-nums text-status-in-progress">
 							{inProgress.length}
@@ -317,7 +317,7 @@ export default function AgentPage() {
 						<p className="text-xs text-muted-foreground">In Progress</p>
 					</CardContent>
 				</Card>
-				<Card className="bg-card/50">
+				<Card className="bg-card">
 					<CardContent className="p-4 text-center">
 						<p className="text-2xl font-normal tabular-nums text-status-done">
 							{completed.length}
@@ -328,7 +328,7 @@ export default function AgentPage() {
 			</div>
 
 			{/* Instructions Section */}
-			<section className="rounded-sm border bg-card/50 p-4 space-y-3">
+			<section className="rounded-sm border bg-card p-4 space-y-3">
 				<div className="flex items-center justify-between">
 					<h2 className="text-sm font-normal">Instructions (System Prompt)</h2>
 					{!editingInstructions && (
@@ -385,7 +385,7 @@ export default function AgentPage() {
 			</section>
 
 			{/* Skills Section */}
-			<section className="rounded-sm border bg-card/50 p-4 space-y-3">
+			<section className="rounded-sm border bg-card p-4 space-y-3">
 				<h2 className="text-sm font-normal">Assigned Skills</h2>
 				{linkedSkills.length > 0 ? (
 					<div className="space-y-2">
@@ -533,7 +533,7 @@ export default function AgentPage() {
 					</h2>
 					<div className="space-y-2">
 						{agentMessages.map((msg) => (
-							<Card key={msg.id} className="bg-card/50">
+							<Card key={msg.id} className="bg-card">
 								<CardContent className="p-3 flex items-center gap-3">
 									<Badge
 										variant={msg.status === "unread" ? "default" : "secondary"}

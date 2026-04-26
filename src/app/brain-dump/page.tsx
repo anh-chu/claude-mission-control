@@ -157,7 +157,7 @@ export default function BrainDumpPage() {
 					count={3}
 					renderItem={() => (
 						<RowSkeleton
-							className="rounded-sm border bg-card/50 p-3 items-start justify-between"
+							className="rounded-sm border bg-card p-3 items-start justify-between"
 							lines={[
 								{ key: "title", className: "h-4 w-4/5" },
 								{ key: "meta", className: "h-3 w-24" },
@@ -255,7 +255,7 @@ export default function BrainDumpPage() {
 						{unprocessed.map((entry) => (
 							<Card
 								key={entry.id}
-								className={`bg-card/50 ${processing.isProcessing(entry.id) ? "animate-pulse border-primary/30 bg-primary/5" : ""}`}
+								className={`bg-card ${processing.isProcessing(entry.id) ? "animate-pulse border-primary/30 bg-primary/5" : ""}`}
 							>
 								<CardContent className="p-3 flex items-start justify-between gap-3">
 									{editingEntryId === entry.id ? (
@@ -391,7 +391,7 @@ export default function BrainDumpPage() {
 					</h2>
 					<div className="space-y-1.5">
 						{processed.map((entry) => (
-							<Card key={entry.id} className="bg-card/30 opacity-60">
+							<Card key={entry.id} className="bg-card opacity-60">
 								<CardContent className="p-2.5 flex items-center justify-between">
 									<div>
 										<p className="text-xs line-through">{entry.content}</p>

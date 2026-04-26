@@ -125,7 +125,7 @@ function DroppableZone({
 		<div
 			ref={setNodeRef}
 			className={cn(
-				"flex flex-col rounded-sm border bg-card/50 min-h-[200px] transition-all",
+				"flex flex-col rounded-sm border bg-card min-h-[200px] transition-all",
 				isOver && "ring-2 ring-primary/50",
 			)}
 		>

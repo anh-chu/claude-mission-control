@@ -10,7 +10,7 @@ export default function BrainDumpLoading() {
 				count={4}
 				renderItem={() => (
 					<RowSkeleton
-						className="rounded-sm border bg-card/50 p-3 items-start justify-between"
+						className="rounded-sm border bg-card p-3 items-start justify-between"
 						lines={[
 							{ key: "title", className: "h-4 w-4/5" },
 							{ key: "meta", className: "h-3 w-24" },

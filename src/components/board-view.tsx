@@ -182,7 +182,7 @@ export function BoardColumn({
 		<div
 			ref={setNodeRef}
 			className={cn(
-				"flex flex-col rounded-sm border bg-card/50 transition-all",
+				"flex flex-col rounded-sm border bg-card transition-all",
 				minHeight,
 				config.borderColor,
 				isOver && "ring-2 ring-primary/40 bg-primary/5 scale-[1.01]",

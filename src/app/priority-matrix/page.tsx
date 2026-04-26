@@ -219,7 +219,7 @@ export default function TasksPage() {
 						className="grid grid-cols-1 sm:grid-cols-2 gap-3"
 						count={4}
 						renderItem={() => (
-							<CardSkeleton className="bg-card/50 p-4 min-h-[200px] space-y-2">
+							<CardSkeleton className="bg-card p-4 min-h-[200px] space-y-2">
 								<Skeleton className="h-5 w-24" />
 								<Skeleton className="h-3 w-32" />
 								<GridSkeleton
@@ -252,7 +252,7 @@ export default function TasksPage() {
 						className="grid grid-cols-1 sm:grid-cols-3 gap-3"
 						count={3}
 						renderItem={(index) => (
-							<CardSkeleton className="bg-card/50 p-4 min-h-[300px] space-y-2">
+							<CardSkeleton className="bg-card p-4 min-h-[300px] space-y-2">
 								<Skeleton className="h-5 w-24" />
 								<GridSkeleton
 									className="space-y-2 pt-2"
