@@ -43,12 +43,11 @@ const workbenchLinks = [
 	{ href: "/documents", label: "Documents", icon: FileText },
 ];
 
-const opsLinks = [
+const utilityLinks = [
+	{ href: "/settings", label: "Settings", icon: User },
 	{ href: "/logs", label: "Debug Logs", icon: Terminal },
 	{ href: "/activity", label: "Activity", icon: Activity },
 ];
-
-const utilityLinks = [{ href: "/settings", label: "Settings", icon: User }];
 
 interface NavLinkProps {
 	href: string;
@@ -243,35 +242,6 @@ export function AppSidebar({
 						<Separator className="mx-2 my-2" />
 						<div className="px-3 pb-1">
 							<p className="text-xs font-normal uppercase tracking-wider text-sidebar-foreground/50">
-								Ops
-							</p>
-						</div>
-						<nav className="space-y-0.5 px-2">
-							{opsLinks.map(({ href, label, icon: Icon }) => {
-								const isActive =
-									pathname === href || pathname.startsWith(`${href}/`);
-								return (
-									<Link
-										key={href}
-										href={href}
-										onClick={onClose}
-										className={cn(
-											"flex items-center gap-3 rounded-sm px-3 py-2 text-sm font-normal transition-colors",
-											isActive
-												? "bg-sidebar-accent text-sidebar-accent-foreground"
-												: "text-sidebar-foreground hover:bg-sidebar-accent/50 hover:text-sidebar-accent-foreground",
-										)}
-									>
-										<Icon className="h-4 w-4 shrink-0" />
-										<span>{label}</span>
-									</Link>
-								);
-							})}
-						</nav>
-
-						<Separator className="mx-2 my-2" />
-						<div className="px-3 pb-1">
-							<p className="text-xs font-normal uppercase tracking-wider text-sidebar-foreground/50">
 								Utilities
 							</p>
 						</div>
@@ -346,27 +316,6 @@ export function AppSidebar({
 					)}
 					<nav className="space-y-0.5 px-2">
 						{workbenchLinks.map(({ href, label, icon }) => (
-							<NavLink
-								key={href}
-								href={href}
-								label={label}
-								icon={icon}
-								isActive={pathname === href || pathname.startsWith(`${href}/`)}
-								collapsed={collapsed}
-							/>
-						))}
-					</nav>
-
-					<Separator className="mx-2 my-2" />
-					{!collapsed && (
-						<div className="px-3 pb-1">
-							<p className="text-xs font-normal uppercase tracking-wider text-sidebar-foreground/50">
-								Ops
-							</p>
-						</div>
-					)}
-					<nav className="space-y-0.5 px-2">
-						{opsLinks.map(({ href, label, icon }) => (
 							<NavLink
 								key={href}
 								href={href}
