@@ -145,19 +145,19 @@ export function SidebarFooter({ collapsed }: SidebarFooterProps) {
 							<p className="text-[10px] text-muted-foreground/60 uppercase tracking-wider font-normal">
 								Always-on mode (PM2)
 							</p>
-							<code className="block text-xs bg-muted px-2 py-1 rounded font-mono">
+							<code className="block text-xs bg-muted px-2 py-1 rounded-sm font-mono">
 								pm2 start ecosystem.config.js
 							</code>
 							<p className="text-[10px] text-muted-foreground/60 uppercase tracking-wider font-normal mt-2">
 								Terminal mode
 							</p>
-							<code className="block text-xs bg-muted px-2 py-1 rounded font-mono">
+							<code className="block text-xs bg-muted px-2 py-1 rounded-sm font-mono">
 								pnpm dev
 							</code>
 							<p className="text-[10px] text-muted-foreground/60 uppercase tracking-wider font-normal mt-2">
 								Stop PM2 server
 							</p>
-							<code className="block text-xs bg-muted px-2 py-1 rounded font-mono">
+							<code className="block text-xs bg-muted px-2 py-1 rounded-sm font-mono">
 								pm2 stop mission-control
 							</code>
 						</div>

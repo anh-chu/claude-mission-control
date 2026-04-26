@@ -123,8 +123,8 @@ export default function AgentPage() {
 								{ key: "line-2", className: "h-3 w-2/3" },
 							]}
 							footer={[
-								{ key: "tag-1", className: "h-4 w-16 rounded-full" },
-								{ key: "tag-2", className: "h-4 w-14 rounded-full" },
+								{ key: "tag-1", className: "h-4 w-16 rounded-sm" },
+								{ key: "tag-2", className: "h-4 w-14 rounded-sm" },
 							]}
 						>
 							<div className="flex items-start justify-between gap-2">
@@ -425,7 +425,7 @@ export default function AgentPage() {
 										type="button"
 										key={skill.id}
 										onClick={() => addSkill(skill.id)}
-										className="inline-flex items-center gap-1 rounded-full border px-2.5 py-0.5 text-xs hover:bg-primary/10 hover:border-primary/30 transition-colors"
+										className="inline-flex items-center gap-1 rounded-sm border px-2.5 py-0.5 text-xs hover:bg-primary/10 hover:border-primary/30 transition-colors"
 									>
 										<Plus className="h-3 w-3" />
 										{skill.name}

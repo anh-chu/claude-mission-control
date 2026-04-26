@@ -103,7 +103,7 @@ function ThinkingEntry({ thinking }: { thinking: string }) {
 
 	return (
 		<Collapsible open={open} onOpenChange={setOpen}>
-			<CollapsibleTrigger className="flex items-start gap-1.5 py-1.5 px-2 w-full hover:bg-sunshine-700/10 rounded text-left bg-sunshine-700/5">
+			<CollapsibleTrigger className="flex items-start gap-1.5 py-1.5 px-2 w-full hover:bg-sunshine-700/10 rounded-sm text-left bg-sunshine-700/5">
 				{open ? (
 					<ChevronDown className="h-3 w-3 mt-0.5 shrink-0 text-muted-foreground" />
 				) : (
@@ -338,7 +338,7 @@ function ToolUseGroupEntry({
 
 	return (
 		<Collapsible open={open} onOpenChange={setOpen}>
-			<CollapsibleTrigger className="flex items-center gap-1.5 py-1 px-2 w-full hover:bg-warning/10 rounded text-left">
+			<CollapsibleTrigger className="flex items-center gap-1.5 py-1 px-2 w-full hover:bg-warning/10 rounded-sm text-left">
 				{open ? (
 					<ChevronDown className="h-3 w-3 shrink-0 text-muted-foreground" />
 				) : (
@@ -368,7 +368,7 @@ function ToolUseEntry({ block }: { block: ToolUseBlock }) {
 	const input = block.input ? JSON.stringify(block.input, null, 2) : "";
 	return (
 		<Collapsible open={open} onOpenChange={setOpen}>
-			<CollapsibleTrigger className="flex items-center gap-1.5 py-1 px-2 w-full hover:bg-muted/50 rounded text-left">
+			<CollapsibleTrigger className="flex items-center gap-1.5 py-1 px-2 w-full hover:bg-muted/50 rounded-sm text-left">
 				{open ? (
 					<ChevronDown className="h-3 w-3 shrink-0 text-muted-foreground" />
 				) : (
@@ -403,7 +403,7 @@ function ToolResultEntry({ block }: { block: ToolResultBlock }) {
 	})();
 	return (
 		<Collapsible open={open} onOpenChange={setOpen}>
-			<CollapsibleTrigger className="flex items-center gap-1.5 py-1 px-2 w-full hover:bg-muted/50 rounded text-left">
+			<CollapsibleTrigger className="flex items-center gap-1.5 py-1 px-2 w-full hover:bg-muted/50 rounded-sm text-left">
 				{open ? (
 					<ChevronDown className="h-3 w-3 shrink-0 text-muted-foreground" />
 				) : (
@@ -491,7 +491,7 @@ export function StreamEntry({ line }: { line: StreamLine }) {
 				: null;
 		const turns = typeof line.num_turns === "number" ? line.num_turns : null;
 		return (
-			<div className="flex items-center gap-2 py-1.5 px-2 bg-muted/30 rounded">
+			<div className="flex items-center gap-2 py-1.5 px-2 bg-muted/30 rounded-sm">
 				<CheckCircle2 className="h-3.5 w-3.5 shrink-0 text-success" />
 				<span className="text-xs text-muted-foreground">
 					Session complete
@@ -523,7 +523,7 @@ export function StreamEntry({ line }: { line: StreamLine }) {
 	})();
 	return (
 		<Collapsible open={open} onOpenChange={setOpen}>
-			<CollapsibleTrigger className="flex items-center gap-1.5 py-1 px-2 w-full hover:bg-muted/50 rounded text-left opacity-60">
+			<CollapsibleTrigger className="flex items-center gap-1.5 py-1 px-2 w-full hover:bg-muted/50 rounded-sm text-left opacity-60">
 				{open ? (
 					<ChevronDown className="h-3 w-3 shrink-0 text-muted-foreground" />
 				) : (

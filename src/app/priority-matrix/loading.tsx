@@ -23,8 +23,8 @@ export default function PriorityMatrixLoading() {
 										{ key: "line-2", className: "h-3 w-2/3" },
 									]}
 									footer={[
-										{ key: "tag-1", className: "h-4 w-16 rounded-full" },
-										{ key: "tag-2", className: "h-4 w-14 rounded-full" },
+										{ key: "tag-1", className: "h-4 w-16 rounded-sm" },
+										{ key: "tag-2", className: "h-4 w-14 rounded-sm" },
 									]}
 								>
 									<div className="flex items-start justify-between gap-2">

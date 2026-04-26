@@ -623,7 +623,7 @@ export default function TaskDetailPage() {
 																			key={att.id}
 																			src={att.url}
 																			alt={att.filename}
-																			className="rounded max-h-32 max-w-[200px] object-contain border border-border/50"
+																			className="rounded-sm max-h-32 max-w-[200px] object-contain border border-border/50"
 																		/>
 																	) : (
 																		<a
@@ -631,7 +631,7 @@ export default function TaskDetailPage() {
 																			href={att.url}
 																			target="_blank"
 																			rel="noopener noreferrer"
-																			className="flex items-center gap-1 bg-muted rounded px-2 py-0.5 text-xs text-accent hover:text-sunshine-700"
+																			className="flex items-center gap-1 bg-muted rounded-sm px-2 py-0.5 text-xs text-accent hover:text-sunshine-700"
 																		>
 																			📎 {att.filename}
 																		</a>

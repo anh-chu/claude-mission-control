@@ -16,7 +16,7 @@ export default function DashboardLoading() {
 				renderItem={() => (
 					<CardSkeleton className="p-4 space-y-2">
 						<div className="flex items-center gap-2">
-							<Skeleton className="h-5 w-5 rounded" />
+							<Skeleton className="h-5 w-5 rounded-sm" />
 							<Skeleton className="h-8 w-12" />
 						</div>
 						<Skeleton className="h-3 w-20" />
@@ -28,7 +28,7 @@ export default function DashboardLoading() {
 					<Skeleton className="h-5 w-24" />
 					{["row-1", "row-2", "row-3"].map((key) => (
 						<div key={key} className="flex items-center gap-2">
-							<Skeleton className="h-4 w-4 rounded" />
+							<Skeleton className="h-4 w-4 rounded-sm" />
 							<Skeleton className="h-4 flex-1" />
 						</div>
 					))}
@@ -37,7 +37,7 @@ export default function DashboardLoading() {
 					<Skeleton className="h-5 w-24" />
 					{["row-1", "row-2"].map((key) => (
 						<div key={key} className="flex items-center gap-2">
-							<Skeleton className="h-4 w-4 rounded" />
+							<Skeleton className="h-4 w-4 rounded-sm" />
 							<Skeleton className="h-4 flex-1" />
 						</div>
 					))}
@@ -48,7 +48,7 @@ export default function DashboardLoading() {
 					<Skeleton className="h-5 w-24" />
 					{["row-1", "row-2", "row-3", "row-4"].map((key) => (
 						<div key={key} className="flex items-center gap-2">
-							<Skeleton className="h-4 w-4 rounded" />
+							<Skeleton className="h-4 w-4 rounded-sm" />
 							<Skeleton className="h-4 flex-1" />
 						</div>
 					))}
@@ -57,7 +57,7 @@ export default function DashboardLoading() {
 					<Skeleton className="h-5 w-24" />
 					{["row-1", "row-2", "row-3", "row-4", "row-5"].map((key) => (
 						<div key={key} className="flex items-center gap-2">
-							<Skeleton className="h-4 w-4 rounded" />
+							<Skeleton className="h-4 w-4 rounded-sm" />
 							<Skeleton className="h-4 flex-1" />
 						</div>
 					))}
@@ -80,7 +80,7 @@ export default function DashboardLoading() {
 								<Skeleton className="h-3 w-3 rounded-full" />
 								<Skeleton className="h-5 w-32" />
 							</div>
-							<Skeleton className="h-5 w-14 rounded-full" />
+							<Skeleton className="h-5 w-14 rounded-sm" />
 						</div>
 					</CardSkeleton>
 				)}

@@ -716,7 +716,7 @@ export default function CommandCenterPage() {
 												</span>
 												<span
 													className={cn(
-														"text-[10px] px-1.5 py-0 rounded-full",
+														"text-[10px] px-1.5 py-0 rounded-sm",
 														agent.status === "dependencies" &&
 															"text-sunshine-700 dark:text-sunshine-700 bg-accent/10",
 														agent.status === "awaiting-decision" &&

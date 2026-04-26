@@ -224,7 +224,7 @@ export function MentionTextarea({
 				<button
 					type="button"
 					onClick={() => fileInputRef.current?.click()}
-					className="shrink-0 h-8 w-8 rounded flex items-center justify-center text-muted-foreground hover:text-foreground hover:bg-muted transition-colors"
+					className="shrink-0 h-8 w-8 rounded-sm flex items-center justify-center text-muted-foreground hover:text-foreground hover:bg-muted transition-colors"
 					title="Attach file"
 				>
 					<Paperclip className="h-4 w-4" />
@@ -244,7 +244,7 @@ export function MentionTextarea({
 					{stagedFiles.map((file, idx) => (
 						<div
 							key={idx}
-							className="flex items-center gap-1 bg-muted rounded px-2 py-0.5 text-xs text-muted-foreground"
+							className="flex items-center gap-1 bg-muted rounded-sm px-2 py-0.5 text-xs text-muted-foreground"
 						>
 							<span className="max-w-[120px] truncate">{file.name}</span>
 							<button

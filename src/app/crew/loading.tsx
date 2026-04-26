@@ -21,9 +21,9 @@ export default function CrewLoading() {
 							<Skeleton className="h-3 w-3 rounded-full" />
 						</div>
 						<div className="flex gap-1">
-							<Skeleton className="h-4 w-16 rounded-full" />
-							<Skeleton className="h-4 w-20 rounded-full" />
-							<Skeleton className="h-4 w-14 rounded-full" />
+							<Skeleton className="h-4 w-16 rounded-sm" />
+							<Skeleton className="h-4 w-20 rounded-sm" />
+							<Skeleton className="h-4 w-14 rounded-sm" />
 						</div>
 						<div className="flex items-center justify-between pt-3 border-t">
 							<Skeleton className="h-3 w-20" />

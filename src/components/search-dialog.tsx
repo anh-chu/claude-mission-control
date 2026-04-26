@@ -145,7 +145,7 @@ export function SearchDialog() {
 									{quad && (
 										<span
 											className={cn(
-												"rounded px-1.5 py-0.5 text-[10px] font-normal",
+												"rounded-sm px-1.5 py-0.5 text-[10px] font-normal",
 												quad.className,
 											)}
 										>
@@ -155,7 +155,7 @@ export function SearchDialog() {
 									{kanban && (
 										<span
 											className={cn(
-												"rounded px-1.5 py-0.5 text-[10px] font-normal",
+												"rounded-sm px-1.5 py-0.5 text-[10px] font-normal",
 												kanban.className,
 											)}
 										>
@@ -187,7 +187,7 @@ export function SearchDialog() {
 								<span className="flex-1 truncate">{project.name}</span>
 								<span
 									className={cn(
-										"rounded px-1.5 py-0.5 text-[10px] font-normal",
+										"rounded-sm px-1.5 py-0.5 text-[10px] font-normal",
 										project.status === "active"
 											? "bg-sunshine-700/20 text-sunshine-700"
 											: project.status === "paused"

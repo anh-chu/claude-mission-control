@@ -122,8 +122,8 @@ export default function SkillsPage() {
 						<CardSkeleton
 							className="p-5 space-y-3"
 							footer={[
-								{ key: "tag-1", className: "h-4 w-14 rounded-full" },
-								{ key: "tag-2", className: "h-4 w-18 rounded-full" },
+								{ key: "tag-1", className: "h-4 w-14 rounded-sm" },
+								{ key: "tag-2", className: "h-4 w-18 rounded-sm" },
 							]}
 							footerClassName="flex gap-1"
 						>

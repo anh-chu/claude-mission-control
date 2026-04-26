@@ -110,7 +110,7 @@ export default function ProjectsPage() {
 									<Skeleton className="h-3 w-3 rounded-full" />
 									<Skeleton className="h-5 w-32" />
 								</div>
-								<Skeleton className="h-5 w-14 rounded-full" />
+								<Skeleton className="h-5 w-14 rounded-sm" />
 							</div>
 						</CardSkeleton>
 					)}

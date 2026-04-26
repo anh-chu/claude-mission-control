@@ -368,7 +368,7 @@ export default function InitiativeDetailPage() {
 							key={s}
 							type="button"
 							onClick={() => handleStatusChange(s)}
-							className={`text-xs px-2.5 py-1 rounded-full border transition-all capitalize ${
+							className={`text-xs px-2.5 py-1 rounded-sm border transition-all capitalize ${
 								initiative.status === s
 									? s === "active"
 										? "bg-sunshine-500/20 text-sunshine-700 border-sunshine-500/40"

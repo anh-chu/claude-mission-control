@@ -1253,7 +1253,7 @@ export default function DocumentsPage() {
 							<img
 								src={`/api/wiki/file?path=${encodeURIComponent(openFile.path)}`}
 								alt={openFile.name}
-								className="max-w-full max-h-full object-contain rounded"
+								className="max-w-full max-h-full object-contain rounded-sm"
 							/>
 						) : editing ? (
 							<Textarea
@@ -1312,14 +1312,14 @@ export default function DocumentsPage() {
 											const isBlock = className?.includes("language-");
 											return isBlock ? (
 												<code
-													className={`block bg-muted rounded px-3 py-2 text-xs font-mono overflow-x-auto my-3 ${className ?? ""}`}
+													className={`block bg-muted rounded-sm px-3 py-2 text-xs font-mono overflow-x-auto my-3 ${className ?? ""}`}
 													{...props}
 												>
 													{children}
 												</code>
 											) : (
 												<code
-													className="bg-muted rounded px-1 py-0.5 text-xs font-mono"
+													className="bg-muted rounded-sm px-1 py-0.5 text-xs font-mono"
 													{...props}
 												>
 													{children}

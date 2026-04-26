@@ -283,7 +283,7 @@ export function SkillForm({ mode, initialData, onDelete }: SkillFormProps) {
 										}`}
 									>
 										<div
-											className={`h-4 w-4 rounded border flex items-center justify-center ${
+											className={`h-4 w-4 rounded-sm border flex items-center justify-center ${
 												isAssigned
 													? "bg-primary border-primary text-primary-foreground"
 													: ""

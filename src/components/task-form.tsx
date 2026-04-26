@@ -278,7 +278,7 @@ export function TaskForm({
 						<button
 							type="button"
 							title="Attach file"
-							className="h-5 w-5 flex items-center justify-center rounded text-muted-foreground hover:text-foreground hover:bg-muted transition-colors"
+							className="h-5 w-5 flex items-center justify-center rounded-sm text-muted-foreground hover:text-foreground hover:bg-muted transition-colors"
 							onClick={() => descFileInputRef.current?.click()}
 						>
 							<Paperclip className="h-3 w-3" />
@@ -319,7 +319,7 @@ export function TaskForm({
 				) : (
 					<button
 						type="button"
-						className="cursor-text hover:bg-muted/40 rounded p-2 -mx-1 transition-colors min-h-[60px] border border-transparent hover:border-border/40 w-full text-left appearance-none bg-transparent"
+						className="cursor-text hover:bg-muted/40 rounded-sm p-2 -mx-1 transition-colors min-h-[60px] border border-transparent hover:border-border/40 w-full text-left appearance-none bg-transparent"
 						onClick={() => setEditingDesc(true)}
 						title="Click to edit"
 					>
@@ -695,7 +695,7 @@ export function TaskForm({
 											type="button"
 											onClick={() => toggleDependency(t.id)}
 											className={cn(
-												"flex items-center gap-2 w-full text-left px-2 py-1 rounded text-xs hover:bg-accent/50 transition-colors",
+												"flex items-center gap-2 w-full text-left px-2 py-1 rounded-sm text-xs hover:bg-accent/50 transition-colors",
 												checked && "bg-accent/30",
 											)}
 										>

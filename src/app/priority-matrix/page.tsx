@@ -233,8 +233,8 @@ export default function TasksPage() {
 												{ key: "line-2", className: "h-3 w-2/3" },
 											]}
 											footer={[
-												{ key: "tag-1", className: "h-4 w-16 rounded-full" },
-												{ key: "tag-2", className: "h-4 w-14 rounded-full" },
+												{ key: "tag-1", className: "h-4 w-16 rounded-sm" },
+												{ key: "tag-2", className: "h-4 w-14 rounded-sm" },
 											]}
 										>
 											<div className="flex items-start justify-between gap-2">
@@ -265,8 +265,8 @@ export default function TasksPage() {
 												{ key: "line-2", className: "h-3 w-2/3" },
 											]}
 											footer={[
-												{ key: "tag-1", className: "h-4 w-16 rounded-full" },
-												{ key: "tag-2", className: "h-4 w-14 rounded-full" },
+												{ key: "tag-1", className: "h-4 w-16 rounded-sm" },
+												{ key: "tag-2", className: "h-4 w-14 rounded-sm" },
 											]}
 										>
 											<div className="flex items-start justify-between gap-2">
@@ -307,7 +307,7 @@ export default function TasksPage() {
 								type="button"
 								onClick={() => setViewMode("matrix")}
 								className={cn(
-									"flex items-center justify-center rounded px-2 py-1 transition-colors",
+									"flex items-center justify-center rounded-sm px-2 py-1 transition-colors",
 									viewMode === "matrix"
 										? "bg-background shadow-sm text-foreground"
 										: "text-muted-foreground hover:text-foreground",
@@ -322,7 +322,7 @@ export default function TasksPage() {
 								type="button"
 								onClick={() => setViewMode("board")}
 								className={cn(
-									"flex items-center justify-center rounded px-2 py-1 transition-colors",
+									"flex items-center justify-center rounded-sm px-2 py-1 transition-colors",
 									viewMode === "board"
 										? "bg-background shadow-sm text-foreground"
 										: "text-muted-foreground hover:text-foreground",

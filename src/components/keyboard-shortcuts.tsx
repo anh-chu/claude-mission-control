@@ -128,7 +128,7 @@ export function KeyboardShortcuts({ onCreateTask }: KeyboardShortcutsProps) {
 								{s.key.split(" ").map((k) => (
 									<kbd
 										key={k}
-										className="inline-flex h-5 min-w-[1.25rem] items-center justify-center rounded border bg-muted px-1.5 text-[10px] font-normal text-muted-foreground"
+										className="inline-flex h-5 min-w-[1.25rem] items-center justify-center rounded-sm border bg-muted px-1.5 text-[10px] font-normal text-muted-foreground"
 									>
 										{k}
 									</kbd>
@@ -139,11 +139,11 @@ export function KeyboardShortcuts({ onCreateTask }: KeyboardShortcutsProps) {
 				</div>
 				<p className="text-xs text-muted-foreground pt-2 border-t">
 					Press{" "}
-					<kbd className="inline-flex h-4 items-center rounded border bg-muted px-1 text-[10px]">
+					<kbd className="inline-flex h-4 items-center rounded-sm border bg-muted px-1 text-[10px]">
 						Ctrl
 					</kbd>{" "}
 					+{" "}
-					<kbd className="inline-flex h-4 items-center rounded border bg-muted px-1 text-[10px]">
+					<kbd className="inline-flex h-4 items-center rounded-sm border bg-muted px-1 text-[10px]">
 						K
 					</kbd>{" "}
 					to open command palette
