@@ -216,7 +216,7 @@ export default function BrainDumpPage() {
 
 			{/* Quick Capture */}
 			<Card>
-				<CardContent>
+				<CardContent className="pt-6">
 					<div className="flex flex-col gap-3">
 						<Textarea
 							placeholder="What's on your mind? Press Enter to capture..."
