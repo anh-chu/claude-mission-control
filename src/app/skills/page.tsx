@@ -26,7 +26,7 @@ function CopyButton({ text }: { text: string }) {
 		<Button
 			variant="ghost"
 			size="icon"
-			className="h-6 w-6 shrink-0"
+			className="size-4 shrink-0"
 			onClick={handleCopy}
 			aria-label="Copy to clipboard"
 		>

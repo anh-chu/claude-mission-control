@@ -52,7 +52,7 @@ export default function Error({
 	return (
 		<div className="flex flex-col items-center justify-center py-20 px-6 text-center">
 			<div className="rounded-sm bg-destructive-soft p-3 mb-4">
-				<AlertTriangle className="h-6 w-6 text-destructive" />
+				<AlertTriangle className="size-5 text-destructive" />
 			</div>
 			<h2 className="text-lg font-normal">Something went wrong</h2>
 			<p className="text-sm text-muted-foreground mt-1 max-w-[360px]">

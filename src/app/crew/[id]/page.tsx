@@ -302,7 +302,7 @@ export default function AgentPage() {
 			{/* Stats */}
 			<div className="grid grid-cols-3 gap-4">
 				<Card className="bg-card">
-					<CardContent className="p-4 text-center">
+					<CardContent className="text-center">
 						<p className="text-2xl font-normal tabular-nums">
 							{agentTasks.length}
 						</p>
@@ -310,7 +310,7 @@ export default function AgentPage() {
 					</CardContent>
 				</Card>
 				<Card className="bg-card">
-					<CardContent className="p-4 text-center">
+					<CardContent className="text-center">
 						<p className="text-2xl font-normal tabular-nums text-status-in-progress">
 							{inProgress.length}
 						</p>
@@ -318,7 +318,7 @@ export default function AgentPage() {
 					</CardContent>
 				</Card>
 				<Card className="bg-card">
-					<CardContent className="p-4 text-center">
+					<CardContent className="text-center">
 						<p className="text-2xl font-normal tabular-nums text-status-done">
 							{completed.length}
 						</p>

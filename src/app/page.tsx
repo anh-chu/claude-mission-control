@@ -325,7 +325,7 @@ export default function CommandCenterPage() {
 							<Rocket className="h-8 w-8 text-primary" />
 						</div>
 						<div>
-							<h1 className="text-2xl font-normal">Welcome to Task Control</h1>
+							<h1 className="text-section font-normal">Welcome to Task Control</h1>
 							<p className="text-muted-foreground mt-2">
 								Your hub for orchestrating AI agents. Create projects, delegate
 								tasks, and let your agents handle the rest.

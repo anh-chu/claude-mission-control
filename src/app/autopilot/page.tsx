@@ -256,7 +256,7 @@ export default function AutopilotPage() {
 			<div className="flex items-center justify-between">
 				<div className="flex items-center gap-3">
 					<Rocket className="h-6 w-6" />
-					<h2 className="text-2xl font-normal">Automation</h2>
+					<h2 className="text-section font-normal">Automation</h2>
 					<Badge
 						variant={isRunning ? "default" : "secondary"}
 						className={isRunning ? "bg-sunshine-700" : ""}
@@ -422,7 +422,7 @@ export default function AutopilotPage() {
 										className="rounded-sm border overflow-hidden"
 									>
 										<div
-											className="flex items-center justify-between p-3 cursor-pointer hover:bg-muted/30 transition-colors"
+											className="flex items-center justify-between p-3 cursor-pointer hover:bg-accent-soft transition-colors"
 											onClick={() =>
 												setExpandedSessionId(isExpanded ? null : session.id)
 											}

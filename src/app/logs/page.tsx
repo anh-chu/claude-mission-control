@@ -276,7 +276,7 @@ export default function LogsPage() {
 
 			<div className="flex items-center justify-between gap-4">
 				<div>
-					<h1 className="text-2xl font-normal tracking-tight">Ops / Debug</h1>
+					<h1 className="text-section font-normal tracking-tight">Ops / Debug</h1>
 					<p className="text-sm text-muted-foreground">
 						Daemon output, active runs, and per-run consoles.
 					</p>

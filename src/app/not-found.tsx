@@ -6,7 +6,7 @@ export default function NotFound() {
 	return (
 		<div className="flex flex-col items-center justify-center py-20 px-6 text-center">
 			<div className="rounded-sm bg-muted p-3 mb-4">
-				<FileQuestion className="h-6 w-6 text-muted-foreground" />
+				<FileQuestion className="size-5 text-muted-foreground" />
 			</div>
 			<h2 className="text-lg font-normal">Page not found</h2>
 			<p className="text-sm text-muted-foreground mt-1 max-w-[300px]">
