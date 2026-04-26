@@ -18,7 +18,7 @@ Light surfaces tier by *both* lightness and chroma: each lift drops saturation t
 | Page Bg | `--background` | `#fdecbe` | `#1f1916` | Foundation canvas (deep honey-cream base, L=88) |
 | Surface | `--card` | `#fff7df` | `#2a2218` | Cards, panels (mid tier, L=92) |
 | Muted Surface | `--muted` | `#fdf5d4` | `#2f2820` | Empty/disabled states, header strips (L=95) |
-| Secondary | `--secondary` | `#fffaee` | `#3d2f22` | Inputs, buttons, lifted interactive surfaces (L=98) |
+| Secondary | `--secondary` | `#fff8e3` | `#3d2f22` | Inputs, buttons, lifted interactive surfaces (L=95) |
 | Popover | `--popover` | `#ffffff` | `#322820` | Apex tier — modals, dropdowns (L=100) |
 | Sidebar Bg | `--sidebar-background` | `#f4db9a` | `#251c12` | Structural chrome, parallel to bg (sunshine-yellow) |
 | Text Base | `--foreground` | `#1f1f1f` | `#fffaeb` | Primary text |
@@ -94,7 +94,7 @@ Light mode mirrors dark mode's structural shape: each lift moves *upward* (light
 | Base | `--background` | `#fdecbe` (88) | `#1f1916` (10) | Recessive canvas |
 | Card | `--card` | `#fff7df` (92) | `#2a2218` (13) | Cards, panels, content surfaces |
 | Muted | `--muted` | `#fdf5d4` (95) | `#2f2820` (15) | Header strips, empty/disabled, subdued surfaces |
-| Secondary | `--secondary` | `#fffaee` (98) | `#3d2f22` (19) | Inputs, buttons, lifted interactive surfaces |
+| Secondary | `--secondary` | `#fff8e3` (95) | `#3d2f22` (19) | Inputs, buttons, lifted interactive surfaces |
 | Apex | `--popover` | `#ffffff` (100) | `#322820` (16) | Modals, dropdowns |
 
 Sidebar (`#f4db9a` light / `#251c12` dark) sits *parallel* to this stack as warm structural chrome — not part of the elevation ladder.
