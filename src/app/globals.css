@@ -65,10 +65,10 @@
 	--info: #fa520f;
 
 	/* Elevation backing — light mode warm golden */
-	--shadow-golden-card: 0 4px 12px -2px rgba(127, 99, 21, 0.10), inset 0 1px 0 rgba(127, 99, 21, 0.18);
-	--shadow-golden-pop: 0 8px 24px -4px rgba(127, 99, 21, 0.15), inset 0 1px 0 rgba(127, 99, 21, 0.20);
-	--shadow-golden-dialog: 0 16px 48px -8px rgba(127, 99, 21, 0.20), inset 0 1px 0 rgba(127, 99, 21, 0.22);
-	--shadow-golden-toast: 0 24px 64px -12px rgba(127, 99, 21, 0.25), inset 0 1px 0 rgba(127, 99, 21, 0.24);
+	--shadow-golden-card: 0 4px 12px -2px rgba(127, 99, 21, 0.10), inset 0 1px 0 rgba(255, 255, 255, 0.6);
+	--shadow-golden-pop: 0 8px 24px -4px rgba(127, 99, 21, 0.15), inset 0 1px 0 rgba(255, 255, 255, 0.65);
+	--shadow-golden-dialog: 0 16px 48px -8px rgba(127, 99, 21, 0.20), inset 0 1px 0 rgba(255, 255, 255, 0.7);
+	--shadow-golden-toast: 0 24px 64px -12px rgba(127, 99, 21, 0.25), inset 0 1px 0 rgba(255, 255, 255, 0.75);
 
 	/* === State tokens === */
 	--state-disabled-opacity: 0.5;
@@ -106,17 +106,17 @@
 	--muted-foreground: hsl(35, 18%, 60%);
 	--accent: #fa520f;
 	--accent-foreground: #ffffff;
-	--accent-soft: #3a2818;
-	--primary-soft: #3a2818;
-	--success-soft: #1e3a25;
-	--quadrant-do-soft: #3a2818;
-	--quadrant-schedule-soft: #3d3320;
-	--quadrant-delegate-soft: #3d3320;
-	--quadrant-eliminate-soft: hsl(30, 8%, 22%);
+	--accent-soft: #61331d;
+	--primary-soft: #453c35;
+	--success-soft: #235233;
+	--quadrant-do-soft: #702f1f;
+	--quadrant-schedule-soft: #755615;
+	--quadrant-delegate-soft: #2f4f40;
+	--quadrant-eliminate-soft: #423e3b;
 	--destructive: #ef4444;
 	--destructive-foreground: #ffffff;
-	--destructive-soft: #3a2424;
-	--warning-soft: #3d3320;
+	--destructive-soft: #78212b;
+	--warning-soft: #634b22;
 	--border: hsl(28, 18%, 22%);
 	--input: hsl(28, 15%, 20%);
 	--ring: #fa520f;

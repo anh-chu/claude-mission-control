@@ -309,7 +309,7 @@ export default function TasksPage() {
 								className={cn(
 									"flex items-center justify-center rounded-sm px-2 py-1 transition-colors",
 									viewMode === "matrix"
-										? "bg-background shadow-sm text-foreground"
+										? "bg-background shadow-e-1 text-foreground"
 										: "text-muted-foreground hover:text-foreground",
 								)}
 								aria-label="Priority Matrix view"
@@ -324,7 +324,7 @@ export default function TasksPage() {
 								className={cn(
 									"flex items-center justify-center rounded-sm px-2 py-1 transition-colors",
 									viewMode === "board"
-										? "bg-background shadow-sm text-foreground"
+										? "bg-background shadow-e-1 text-foreground"
 										: "text-muted-foreground hover:text-foreground",
 								)}
 								aria-label="Status Board view"

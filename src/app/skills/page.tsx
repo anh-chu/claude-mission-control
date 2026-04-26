@@ -48,7 +48,7 @@ function SkillCard({
 }) {
 	return (
 		<Link href={`/skills/${skill.id}`}>
-			<div className="group rounded-sm border bg-card p-5 transition-all hover:shadow-md hover:border-primary/30">
+			<div className="group rounded-sm border bg-card p-5 transition-all hover:shadow-e-2 hover:border-primary/30">
 				<div className="flex items-start justify-between">
 					<div>
 						<h3 className="font-normal text-sm group-hover:text-primary transition-colors">
