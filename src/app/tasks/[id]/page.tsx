@@ -53,22 +53,22 @@ import { cn, parseAgentMentions } from "@/lib/utils";
 const quadrantLabels: Record<string, { label: string; color: string }> = {
 	do: {
 		label: "DO",
-		color: "bg-quadrant-do/20 text-quadrant-do border-quadrant-do/30",
+		color: "bg-quadrant-do-soft text-quadrant-do border-quadrant-do/30",
 	},
 	schedule: {
 		label: "SCHEDULE",
 		color:
-			"bg-quadrant-schedule/20 text-quadrant-schedule border-quadrant-schedule/30",
+			"bg-quadrant-schedule-soft text-quadrant-schedule border-quadrant-schedule/30",
 	},
 	delegate: {
 		label: "DELEGATE",
 		color:
-			"bg-quadrant-delegate/20 text-quadrant-delegate border-quadrant-delegate/30",
+			"bg-quadrant-delegate-soft text-quadrant-delegate border-quadrant-delegate/30",
 	},
 	eliminate: {
 		label: "ELIMINATE",
 		color:
-			"bg-quadrant-eliminate/20 text-quadrant-eliminate border-quadrant-eliminate/30",
+			"bg-quadrant-eliminate-soft text-quadrant-eliminate border-quadrant-eliminate/30",
 	},
 };
 

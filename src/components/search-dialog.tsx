@@ -38,7 +38,7 @@ const KANBAN_LABELS: Record<string, { label: string; className: string }> = {
 		label: "Active",
 		className: "bg-accent-soft text-accent",
 	},
-	done: { label: "Done", className: "bg-success/20 text-success" },
+	done: { label: "Done", className: "bg-success-soft text-success" },
 };
 
 function getQuadrantKey(task: Task): string {

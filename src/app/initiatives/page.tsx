@@ -71,7 +71,7 @@ function statusBadge(status: InitiativeStatus) {
 			);
 		case "completed":
 			return (
-				<Badge className="bg-success/20 text-success border-success/30 text-[10px]">
+				<Badge className="bg-success-soft text-success border-success/30 text-[10px]">
 					Completed
 				</Badge>
 			);

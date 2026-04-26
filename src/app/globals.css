@@ -19,6 +19,11 @@
 	--accent-foreground: #ffffff;
 	--accent-soft: #fde9d4;
 	--primary-soft: #ececec;
+	--success-soft: #dcf5e3;
+	--quadrant-do-soft: #fde9d4;
+	--quadrant-schedule-soft: #fff0d0;
+	--quadrant-delegate-soft: #fee8c4;
+	--quadrant-eliminate-soft: hsl(30, 10%, 90%);
 	--destructive: #dc2626;
 	--destructive-foreground: #ffffff;
 	--destructive-soft: #fbe7e7;
@@ -103,6 +108,11 @@
 	--accent-foreground: #ffffff;
 	--accent-soft: #3a2818;
 	--primary-soft: #3a2818;
+	--success-soft: #1e3a25;
+	--quadrant-do-soft: #3a2818;
+	--quadrant-schedule-soft: #3d3320;
+	--quadrant-delegate-soft: #3d3320;
+	--quadrant-eliminate-soft: hsl(30, 8%, 22%);
 	--destructive: #ef4444;
 	--destructive-foreground: #ffffff;
 	--destructive-soft: #3a2424;

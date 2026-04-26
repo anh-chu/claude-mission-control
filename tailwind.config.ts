@@ -61,15 +61,22 @@ const config: Config = {
 				},
 				// Eisenhower quadrant colors
 				"quadrant-do": "var(--quadrant-do)",
+				"quadrant-do-soft": "var(--quadrant-do-soft)",
 				"quadrant-schedule": "var(--quadrant-schedule)",
+				"quadrant-schedule-soft": "var(--quadrant-schedule-soft)",
 				"quadrant-delegate": "var(--quadrant-delegate)",
+				"quadrant-delegate-soft": "var(--quadrant-delegate-soft)",
 				"quadrant-eliminate": "var(--quadrant-eliminate)",
+				"quadrant-eliminate-soft": "var(--quadrant-eliminate-soft)",
 				// Status colors
 				"status-not-started": "var(--status-not-started)",
 				"status-in-progress": "var(--status-in-progress)",
 				"status-done": "var(--status-done)",
 				// Semantic colors
-				success: "var(--success)",
+				success: {
+					DEFAULT: "var(--success)",
+					soft: "var(--success-soft)",
+				},
 				warning: {
 					DEFAULT: "var(--warning)",
 					soft: "var(--warning-soft)",

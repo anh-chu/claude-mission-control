@@ -51,7 +51,7 @@ const EVENT_META: EventMetaMap = {
 	},
 	task_completed: {
 		label: "Task Completed",
-		color: "bg-success/10 text-success border-success/20",
+		color: "bg-success-soft text-success border-success/20",
 	},
 	task_delegated: {
 		label: "Task Delegated",
@@ -71,7 +71,7 @@ const EVENT_META: EventMetaMap = {
 	},
 	decision_answered: {
 		label: "Decision Answered",
-		color: "bg-success/10 text-success border-success/20",
+		color: "bg-success-soft text-success border-success/20",
 	},
 	brain_dump_triaged: {
 		label: "Quick Capture Processed",
@@ -79,7 +79,7 @@ const EVENT_META: EventMetaMap = {
 	},
 	milestone_completed: {
 		label: "Milestone Completed",
-		color: "bg-success/10 text-success border-success/20",
+		color: "bg-success-soft text-success border-success/20",
 	},
 	agent_checkin: {
 		label: "Agent Check-in",
