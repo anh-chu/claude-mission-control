@@ -73,11 +73,11 @@ export function ProjectCardLarge({
 						className={cn(
 							"group cursor-pointer transition-all hover:shadow-golden hover:border-primary/30 hover:-translate-y-0.5 animate-fade-in-up",
 							isRunning &&
-								"ring-2 ring-green-500/50 border-green-500/30 shadow-green-500/10 shadow-golden",
+								"ring-2 ring-mistral-orange/50 border-mistral-orange/30 shadow-golden",
 						)}
 					>
 						<CardHeader
-							className={cn("pb-3", isRunning && "bg-green-500/5 rounded-t-sm")}
+							className={cn("pb-3", isRunning && "bg-mistral-orange/5 rounded-t-sm")}
 						>
 							<div className="flex items-center justify-between">
 								<div className="flex items-center gap-2">

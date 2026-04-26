@@ -66,8 +66,8 @@ export function RunButton({
 					btnSize,
 					"shrink-0 rounded-full transition-colors",
 					isRunning
-						? "text-green-500 cursor-default"
-						: "text-muted-foreground hover:text-green-500 hover:bg-green-500/10",
+						? "text-mistral-orange cursor-default"
+						: "text-muted-foreground hover:text-mistral-orange hover:bg-mistral-orange/10",
 				)}
 				disabled={disabled || isRunning}
 				title={title ?? (isRunning ? "Running..." : "Launch task")}

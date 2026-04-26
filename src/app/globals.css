@@ -57,25 +57,25 @@
 }
 
 .dark {
-	/* Warm dark — Mistral Black base, warm browns for surfaces */
-	--background: #1f1f1f;
+	/* Warm dark — deeper warm brown-black base */
+	--background: #1f1916;
 	--foreground: #fffaeb;
-	--card: #2a2520;
+	--card: #2a2218;
 	--card-foreground: #fffaeb;
-	--popover: #322c25;
+	--popover: #322820;
 	--popover-foreground: #fffaeb;
 	--primary: #fa520f;
 	--primary-foreground: #ffffff;
-	--secondary: #3d342a;
+	--secondary: #3d2f22;
 	--secondary-foreground: #fffaeb;
-	--muted: #332d25;
-	--muted-foreground: hsl(35, 15%, 55%);
+	--muted: #2f2820;
+	--muted-foreground: hsl(35, 18%, 60%);
 	--accent: #fa520f;
 	--accent-foreground: #ffffff;
 	--destructive: #ef4444;
 	--destructive-foreground: #ffffff;
-	--border: hsl(30, 15%, 22%);
-	--input: hsl(30, 12%, 20%);
+	--border: hsl(28, 18%, 22%);
+	--input: hsl(28, 15%, 20%);
 	--ring: #fa520f;
 
 	/* Chart colors — warm-shifted dark equivalents */
@@ -86,11 +86,11 @@
 	--chart-5: #fffaeb;
 
 	/* Sidebar — deeper warm dark for visual hierarchy */
-	--sidebar-background: #251f19;
+	--sidebar-background: #251c12;
 	--sidebar-foreground: #fffaeb;
 	--sidebar-primary: #fa520f;
 	--sidebar-primary-foreground: #ffffff;
-	--sidebar-accent: #2a2520;
+	--sidebar-accent: #2a2218;
 	--sidebar-accent-foreground: #fffaeb;
 	--sidebar-border: hsl(30, 15%, 18%);
 	--sidebar-ring: #fa520f;
@@ -110,6 +110,14 @@
 	--success: #22c55e;
 	--warning: #ffa110;
 	--info: #fa520f;
+}
+
+/* Bug 1 fix: shadow-golden on dark bg — no golden halo, pure depth shadows */
+.dark .shadow-golden {
+	box-shadow:
+		0 1px 0 0 rgba(255, 255, 255, 0.04) inset,
+		0 4px 12px 0 rgba(0, 0, 0, 0.4),
+		0 16px 32px 0 rgba(0, 0, 0, 0.3);
 }
 
 @layer base {
@@ -224,10 +232,10 @@ nextjs-portal {
 		background: transparent;
 	}
 	.dark ::-webkit-scrollbar-thumb {
-		background: #3d342a;
+		background: #3d2f22;
 		border-radius: 4px;
 	}
 	.dark ::-webkit-scrollbar-thumb:hover {
-		background: #4a3f33;
+		background: #4a3a28;
 	}
 }

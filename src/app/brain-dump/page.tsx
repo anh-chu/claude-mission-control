@@ -228,7 +228,7 @@ export default function BrainDumpPage() {
 						<Tip content="Save quick capture entry">
 							<Button
 								onClick={handleAdd}
-								className="self-end"
+								className="self-end bg-mistral-orange text-white hover:bg-mistral-flame"
 								disabled={!newContent.trim()}
 							>
 								Capture
