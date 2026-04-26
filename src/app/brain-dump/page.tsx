@@ -217,23 +217,28 @@ export default function BrainDumpPage() {
 			{/* Quick Capture */}
 			<Card>
 				<CardContent>
-					<div className="flex gap-3">
+					<div className="flex flex-col gap-3">
 						<Textarea
 							placeholder="What's on your mind? Press Enter to capture..."
 							value={newContent}
 							onChange={(e) => setNewContent(e.target.value)}
 							onKeyDown={handleKeyDown}
-							className="min-h-[60px] flex-1 resize-none"
+							className="min-h-[96px] resize-none"
 						/>
-						<Tip content="Save quick capture entry">
-							<Button
-								onClick={handleAdd}
-								className="self-end bg-primary text-primary-foreground hover:bg-primary/90"
-								disabled={!newContent.trim()}
-							>
-								Capture
-							</Button>
-						</Tip>
+						<div className="flex items-center justify-between">
+							<p className="text-xs text-muted-foreground">
+								Press <kbd className="rounded-sm border bg-muted px-1.5 py-0.5 text-[10px] font-mono">⌘ Enter</kbd> to capture
+							</p>
+							<Tip content="Save quick capture entry">
+								<Button
+									size="sm"
+									onClick={handleAdd}
+									disabled={!newContent.trim()}
+								>
+									Capture
+								</Button>
+							</Tip>
+						</div>
 					</div>
 				</CardContent>
 			</Card>
