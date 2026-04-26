@@ -3,17 +3,17 @@
 @tailwind utilities;
 
 :root {
-	--background: #fffaeb;
+	--background: #fdf3da;
 	--foreground: #1f1f1f;
-	--card: #fffefa;
+	--card: #fffaeb;
 	--card-foreground: #1f1f1f;
 	--popover: #ffffff;
 	--popover-foreground: #1f1f1f;
 	--primary: #1f1f1f;
 	--primary-foreground: #ffffff;
-	--secondary: #fff0c2;
+	--secondary: #fce7b0;
 	--secondary-foreground: #1f1f1f;
-	--muted: #fff0c2;
+	--muted: #f2deb0;
 	--muted-foreground: hsl(0, 0%, 24%);
 	--accent: #fa520f;
 	--accent-foreground: #ffffff;
@@ -28,7 +28,7 @@
 	--destructive-foreground: #ffffff;
 	--destructive-soft: #fbe7e7;
 	--warning-soft: #fff3d6;
-	--border: hsl(40, 30%, 88%);
+	--border: #dfcc9f;
 	--input: hsl(40, 25%, 80%);
 	--ring: #fa520f;
 	--radius: 0.125rem;
