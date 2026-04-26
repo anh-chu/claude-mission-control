@@ -11,14 +11,16 @@ Complete commitment to warm temperature. Gradient system: yellow (`#ffd900`) to 
 ## 2. Token Registry
 
 ### Color
+Light surfaces tier by *both* lightness and chroma: each lift drops saturation toward white. Dark surfaces tier by lightness alone (warm-brown base, lighter = elevated).
+
 | Role | Variable | Light Value | Dark Value | Notes |
 |---|---|---|---|---|
-| Page Bg | `--background` | `#fdf3da` | `#1f1916` | Foundation canvas (deep honey-cream base) |
-| Surface | `--card` | `#fffaeb` | `#2a2218` | Base surface, lifted above bg |
-| Popover | `--popover` | `#ffffff` | `#322820` | Apex tier — modals, dropdowns, inputs |
-| Secondary | `--secondary` | `#fce7b0` | (dark equiv) | Buttons/pills, distinct from sidebar |
-| Muted | `--muted` | `#f2deb0` | (dark equiv) | Empty/disabled states, subdued surfaces |
-| Sidebar Bg | `--sidebar-background` | `#fff0c2` | `#251c12` | Structural chrome (sunshine-yellow) |
+| Page Bg | `--background` | `#fdecbe` | `#1f1916` | Foundation canvas (deep honey-cream base, L=88) |
+| Surface | `--card` | `#fff7df` | `#2a2218` | Cards, panels (mid tier, L=92) |
+| Muted Surface | `--muted` | `#fdf5d4` | `#2f2820` | Empty/disabled states, header strips (L=95) |
+| Secondary | `--secondary` | `#fffaee` | `#3d2f22` | Inputs, buttons, lifted interactive surfaces (L=98) |
+| Popover | `--popover` | `#ffffff` | `#322820` | Apex tier — modals, dropdowns (L=100) |
+| Sidebar Bg | `--sidebar-background` | `#f4db9a` | `#251c12` | Structural chrome, parallel to bg (sunshine-yellow) |
 | Text Base | `--foreground` | `#1f1f1f` | `#fffaeb` | Primary text |
 | Text Muted | `--muted-foreground` | `hsl(0, 0%, 24%)` | `hsl(35, 18%, 60%)` | Secondary text |
 | Border | `--border` | `#dfcc9f` | `hsl(28, 18%, 22%)` | Structural dividers (warm taupe) |
@@ -26,6 +28,7 @@ Complete commitment to warm temperature. Gradient system: yellow (`#ffd900`) to 
 | Primary Action| `--primary` | `#1f1f1f` | `#fa520f` | Main CTA bg |
 | Primary Text| `--primary-foreground`| `#ffffff` | `#ffffff` | Main CTA text |
 | Accent | `--accent` | `#fa520f` | `#fa520f` | Brand focus / active states |
+| Warning | `--warning` | `#ffa110` | `#ffa110` | Warning fill (badges, status pills) |
 | Destructive | `--destructive` | `#dc2626` | `#ef4444` | Danger actions |
 
 #### Soft Semantic Tokens
@@ -33,11 +36,16 @@ Pre-mixed solid tints for state highlights, icon halos, status blocks, drag-over
 
 | Role | Variable | Tailwind | Light Value | Dark Value | Use For |
 |---|---|---|---|---|---|
-| Accent Soft | `--accent-soft` | `bg-accent-soft` | `#fde9d4` | `#3a2818` | Active state, icon halos, daemon-running highlights |
-| Primary Soft | `--primary-soft` | `bg-primary-soft` | `#ececec` | `#3a2818` | Drag-over zones, board drop targets, primary halos |
-| Destructive Soft| `--destructive-soft`| `bg-destructive-soft`| `#fbe7e7` | `#3a2424` | Error blocks, error message boxes, DO status pills |
-| Warning Soft | `--warning-soft` | `bg-warning-soft` | `#fff3d6` | `#3d3320` | Warning panels, scheduled-status indicators |
+| Accent Soft | `--accent-soft` | `bg-accent-soft` | `#fbd9b4` | `#61331d` | Active state, icon halos, daemon-running highlights |
+| Primary Soft | `--primary-soft` | `bg-primary-soft` | `#e8dcc4` | `#453c35` | Drag-over zones, board drop targets, primary halos |
+| Success Soft | `--success-soft` | `bg-success-soft` | `#c4e8c8` | `#235233` | Success blocks, completed indicators |
+| Destructive Soft| `--destructive-soft`| `bg-destructive-soft`| `#f5c4c4` | `#78212b` | Error blocks, error message boxes, DO status pills |
+| Warning Soft | `--warning-soft` | `bg-warning-soft` | `#ffe8a8` | `#634b22` | Warning panels, scheduled-status indicators |
 | Warning Ink  | `--warning-ink`  | `text-warning-ink`   | `#a85800` | `#ffa110` | Amber text/icon on light surfaces (Thinking, tool calls). Light mode uses deepened amber for AA on cream. |
+| Quadrant Do Soft | `--quadrant-do-soft` | `bg-quadrant-do-soft` | `#fbd9b4` | `#702f1f` | Eisenhower DO halos |
+| Quadrant Schedule Soft | `--quadrant-schedule-soft` | `bg-quadrant-schedule-soft` | `#ffd9a0` | `#755615` | Eisenhower SCHEDULE halos |
+| Quadrant Delegate Soft | `--quadrant-delegate-soft` | `bg-quadrant-delegate-soft` | `#fdd9a8` | `#2f4f40` | Eisenhower DELEGATE halos |
+| Quadrant Eliminate Soft| `--quadrant-eliminate-soft`| `bg-quadrant-eliminate-soft`| `#d8d0c4` | `#423e3b` | Eisenhower ELIMINATE halos |
 
 ### Typography
 - **Family**: `Arial, ui-sans-serif, system-ui`
@@ -78,21 +86,24 @@ Map shadow + border + ring to semantic tiers. Use `shadow-e-{n}` utilities, neve
 
 *`shadow-e-*` in light is `rgba(127,99,21,x)` warm-brown multi-layer with white inset highlight. Dark is pure dark drop-shadow with subtle white inset. `shadow-golden` is the original 5-layer cone, reserved for elevated chrome where the dramatic look is intentional.*
 
-### Surface Hierarchy (Light Mode)
-Monotonic warm-to-white elevation. All lift moves in the same hue family; pure white is reserved for the apex tier.
+### Surface Hierarchy
+Light mode mirrors dark mode's structural shape: each lift moves *upward* (lighter). Light additionally drops chroma toward white at the apex so tiers separate visually, not just by lightness.
 
-| Tier | Token | Hex | Role |
-|---|---|---|---|
-| Base | `--background` | `#fdf3da` | Recessive canvas |
-| Mid | `--card` | `#fffaeb` | Cards, panels, content surfaces |
-| Apex | `--popover` | `#ffffff` | Modals, dropdowns, inputs |
+| Tier | Token | Light (L) | Dark (L) | Role |
+|---|---|---|---|---|
+| Base | `--background` | `#fdecbe` (88) | `#1f1916` (10) | Recessive canvas |
+| Card | `--card` | `#fff7df` (92) | `#2a2218` (13) | Cards, panels, content surfaces |
+| Muted | `--muted` | `#fdf5d4` (95) | `#2f2820` (15) | Header strips, empty/disabled, subdued surfaces |
+| Secondary | `--secondary` | `#fffaee` (98) | `#3d2f22` (19) | Inputs, buttons, lifted interactive surfaces |
+| Apex | `--popover` | `#ffffff` (100) | `#322820` (16) | Modals, dropdowns |
 
-Sidebar (`#fff0c2`) and secondary chips (`#fce7b0`) sit *parallel* to this stack as warm structural chrome — they are not part of the elevation ladder.
+Sidebar (`#f4db9a` light / `#251c12` dark) sits *parallel* to this stack as warm structural chrome — not part of the elevation ladder.
 
 **Rules**
-- Inputs/textareas bind to `bg-popover` so they read white in light, lifted in dark, regardless of the surface they sit on.
-- Never use `bg-white` directly. Use `bg-popover` for the apex tier.
-- Never use `bg-card` and `bg-background` interchangeably; they are different elevation tiers.
+- Inputs and textareas bind to `bg-secondary` so they sit on the warm-lifted interactive tier in both modes (avoids clinical pure white in light).
+- Never use `bg-white` or `bg-black` directly. Use `bg-popover` for the apex surface.
+- `bg-card` and `bg-background` are *different* elevation tiers — never use them interchangeably.
+- Soft semantic tokens (`bg-accent-soft`, `bg-warning-soft`, etc.) are tuned to sit *below* `--card` (L ≈ 83–88) so tinted halos remain visible against the new card surface.
 
 ### Motion
 Semantic states tied to durations. All `ease-out`.
