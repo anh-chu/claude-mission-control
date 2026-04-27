@@ -442,9 +442,12 @@ export default function DocumentsPage() {
 				throw new Error(e.error ?? "Failed to start run");
 			}
 			const data = (await res.json()) as { runId: string };
-			// Accumulate current run's lines before hook resets on runId change
-			if (streamRunId) {
+			// Follow-up: accumulate current run's lines before hook resets
+			// New conversation: reset prior lines
+			if (sessionId && streamRunId) {
 				setPriorLines((prev) => [...prev, ...agentStreamLinesRef.current]);
+			} else {
+				setPriorLines([]);
 			}
 			setStreamRunId(data.runId);
 			await loadRuns();
@@ -1288,6 +1291,7 @@ export default function DocumentsPage() {
 											type="button"
 											className="w-full text-left rounded-sm border bg-background px-3 py-2 text-xs space-y-1 cursor-pointer hover:bg-muted/50 transition-colors"
 											onClick={() => {
+												setPriorLines([]);
 												setStreamRunId(run.id);
 											}}
 										>
