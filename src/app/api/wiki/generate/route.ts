@@ -1,4 +1,11 @@
-import { mkdirSync, renameSync, writeFileSync } from "node:fs";
+import { spawn } from "node:child_process";
+import {
+	existsSync,
+	mkdirSync,
+	readFileSync,
+	renameSync,
+	writeFileSync,
+} from "node:fs";
 import path from "node:path";
 import { NextResponse } from "next/server";
 import {
@@ -6,7 +13,7 @@ import {
 	getWorkspaceDataDir,
 	mutateActiveRuns,
 } from "@/lib/data";
-import { getWikiDir } from "@/lib/paths";
+import { DATA_DIR, getWikiDir } from "@/lib/paths";
 import { applyWorkspaceContext } from "@/lib/workspace-context";
 
 interface WikiJobFile {
@@ -16,6 +23,39 @@ interface WikiJobFile {
 	model: string;
 	sessionId: string | null;
 	message: string | null;
+}
+
+// ─── Daemon auto-start ────────────────────────────────────────────────────────
+
+const DAEMON_PID_FILE = path.join(DATA_DIR, "daemon.pid");
+
+function isDaemonRunning(): boolean {
+	try {
+		if (!existsSync(DAEMON_PID_FILE)) return false;
+		const pid = Number(readFileSync(DAEMON_PID_FILE, "utf-8").trim());
+		if (!Number.isFinite(pid) || pid <= 0) return false;
+		process.kill(pid, 0);
+		return true;
+	} catch {
+		return false;
+	}
+}
+
+function ensureDaemonRunning(): void {
+	if (isDaemonRunning()) return;
+	const daemonScript = path.resolve(
+		process.cwd(),
+		"scripts",
+		"daemon",
+		"index.ts",
+	);
+	const tsxBin = path.resolve(process.cwd(), "node_modules", ".bin", "tsx");
+	const child = spawn(tsxBin, [daemonScript, "start"], {
+		cwd: process.cwd(),
+		detached: true,
+		stdio: "ignore",
+	});
+	child.unref();
 }
 
 function writeJobFile(wikiDir: string, job: WikiJobFile): void {
@@ -89,7 +129,8 @@ export async function POST(request: Request) {
 			return undefined;
 		});
 
-		// Write job file — main daemon fs.watch picks it up
+		// Ensure daemon is running, then write job file
+		ensureDaemonRunning();
 		const job: WikiJobFile = {
 			runId,
 			workspaceId,
