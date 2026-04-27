@@ -139,7 +139,6 @@ export async function ensureWorkspaceDir(workspaceId: string): Promise<void> {
 export async function initWikiDir(workspaceId: string): Promise<void> {
 	const wikiDir = getWikiDir(workspaceId);
 	await mkdir(wikiDir, { recursive: true });
-	await mkdir(path.join(wikiDir, ".runs"), { recursive: true });
 
 	// Write .wiki-path sentinel for llm-wiki-pm v2.5.0 SessionStart discovery.
 	// Use getDefaultWikiDir to avoid circular read of the sentinel itself.

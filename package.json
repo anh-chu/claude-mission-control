@@ -4,9 +4,8 @@
 	"license": "AGPL-3.0-only",
 	"private": true,
 	"scripts": {
-		"dev": "pnpm build:daemon && next dev",
-		"build": "pnpm build:daemon && next build",
-		"build:daemon": "esbuild scripts/daemon/run-wiki-generate.ts --bundle --platform=node --target=node20 --format=esm --outfile=dist/daemon/run-wiki-generate.mjs --packages=external",
+		"dev": "next dev",
+		"build": "next build",
 		"start": "next start",
 		"lint": "next lint",
 		"test": "vitest run",

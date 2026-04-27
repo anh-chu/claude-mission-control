@@ -51,6 +51,7 @@ import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Textarea } from "@/components/ui/textarea";
 import type { StreamLine } from "@/hooks/use-agent-stream";
+import { useAgentStream } from "@/hooks/use-agent-stream";
 import { useAgents } from "@/hooks/use-data";
 import { SKILLS } from "@/lib/types";
 import { cn } from "@/lib/utils";
@@ -66,18 +67,19 @@ interface TreeNode {
 	loading?: boolean;
 }
 
-interface WikiRunRecord {
+interface WikiRun {
 	id: string;
-	workspaceId: string;
-	status: "running" | "completed" | "failed";
-	agentId?: string;
-	model?: string;
+	status: "running" | "completed" | "failed" | "timeout" | "stopped";
+	agentId: string;
+	source?: string;
 	startedAt: string;
 	completedAt: string | null;
 	exitCode: number | null;
 	error: string | null;
-	pid: number;
-	sessionId?: string;
+	streamFile?: string | null;
+	sessionId?: string | null;
+	firstMessage?: string | null;
+	model?: string | null;
 }
 
 const DOC_MAINTAINER_AGENT_ID = "doc-maintainer";
@@ -157,16 +159,15 @@ export default function DocumentsPage() {
 	const [saving, setSaving] = useState(false);
 	const [saveError, setSaveError] = useState<string | null>(null);
 
-	const [wikiRuns, setWikiRuns] = useState<WikiRunRecord[]>([]);
+	const [wikiRuns, setWikiRuns] = useState<WikiRun[]>([]);
 	const [runsLoading, setRunsLoading] = useState(false);
 	const [runError, setRunError] = useState<string | null>(null);
-	const [running, setRunning] = useState(false);
 	const [runMessage, setRunMessage] = useState<string | null>(null);
 	const [initingWiki, setInitingWiki] = useState(false);
 
-	const [activeRunId, setActiveRunId] = useState<string | null>(null);
 	const [streamRunId, setStreamRunId] = useState<string | null>(null);
-	const [streamEvents, setStreamEvents] = useState<StreamLine[]>([]);
+	const [priorLines, setPriorLines] = useState<StreamLine[]>([]);
+	const agentStreamLinesRef = useRef<StreamLine[]>([]);
 	const [selectedAgentId, setSelectedAgentId] = useState(
 		DOC_MAINTAINER_AGENT_ID,
 	);
@@ -176,7 +177,15 @@ export default function DocumentsPage() {
 		(a) => a.id === DOC_MAINTAINER_AGENT_ID,
 	);
 	const [selectedModel, setSelectedModel] = useState("sonnet");
-	const streamCursorRef = useRef(0);
+	const {
+		lines: agentStreamLines,
+		isConnected,
+		isDone: streamDone,
+	} = useAgentStream(streamRunId);
+	// Keep a ref in sync so handleChatSend can snapshot lines before runId changes
+	useEffect(() => {
+		agentStreamLinesRef.current = agentStreamLines;
+	}, [agentStreamLines]);
 	const [chatInput, setChatInput] = useState("");
 	const [chatSending, setChatSending] = useState(false);
 	const [slashMenuOpen, setSlashMenuOpen] = useState(false);
@@ -226,8 +235,8 @@ export default function DocumentsPage() {
 		);
 	}, [slashMenuOpen, slashQuery, allSlashCommands]);
 	const displayStreamEvents = useMemo(
-		() => prepareConsoleLines(streamEvents),
-		[streamEvents],
+		() => prepareConsoleLines([...priorLines, ...agentStreamLines]),
+		[priorLines, agentStreamLines],
 	);
 
 	// Drag state
@@ -361,10 +370,18 @@ export default function DocumentsPage() {
 	const loadRuns = useCallback(async () => {
 		setRunsLoading(true);
 		try {
-			const res = await fetch("/api/wiki/runs");
+			const res = await fetch("/api/runs");
 			if (!res.ok) return;
-			const data: { runs: WikiRunRecord[] } = await res.json();
-			setWikiRuns(data.runs);
+			const data: { runs: WikiRun[] } = await res.json();
+			const wikiOnly = (data.runs || []).filter(
+				(r: WikiRun) => r.source === "wiki",
+			);
+			setWikiRuns(
+				wikiOnly.sort(
+					(a, b) =>
+						new Date(b.startedAt).getTime() - new Date(a.startedAt).getTime(),
+				),
+			);
 		} catch {
 			// ignore
 		} finally {
@@ -384,85 +401,10 @@ export default function DocumentsPage() {
 	}, [runAgents, selectedAgentId]);
 
 	useEffect(() => {
-		if (!activeRunId) return;
-		const id = setInterval(async () => {
-			try {
-				const res = await fetch("/api/wiki/runs");
-				if (!res.ok) return;
-				const data: { runs: WikiRunRecord[] } = await res.json();
-				setWikiRuns(data.runs);
-
-				const run = data.runs.find((r) => r.id === activeRunId);
-				if (!run) return;
-				if (run.status === "running") {
-					setRunning(true);
-					return;
-				}
-				setRunning(false);
-				setActiveRunId(null);
-				if (run.status === "completed") {
-					setRunMessage(`Run ${run.id} completed.`);
-					setRunError(null);
-				} else {
-					setRunError(run.error ?? `Run ${run.id} failed.`);
-				}
-			} catch {
-				// ignore polling errors
-			}
-		}, 2000);
-		return () => clearInterval(id);
-	}, [activeRunId]);
-
-	useEffect(() => {
-		if (!streamRunId) return;
-		const ac = new AbortController();
-
-		(async () => {
-			try {
-				const res = await fetch(
-					`/api/wiki/run-stream?runId=${encodeURIComponent(streamRunId)}&since=${streamCursorRef.current}`,
-					{ signal: ac.signal },
-				);
-				if (!res.ok || !res.body) return;
-				const reader = res.body.getReader();
-				const decoder = new TextDecoder();
-				let buf = "";
-
-				while (true) {
-					const { done, value } = await reader.read();
-					if (done) break;
-					buf += decoder.decode(value, { stream: true });
-
-					// Parse SSE frames
-					const parts = buf.split("\n\n");
-					buf = parts.pop() ?? "";
-					for (const part of parts) {
-						const lines = part.split("\n");
-						let event = "message";
-						let data = "";
-						for (const line of lines) {
-							if (line.startsWith("event: ")) event = line.slice(7);
-							else if (line.startsWith("data: ")) data = line.slice(6);
-						}
-						if (event === "message" && data) {
-							try {
-								const parsed = JSON.parse(data) as StreamLine;
-								setStreamEvents((prev) => [...prev, parsed]);
-							} catch {
-								// ignore
-							}
-						} else if (event === "done") {
-							return;
-						}
-					}
-				}
-			} catch {
-				// aborted or network error
-			}
-		})();
-
-		return () => ac.abort();
-	}, [streamRunId]);
+		if (streamDone) {
+			void loadRuns();
+		}
+	}, [streamDone, loadRuns]);
 
 	const handleChatSend = useCallback(async () => {
 		const msg = chatInput.trim();
@@ -500,11 +442,11 @@ export default function DocumentsPage() {
 				throw new Error(e.error ?? "Failed to start run");
 			}
 			const data = (await res.json()) as { runId: string };
-			// Don't clear stream events — keep previous conversation visible
-			// and append new run's events on top
-			streamCursorRef.current = 0;
+			// Accumulate current run's lines before hook resets on runId change
+			if (streamRunId) {
+				setPriorLines((prev) => [...prev, ...agentStreamLinesRef.current]);
+			}
 			setStreamRunId(data.runId);
-			setActiveRunId(data.runId);
 			await loadRuns();
 		} catch {
 			setChatInput(msg);
@@ -898,7 +840,7 @@ export default function DocumentsPage() {
 						size="sm"
 						variant="outline"
 						onClick={handleInitWiki}
-						disabled={initingWiki || running}
+						disabled={initingWiki || isConnected}
 					>
 						{initingWiki ? <Loader2 className="h-3 w-3 animate-spin" /> : null}
 						Sync
@@ -1300,7 +1242,7 @@ export default function DocumentsPage() {
 							</div>
 							{/* Stream content */}
 							<div className="flex-1 overflow-auto p-4 min-h-0">
-								{displayStreamEvents.length === 0 && activeRunId ? (
+								{displayStreamEvents.length === 0 && isConnected ? (
 									<div className="flex items-center gap-2 text-sm text-muted-foreground">
 										<WorkingIndicator /> Waiting for Claude output...
 									</div>
@@ -1314,7 +1256,7 @@ export default function DocumentsPage() {
 											// biome-ignore lint/suspicious/noArrayIndexKey: stream events are append-only
 											<StreamEntry key={`evt_${i}_${line.type}`} line={line} />
 										))}
-										{activeRunId && <WorkingIndicator />}
+										{isConnected && <WorkingIndicator />}
 									</div>
 								)}
 							</div>
@@ -1346,8 +1288,6 @@ export default function DocumentsPage() {
 											type="button"
 											className="w-full text-left rounded-sm border bg-background px-3 py-2 text-xs space-y-1 cursor-pointer hover:bg-muted/50 transition-colors"
 											onClick={() => {
-												setStreamEvents([]);
-												streamCursorRef.current = 0;
 												setStreamRunId(run.id);
 											}}
 										>

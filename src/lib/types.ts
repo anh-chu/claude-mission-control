@@ -365,7 +365,8 @@ export interface ActiveRun {
 		| "scheduled"
 		| "webhook"
 		| "inbox-respond"
-		| "comment";
+		| "comment"
+		| "wiki";
 	projectId: string | null;
 	missionId: string | null;
 	pid: number;
@@ -378,6 +379,11 @@ export interface ActiveRun {
 	numTurns: number | null;
 	continuationIndex: number;
 	streamFile?: string | null;
+	// Wiki / extended fields
+	sessionId?: string | null;
+	firstMessage?: string | null;
+	model?: string | null;
+	noPrune?: boolean;
 }
 
 export interface ActiveRunsFile {

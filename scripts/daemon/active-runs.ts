@@ -3,7 +3,7 @@
  * Extracted from run-task.ts and run-task-comment.ts (byte-for-byte identical).
  */
 
-import { existsSync, readFileSync, writeFileSync } from "fs";
+import { existsSync, readFileSync, renameSync, writeFileSync } from "fs";
 
 export interface ActiveRunEntry {
 	id: string;
@@ -16,7 +16,8 @@ export interface ActiveRunEntry {
 		| "scheduled"
 		| "webhook"
 		| "inbox-respond"
-		| "comment";
+		| "comment"
+		| "wiki";
 	projectId: string | null;
 	missionId: string | null;
 	pid: number;
@@ -29,21 +30,25 @@ export interface ActiveRunEntry {
 	numTurns: number | null;
 	continuationIndex: number;
 	streamFile?: string | null;
+	// Wiki fields
+	sessionId?: string | null;
+	firstMessage?: string | null;
+	model?: string | null;
+	noPrune?: boolean;
 }
 
 export function readActiveRuns(filePath: string): { runs: ActiveRunEntry[] } {
-	try {
-		if (!existsSync(filePath)) return { runs: [] };
-		const raw = readFileSync(filePath, "utf-8");
-		return JSON.parse(raw) as { runs: ActiveRunEntry[] };
-	} catch {
-		return { runs: [] };
-	}
+	if (!existsSync(filePath)) return { runs: [] };
+	const raw = readFileSync(filePath, "utf-8");
+	// Throw on parse failure — corrupt file should not silently discard all runs
+	return JSON.parse(raw) as { runs: ActiveRunEntry[] };
 }
 
 export function writeActiveRuns(
 	filePath: string,
 	data: { runs: ActiveRunEntry[] },
 ): void {
-	writeFileSync(filePath, JSON.stringify(data, null, 2), "utf-8");
+	const tmpPath = `${filePath}.${process.pid}.tmp`;
+	writeFileSync(tmpPath, JSON.stringify(data, null, 2), "utf-8");
+	renameSync(tmpPath, filePath);
 }

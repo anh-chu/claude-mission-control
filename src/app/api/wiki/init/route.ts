@@ -43,19 +43,6 @@ function cachePluginPath(wikiDir: string, installPath: string): void {
 	}
 }
 
-function killWikiDaemon(wikiDir: string): void {
-	const pidFile = path.join(wikiDir, ".wiki-daemon.pid");
-	if (!existsSync(pidFile)) return;
-	try {
-		const pid = Number(readFileSync(pidFile, "utf-8").trim());
-		if (Number.isFinite(pid) && pid > 0) {
-			process.kill(pid, "SIGTERM");
-		}
-	} catch {
-		// daemon may already be gone — best-effort
-	}
-}
-
 export async function POST() {
 	try {
 		const workspaceId = await applyWorkspaceContext();
@@ -69,8 +56,7 @@ export async function POST() {
 		});
 		if (doUpdate) {
 			markPluginUpdated(wikiDir);
-			// Kill daemon so it restarts fresh with the updated plugin
-			killWikiDaemon(wikiDir);
+			// Main daemon will re-preheat SDK naturally on next job consumption
 		}
 		cachePluginPath(wikiDir, plugin.installPath);
 		const bootstrap = ensureWikiBootstrappedFromPlugin(

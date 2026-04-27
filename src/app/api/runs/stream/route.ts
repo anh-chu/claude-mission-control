@@ -10,11 +10,7 @@ import {
 import type { NextRequest } from "next/server";
 import path from "path";
 import { getWorkspaceDataDir } from "@/lib/data";
-
-const ACTIVE_RUNS_FILE = path.join(
-	getWorkspaceDataDir("default"),
-	"active-runs.json",
-);
+import { applyWorkspaceContext } from "@/lib/workspace-context";
 
 interface ActiveRunEntry {
 	id: string;
@@ -22,9 +18,12 @@ interface ActiveRunEntry {
 	streamFile?: string | null;
 }
 
-function getRunEntry(runId: string): ActiveRunEntry | null {
+function getRunEntry(
+	runId: string,
+	activeRunsFile: string,
+): ActiveRunEntry | null {
 	try {
-		const raw = readFileSync(ACTIVE_RUNS_FILE, "utf-8");
+		const raw = readFileSync(activeRunsFile, "utf-8");
 		const data = JSON.parse(raw) as { runs: ActiveRunEntry[] };
 		return data.runs.find((r) => r.id === runId) ?? null;
 	} catch {
@@ -39,13 +38,19 @@ function getRunEntry(runId: string): ActiveRunEntry | null {
  * Sends existing lines first, then watches for new lines until the run completes.
  */
 export async function GET(request: NextRequest) {
+	const workspaceId = await applyWorkspaceContext();
+	const activeRunsFile = path.join(
+		getWorkspaceDataDir(workspaceId),
+		"active-runs.json",
+	);
+
 	const runId = request.nextUrl.searchParams.get("runId");
 
-	if (!runId || !/^run_[\w]+/.test(runId)) {
+	if (!runId || !/^(run|wiki)_[A-Za-z0-9_-]+$/.test(runId)) {
 		return new Response("Missing or invalid runId", { status: 400 });
 	}
 
-	const run = getRunEntry(runId);
+	const run = getRunEntry(runId, activeRunsFile);
 	if (!run) {
 		return new Response("Run not found", { status: 404 });
 	}
@@ -58,7 +63,7 @@ export async function GET(request: NextRequest) {
 	// Security: ensure stream file is within data/agent-streams/
 	const resolvedPath = path.resolve(streamFile);
 	const streamsDir = path.resolve(
-		getWorkspaceDataDir("default"),
+		getWorkspaceDataDir(workspaceId),
 		"agent-streams",
 	);
 	if (
@@ -134,7 +139,7 @@ export async function GET(request: NextRequest) {
 
 			function checkRunStatus() {
 				if (closed) return;
-				const currentRun = getRunEntry(runId!);
+				const currentRun = getRunEntry(runId!, activeRunsFile);
 				if (!currentRun || currentRun.status !== "running") {
 					// Send any remaining content
 					sendNewContent();
