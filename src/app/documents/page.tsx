@@ -1233,7 +1233,8 @@ export default function DocumentsPage() {
 									className="text-xs text-muted-foreground truncate"
 									title={streamRunId}
 								>
-									{streamRunId}
+									{wikiRuns.find((r) => r.id === streamRunId)?.firstMessage ||
+										streamRunId}
 								</p>
 								<Button
 									size="sm"
@@ -1296,8 +1297,11 @@ export default function DocumentsPage() {
 											}}
 										>
 											<div className="flex items-center justify-between gap-2">
-												<span className="font-normal truncate" title={run.id}>
-													{run.id}
+												<span
+													className="font-normal truncate"
+													title={run.firstMessage || run.id}
+												>
+													{run.firstMessage || run.id}
 												</span>
 												<Badge
 													variant="outline"
