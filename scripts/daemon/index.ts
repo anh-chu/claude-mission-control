@@ -258,6 +258,30 @@ async function processWikiJob(
 
 		exitCode = result.exitCode;
 		finalSessionId = result.sessionId;
+
+		// Stale session: retry as fresh run (no resume)
+		if (exitCode !== 0 && sessionId) {
+			const streamContent = readFileSync(streamFile, "utf-8");
+			if (streamContent.includes("No conversation found with session ID")) {
+				logger.warn(
+					"daemon",
+					`[${workspaceId}] Stale session for ${runId}, retrying as fresh run`,
+				);
+				appendStreamEvent(streamFile, {
+					type: "system",
+					subtype: "info",
+					message: "Previous session expired. Starting fresh conversation.",
+				});
+				const freshOpts = { ...sdkBuildOpts, sessionId: null };
+				const freshResult = await runWithSdk({
+					prompt,
+					...freshOpts,
+					streamFile,
+				});
+				exitCode = freshResult.exitCode;
+				finalSessionId = freshResult.sessionId;
+			}
+		}
 	} catch (err) {
 		appendStreamEvent(streamFile, {
 			type: "system",
