@@ -67,7 +67,6 @@ function highlightMentions(children: React.ReactNode): React.ReactNode {
 		return parts.map((part, i) => {
 			if (/^@[a-z0-9-]+$/.test(part))
 				return (
-					// biome-ignore lint/suspicious/noArrayIndexKey: split parts are positional, order is stable
 					<span key={`${part}_${i}`} className="text-accent font-normal">
 						{part}
 					</span>

@@ -2,9 +2,15 @@
  * Node.js-only instrumentation logic.
  * Imported dynamically from instrumentation.ts to avoid Edge bundling.
  */
-import { copyFileSync, cpSync, existsSync, mkdirSync, writeFileSync } from "fs";
-import os from "os";
-import path from "path";
+import {
+	copyFileSync,
+	cpSync,
+	existsSync,
+	mkdirSync,
+	writeFileSync,
+} from "node:fs";
+import os from "node:os";
+import path from "node:path";
 import { createLogger } from "@/lib/logger";
 import {
 	scheduleDaemonWatchdog,

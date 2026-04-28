@@ -3,7 +3,7 @@
  * Shared by multiple daemon scripts.
  */
 
-import { existsSync, readFileSync } from "fs";
+import { existsSync, readFileSync } from "node:fs";
 
 /**
  * Read and parse a JSON file, returning null on any error.

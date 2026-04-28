@@ -44,7 +44,7 @@ export async function POST(request: Request) {
 		body.entryIds.length > 0
 	) {
 		targetEntries = dumpData.entries.filter(
-			(e) => !e.processed && body.entryIds!.includes(e.id),
+			(e) => !e.processed && body.entryIds?.includes(e.id),
 		);
 	} else {
 		return NextResponse.json(

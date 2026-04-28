@@ -3,17 +3,17 @@
  * All jobs run in the Node.js process for the lifetime of the server.
  */
 
-import { spawn } from "child_process";
+import { spawn } from "node:child_process";
 import {
 	existsSync,
 	readdirSync,
 	readFileSync,
 	statSync,
 	unlinkSync,
-} from "fs";
-import { readdir, stat, unlink } from "fs/promises";
+} from "node:fs";
+import { readdir, stat, unlink } from "node:fs/promises";
+import path from "node:path";
 import cron from "node-cron";
-import path from "path";
 import { DATA_DIR } from "./paths";
 
 // Get base directory for script resolution.
@@ -236,8 +236,8 @@ function isDaemonRunning(): boolean {
 	const pidFile = path.join(DATA_DIR, "daemon.pid");
 	if (!existsSync(pidFile)) return false;
 	try {
-		const pid = parseInt(readFileSync(pidFile, "utf-8").trim());
-		if (isNaN(pid)) return false;
+		const pid = parseInt(readFileSync(pidFile, "utf-8").trim(), 10);
+		if (Number.isNaN(pid)) return false;
 		process.kill(pid, 0);
 		return true;
 	} catch {

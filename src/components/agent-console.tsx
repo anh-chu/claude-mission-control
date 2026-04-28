@@ -471,7 +471,6 @@ export function StreamEntry({ line }: { line: StreamLine }) {
 			if (block.type === "text") {
 				const text = (block as TextBlock).text;
 				if (!text?.trim()) return [];
-				// biome-ignore lint/suspicious/noArrayIndexKey: stream blocks are append-only, order is stable
 				return [<ResponseTextEntry key={`text_${i}`} text={text} />];
 			}
 			if (block.type === "tool_use") {
@@ -647,7 +646,6 @@ export function AgentConsole({ runId, onStop }: AgentConsoleProps) {
 					</div>
 				)}
 				{displayLines.map((line, i) => {
-					// biome-ignore lint/suspicious/noArrayIndexKey: stream lines are append-only, order is stable
 					return <StreamEntry key={`line_${i}_${line.type}`} line={line} />;
 				})}
 			</div>

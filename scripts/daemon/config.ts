@@ -1,5 +1,5 @@
-import { existsSync, readFileSync, writeFileSync } from "fs";
-import path from "path";
+import { existsSync, readFileSync, writeFileSync } from "node:fs";
+import path from "node:path";
 import { getWorkspaceDir } from "../../src/lib/paths";
 import { logger } from "./logger";
 import type { DaemonConfig } from "./types";

@@ -1,6 +1,6 @@
-import { existsSync, readFileSync } from "fs";
+import { existsSync, readFileSync } from "node:fs";
+import path from "node:path";
 import { NextResponse } from "next/server";
-import path from "path";
 import { getUploadsDir } from "@/lib/paths";
 import { applyWorkspaceContext } from "@/lib/workspace-context";
 

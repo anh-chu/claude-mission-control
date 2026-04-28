@@ -1,6 +1,6 @@
-import { rm } from "fs/promises";
+import { rm } from "node:fs/promises";
+import path from "node:path";
 import { type NextRequest, NextResponse } from "next/server";
-import path from "path";
 import { z } from "zod";
 import {
 	ensureWorkspaceDir,

@@ -3,7 +3,7 @@
  * Extracted from run-task.ts and run-task-comment.ts (byte-for-byte identical).
  */
 
-import { existsSync, readFileSync, renameSync, writeFileSync } from "fs";
+import { existsSync, readFileSync, renameSync, writeFileSync } from "node:fs";
 
 export interface ActiveRunEntry {
 	id: string;

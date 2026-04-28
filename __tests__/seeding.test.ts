@@ -1,7 +1,7 @@
-import { existsSync } from "fs";
-import { readdir, readFile, rm } from "fs/promises";
-import os from "os";
-import path from "path";
+import { existsSync } from "node:fs";
+import { readFile, rm } from "node:fs/promises";
+import os from "node:os";
+import path from "node:path";
 import { afterAll, describe, expect, it } from "vitest";
 import { ensureWorkspaceDir, getWorkspaceDataDir } from "@/lib/data";
 
@@ -111,7 +111,7 @@ describe("ensureWorkspaceDir", () => {
 		// Write a known value to tasks.json
 		const marker = JSON.stringify({ tasks: [{ id: "marker_task" }] });
 		const fp = path.join(WS_DIR, "tasks.json");
-		const { writeFile: wf } = await import("fs/promises");
+		const { writeFile: wf } = await import("node:fs/promises");
 		await wf(fp, marker, "utf-8");
 
 		// Re-run seeding

@@ -320,9 +320,7 @@ export function SkillForm({ mode, initialData, onDelete }: SkillFormProps) {
 						Cancel
 					</Button>
 					{mode === "edit" && dirty && (
-						<p className="text-xs text-warning self-center">
-							Unsaved changes
-						</p>
+						<p className="text-xs text-warning self-center">Unsaved changes</p>
 					)}
 				</div>
 			</div>

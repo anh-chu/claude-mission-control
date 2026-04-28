@@ -227,7 +227,11 @@ export default function BrainDumpPage() {
 						/>
 						<div className="flex items-center justify-between">
 							<p className="text-xs text-muted-foreground">
-								Press <kbd className="rounded-sm border bg-muted px-1.5 py-0.5 text-[10px] font-mono">⌘ Enter</kbd> to capture
+								Press{" "}
+								<kbd className="rounded-sm border bg-muted px-1.5 py-0.5 text-[10px] font-mono">
+									⌘ Enter
+								</kbd>{" "}
+								to capture
 							</p>
 							<Tip content="Save quick capture entry">
 								<Button
@@ -283,7 +287,6 @@ export default function BrainDumpPage() {
 													size="sm"
 													onClick={handleSaveEdit}
 													disabled={!editContent.trim()}
-
 												>
 													Save
 												</Button>
@@ -291,7 +294,6 @@ export default function BrainDumpPage() {
 													size="sm"
 													variant="ghost"
 													onClick={cancelEditing}
-
 												>
 													Cancel
 												</Button>

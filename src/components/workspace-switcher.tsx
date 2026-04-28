@@ -78,9 +78,7 @@ export function WorkspaceSwitcher({
 				)}
 			>
 				<div className="h-2.5 w-2.5 rounded-full bg-sidebar-foreground/20 shrink-0" />
-				{!collapsed && (
-					<div className="h-3 w-20 rounded-sm bg-muted" />
-				)}
+				{!collapsed && <div className="h-3 w-20 rounded-sm bg-muted" />}
 			</div>
 		);
 	}

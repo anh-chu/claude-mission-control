@@ -461,7 +461,7 @@ export default function AutopilotPage() {
 													runId={runId}
 													onStop={
 														session.taskId
-															? () => stopTask(session.taskId!)
+															? () => stopTask(session.taskId as string)
 															: undefined
 													}
 												/>

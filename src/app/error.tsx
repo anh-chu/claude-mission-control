@@ -13,6 +13,7 @@ import { Button } from "@/components/ui/button";
 
 const AUTO_RETRY_DELAY = 3000; // 3 seconds
 
+// biome-ignore lint/suspicious/noShadowRestrictedNames: Next.js error boundary convention
 export default function Error({
 	error,
 	reset,

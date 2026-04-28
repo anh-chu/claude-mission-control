@@ -1,5 +1,4 @@
 #!/usr/bin/env node
-import { watch } from "node:fs/promises";
 import {
 	existsSync,
 	mkdirSync,
@@ -8,18 +7,15 @@ import {
 	rmSync,
 	unlinkSync,
 	writeFileSync,
-} from "fs";
-import path from "path";
+} from "node:fs";
+import { watch } from "node:fs/promises";
+import path from "node:path";
 import {
 	DOC_MAINTAINER_AGENT_INSTRUCTIONS,
 	getWorkspaceDataDir,
 } from "../../src/lib/data";
 import { DATA_DIR, getWikiDir, getWorkspaceDir } from "../../src/lib/paths";
-import {
-	type ActiveRunEntry,
-	readActiveRuns,
-	writeActiveRuns,
-} from "./active-runs";
+import { readActiveRuns, writeActiveRuns } from "./active-runs";
 import { loadConfig } from "./config";
 import { Dispatcher } from "./dispatcher";
 import { HealthMonitor } from "./health";
@@ -29,7 +25,6 @@ import { AgentRunner } from "./runner";
 import { Scheduler } from "./scheduler";
 import {
 	appendStreamEvent,
-	buildSdkOptions,
 	consumeStream,
 	getWarmHandle,
 	preheatSdk,
@@ -68,8 +63,8 @@ function writePidFile(): void {
 function readPidFile(): number | null {
 	try {
 		if (!existsSync(PID_FILE)) return null;
-		const pid = parseInt(readFileSync(PID_FILE, "utf-8").trim());
-		return isNaN(pid) ? null : pid;
+		const pid = parseInt(readFileSync(PID_FILE, "utf-8").trim(), 10);
+		return Number.isNaN(pid) ? null : pid;
 	} catch {
 		return null;
 	}
@@ -202,7 +197,9 @@ async function processWikiJob(
 			const activeRunsData = readActiveRuns(activeRunsPath);
 			const idx = activeRunsData.runs.findIndex((r) => r.id === runId);
 			if (idx !== -1) {
-				const entry = activeRunsData.runs[idx]!;
+				const entry = activeRunsData.runs[
+					idx
+				] as (typeof activeRunsData.runs)[number];
 				entry.status = "failed";
 				entry.exitCode = 1;
 				entry.completedAt = new Date().toISOString();
@@ -308,7 +305,9 @@ async function processWikiJob(
 		const activeRunsData = readActiveRuns(activeRunsPath);
 		const idx = activeRunsData.runs.findIndex((r) => r.id === runId);
 		if (idx !== -1) {
-			const entry = activeRunsData.runs[idx]!;
+			const entry = activeRunsData.runs[
+				idx
+			] as (typeof activeRunsData.runs)[number];
 			entry.status = exitCode === 0 ? "completed" : "failed";
 			entry.exitCode = exitCode;
 			entry.completedAt = completedAt;
@@ -375,7 +374,7 @@ function startWikiWatcher(workspaceId: string): {
 		if (processing || shuttingDown) return;
 		while (queue.length > 0 && !shuttingDown) {
 			processing = true;
-			const jobPath = queue.shift()!;
+			const jobPath = queue.shift() as string;
 			try {
 				await processWikiJob(jobPath, workspaceId);
 			} catch (err) {

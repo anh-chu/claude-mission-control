@@ -1,7 +1,7 @@
-import { execSync } from "child_process";
-import * as fs from "fs";
-import * as net from "net";
-import * as path from "path";
+import { execSync } from "node:child_process";
+import * as fs from "node:fs";
+import * as net from "node:net";
+import * as path from "node:path";
 
 // ANSI color codes
 const colors = {
@@ -98,7 +98,7 @@ export function checkDataDirWritable(dataDir: string): boolean {
 		fs.mkdirSync(dataDir, { recursive: true });
 
 		// Test write access by creating a temp file
-		const testFile = path.join(dataDir, ".write-test-" + Date.now());
+		const testFile = path.join(dataDir, `.write-test-${Date.now()}`);
 		fs.writeFileSync(testFile, "test");
 		fs.unlinkSync(testFile);
 

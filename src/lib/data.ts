@@ -1,7 +1,7 @@
+import { existsSync } from "node:fs";
+import { copyFile, cp, mkdir, readFile, writeFile } from "node:fs/promises";
+import path from "node:path";
 import { Mutex } from "async-mutex";
-import { existsSync } from "fs";
-import { copyFile, cp, mkdir, readFile, writeFile } from "fs/promises";
-import path from "path";
 import {
 	DATA_DIR,
 	getDefaultWikiDir,

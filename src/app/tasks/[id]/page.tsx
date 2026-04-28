@@ -408,9 +408,7 @@ export default function TaskDetailPage() {
 											variant="secondary"
 											className={cn(
 												"text-xs gap-1",
-												unmetDepCount > 0
-													? "border-accent/30 text-accent"
-													: "",
+												unmetDepCount > 0 ? "border-accent/30 text-accent" : "",
 											)}
 										>
 											<Link2 className="h-3 w-3" />
@@ -574,9 +572,7 @@ export default function TaskDetailPage() {
 													<AuthorIcon
 														className={cn(
 															"h-3 w-3",
-															isAgent
-																? "text-accent"
-																: "text-muted-foreground",
+															isAgent ? "text-accent" : "text-muted-foreground",
 														)}
 													/>
 												</div>
@@ -618,7 +614,6 @@ export default function TaskDetailPage() {
 																{comment.attachments.map((att) =>
 																	att.type === "image" ? (
 																		// biome-ignore lint/performance/noImgElement: user-uploaded content with dynamic URLs
-																		// eslint-disable-next-line @next/next/no-img-element
 																		<img
 																			key={att.id}
 																			src={att.url}

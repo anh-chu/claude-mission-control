@@ -92,7 +92,7 @@ export function TaskCard({
 	const isImpeded = hasDependencies || hasAwaitingDecision; // Any blocking reason (for styling)
 
 	// Deadline check
-	const dueDate = task.dueDate ? new Date(task.dueDate + "T23:59:59") : null;
+	const dueDate = task.dueDate ? new Date(`${task.dueDate}T23:59:59`) : null;
 	const now = new Date();
 	const isOverdue = dueDate && task.kanban !== "done" && dueDate < now;
 	const daysUntilDue = dueDate
@@ -135,12 +135,8 @@ export function TaskCard({
 						isDragging && "opacity-50 shadow-e-4 rotate-1",
 						onClick && "cursor-pointer",
 						isBlocked && "opacity-60 border-destructive/30",
-						!isBlocked &&
-							hasDependencies &&
-							"opacity-75 border-primary/30",
-						!isBlocked &&
-							hasAwaitingDecision &&
-							"opacity-75 border-warning/30",
+						!isBlocked && hasDependencies && "opacity-75 border-primary/30",
+						!isBlocked && hasAwaitingDecision && "opacity-75 border-warning/30",
 						isOverdue && "border-destructive/30",
 						isRunning &&
 							"ring-2 ring-sunshine-700/50 border-sunshine-700/30 shadow-sunshine-700/10 shadow-e-2",

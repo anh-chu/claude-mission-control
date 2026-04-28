@@ -46,6 +46,6 @@ export function extractSummary(stdout: string): string {
 	});
 	const tail = textLines.slice(-10).join("\n");
 	if (!tail) return "(no output)";
-	if (tail.length > 500) return tail.slice(0, 497) + "...";
+	if (tail.length > 500) return `${tail.slice(0, 497)}...`;
 	return tail;
 }

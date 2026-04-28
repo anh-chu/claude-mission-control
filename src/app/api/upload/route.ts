@@ -1,7 +1,7 @@
-import { randomUUID } from "crypto";
-import { mkdir, writeFile } from "fs/promises";
+import { randomUUID } from "node:crypto";
+import { mkdir, writeFile } from "node:fs/promises";
+import path from "node:path";
 import { NextResponse } from "next/server";
-import path from "path";
 import { getUploadsDir } from "@/lib/paths";
 import { applyWorkspaceContext } from "@/lib/workspace-context";
 

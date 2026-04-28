@@ -1,7 +1,7 @@
 import { spawn } from "node:child_process";
 import { existsSync, readFileSync, renameSync, writeFileSync } from "node:fs";
 import path from "node:path";
-import { DATA_DIR, getWorkspaceDir } from "../../src/lib/paths";
+import { getWorkspaceDir } from "../../src/lib/paths";
 import type { HealthMonitor } from "./health";
 import { logger } from "./logger";
 import {
@@ -16,7 +16,7 @@ import type { DaemonConfig, ProjectRunsFile } from "./types";
 import { getWorkspaceEnv } from "./workspace-env";
 
 const TSX_BIN = path.resolve(__dirname, "../../node_modules/.bin/tsx");
-const MAX_RETRY_DELAY_MINUTES = 60;
+const _MAX_RETRY_DELAY_MINUTES = 60;
 
 // ─── Script Resolution ─────────────────────────────────────────────────────────
 
@@ -165,15 +165,6 @@ export class Dispatcher {
 				`Failed to persist retry queue: ${err instanceof Error ? err.message : String(err)}`,
 			);
 		}
-	}
-
-	/**
-	 * Calculate retry delay with exponential backoff.
-	 * delay = retryDelayMinutes * 2^(attempt-1), capped at MAX_RETRY_DELAY_MINUTES
-	 */
-	private getRetryDelayMinutes(attempt: number): number {
-		const base = this.config.execution.retryDelayMinutes;
-		return Math.min(base * 2 ** (attempt - 1), MAX_RETRY_DELAY_MINUTES);
 	}
 
 	// ─── Polling ────────────────────────────────────────────────────────────

@@ -5,8 +5,8 @@ import {
 	statSync,
 	type WriteStream,
 	writeFileSync,
-} from "fs";
-import path from "path";
+} from "node:fs";
+import path from "node:path";
 import { DATA_DIR } from "./paths";
 import { scrubCredentials } from "./scrub";
 

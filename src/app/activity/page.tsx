@@ -12,7 +12,7 @@ import { Input } from "@/components/ui/input";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useActivityLog, useDecisions } from "@/hooks/use-data";
 import { showError, showSuccess } from "@/lib/toast";
-import type { ActivityEvent, DecisionItem, EventType } from "@/lib/types";
+import type { ActivityEvent, EventType } from "@/lib/types";
 
 type Actor = string;
 
@@ -119,7 +119,7 @@ function DecisionActions({
 	decisionId: string;
 	onAnswer: () => void;
 }) {
-	const { decisions, refetch } = useDecisions();
+	const { decisions } = useDecisions();
 	const [customAnswer, setCustomAnswer] = useState("");
 	const [submitting, setSubmitting] = useState(false);
 
@@ -286,7 +286,6 @@ function FeedSkeleton() {
 	return (
 		<div className="space-y-1">
 			{Array.from({ length: 8 }).map((_, i) => (
-				// biome-ignore lint/suspicious/noArrayIndexKey: static skeleton list
 				<div key={i} className="flex gap-3 py-2.5 px-3">
 					<Skeleton className="h-7 w-7 rounded-full shrink-0" />
 					<div className="flex-1 space-y-1.5">

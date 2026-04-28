@@ -1,6 +1,6 @@
-import { readFileSync, unwatchFile, watchFile } from "fs";
+import { readFileSync, unwatchFile, watchFile } from "node:fs";
+import path from "node:path";
 import type { NextRequest } from "next/server";
-import path from "path";
 import { isAllowedLogPath, scrubLogLines } from "@/lib/log-reader";
 import { DATA_DIR } from "@/lib/paths";
 

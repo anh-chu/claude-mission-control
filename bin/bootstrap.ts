@@ -1,7 +1,7 @@
 import { existsSync, mkdirSync, readFileSync, writeFileSync } from "node:fs";
+import os from "node:os";
+import path from "node:path";
 import { fileURLToPath } from "node:url";
-import os from "os";
-import path from "path";
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
@@ -114,7 +114,7 @@ function ensureLogsDir(): void {
 /**
  * Read stored version from ~/.mandio/.version.
  */
-function getStoredVersion(): string | null {
+function _getStoredVersion(): string | null {
 	const versionPath = path.join(DATA_DIR, VERSION_FILE);
 	if (!existsSync(versionPath)) return null;
 

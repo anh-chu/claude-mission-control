@@ -112,10 +112,14 @@ const config: Config = {
 				// e-tier elevation system
 				"e-0": "none",
 				"e-1": "0 1px 2px 0 rgb(0 0 0 / 0.05)", // input
-				"e-2": "var(--shadow-golden-card, 0 4px 12px -2px rgba(127, 99, 21, 0.10))", // card — falls back if var not set
-				"e-3": "var(--shadow-golden-pop, 0 8px 24px -4px rgba(127, 99, 21, 0.15))", // dropdown/popover
-				"e-4": "var(--shadow-golden-dialog, 0 16px 48px -8px rgba(127, 99, 21, 0.20))", // dialog
-				"e-5": "var(--shadow-golden-toast, 0 24px 64px -12px rgba(127, 99, 21, 0.25))", // toast
+				"e-2":
+					"var(--shadow-golden-card, 0 4px 12px -2px rgba(127, 99, 21, 0.10))", // card — falls back if var not set
+				"e-3":
+					"var(--shadow-golden-pop, 0 8px 24px -4px rgba(127, 99, 21, 0.15))", // dropdown/popover
+				"e-4":
+					"var(--shadow-golden-dialog, 0 16px 48px -8px rgba(127, 99, 21, 0.20))", // dialog
+				"e-5":
+					"var(--shadow-golden-toast, 0 24px 64px -12px rgba(127, 99, 21, 0.25))", // toast
 			},
 			fontFamily: {
 				sans: [

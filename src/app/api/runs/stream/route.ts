@@ -6,9 +6,9 @@ import {
 	readSync,
 	statSync,
 	watch,
-} from "fs";
+} from "node:fs";
+import path from "node:path";
 import type { NextRequest } from "next/server";
-import path from "path";
 import { getWorkspaceDataDir } from "@/lib/data";
 import { applyWorkspaceContext } from "@/lib/workspace-context";
 
@@ -139,7 +139,7 @@ export async function GET(request: NextRequest) {
 
 			function checkRunStatus() {
 				if (closed) return;
-				const currentRun = getRunEntry(runId!, activeRunsFile);
+				const currentRun = getRunEntry(runId as string, activeRunsFile);
 				if (!currentRun || currentRun.status !== "running") {
 					// Send any remaining content
 					sendNewContent();

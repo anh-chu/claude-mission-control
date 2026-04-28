@@ -1,7 +1,7 @@
-import { spawn } from "child_process";
-import { existsSync, readFileSync, unlinkSync, writeFileSync } from "fs";
+import { spawn } from "node:child_process";
+import { existsSync, readFileSync, unlinkSync, writeFileSync } from "node:fs";
+import path from "node:path";
 import { NextResponse } from "next/server";
-import path from "path";
 import { getWorkspaceDataDir } from "@/lib/data";
 import { readJSON } from "@/lib/json-io";
 import { getUploadsDir } from "@/lib/paths";

@@ -1,6 +1,6 @@
-import { spawn } from "child_process";
+import { spawn } from "node:child_process";
+import path from "node:path";
 import { NextResponse } from "next/server";
-import path from "path";
 import { readJSON } from "@/lib/json-io";
 import { DATA_DIR } from "@/lib/paths";
 

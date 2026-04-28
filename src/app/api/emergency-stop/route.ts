@@ -1,6 +1,6 @@
-import fs from "fs";
+import fs from "node:fs";
+import path from "node:path";
 import { NextResponse } from "next/server";
-import path from "path";
 import { mutateActivityLog } from "@/lib/data";
 import { DATA_DIR } from "@/lib/paths";
 
@@ -16,7 +16,7 @@ export async function POST() {
 		if (fs.existsSync(pidPath)) {
 			const raw = fs.readFileSync(pidPath, "utf-8").trim();
 			const pid = parseInt(raw, 10);
-			if (!isNaN(pid)) {
+			if (!Number.isNaN(pid)) {
 				try {
 					process.kill(pid, 0); // Check if process exists
 					process.kill(pid, "SIGTERM");

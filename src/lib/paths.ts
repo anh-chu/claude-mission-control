@@ -1,6 +1,6 @@
-import { existsSync, readFileSync } from "fs";
-import os from "os";
-import path from "path";
+import { existsSync, readFileSync } from "node:fs";
+import os from "node:os";
+import path from "node:path";
 
 /**
  * Root directory for all Mandio runtime data.

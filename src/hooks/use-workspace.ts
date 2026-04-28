@@ -30,6 +30,7 @@ export function useWorkspace() {
 	}, [fetchWorkspaces]);
 
 	const switchWorkspace = useCallback((id: string) => {
+		// biome-ignore lint/suspicious/noDocumentCookie: intentional cookie for workspace persistence
 		document.cookie = `workspace_id=${id}; path=/; max-age=${60 * 60 * 24 * 365}`;
 		window.location.reload();
 	}, []);

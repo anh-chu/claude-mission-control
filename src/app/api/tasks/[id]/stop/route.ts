@@ -1,5 +1,5 @@
+import path from "node:path";
 import { NextResponse } from "next/server";
-import path from "path";
 import { readJSON, writeJSON } from "@/lib/json-io";
 import { DATA_DIR } from "@/lib/paths";
 

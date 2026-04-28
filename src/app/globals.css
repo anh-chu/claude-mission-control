@@ -66,14 +66,22 @@
 	--info: #fa520f;
 
 	/* Elevation backing — light mode warm golden */
-	--shadow-golden-card: 0 4px 12px -2px rgba(127, 99, 21, 0.10), inset 0 1px 0 rgba(255, 255, 255, 0.6);
-	--shadow-golden-pop: 0 8px 24px -4px rgba(127, 99, 21, 0.15), inset 0 1px 0 rgba(255, 255, 255, 0.65);
-	--shadow-golden-dialog: 0 16px 48px -8px rgba(127, 99, 21, 0.20), inset 0 1px 0 rgba(255, 255, 255, 0.7);
-	--shadow-golden-toast: 0 24px 64px -12px rgba(127, 99, 21, 0.25), inset 0 1px 0 rgba(255, 255, 255, 0.75);
+	--shadow-golden-card:
+		0 4px 12px -2px rgba(127, 99, 21, 0.1),
+		inset 0 1px 0 rgba(255, 255, 255, 0.6);
+	--shadow-golden-pop:
+		0 8px 24px -4px rgba(127, 99, 21, 0.15),
+		inset 0 1px 0 rgba(255, 255, 255, 0.65);
+	--shadow-golden-dialog:
+		0 16px 48px -8px rgba(127, 99, 21, 0.2),
+		inset 0 1px 0 rgba(255, 255, 255, 0.7);
+	--shadow-golden-toast:
+		0 24px 64px -12px rgba(127, 99, 21, 0.25),
+		inset 0 1px 0 rgba(255, 255, 255, 0.75);
 
 	/* === State tokens === */
 	--state-disabled-opacity: 0.5;
-	--state-hover-overlay: 0 0 0 / 0.05;		/* black 5% for light */
+	--state-hover-overlay: 0 0 0 / 0.05; /* black 5% for light */
 	--state-active-scale: 0.98;
 	--ring-width-input: 1px;
 	--ring-width-interactive: 2px;
@@ -82,7 +90,7 @@
 	--motion-fast: 100ms;
 	--motion-base: 150ms;
 	--motion-slow: 300ms;
-	--motion-easing: cubic-bezier(0, 0, 0.2, 1);	/* ease-out */
+	--motion-easing: cubic-bezier(0, 0, 0.2, 1); /* ease-out */
 
 	/* === Z-index tokens === */
 	--z-sticky: 10;
@@ -156,13 +164,19 @@
 	--warning: #ffa110;
 	--info: #fa520f;
 
-	--state-hover-overlay: 255 255 255 / 0.10;	/* white 10% for dark */
+	--state-hover-overlay: 255 255 255 / 0.1; /* white 10% for dark */
 
 	/* Elevation backing — dark mode neutral depth + subtle inner top border */
-	--shadow-golden-card: 0 4px 12px -2px rgba(0, 0, 0, 0.40), inset 0 1px 0 rgba(255, 255, 255, 0.04);
-	--shadow-golden-pop: 0 8px 24px -4px rgba(0, 0, 0, 0.55), inset 0 1px 0 rgba(255, 255, 255, 0.05);
-	--shadow-golden-dialog: 0 16px 48px -8px rgba(0, 0, 0, 0.65), inset 0 1px 0 rgba(255, 255, 255, 0.06);
-	--shadow-golden-toast: 0 24px 64px -12px rgba(0, 0, 0, 0.70), inset 0 1px 0 rgba(255, 255, 255, 0.08);
+	--shadow-golden-card:
+		0 4px 12px -2px rgba(0, 0, 0, 0.4), inset 0 1px 0 rgba(255, 255, 255, 0.04);
+	--shadow-golden-pop:
+		0 8px 24px -4px rgba(0, 0, 0, 0.55), inset 0 1px 0 rgba(255, 255, 255, 0.05);
+	--shadow-golden-dialog:
+		0 16px 48px -8px rgba(0, 0, 0, 0.65),
+		inset 0 1px 0 rgba(255, 255, 255, 0.06);
+	--shadow-golden-toast:
+		0 24px 64px -12px rgba(0, 0, 0, 0.7),
+		inset 0 1px 0 rgba(255, 255, 255, 0.08);
 }
 
 /* Bug 1 fix: shadow-golden on dark bg — no golden halo, pure depth shadows */
@@ -254,7 +268,7 @@
 /* Hide Next.js dev mode indicator */
 [data-next-mark],
 nextjs-portal {
-	display: none !important;
+	display: none;
 }
 
 /* Custom scrollbar — light mode */

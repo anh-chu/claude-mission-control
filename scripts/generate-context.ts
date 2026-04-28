@@ -284,7 +284,7 @@ async function main(): Promise<void> {
 		`Inbox: ${unreadMessages.length} unread | Decisions: ${pendingDecisions.length} pending`,
 	);
 
-	const content = lines.join("\n") + "\n";
+	const content = `${lines.join("\n")}\n`;
 	await writeFile(path.join(WORKSPACE_DIR, "ai-context.md"), content, "utf-8");
 	console.log(
 		`Generated ai-context.md for workspace '${workspaceId}' (${content.length} bytes)`,

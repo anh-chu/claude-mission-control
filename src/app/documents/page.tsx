@@ -729,7 +729,6 @@ export default function DocumentsPage() {
 
 					<span className="flex-1 truncate">{node.name}</span>
 
-					{/* biome-ignore lint/a11y/noStaticElementInteractions: stopPropagation container, no interactive role needed */}
 					<div
 						className="flex items-center gap-0.5 shrink-0 opacity-0 group-hover:opacity-100 transition-opacity"
 						onClick={(e) => e.stopPropagation()}
@@ -907,7 +906,6 @@ export default function DocumentsPage() {
 					</div>
 				)}
 
-				{/* biome-ignore lint/a11y/noStaticElementInteractions: drop zone, keyboard handled via draggable items */}
 				<div
 					className={cn(
 						"flex-1 overflow-auto py-1",
@@ -1262,7 +1260,6 @@ export default function DocumentsPage() {
 								) : (
 									<div className="space-y-1">
 										{displayStreamEvents.map((line, i) => (
-											// biome-ignore lint/suspicious/noArrayIndexKey: stream events are append-only
 											<StreamEntry key={`evt_${i}_${line.type}`} line={line} />
 										))}
 										{isConnected && <WorkingIndicator />}

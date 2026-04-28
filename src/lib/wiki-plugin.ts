@@ -1,6 +1,6 @@
-import { execFileSync, execSync } from "child_process";
-import { existsSync, readFileSync } from "fs";
-import path from "path";
+import { execFileSync, execSync } from "node:child_process";
+import { existsSync, readFileSync } from "node:fs";
+import path from "node:path";
 
 export type WikiPluginStatus = "installed" | "already-installed";
 export type WikiBootstrapStatus = "bootstrapped" | "already-initialized";
@@ -82,7 +82,7 @@ function getInstalledPlugin(cwd: string): ListedPlugin | null {
 	for (const plugin of plugins) {
 		if (plugin.id !== PKG) continue;
 		if (plugin.scope !== "project") continue;
-		if (plugin.installPath && plugin.installPath.trim()) return plugin;
+		if (plugin.installPath?.trim()) return plugin;
 	}
 	return null;
 }

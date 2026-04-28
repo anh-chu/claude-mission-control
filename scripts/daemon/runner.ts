@@ -1,6 +1,11 @@
-import { type ChildProcess, execSync, spawn } from "child_process";
-import { createWriteStream, existsSync, mkdirSync, readFileSync } from "fs";
-import path from "path";
+import { type ChildProcess, execSync, spawn } from "node:child_process";
+import {
+	createWriteStream,
+	existsSync,
+	mkdirSync,
+	readFileSync,
+} from "node:fs";
+import path from "node:path";
 // tree-kill for killing process trees on Windows
 import treeKill from "tree-kill";
 import { getWorkspaceDir } from "../../src/lib/paths";
@@ -10,7 +15,6 @@ import { scrubCredentials, validateBinary } from "./security";
 import type {
 	AgentBackend,
 	ClaudeOutputMeta,
-	ClaudeUsage,
 	SpawnOptions,
 	SpawnResult,
 } from "./types";
@@ -471,7 +475,7 @@ export class AgentRunner {
 
 		logger.debug(
 			"runner",
-			`Spawning [${backend}]: ${resolved.bin} ${resolved.prefixArgs.length ? resolved.prefixArgs[0] + " " : ""}-p "<prompt>" --max-turns ${opts.maxTurns}`,
+			`Spawning [${backend}]: ${resolved.bin} ${resolved.prefixArgs.length ? `${resolved.prefixArgs[0]} ` : ""}-p "<prompt>" --max-turns ${opts.maxTurns}`,
 		);
 		logger.debug("runner", `CWD: ${cwd}`);
 
@@ -554,13 +558,13 @@ export class AgentRunner {
 					if (streamWriter) {
 						if (backend === "codex") {
 							streamWriter.write(
-								JSON.stringify({
+								`${JSON.stringify({
 									type: "assistant",
 									content: [{ type: "text", text: line }],
-								}) + "\n",
+								})}\n`,
 							);
 						} else {
-							streamWriter.write(line + "\n");
+							streamWriter.write(`${line}\n`);
 						}
 					}
 				}
@@ -613,7 +617,7 @@ export class AgentRunner {
 					// Flush remaining buffer and close stream file
 					if (streamWriter) {
 						if (lineBuffer.trim()) {
-							streamWriter.write(lineBuffer + "\n");
+							streamWriter.write(`${lineBuffer}\n`);
 						}
 						streamWriter.end();
 					}
@@ -666,7 +670,7 @@ export class AgentRunner {
 				settled = true;
 				clearTimeout(timer);
 
-				const binPath = resolved.originalPath;
+				const _binPath = resolved.originalPath;
 				if (err.message.includes("ENOENT")) {
 					// Clear cached path so next attempt retries detection
 					cachedBinary = null;

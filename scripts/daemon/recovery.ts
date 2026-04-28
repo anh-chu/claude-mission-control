@@ -1,4 +1,4 @@
-import path from "path";
+import path from "node:path";
 import { getWorkspaceDir } from "../../src/lib/paths";
 import { logger } from "./logger";
 import { atomicWriteJson, readJsonFile } from "./runs-registry";
@@ -173,7 +173,7 @@ export function runCrashRecovery(
 
 		for (const task of inProgress) {
 			const taskId = task.id as string;
-			const agentId = task.assignedTo as string;
+			const _agentId = task.assignedTo as string;
 			const record = sessionRecords.find((s) => s.taskId === taskId);
 
 			if (record) {

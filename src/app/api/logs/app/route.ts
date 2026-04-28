@@ -1,5 +1,5 @@
+import path from "node:path";
 import { type NextRequest, NextResponse } from "next/server";
-import path from "path";
 import { isAllowedLogPath, tailFile } from "@/lib/log-reader";
 import { DATA_DIR } from "@/lib/paths";
 

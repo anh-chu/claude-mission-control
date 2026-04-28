@@ -13,8 +13,8 @@
  *   6. Logs an activity event
  */
 
-import { existsSync, mkdirSync, readFileSync, writeFileSync } from "fs";
-import path from "path";
+import { existsSync, mkdirSync, readFileSync, writeFileSync } from "node:fs";
+import path from "node:path";
 import { createLogger } from "../../src/lib/logger";
 import { readActiveRuns, writeActiveRuns } from "./active-runs";
 import { logger } from "./logger";

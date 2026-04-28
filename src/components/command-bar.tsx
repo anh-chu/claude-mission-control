@@ -94,7 +94,7 @@ export function CommandBar({
 		// Intercept slash commands
 		if (trimmed.startsWith("/")) {
 			const matchedSkill = SKILLS.find(
-				(s) => s.command === trimmed || trimmed.startsWith(s.command + " "),
+				(s) => s.command === trimmed || trimmed.startsWith(`${s.command} `),
 			);
 			if (matchedSkill) {
 				setSlashNotification(matchedSkill.command);
@@ -183,11 +183,7 @@ export function CommandBar({
 					className="h-9 flex-1 border-0 bg-transparent px-0 shadow-none focus-visible:ring-0 placeholder:text-muted-foreground/60"
 				/>
 				{value.trim() && (
-					<Button
-						size="sm"
-						onClick={handleSubmit}
-						className="gap-1.5 px-2.5"
-					>
+					<Button size="sm" onClick={handleSubmit} className="gap-1.5 px-2.5">
 						<Zap className="h-3 w-3" />
 						Capture
 					</Button>
