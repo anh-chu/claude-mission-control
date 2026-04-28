@@ -290,7 +290,7 @@
 - `APPDATA` **required** — scripts/daemon/runner.ts
 - `CLAUDE_CODE_OAUTH_TOKEN` **required** — scripts/daemon/security.ts
 - `CMC_DATA_DIR` **required** — __tests__/helpers.ts
-- `CMC_WORKSPACE_ID` **required** — scripts/daemon/run-brain-dump-triage.ts
+- `MANDIO_WORKSPACE_ID` **required** — scripts/daemon/run-brain-dump-triage.ts
 - `COMSPEC` **required** — scripts/daemon/security.ts
 - `HOME` **required** — scripts/daemon/runner.ts
 - `LOCALAPPDATA` **required** — scripts/daemon/runner.ts

@@ -33,7 +33,7 @@ Changes to these files have the widest blast radius across the codebase:
 - `APPDATA` — `scripts/daemon/runner.ts`
 - `CLAUDE_CODE_OAUTH_TOKEN` — `scripts/daemon/security.ts`
 - `CMC_DATA_DIR` — `__tests__/helpers.ts`
-- `CMC_WORKSPACE_ID` — `scripts/daemon/run-brain-dump-triage.ts`
+- `MANDIO_WORKSPACE_ID` — `scripts/daemon/run-brain-dump-triage.ts`
 - `COMSPEC` — `scripts/daemon/security.ts`
 - `HOME` — `scripts/daemon/runner.ts`
 - `LOCALAPPDATA` — `scripts/daemon/runner.ts`

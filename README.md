@@ -4,12 +4,12 @@
 </p>
 
 <p align="center">
-  <img src="docs/rocket.svg" alt="Task Control" width="80" />
+  <img src="docs/rocket.svg" alt="Mandio" width="80" />
 </p>
 
-<h1 align="center">Task Control</h1>
+<h1 align="center">Mandio</h1>
 
-<p align="center"><img src="docs/demo.gif" alt="Task Control Demo" width="800" /></p>
+<p align="center"><img src="docs/demo.gif" alt="Mandio Demo" width="800" /></p>
 
 ---
 
@@ -17,16 +17,16 @@
 
 A self-hosted task manager that runs your work through AI agents. You add tasks, set priorities, and Autopilot handles execution: it spawns Claude Code or Codex CLI sessions, streams output live, and routes decisions back to you.
 
-Runs entirely on your machine. Data in `~/.cmc/`. No cloud.
+Runs entirely on your machine. Data in `~/.mandio/`. No cloud.
 
-## Quick Start with `npx mission-control`
+## Quick Start with `npx mandio`
 
 ```bash
-npx mission-control dev     # Start dev server at localhost:3000
-npx mission-control start  # Start production server
-npx mission-control stop    # Stop production server
-npx mission-control status  # Show running services
-npx mission-control version # Show version
+npx mandio dev     # Start dev server at localhost:3000
+npx mandio start  # Start production server
+npx mandio stop    # Stop production server
+npx mandio status  # Show running services
+npx mandio version # Show version
 ```
 
 **Requirements**
@@ -36,8 +36,8 @@ npx mission-control version # Show version
   - Run `claude` once to authenticate
 
 **Configuration**
-- `MC_API_TOKEN` — optional auth token for API endpoints (not required for local use)
-- `CMC_DATA_DIR` — data directory (default: `~/.cmc/`)
+- `MANDIO_API_TOKEN` — optional auth token for API endpoints (not required for local use)
+- `MANDIO_DATA_DIR` — data directory (default: `~/.mandio/`)
 - `PORT` — server port (default: `3000`)
 
 ---
@@ -57,9 +57,9 @@ Workspace
 
 ## Why Local-First
 
-AI agent tools usually mean handing your tasks, credentials, and decisions to a cloud service. Task Control takes the opposite approach:
+AI agent tools usually mean handing your tasks, credentials, and decisions to a cloud service. Mandio takes the opposite approach:
 
-- **Data in `~/.cmc/`:** persists across app updates, never synced anywhere
+- **Data in `~/.mandio/`:** persists across app updates, never synced anywhere
 - **No database:** plain JSON files you can read, edit, or back up directly
 - **No vendor lock-in:** agents run via Claude Code or Codex CLI, both locally installed
 - **Full audit trail:** every agent action logged in activity-log.json
@@ -110,7 +110,7 @@ The daemon (`pnpm daemon:start`) is the engine. It runs as a detached background
 
 ### Rich Task Detail
 - **Markdown Descriptions:** Full markdown rendering in task descriptions; click to edit
-- **File Attachments:** Attach images and files to task descriptions and comments; stored in `~/.cmc/uploads/`
+- **File Attachments:** Attach images and files to task descriptions and comments; stored in `~/.mandio/uploads/`
 - **Inline Previews:** Images render inline in comments; other files as download links
 - **Comments:** Full comment thread and @-mention support on tasks
 
@@ -138,15 +138,15 @@ The daemon (`pnpm daemon:start`) is the engine. It runs as a detached background
 ### Install & Run
 
 ```bash
-git clone https://github.com/anh-chu/claude-mission-control.git
-cd claude-mission-control
+git clone https://github.com/anh-chu/mandio.git
+cd mandio
 pnpm install
 pnpm dev
 ```
 
 Open [http://localhost:3000](http://localhost:3000). On first run, click **"Load Demo Data"** to explore with sample tasks, agents, and messages.
 
-Your workspace data is created at **`~/.cmc/`** on first launch, separate from the repo, so `git pull` never touches your data.
+Your workspace data is created at **`~/.mandio/`** on first launch, separate from the repo, so `git pull` never touches your data.
 
 ### Enable Autopilot
 
@@ -173,7 +173,7 @@ Or start it from **Settings → Autopilot** in the UI. Once started, Autopilot w
 Autopilot watches tasks.json for changes
   → Finds tasks: kanban=not-started, assignedTo≠me, unblocked
   → Spawns a Claude Code / Codex CLI session with agent persona + task context
-  → Agent executes, streams output live to ~/.cmc/agent-streams/<id>.jsonl
+  → Agent executes, streams output live to ~/.mandio/agent-streams/<id>.jsonl
   → Agent marks task done, posts completion report to inbox.json
   → If agent needs human input → sets awaiting-decision, Autopilot pauses
   → You answer the decision → Autopilot resumes the task
@@ -195,7 +195,7 @@ Server restarts (or crashes)
 
 ```
 You comment "@researcher check the API docs"
-  → Task Control parses the mention, validates agent exists
+  → Mandio parses the mention, validates agent exists
   → Spawns dedicated agent session with task context + your comment
   → Agent responds with a new comment (streams live)
   → If agent determines rework is needed on a done task, it reopens automatically
@@ -250,7 +250,7 @@ Each agent can use Claude Code or Codex CLI as its backend, configurable from th
 ## Data & Architecture
 
 ```
-~/.cmc/                                  All persistent data, never inside the repo
+~/.mandio/                                  All persistent data, never inside the repo
   workspaces.json                        Workspace registry
   workspaces/{id}/
     tasks.json                           Tasks (Eisenhower + kanban + agent assignment)
@@ -283,7 +283,7 @@ Each agent can use Claude Code or Codex CLI as its backend, configurable from th
 
 ### Design Principles
 
-- **Local-first:** No database. No cloud. Plain JSON in `~/.cmc/`. Yours forever.
+- **Local-first:** No database. No cloud. Plain JSON in `~/.mandio/`. Yours forever.
 - **Agent-first API:** Every endpoint optimized for token-efficient agent reads and writes.
 - **Daemon-first execution:** Autopilot is the default path, not an optional add-on.
 - **Resilience by default:** Crash recovery, session resume, and retry queues built into the daemon.
@@ -302,7 +302,7 @@ Each agent can use Claude Code or Codex CLI as its backend, configurable from th
 | Drag & Drop | [@dnd-kit](https://dndkit.com) |
 | Validation | [Zod](https://zod.dev) |
 | Testing | [Vitest](https://vitest.dev) |
-| Storage | Local JSON files (`~/.cmc/`) |
+| Storage | Local JSON files (`~/.mandio/`) |
 | Agent CLIs | [Claude Code](https://docs.anthropic.com/en/docs/claude-code), [Codex CLI](https://github.com/openai/codex) |
 
 ---
@@ -319,15 +319,15 @@ pnpm verify           # Typecheck + lint + build + test
 pnpm daemon:start     # Start Autopilot daemon
 pnpm daemon:stop      # Stop Autopilot daemon
 pnpm daemon:status    # Show daemon status + active sessions
-pnpm gen:context      # Regenerate ~/.cmc/ai-context.md
-pnpm cleanup:uploads  # Remove orphaned files from ~/.cmc/uploads
+pnpm gen:context      # Regenerate ~/.mandio/ai-context.md
+pnpm cleanup:uploads  # Remove orphaned files from ~/.mandio/uploads
 ```
 
 ---
 
 ## Credits
 
-Built on [Mission Control](https://github.com/MeisnerDan/mission-control) by Dan Meisner.
+Built on Mandio by Dan Meisner.
 
 ---
 

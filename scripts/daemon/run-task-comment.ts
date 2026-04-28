@@ -30,7 +30,7 @@ const taskLogger = createLogger("task", { sync: true });
 import { getWorkspaceDir } from "../../src/lib/paths";
 
 const WORKSPACE_DIR = getWorkspaceDir(
-	process.env.CMC_WORKSPACE_ID ?? "default",
+	process.env.MANDIO_WORKSPACE_ID ?? "default",
 );
 const TASKS_FILE = path.join(WORKSPACE_DIR, "tasks.json");
 const AGENTS_FILE = path.join(WORKSPACE_DIR, "agents.json");

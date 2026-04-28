@@ -394,7 +394,7 @@ export class AgentRunner {
 
 	constructor(cwd?: string) {
 		this.cwd =
-			cwd ?? getWorkspaceDir(process.env.CMC_WORKSPACE_ID ?? "default");
+			cwd ?? getWorkspaceDir(process.env.MANDIO_WORKSPACE_ID ?? "default");
 	}
 
 	/**

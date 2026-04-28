@@ -65,7 +65,7 @@ interface DecisionItem {
 }
 
 const workspaceId =
-	process.argv[2] ?? process.env.CMC_WORKSPACE_ID ?? "default";
+	process.argv[2] ?? process.env.MANDIO_WORKSPACE_ID ?? "default";
 const WORKSPACE_DIR = getWorkspaceDir(workspaceId);
 async function readJSON<T>(filename: string): Promise<T> {
 	const raw = await readFile(path.join(WORKSPACE_DIR, filename), "utf-8");
@@ -147,7 +147,7 @@ async function main(): Promise<void> {
 
 	// Build markdown
 	const lines: string[] = [];
-	lines.push("# Mission Control — AI Context Snapshot");
+	lines.push("# Mandio — AI Context Snapshot");
 	lines.push(`Generated: ${now}`);
 	lines.push("");
 

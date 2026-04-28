@@ -17,10 +17,10 @@ function timingSafeEqual(a: string, b: string): boolean {
 /**
  * API Authentication Middleware
  *
- * When MC_API_TOKEN is set in .env.local, all /api/* requests require
+ * When MANDIO_API_TOKEN is set in .env.local, all /api/* requests require
  * a matching Authorization: Bearer <token> header.
  *
- * When MC_API_TOKEN is NOT set, all requests pass through (backwards
+ * When MANDIO_API_TOKEN is NOT set, all requests pass through (backwards
  * compatible for local-only development with zero configuration).
  */
 export function proxy(request: NextRequest) {
@@ -78,7 +78,7 @@ export function proxy(request: NextRequest) {
 		}
 	}
 
-	const token = process.env.MC_API_TOKEN;
+	const token = process.env.MANDIO_API_TOKEN;
 
 	// Exempt server-status endpoint from auth (needed for health checks)
 	if (pathname === "/api/server-status")

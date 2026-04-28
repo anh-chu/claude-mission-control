@@ -1,7 +1,7 @@
 Conduct my weekly review:
 
-1. Read $CMC_DATA_DIR/workspaces/<id>/ai-context.md for a quick snapshot of current state
-2. Read all data files in $CMC_DATA_DIR/workspaces/<id>/
+1. Read $MANDIO_DATA_DIR/workspaces/<id>/ai-context.md for a quick snapshot of current state
+2. Read all data files in $MANDIO_DATA_DIR/workspaces/<id>/
 3. Run `git log --oneline --since="7 days ago" --all` for all projects
 4. Analyze task completion rates and goal progress
 

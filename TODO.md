@@ -1,6 +1,6 @@
 # TODO
 
-Near-term focus for Task Control. Not a full roadmap, just the next two bets.
+Near-term focus for Mandio. Not a full roadmap, just the next two bets.
 
 ## 1. Canvas automation workflow builder
 

@@ -7,10 +7,10 @@ Read the current state of the workspace, identify pending work for each agent, a
 ## Execution Flow
 
 ### Step 1: Situational Awareness
-1. Read `$CMC_DATA_DIR/workspaces/<id>/ai-context.md` for a quick snapshot
-2. Read `$CMC_DATA_DIR/workspaces/<id>/tasks.json` for all tasks
-3. Read `$CMC_DATA_DIR/workspaces/<id>/agents.json` for agent personas
-4. Read `$CMC_DATA_DIR/workspaces/<id>/inbox.json` for pending messages
+1. Read `$MANDIO_DATA_DIR/workspaces/<id>/ai-context.md` for a quick snapshot
+2. Read `$MANDIO_DATA_DIR/workspaces/<id>/tasks.json` for all tasks
+3. Read `$MANDIO_DATA_DIR/workspaces/<id>/agents.json` for agent personas
+4. Read `$MANDIO_DATA_DIR/workspaces/<id>/inbox.json` for pending messages
 
 ### Step 2: Work Assignment
 1. Filter tasks where `kanban` is `"not-started"` or `"in-progress"`
@@ -23,8 +23,8 @@ Read the current state of the workspace, identify pending work for each agent, a
 
 ### Step 3: Sequential Execution (Default Mode)
 For each agent with pending work:
-1. Read the agent's full persona from `$CMC_DATA_DIR/workspaces/<id>/agents.json`
-2. Read the agent's linked skills from `$CMC_DATA_DIR/workspaces/<id>/skills-library.json`
+1. Read the agent's full persona from `$MANDIO_DATA_DIR/workspaces/<id>/agents.json`
+2. Read the agent's linked skills from `$MANDIO_DATA_DIR/workspaces/<id>/skills-library.json`
 3. Read the agent's command file from `.claude/commands/<agent-id>/user.md`
 4. Use the `Task` tool to spawn a sub-agent with that agent's persona
 5. The sub-agent picks up their highest-priority unblocked task

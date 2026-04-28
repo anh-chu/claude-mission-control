@@ -1,22 +1,22 @@
 @echo off
 setlocal enabledelayedexpansion
-title Mission Control
+title Mandio
 
 :: ============================================================
-:: Mission Control - Start Script (Windows)
+:: Mandio - Start Script (Windows)
 :: ============================================================
 
 :: Set PATH for Node.js and pnpm
 set "PATH=C:\Program Files\nodejs;C:\Users\justs\AppData\Roaming\npm;%PATH%"
 
-:: Change to the mission-control directory
+:: Change to the mandio directory
 cd /d "%~dp0"
 
 :: --- Pre-flight check: Is port 3000 already in use? ---
 for /f "tokens=5" %%a in ('netstat -aon 2^>nul ^| findstr ":3000 " ^| findstr "LISTENING"') do (
     echo.
-    echo [Mission Control] Port 3000 is already in use ^(PID %%a^).
-    echo   To stop it:  stop-mission-control.bat
+    echo [Mandio] Port 3000 is already in use ^(PID %%a^).
+    echo   To stop it:  stop-mandio.bat
     echo   To use it:   http://localhost:3000
     echo.
     exit /b 1
@@ -31,9 +31,9 @@ echo running > .mc.pid
 
 :: --- Start dev server (blocks here until Ctrl+C) ---
 echo.
-echo [Mission Control] Starting dev server...
+echo [Mandio] Starting dev server...
 echo   URL:  http://localhost:3000
-echo   Stop: Press Ctrl+C in this window, or run stop-mission-control.bat
+echo   Stop: Press Ctrl+C in this window, or run stop-mandio.bat
 echo.
 
 node node_modules\next\dist\bin\next dev
@@ -41,4 +41,4 @@ node node_modules\next\dist\bin\next dev
 :: --- Cleanup after server exits ---
 if exist .mc.pid del .mc.pid
 echo.
-echo [Mission Control] Server stopped.
+echo [Mandio] Server stopped.

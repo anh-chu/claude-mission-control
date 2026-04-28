@@ -2,14 +2,14 @@
 setlocal enabledelayedexpansion
 
 :: ============================================================
-:: Mission Control - Stop Script (Windows)
+:: Mandio - Stop Script (Windows)
 :: ============================================================
 
-:: Change to the mission-control directory
+:: Change to the mandio directory
 cd /d "%~dp0"
 
 echo.
-echo [Mission Control] Stopping server on port 3000...
+echo [Mandio] Stopping server on port 3000...
 
 :: --- Find and kill all processes on port 3000 with tree-kill ---
 set "FOUND=0"
@@ -32,7 +32,7 @@ if exist .mc.pid del .mc.pid
 if "!FOUND!"=="0" (
     echo   No process found on port 3000.
     echo.
-    echo [Mission Control] Nothing to stop.
+    echo [Mandio] Nothing to stop.
     echo.
     exit /b 0
 )
@@ -55,5 +55,5 @@ for /f "tokens=5" %%a in ('netstat -aon 2^>nul ^| findstr ":3000 " ^| findstr "L
 )
 
 echo.
-echo [Mission Control] Server stopped. Port 3000 is free.
+echo [Mandio] Server stopped. Port 3000 is free.
 echo.

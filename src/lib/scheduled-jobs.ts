@@ -17,11 +17,11 @@ import path from "path";
 import { DATA_DIR } from "./paths";
 
 // Get base directory for script resolution.
-// Priority: MC_INSTALL_DIR env var > __dirname-based > process.cwd() fallback.
+// Priority: MANDIO_INSTALL_DIR env var > __dirname-based > process.cwd() fallback.
 function getBaseDir(): string {
-	// CLI wrapper sets MC_INSTALL_DIR when installed as npm package
-	if (process.env.MC_INSTALL_DIR) {
-		return process.env.MC_INSTALL_DIR;
+	// CLI wrapper sets MANDIO_INSTALL_DIR when installed as npm package
+	if (process.env.MANDIO_INSTALL_DIR) {
+		return process.env.MANDIO_INSTALL_DIR;
 	}
 	// __dirname-relative: up from lib/ to package root
 	const packageRoot = path.resolve(__dirname, "..", "..");

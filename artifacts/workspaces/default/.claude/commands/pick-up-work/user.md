@@ -1,14 +1,14 @@
 Check for new work assignments and pick up the highest-priority task:
 
-1. Read $CMC_DATA_DIR/workspaces/<id>/ai-context.md for current state
-2. Read $CMC_DATA_DIR/workspaces/<id>/inbox.json — filter for messages where:
+1. Read $MANDIO_DATA_DIR/workspaces/<id>/ai-context.md for current state
+2. Read $MANDIO_DATA_DIR/workspaces/<id>/inbox.json — filter for messages where:
    - `to` matches your current agent role
    - `status` is "unread"
    - `type` is "delegation" (new assignments)
-3. Read $CMC_DATA_DIR/workspaces/<id>/tasks.json — find tasks assigned to your role that are:
+3. Read $MANDIO_DATA_DIR/workspaces/<id>/tasks.json — find tasks assigned to your role that are:
    - kanban "not-started" (ready to work on)
    - Not blocked (no incomplete dependencies in blockedBy)
-4. Read $CMC_DATA_DIR/workspaces/<id>/decisions.json — check for any pending decisions that might affect your work
+4. Read $MANDIO_DATA_DIR/workspaces/<id>/decisions.json — check for any pending decisions that might affect your work
 
 Present findings as:
 

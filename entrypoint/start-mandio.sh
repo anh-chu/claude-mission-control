@@ -2,7 +2,7 @@
 set -euo pipefail
 
 # ============================================================
-# Mission Control - Start Script (Linux/macOS)
+# Mandio - Start Script (Linux/macOS)
 # ============================================================
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
@@ -17,13 +17,13 @@ if [ -f "$PID_FILE" ]; then
     OLD_PID=$(cat "$PID_FILE")
     if kill -0 "$OLD_PID" 2>/dev/null; then
         echo ""
-        echo "[Mission Control] Already running (PID $OLD_PID)."
-        echo "  To stop it:  ./stop-mission-control.sh"
+        echo "[Mandio] Already running (PID $OLD_PID)."
+        echo "  To stop it:  ./stop-mandio.sh"
         echo "  To use it:   $URL"
         echo ""
         exit 1
     else
-        echo "[Mission Control] Cleaning up stale PID file."
+        echo "[Mandio] Cleaning up stale PID file."
         rm -f "$PID_FILE"
     fi
 fi
@@ -38,8 +38,8 @@ fi
 
 if [ -n "$EXISTING_PID" ]; then
     echo ""
-    echo "[Mission Control] Port $PORT is already in use (PID $EXISTING_PID)."
-    echo "  To stop it:  ./stop-mission-control.sh"
+    echo "[Mandio] Port $PORT is already in use (PID $EXISTING_PID)."
+    echo "  To stop it:  ./stop-mandio.sh"
     echo "  To use it:   $URL"
     echo ""
     exit 1
@@ -49,7 +49,7 @@ fi
 cleanup() {
     rm -f "$PID_FILE"
     echo ""
-    echo "[Mission Control] Server stopped."
+    echo "[Mandio] Server stopped."
 }
 trap cleanup EXIT INT TERM
 
@@ -74,9 +74,9 @@ trap cleanup EXIT INT TERM
 
 # --- Start dev server ---
 echo ""
-echo "[Mission Control] Starting dev server..."
+echo "[Mandio] Starting dev server..."
 echo "  URL:  $URL"
-echo "  Stop: Press Ctrl+C, or run ./stop-mission-control.sh"
+echo "  Stop: Press Ctrl+C, or run ./stop-mandio.sh"
 echo ""
 
 # Start pnpm dev in background, capture PID, then wait for it

@@ -7,9 +7,9 @@ import { ensureWorkspaceDir, getWorkspaceDataDir } from "@/lib/data";
 
 // Use a throwaway workspace ID so we never touch the live "default" workspace.
 const TEST_WS_ID = `test-seed-${Date.now()}`;
-const DATA_DIR = process.env.CMC_DATA_DIR
-	? path.resolve(process.env.CMC_DATA_DIR)
-	: path.join(os.homedir(), ".cmc");
+const DATA_DIR = process.env.MANDIO_DATA_DIR
+	? path.resolve(process.env.MANDIO_DATA_DIR)
+	: path.join(os.homedir(), ".mandio");
 const WS_DIR = path.join(DATA_DIR, "workspaces", TEST_WS_ID);
 
 afterAll(async () => {

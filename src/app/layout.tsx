@@ -5,7 +5,7 @@ import { LayoutShell } from "@/components/layout-shell";
 import { ThemeProvider } from "@/components/theme-provider";
 
 export const metadata: Metadata = {
-	title: "Task Control",
+	title: "Mandio",
 	description:
 		"AI agent orchestration hub — Eisenhower matrix, Kanban, initiatives, and multi-agent task execution",
 };

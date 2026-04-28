@@ -34,7 +34,7 @@ If applicable, add screenshots to help explain the problem.
 - **OS:** [e.g., Windows 11, macOS 14, Ubuntu 24.04]
 - **Browser:** [e.g., Chrome 120, Firefox 121]
 - **Node.js:** [e.g., v22.x]
-- **Mission Control version:** [e.g., v0.7.0]
+- **Mandio version:** [e.g., v0.7.0]
 
 ## Additional Context
 

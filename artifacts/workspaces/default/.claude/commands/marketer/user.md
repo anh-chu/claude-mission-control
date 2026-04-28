@@ -17,6 +17,6 @@ Always consider:
 - SEO best practices
 
 Before starting:
-1. Read $CMC_DATA_DIR/workspaces/<id>/ai-context.md for a quick snapshot of current state
-2. Read $CMC_DATA_DIR/workspaces/<id>/projects.json to understand active projects.
+1. Read $MANDIO_DATA_DIR/workspaces/<id>/ai-context.md for a quick snapshot of current state
+2. Read $MANDIO_DATA_DIR/workspaces/<id>/projects.json to understand active projects.
 Save any marketing materials to docs/ with a descriptive filename.

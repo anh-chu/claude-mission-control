@@ -1,14 +1,14 @@
 ---
 name: task-management
 description: >
-  Manages tasks in Mission Control. Use when creating, updating, or querying tasks,
+  Manages tasks in Mandio. Use when creating, updating, or querying tasks,
   goals, projects, or brain dump entries. Applies when the user mentions tasks, priorities,
   to-dos, planning, or asks about what needs to be done.
 ---
 
-# Task Management in Mission Control
+# Task Management in Mandio
 
-Data is stored in `$CMC_DATA_DIR/workspaces/<id>/` (defaults to `~/.cmc/workspaces/<id>/`). The daemon SOP injects correct file paths at runtime.
+Data is stored in `$MANDIO_DATA_DIR/workspaces/<id>/` (defaults to `~/.mandio/workspaces/<id>/`). The daemon SOP injects correct file paths at runtime.
 
 ## Quick Reference
 - **AI Context**: `ai-context.md` (read this FIRST for a snapshot)

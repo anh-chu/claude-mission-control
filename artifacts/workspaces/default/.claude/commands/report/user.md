@@ -1,11 +1,11 @@
 Post a status update or completion report: $ARGUMENTS
 
-1. Read $CMC_DATA_DIR/workspaces/<id>/tasks.json to find the relevant task
+1. Read $MANDIO_DATA_DIR/workspaces/<id>/tasks.json to find the relevant task
 2. Determine the report type:
    - If task is being completed: type is "report", update task kanban to "done"
    - If task is in progress: type is "update", keep task as "in-progress"
 
-3. Write a message to $CMC_DATA_DIR/workspaces/<id>/inbox.json:
+3. Write a message to $MANDIO_DATA_DIR/workspaces/<id>/inbox.json:
    ```json
    {
      "id": "msg_{timestamp}",
@@ -21,7 +21,7 @@ Post a status update or completion report: $ARGUMENTS
    }
    ```
 
-4. Log the activity in $CMC_DATA_DIR/workspaces/<id>/activity-log.json:
+4. Log the activity in $MANDIO_DATA_DIR/workspaces/<id>/activity-log.json:
    ```json
    {
      "id": "evt_{timestamp}",

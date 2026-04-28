@@ -1,11 +1,11 @@
 {
-	"name": "mission-control",
+	"name": "mandio",
 	"version": "0.15.0",
 	"license": "AGPL-3.0-only",
 	"type": "module",
 	"bin": {
 		"mctl": "./bin/cli.js",
-		"mission-control": "./bin/cli.js"
+		"mandio": "./bin/cli.js"
 	},
 	"scripts": {
 		"dev": "next dev",

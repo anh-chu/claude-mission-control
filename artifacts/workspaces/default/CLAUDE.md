@@ -17,7 +17,7 @@ Workspace (fully isolated context)
 
 ## Workspace Map
 ```
-~/.cmc/
+~/.mandio/
 ├── workspaces.json              — Registry of all workspaces (root-level, not workspace-scoped)
 ├── daemon-status.json           — Global daemon state
 ├── daemon.pid                   — Daemon process ID
@@ -318,7 +318,7 @@ Available API routes: `/api/tasks`, `/api/goals`, `/api/initiatives`, `/api/acti
 
 ## Agent Communication Protocol
 
-Agents communicate through JSON files. The Mission Control UI reads these same files through API routes.
+Agents communicate through JSON files. The Mandio UI reads these same files through API routes.
 
 ### How to Read Your Inbox
 ```

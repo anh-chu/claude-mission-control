@@ -1,12 +1,12 @@
 Generate my daily standup by doing the following:
 
-1. Read $CMC_DATA_DIR/workspaces/<id>/ai-context.md for a quick snapshot of current state
-2. Read $CMC_DATA_DIR/workspaces/<id>/tasks.json and find tasks with kanban "in-progress"
-3. Read $CMC_DATA_DIR/workspaces/<id>/inbox.json for any unread messages
-4. Read $CMC_DATA_DIR/workspaces/<id>/activity-log.json for recent events (last 24 hours)
-5. Read $CMC_DATA_DIR/workspaces/<id>/decisions.json for any pending decisions
+1. Read $MANDIO_DATA_DIR/workspaces/<id>/ai-context.md for a quick snapshot of current state
+2. Read $MANDIO_DATA_DIR/workspaces/<id>/tasks.json and find tasks with kanban "in-progress"
+3. Read $MANDIO_DATA_DIR/workspaces/<id>/inbox.json for any unread messages
+4. Read $MANDIO_DATA_DIR/workspaces/<id>/activity-log.json for recent events (last 24 hours)
+5. Read $MANDIO_DATA_DIR/workspaces/<id>/decisions.json for any pending decisions
 6. Run `git log --oneline --since="yesterday" --all` across all project directories
-7. Read $CMC_DATA_DIR/workspaces/<id>/goals.json to check milestone progress
+7. Read $MANDIO_DATA_DIR/workspaces/<id>/goals.json to check milestone progress
 
 Format the output as:
 

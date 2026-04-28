@@ -1,4 +1,4 @@
-# CCMC Redesign: Design System & Token Registry
+# Mandio: Design System & Token Registry
 
 ## 1. Philosophy
 

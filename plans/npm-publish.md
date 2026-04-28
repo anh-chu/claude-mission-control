@@ -1,11 +1,11 @@
-# npm Publish Plan — mission-control
+# npm Publish Plan — mandio
 
-Make the app installable via `npx mission-control`.
+Make the app installable via `npx mandio`.
 
 ## Architecture
 
 ```
-npx mission-control
+npx mandio
   └─ bin/cli.js (entry point)
        ├─ preflight checks (Node >=18, Claude CLI, port 3000)
        ├─ bootstrap ~/.cmc/ data dir

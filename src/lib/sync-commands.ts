@@ -36,7 +36,7 @@ export function generateAgentCommandMarkdown(
 	}
 
 	lines.push("## Standard Operating Procedures");
-	lines.push("1. Read `~/.cmc/ai-context.md` for current state");
+	lines.push("1. Read `~/.mandio/ai-context.md` for current state");
 	lines.push(
 		`2. Check inbox for messages addressed to you: filter \`to: "${agent.id}"\``,
 	);

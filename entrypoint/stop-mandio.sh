@@ -2,7 +2,7 @@
 set -euo pipefail
 
 # ============================================================
-# Mission Control - Stop Script (Linux/macOS)
+# Mandio - Stop Script (Linux/macOS)
 # ============================================================
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
@@ -12,7 +12,7 @@ PID_FILE=".mc.pid"
 PORT=3000
 
 echo ""
-echo "[Mission Control] Stopping server on port $PORT..."
+echo "[Mandio] Stopping server on port $PORT..."
 
 KILLED=false
 
@@ -69,10 +69,10 @@ fi
 
 if [ "$KILLED" = true ]; then
     echo ""
-    echo "[Mission Control] Server stopped. Port $PORT is free."
+    echo "[Mandio] Server stopped. Port $PORT is free."
 else
-    echo "  No running Mission Control process found."
+    echo "  No running Mandio process found."
     echo ""
-    echo "[Mission Control] Nothing to stop."
+    echo "[Mandio] Nothing to stop."
 fi
 echo ""

@@ -158,7 +158,7 @@ export function AppSidebar({
 				>
 					<div className="flex h-14 flex-col border-b">
 						<div className="flex h-14 items-center justify-between px-4">
-							<span className="text-sm font-normal">Task Control</span>
+							<span className="text-sm font-normal">Mandio</span>
 							<Button
 								variant="ghost"
 								size="icon"

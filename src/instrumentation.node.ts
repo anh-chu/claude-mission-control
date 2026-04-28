@@ -12,9 +12,9 @@ import {
 	scheduleUploadsCleanup,
 } from "@/lib/scheduled-jobs";
 
-const DATA_DIR = process.env.CMC_DATA_DIR
-	? path.resolve(process.env.CMC_DATA_DIR)
-	: path.join(os.homedir(), ".cmc");
+const DATA_DIR = process.env.MANDIO_DATA_DIR
+	? path.resolve(process.env.MANDIO_DATA_DIR)
+	: path.join(os.homedir(), ".mandio");
 const appLogger = createLogger("app");
 
 // ─── Seed default workspace on fresh install ────────────────────────────────

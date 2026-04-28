@@ -16,7 +16,7 @@ export default function GlobalError({
 	);
 
 	useEffect(() => {
-		console.error("[Mission Control Global Error]", error);
+		console.error("[Mandio Global Error]", error);
 	}, [error]);
 
 	// Auto-reload after countdown

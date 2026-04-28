@@ -10,7 +10,7 @@ export default defineConfig({
     testTimeout: 15000,
     globalSetup: "./__tests__/global-setup.ts",
     env: {
-      CMC_DATA_DIR: path.join(__dirname, ".test-data"),
+      MANDIO_DATA_DIR: path.join(__dirname, ".test-data"),
     },
   },
   resolve: {

@@ -1,11 +1,11 @@
 Create my daily plan:
 
-1. Read $CMC_DATA_DIR/workspaces/<id>/ai-context.md for a quick snapshot of current state
-2. Read $CMC_DATA_DIR/workspaces/<id>/tasks.json
-3. Read $CMC_DATA_DIR/workspaces/<id>/inbox.json for new delegations and messages
-4. Read $CMC_DATA_DIR/workspaces/<id>/decisions.json for pending decisions needing my input
-5. Read $CMC_DATA_DIR/workspaces/<id>/brain-dump.json for items needing triage
-6. Read $CMC_DATA_DIR/workspaces/<id>/goals.json for upcoming milestone deadlines
+1. Read $MANDIO_DATA_DIR/workspaces/<id>/ai-context.md for a quick snapshot of current state
+2. Read $MANDIO_DATA_DIR/workspaces/<id>/tasks.json
+3. Read $MANDIO_DATA_DIR/workspaces/<id>/inbox.json for new delegations and messages
+4. Read $MANDIO_DATA_DIR/workspaces/<id>/decisions.json for pending decisions needing my input
+5. Read $MANDIO_DATA_DIR/workspaces/<id>/brain-dump.json for items needing triage
+6. Read $MANDIO_DATA_DIR/workspaces/<id>/goals.json for upcoming milestone deadlines
 
 Produce a focused plan:
 

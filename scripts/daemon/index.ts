@@ -441,13 +441,13 @@ function startWikiWatcher(workspaceId: string): {
 function handleStatus(): void {
 	const pid = readPidFile();
 	if (pid && isProcessRunning(pid)) {
-		console.log("\n=== Mission Control Agent Daemon ===");
+		console.log("\n=== Mandio Agent Daemon ===");
 		console.log(`Status:  \x1b[32mRunning\x1b[0m`);
 		console.log(`PID:     ${pid}`);
 		console.log("");
 	} else {
 		if (pid) removePidFile(); // Clean stale PID file
-		console.log("\n=== Mission Control Agent Daemon ===");
+		console.log("\n=== Mandio Agent Daemon ===");
 		console.log(`Status:  \x1b[31mStopped\x1b[0m`);
 		console.log("");
 	}
@@ -488,7 +488,7 @@ async function handleStart(): Promise<void> {
 	}
 	if (existingPid) removePidFile();
 
-	console.log("\n=== Mission Control Agent Daemon ===\n");
+	console.log("\n=== Mandio Agent Daemon ===\n");
 
 	// Discover active workspaces
 	const allWorkspaces = readWorkspaces();

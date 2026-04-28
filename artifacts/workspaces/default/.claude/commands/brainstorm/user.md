@@ -2,10 +2,10 @@ Brainstorm ideas about: $ARGUMENTS
 
 ## Setup
 
-1. Read `$CMC_DATA_DIR/workspaces/<id>/ai-context.md` for current state snapshot
-2. Read `$CMC_DATA_DIR/workspaces/<id>/brain-dump.json` to see existing ideas (avoid duplicates)
-3. Read `$CMC_DATA_DIR/workspaces/<id>/projects.json` to understand active projects and their context
-4. Read `$CMC_DATA_DIR/workspaces/<id>/goals.json` to understand strategic priorities
+1. Read `$MANDIO_DATA_DIR/workspaces/<id>/ai-context.md` for current state snapshot
+2. Read `$MANDIO_DATA_DIR/workspaces/<id>/brain-dump.json` to see existing ideas (avoid duplicates)
+3. Read `$MANDIO_DATA_DIR/workspaces/<id>/projects.json` to understand active projects and their context
+4. Read `$MANDIO_DATA_DIR/workspaces/<id>/goals.json` to understand strategic priorities
 
 ## Brainstorming Phase
 
@@ -36,7 +36,7 @@ After presenting all ideas, rank your **top 3 picks** based on the best effort-t
 
 Ask me which ideas I want to keep. For each selected idea:
 
-1. Add it to `$CMC_DATA_DIR/workspaces/<id>/brain-dump.json` with:
+1. Add it to `$MANDIO_DATA_DIR/workspaces/<id>/brain-dump.json` with:
    ```json
    {
      "id": "bd_{Date.now()}",

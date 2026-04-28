@@ -1,8 +1,8 @@
 /**
- * Authenticated API client for Mission Control.
+ * Authenticated API client for Mandio.
  *
  * Wraps fetch() with:
- * - Automatic Bearer token injection (NEXT_PUBLIC_MC_API_TOKEN)
+ * - Automatic Bearer token injection (NEXT_PUBLIC_MANDIO_API_TOKEN)
  * - Retry with exponential backoff for network errors and 5xx responses
  * - Configurable retry behavior per request
  */
@@ -30,7 +30,7 @@ export async function apiFetch(
 	url: string,
 	init?: ApiFetchInit,
 ): Promise<Response> {
-	const token = process.env.NEXT_PUBLIC_MC_API_TOKEN;
+	const token = process.env.NEXT_PUBLIC_MANDIO_API_TOKEN;
 	const headers = new Headers(init?.headers);
 	if (token) {
 		headers.set("Authorization", `Bearer ${token}`);

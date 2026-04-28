@@ -1,6 +1,6 @@
-# Contributing to Mission Control
+# Contributing to Mandio
 
-Thanks for your interest in contributing! Mission Control is an open-source task management system designed for solo entrepreneurs supervising AI agents.
+Thanks for your interest in contributing! Mandio is an open-source task management system designed for solo entrepreneurs supervising AI agents.
 
 ## Getting Started
 
@@ -11,7 +11,7 @@ Thanks for your interest in contributing! Mission Control is an open-source task
 
 ### Setup
 ```bash
-git clone https://github.com/MeisnerDan/mission-control.git
+git clone https://github.com/MeisnerDan/mandio.git
    # repo folder → app folder (where package.json lives)
 pnpm install
 pnpm dev

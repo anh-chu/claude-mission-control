@@ -6,9 +6,9 @@ import path from "path";
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
 // Data directory constants (replicated from src/lib/paths.ts to avoid cross-module issues)
-const DATA_DIR: string = process.env.CMC_DATA_DIR
-	? path.resolve(process.env.CMC_DATA_DIR)
-	: path.join(os.homedir(), ".cmc");
+const DATA_DIR: string = process.env.MANDIO_DATA_DIR
+	? path.resolve(process.env.MANDIO_DATA_DIR)
+	: path.join(os.homedir(), ".mandio");
 
 function getWorkspaceDir(workspaceId: string): string {
 	return path.join(DATA_DIR, "workspaces", workspaceId);
@@ -17,8 +17,8 @@ function getWorkspaceDir(workspaceId: string): string {
 const VERSION_FILE = ".version";
 
 /**
- * Bootstrap the data directory for Mission Control.
- * Creates the base ~/.cmc/ structure and runs migrations if needed.
+ * Bootstrap the data directory for Mandio.
+ * Creates the base ~/.mandio/ structure and runs migrations if needed.
  */
 export async function bootstrapDataDir(): Promise<void> {
 	ensureDataDir();
@@ -47,7 +47,7 @@ function getCurrentVersion(): string {
 }
 
 /**
- * Write the current version to ~/.cmc/.version.
+ * Write the current version to ~/.mandio/.version.
  */
 function writeVersion(): void {
 	const versionPath = path.join(DATA_DIR, VERSION_FILE);
@@ -101,7 +101,7 @@ function ensureDefaultWorkspace(): void {
 }
 
 /**
- * Ensure the logs directory exists at ~/.cmc/logs/.
+ * Ensure the logs directory exists at ~/.mandio/logs/.
  */
 function ensureLogsDir(): void {
 	const logsDir = path.join(DATA_DIR, "logs");
@@ -112,7 +112,7 @@ function ensureLogsDir(): void {
 }
 
 /**
- * Read stored version from ~/.cmc/.version.
+ * Read stored version from ~/.mandio/.version.
  */
 function getStoredVersion(): string | null {
 	const versionPath = path.join(DATA_DIR, VERSION_FILE);

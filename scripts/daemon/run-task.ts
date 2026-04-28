@@ -45,7 +45,7 @@ import { getWorkspaceDir } from "../../src/lib/paths";
 import { getWorkspaceEnv } from "./workspace-env";
 
 const WORKSPACE_DIR = getWorkspaceDir(
-	process.env.CMC_WORKSPACE_ID ?? "default",
+	process.env.MANDIO_WORKSPACE_ID ?? "default",
 );
 const TSX_BIN = path.resolve(__dirname, "../../node_modules/.bin/tsx");
 const ACTIVE_RUNS_FILE = path.join(WORKSPACE_DIR, "active-runs.json");
@@ -308,7 +308,7 @@ function handleTaskCompletion(
 	// 4. Regenerate ai-context.md
 	try {
 		const missionControlDir = path.resolve(__dirname, "../..");
-		const workspaceId = process.env.CMC_WORKSPACE_ID ?? "default";
+		const workspaceId = process.env.MANDIO_WORKSPACE_ID ?? "default";
 		execSync(`${TSX_BIN} scripts/generate-context.ts ${workspaceId}`, {
 			cwd: missionControlDir,
 			timeout: 30_000,
@@ -497,7 +497,7 @@ function spawnContinuation(
 			shell: false,
 			env: {
 				...process.env,
-				CMC_WORKSPACE_ID: process.env.CMC_WORKSPACE_ID ?? "default",
+				MANDIO_WORKSPACE_ID: process.env.MANDIO_WORKSPACE_ID ?? "default",
 			},
 		});
 		child.unref();
@@ -883,7 +883,7 @@ function handleProjectRunContinuation(
 					shell: false,
 					env: {
 						...process.env,
-						CMC_WORKSPACE_ID: process.env.CMC_WORKSPACE_ID ?? "default",
+						MANDIO_WORKSPACE_ID: process.env.MANDIO_WORKSPACE_ID ?? "default",
 					},
 				});
 				child.unref();
@@ -1252,7 +1252,7 @@ This is session ${continuationIndex + 1}. Previous session(s) ran out of turns o
 			cwd: WORKSPACE_DIR,
 			streamFile,
 			resumeSessionId: decisionResumeSessionId ?? undefined,
-			env: getWorkspaceEnv(process.env.CMC_WORKSPACE_ID ?? "default"),
+			env: getWorkspaceEnv(process.env.MANDIO_WORKSPACE_ID ?? "default"),
 			onSessionId: (sid) => {
 				capturedSessionId = sid;
 			},
@@ -1335,7 +1335,7 @@ This is session ${continuationIndex + 1}. Previous session(s) ran out of turns o
 				backend,
 				cwd: WORKSPACE_DIR,
 				streamFile,
-				env: getWorkspaceEnv(process.env.CMC_WORKSPACE_ID ?? "default"),
+				env: getWorkspaceEnv(process.env.MANDIO_WORKSPACE_ID ?? "default"),
 				onSessionId: (sid) => {
 					capturedSessionId = sid;
 				},

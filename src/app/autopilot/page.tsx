@@ -809,7 +809,7 @@ export default function AutopilotPage() {
 										These tools are pre-approved for agents via{" "}
 										<code className="text-[10px]">--allowedTools</code>. Edit{" "}
 										<code className="text-[10px]">
-											~/.cmc/daemon-config.json
+											~/.mandio/daemon-config.json
 										</code>{" "}
 										to change.
 									</p>

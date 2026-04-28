@@ -1,7 +1,7 @@
 # Minimalization Report
 
 **Generated**: 2026-04-24
-**Codebase**: mission-control v0.15.0
+**Codebase**: mandio v0.15.0
 **Total**: ~42,200 LOC across 100 API routes, 96 UI components, 19 pages, 37 lib files, 11 hooks
 
 ---

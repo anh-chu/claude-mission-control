@@ -326,7 +326,7 @@ export default function CommandCenterPage() {
 						</div>
 						<div>
 							<h1 className="text-section font-normal">
-								Welcome to Task Control
+								Welcome to Mandio
 							</h1>
 							<p className="text-muted-foreground mt-2">
 								Your hub for orchestrating AI agents. Create projects, delegate

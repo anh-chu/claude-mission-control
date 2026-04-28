@@ -1,13 +1,13 @@
 #!/usr/bin/env node
 /**
- * Mission Control CLI Entry Point
+ * Mandio CLI Entry Point
  *
  * Usage:
- *   mission-control start    - Start the server (production mode)
- *   mission-control dev     - Start in development mode
- *   mission-control stop    - Stop running server
- *   mission-control status  - Show server status
- *   mission-control version - Show version
+ *   mandio start    - Start the server (production mode)
+ *   mandio dev     - Start in development mode
+ *   mandio stop    - Stop running server
+ *   mandio status  - Show server status
+ *   mandio version - Show version
  */
 
 import { type ChildProcess, spawn } from "child_process";
@@ -29,7 +29,7 @@ import {
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const rootDir = path.resolve(__dirname, "..");
 
-const PID_FILE = path.join(DATA_DIR, "mission-control.pid");
+const PID_FILE = path.join(DATA_DIR, "mandio.pid");
 
 interface CliOptions {
 	port?: number;
@@ -86,7 +86,7 @@ function startServerProcess(port: number): ChildProcess {
 	const proc = spawn(process.execPath, [serverScript], {
 		stdio: "inherit",
 		shell: false,
-		env: { ...process.env, PORT: String(port), MC_INSTALL_DIR: rootDir },
+		env: { ...process.env, PORT: String(port), MANDIO_INSTALL_DIR: rootDir },
 		cwd: rootDir,
 	});
 	return proc;
@@ -165,7 +165,7 @@ async function healthCheck(port: number): Promise<boolean> {
 // --- CLI Commands ---
 
 async function start(options: CliOptions = {}) {
-	console.log("🚀 Starting Mission Control...\n");
+	console.log("🚀 Starting Mandio...\n");
 
 	// Run preflight checks
 	const nodeOk = checkNodeVersion();
@@ -190,10 +190,10 @@ async function start(options: CliOptions = {}) {
 	const pidInfo = loadPidFile();
 	if (pidInfo && isProcessAlive(pidInfo.pid)) {
 		console.error(
-			"❌ Mission Control is already running (PID:",
+			"❌ Mandio is already running (PID:",
 			pidInfo.pid + ")",
 		);
-		console.log("   Use 'mission-control stop' to stop it first.");
+		console.log("   Use 'mandio stop' to stop it first.");
 		process.exit(1);
 	}
 
@@ -213,7 +213,7 @@ async function start(options: CliOptions = {}) {
 		const pid = forkDaemon(process.execPath, [serverScript], {
 			...process.env,
 			PORT: String(port),
-			MC_INSTALL_DIR: rootDir,
+			MANDIO_INSTALL_DIR: rootDir,
 		});
 
 		// Write PID file
@@ -266,7 +266,7 @@ async function start(options: CliOptions = {}) {
 }
 
 async function stop() {
-	console.log("🛑 Stopping Mission Control...\n");
+	console.log("🛑 Stopping Mandio...\n");
 
 	const pidInfo = loadPidFile();
 	if (!pidInfo) {
@@ -287,13 +287,13 @@ async function status() {
 	const pidInfo = loadPidFile();
 
 	if (!pidInfo) {
-		console.log("Mission Control is not running");
+		console.log("Mandio is not running");
 		return;
 	}
 
 	const isAlive = isProcessAlive(pidInfo.pid);
 
-	console.log("Mission Control Status:");
+	console.log("Mandio Status:");
 	console.log("  State:", isAlive ? "🟢 Running" : "🔴 Stopped");
 	console.log("  PID:", pidInfo.pid);
 	console.log("  Port:", pidInfo.port);
@@ -303,7 +303,7 @@ async function status() {
 function version() {
 	const pkgPath = path.join(rootDir, "package.json");
 	const pkg = JSON.parse(fs.readFileSync(pkgPath, "utf-8"));
-	console.log(`mission-control v${pkg.version}`);
+	console.log(`mandio v${pkg.version}`);
 }
 
 async function dev() {
@@ -365,10 +365,10 @@ async function main() {
 		case "help":
 		default:
 			console.log(`
-Mission Control CLI
+Mandio CLI
 
 Usage:
-  mission-control <command> [options]
+  mandio <command> [options]
 
 Commands:
   start           Start the server
@@ -382,10 +382,10 @@ Options:
   --daemon       Run in background (daemon mode)
 
 Examples:
-  mission-control start --port 3000
-  mission-control start --daemon
-  mission-control stop
-  mission-control status
+  mandio start --port 3000
+  mandio start --daemon
+  mandio stop
+  mandio status
 			`);
 			break;
 	}

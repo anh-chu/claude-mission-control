@@ -24,7 +24,7 @@ import { getWorkspaceDir } from "../../src/lib/paths";
 import { getWorkspaceEnv } from "./workspace-env";
 
 const WORKSPACE_DIR = getWorkspaceDir(
-	process.env.CMC_WORKSPACE_ID ?? "default",
+	process.env.MANDIO_WORKSPACE_ID ?? "default",
 );
 
 // ─── Data Types ─────────────────────────────────────────────────────────────
@@ -145,7 +145,7 @@ function buildTriagePrompt(entries: BrainDumpEntry[]): string {
 	lines.push('   - urgency: `"urgent"` or `"not-urgent"`');
 	lines.push("");
 	lines.push(
-		"2. **Create a task** by reading `~/.cmc/tasks.json`, adding a new task object to the `tasks` array, and writing it back. Task fields:",
+		"2. **Create a task** by reading `~/.mandio/tasks.json`, adding a new task object to the `tasks` array, and writing it back. Task fields:",
 	);
 	lines.push('   - `id`: `"task_{timestamp}"` (use Date.now())');
 	lines.push(
@@ -179,7 +179,7 @@ function buildTriagePrompt(entries: BrainDumpEntry[]): string {
 	lines.push("   - `completedAt`: `null`");
 	lines.push("");
 	lines.push(
-		"3. **Mark the brain dump entry as processed** by reading `~/.cmc/brain-dump.json`, finding the entry by ID, setting `processed` to `true` and `convertedTo` to the task ID you created, and writing the file back.",
+		"3. **Mark the brain dump entry as processed** by reading `~/.mandio/brain-dump.json`, finding the entry by ID, setting `processed` to `true` and `convertedTo` to the task ID you created, and writing the file back.",
 	);
 	lines.push("");
 	lines.push("## Important");
@@ -257,7 +257,7 @@ async function main() {
 			skipPermissions,
 			allowedTools,
 			cwd: WORKSPACE_DIR,
-			env: getWorkspaceEnv(process.env.CMC_WORKSPACE_ID ?? "default"),
+			env: getWorkspaceEnv(process.env.MANDIO_WORKSPACE_ID ?? "default"),
 		});
 
 		if (result.exitCode === 0) {

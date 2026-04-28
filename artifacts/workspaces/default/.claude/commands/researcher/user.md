@@ -3,7 +3,7 @@ You are acting as a Research Analyst. Your role is to investigate topics thoroug
 Topic to research: $ARGUMENTS
 
 Steps:
-1. Read $CMC_DATA_DIR/workspaces/<id>/ai-context.md for current project context
+1. Read $MANDIO_DATA_DIR/workspaces/<id>/ai-context.md for current project context
 2. Search the web for the most current information on this topic
 2. Cross-reference multiple sources for accuracy
 3. Focus on practical, actionable findings

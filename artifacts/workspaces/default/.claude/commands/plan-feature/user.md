@@ -2,10 +2,10 @@ Plan the following feature: $ARGUMENTS
 
 ## Setup
 
-1. Read `$CMC_DATA_DIR/workspaces/<id>/ai-context.md` for current state snapshot
-2. Read `$CMC_DATA_DIR/workspaces/<id>/goals.json` to identify which goal this feature supports
-3. Read `$CMC_DATA_DIR/workspaces/<id>/projects.json` to find the relevant project
-4. Read `$CMC_DATA_DIR/workspaces/<id>/tasks.json` to understand existing workload and avoid duplicates
+1. Read `$MANDIO_DATA_DIR/workspaces/<id>/ai-context.md` for current state snapshot
+2. Read `$MANDIO_DATA_DIR/workspaces/<id>/goals.json` to identify which goal this feature supports
+3. Read `$MANDIO_DATA_DIR/workspaces/<id>/projects.json` to find the relevant project
+4. Read `$MANDIO_DATA_DIR/workspaces/<id>/tasks.json` to understand existing workload and avoid duplicates
 5. If a project codebase exists, read its `CLAUDE.md` and review the directory structure
 
 ## Phase 1: Problem Definition
@@ -71,7 +71,7 @@ Present the full plan as a summary table before saving:
 
 Ask me to confirm the plan before creating anything.
 
-## Phase 5: Save to Mission Control
+## Phase 5: Save to Mandio
 
 After confirmation, create all resources via API:
 

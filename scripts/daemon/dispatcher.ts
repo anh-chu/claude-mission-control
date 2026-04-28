@@ -371,7 +371,7 @@ export class Dispatcher {
 				detached: true,
 				stdio: "ignore",
 				shell: false,
-				env: { ...process.env, CMC_WORKSPACE_ID: this.workspaceId },
+				env: { ...process.env, MANDIO_WORKSPACE_ID: this.workspaceId },
 			});
 			child.unref();
 			logger.info(
@@ -689,7 +689,7 @@ export class Dispatcher {
 									detached: true,
 									stdio: "ignore",
 									shell: false,
-									env: { ...process.env, CMC_WORKSPACE_ID: this.workspaceId },
+									env: { ...process.env, MANDIO_WORKSPACE_ID: this.workspaceId },
 								});
 								child.unref();
 								logger.info(

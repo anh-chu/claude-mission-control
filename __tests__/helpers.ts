@@ -4,10 +4,10 @@ import path from "node:path";
 
 // Mirror the path resolution in src/lib/paths.ts so backups hit the same files
 // that data.ts reads and writes during tests.
-const CMC_DATA_DIR = process.env.CMC_DATA_DIR
-	? path.resolve(process.env.CMC_DATA_DIR)
-	: path.join(os.homedir(), ".cmc");
-const WORKSPACE_DIR = path.join(CMC_DATA_DIR, "workspaces", "default");
+const MANDIO_DATA_DIR = process.env.MANDIO_DATA_DIR
+	? path.resolve(process.env.MANDIO_DATA_DIR)
+	: path.join(os.homedir(), ".mandio");
+const WORKSPACE_DIR = path.join(MANDIO_DATA_DIR, "workspaces", "default");
 
 // Backup and restore data files for test isolation
 export async function backupDataFiles(): Promise<Record<string, string>> {
