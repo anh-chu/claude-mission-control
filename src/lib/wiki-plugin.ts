@@ -184,10 +184,6 @@ export function ensureWikiPluginInstalledDetailed(
 	};
 }
 
-export function ensureWikiPluginInstalled(cwd: string): WikiPluginStatus {
-	return ensureWikiPluginInstalledDetailed(cwd).status;
-}
-
 /**
  * Resolve the .wiki-path file content if present in the workspace directory.
  * v2.5.0: plugin reads this file to discover the wiki dir during SessionStart.

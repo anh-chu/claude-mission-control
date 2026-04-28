@@ -1,0 +1,11 @@
+{
+	"$schema": "https://unpkg.com/knip@6/schema.json",
+	"tags": ["-lintignore"],
+	"entry": [
+		"src/**/*.{ts,tsx}",
+		"bin/cli.ts",
+		"scripts/**/*.ts",
+		"__tests__/**/*.ts"
+	],
+	"ignoreDependencies": ["eslint", "eslint-config-next"]
+}

@@ -384,12 +384,6 @@ export async function saveProjects(data: ProjectsFile): Promise<void> {
 	});
 }
 
-export async function saveBrainDump(data: BrainDumpFile): Promise<void> {
-	await fileMutexes.brainDump.runExclusive(async () => {
-		await _writeJson("brain-dump.json", data);
-	});
-}
-
 export async function saveActivityLog(data: ActivityLogFile): Promise<void> {
 	await fileMutexes.activityLog.runExclusive(async () => {
 		await _writeJson("activity-log.json", data);
@@ -405,20 +399,6 @@ export async function saveInbox(data: InboxFile): Promise<void> {
 export async function saveDecisions(data: DecisionsFile): Promise<void> {
 	await fileMutexes.decisions.runExclusive(async () => {
 		await _writeJson("decisions.json", data);
-	});
-}
-
-export async function saveAgents(data: AgentsFile): Promise<void> {
-	await fileMutexes.agents.runExclusive(async () => {
-		await _writeJson("agents.json", data);
-	});
-}
-
-export async function saveSkillsLibrary(
-	data: SkillsLibraryFile,
-): Promise<void> {
-	await fileMutexes.skillsLibrary.runExclusive(async () => {
-		await _writeJson("skills-library.json", data);
 	});
 }
 

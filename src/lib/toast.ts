@@ -7,7 +7,3 @@ export function showSuccess(message: string, options?: ExternalToast) {
 export function showError(message: string, options?: ExternalToast) {
 	toast.error(message, options);
 }
-
-export function showInfo(message: string, options?: ExternalToast) {
-	toast.info(message, options);
-}

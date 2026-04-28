@@ -31,38 +31,3 @@ export async function restoreDataFiles(
 		await fs.writeFile(path.join(WORKSPACE_DIR, file), content, "utf-8");
 	}
 }
-
-// Helper to make test task payloads
-export function createTestTask(overrides: Record<string, unknown> = {}) {
-	return {
-		title: "Test Task",
-		description: "A test task",
-		importance: "important" as const,
-		urgency: "urgent" as const,
-		kanban: "not-started" as const,
-		projectId: null,
-		milestoneId: null,
-		assignedTo: null,
-		collaborators: [],
-		subtasks: [],
-		blockedBy: [],
-		estimatedMinutes: null,
-		actualMinutes: null,
-		acceptanceCriteria: "",
-		comments: [],
-		tags: [],
-		...overrides,
-	};
-}
-
-export function createTestProject(overrides: Record<string, unknown> = {}) {
-	return {
-		name: "Test Project",
-		description: "A test project",
-		status: "active" as const,
-		color: "#3b82f6",
-		teamMembers: [],
-		tags: [],
-		...overrides,
-	};
-}

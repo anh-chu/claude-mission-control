@@ -20,6 +20,7 @@ import { fileURLToPath } from "url";
 import { DATA_DIR } from "../src/lib/paths";
 import { bootstrapDataDir } from "./bootstrap";
 import {
+	checkClaudeCLI,
 	checkDataDirWritable,
 	checkNodeVersion,
 	checkPortAvailable,
@@ -173,6 +174,13 @@ async function start(options: CliOptions = {}) {
 		process.exit(1);
 	}
 
+	const claudeOk = checkClaudeCLI();
+	if (!claudeOk) {
+		console.error(
+			"\n❌ Claude CLI not found. Some features will be unavailable.",
+		);
+	}
+
 	// Bootstrap data directory
 	console.log("📁 Setting up data directory...");
 	await bootstrapDataDir();
@@ -224,7 +232,7 @@ async function start(options: CliOptions = {}) {
 		console.log(`Starting server on port ${port}...`);
 
 		const proc = startServerProcess(port);
-		let resolved = false;
+		const resolved = false;
 
 		proc.on("error", (err) => {
 			if (!resolved) {
@@ -326,7 +334,9 @@ async function main() {
 	if (portIndex !== -1 && args[portIndex + 1]) {
 		const portArg = parseInt(args[portIndex + 1], 10);
 		if (!Number.isInteger(portArg) || portArg < 1 || portArg > 65535) {
-			console.error(`❌ Invalid port: ${args[portIndex + 1]}. Must be an integer between 1 and 65535.`);
+			console.error(
+				`❌ Invalid port: ${args[portIndex + 1]}. Must be an integer between 1 and 65535.`,
+			);
 			process.exit(1);
 		}
 		options.port = portArg;

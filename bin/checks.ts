@@ -60,7 +60,7 @@ export function checkClaudeCLI(): boolean {
 	} catch {
 		printResult("Claude CLI", false, "not installed");
 		console.log(
-			`${colors.yellow}  Please install: npm install -g @anthropic/claude-cli${colors.reset}`,
+			`${colors.yellow}  Please install: npm install -g @anthropic-ai/claude-code${colors.reset}`,
 		);
 		return false;
 	}
@@ -109,4 +109,3 @@ export function checkDataDirWritable(dataDir: string): boolean {
 		return false;
 	}
 }
-

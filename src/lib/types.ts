@@ -447,16 +447,6 @@ export function getQuadrant(task: Task): EisenhowerQuadrant {
 	return "eliminate";
 }
 
-export function quadrantFromValues(
-	importance: Importance,
-	urgency: Urgency,
-): EisenhowerQuadrant {
-	if (importance === "important" && urgency === "urgent") return "do";
-	if (importance === "important" && urgency === "not-urgent") return "schedule";
-	if (importance === "not-important" && urgency === "urgent") return "delegate";
-	return "eliminate";
-}
-
 export function valuesFromQuadrant(quadrant: EisenhowerQuadrant): {
 	importance: Importance;
 	urgency: Urgency;
