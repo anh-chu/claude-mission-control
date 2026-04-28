@@ -189,10 +189,7 @@ async function start(options: CliOptions = {}) {
 	// Check if already running
 	const pidInfo = loadPidFile();
 	if (pidInfo && isProcessAlive(pidInfo.pid)) {
-		console.error(
-			"❌ Mandio is already running (PID:",
-			pidInfo.pid + ")",
-		);
+		console.error("❌ Mandio is already running (PID:", pidInfo.pid + ")");
 		console.log("   Use 'mandio stop' to stop it first.");
 		process.exit(1);
 	}
