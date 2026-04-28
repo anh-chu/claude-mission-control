@@ -1,6 +1,6 @@
-import { spawn } from "child_process";
-import { existsSync, readFileSync, renameSync, writeFileSync } from "fs";
-import path from "path";
+import { spawn } from "node:child_process";
+import { existsSync, readFileSync, renameSync, writeFileSync } from "node:fs";
+import path from "node:path";
 import { DATA_DIR, getWorkspaceDir } from "../../src/lib/paths";
 import type { HealthMonitor } from "./health";
 import { logger } from "./logger";
@@ -123,7 +123,7 @@ export class Dispatcher {
 				createdAt: new Date().toISOString(),
 				readAt: null,
 			});
-			const tmp = INBOX_FILE + ".tmp";
+			const tmp = `${INBOX_FILE}.tmp`;
 			writeFileSync(tmp, JSON.stringify(data, null, 2), "utf-8");
 			renameSync(tmp, INBOX_FILE);
 		} catch (err) {
@@ -156,7 +156,7 @@ export class Dispatcher {
 
 	private saveRetryQueue(): void {
 		try {
-			const tmp = this.RETRY_QUEUE_FILE + ".tmp";
+			const tmp = `${this.RETRY_QUEUE_FILE}.tmp`;
 			writeFileSync(tmp, JSON.stringify(this.retryQueue, null, 2), "utf-8");
 			renameSync(tmp, this.RETRY_QUEUE_FILE);
 		} catch (err) {
@@ -269,7 +269,7 @@ export class Dispatcher {
 			const toDispatch = dispatchable.slice(0, availableSlots);
 
 			for (const task of toDispatch) {
-				this.dispatchTask(task.id, task.assignedTo!);
+				this.dispatchTask(task.id, task.assignedTo ?? "system");
 			}
 		} catch (err) {
 			logger.error(
@@ -513,7 +513,7 @@ export class Dispatcher {
 			if (task && task.kanban === "in-progress") {
 				task.kanban = "not-started";
 				task.updatedAt = new Date().toISOString();
-				const tmp = TASKS_FILE_PATH + ".tmp";
+				const tmp = `${TASKS_FILE_PATH}.tmp`;
 				writeFileSync(tmp, JSON.stringify(data, null, 2), "utf-8");
 				renameSync(tmp, TASKS_FILE_PATH);
 				logger.info("dispatcher", `Task ${taskId} reset to not-started`);

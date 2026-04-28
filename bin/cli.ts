@@ -10,13 +10,12 @@
  *   mandio version - Show version
  */
 
-import { type ChildProcess, spawn } from "child_process";
-import * as fs from "fs";
-import * as http from "http";
-import os from "os";
-import * as path from "path";
+import { type ChildProcess, spawn } from "node:child_process";
+import * as fs from "node:fs";
+import * as http from "node:http";
+import * as path from "node:path";
+import { fileURLToPath } from "node:url";
 import treeKill from "tree-kill";
-import { fileURLToPath } from "url";
 import { DATA_DIR } from "../src/lib/paths";
 import { bootstrapDataDir } from "./bootstrap";
 import {
@@ -128,7 +127,7 @@ function forkDaemon(
 		env,
 	});
 	daemon.unref();
-	return daemon.pid!;
+	return daemon.pid as number;
 }
 
 function httpGet(url: string, timeout: number = 5000): Promise<string> {
@@ -189,7 +188,7 @@ async function start(options: CliOptions = {}) {
 	// Check if already running
 	const pidInfo = loadPidFile();
 	if (pidInfo && isProcessAlive(pidInfo.pid)) {
-		console.error("❌ Mandio is already running (PID:", pidInfo.pid + ")");
+		console.error(`❌ Mandio is already running (PID: ${pidInfo.pid})`);
 		console.log("   Use 'mandio stop' to stop it first.");
 		process.exit(1);
 	}
@@ -254,8 +253,8 @@ async function start(options: CliOptions = {}) {
 		// Write PID file
 		clearPidFile();
 		writePidFile({
-			pid: proc.pid!,
-			serverPid: proc.pid!,
+			pid: proc.pid as number,
+			serverPid: proc.pid as number,
 			port,
 			startedAt: new Date().toISOString(),
 		});
@@ -359,7 +358,6 @@ async function main() {
 		case "version":
 			version();
 			break;
-		case "help":
 		default:
 			console.log(`
 Mandio CLI
