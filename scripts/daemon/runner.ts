@@ -218,101 +218,6 @@ function findClaudeBinary(): ResolvedBinary {
 	};
 }
 
-// ─── Codex Binary Detection ─────────────────────────────────────────────────
-
-let cachedCodexBinary: ResolvedBinary | null = null;
-
-function findCodexBinary(): ResolvedBinary {
-	if (cachedCodexBinary) return cachedCodexBinary;
-
-	// 1. Check config override
-	try {
-		const config = loadConfig();
-		const codexPath = (config.execution as Record<string, unknown>)
-			.codexBinaryPath;
-		if (typeof codexPath === "string" && codexPath) {
-			logger.info("runner", `Using configured codex binary path: ${codexPath}`);
-			cachedCodexBinary = {
-				bin: codexPath,
-				prefixArgs: [],
-				originalPath: codexPath,
-				source: "configured",
-			};
-			return cachedCodexBinary;
-		}
-	} catch {
-		/* config load failed, continue with auto-detect */
-	}
-
-	// 2. Check common install locations
-	const candidates: string[] = [];
-	const home = process.env.HOME ?? "";
-
-	if (process.platform === "win32") {
-		const appData = process.env.APPDATA ?? "";
-		const localAppData = process.env.LOCALAPPDATA ?? "";
-		candidates.push(
-			path.join(appData, "npm", "codex.cmd"),
-			path.join(appData, "npm", "codex"),
-			path.join(localAppData, "pnpm", "codex.cmd"),
-			path.join(localAppData, "pnpm", "codex"),
-		);
-	} else {
-		candidates.push(
-			path.join(home, ".local", "bin", "codex"),
-			path.join(home, ".npm-global", "bin", "codex"),
-			"/usr/local/bin/codex",
-			"/usr/bin/codex",
-		);
-	}
-
-	for (const candidate of candidates) {
-		if (candidate && existsSync(candidate)) {
-			logger.info("runner", `Found codex at: ${candidate}`);
-			cachedCodexBinary = {
-				bin: candidate,
-				prefixArgs: [],
-				originalPath: candidate,
-				source: "install-location",
-			};
-			return cachedCodexBinary;
-		}
-	}
-
-	// 3. Try which/where
-	try {
-		const cmd = process.platform === "win32" ? "where codex" : "which codex";
-		const result = execSync(cmd, { encoding: "utf-8", timeout: 5000 })
-			.trim()
-			.split("\n")[0]
-			.trim();
-		if (result) {
-			logger.info("runner", `Found codex via PATH: ${result}`);
-			cachedCodexBinary = {
-				bin: result,
-				prefixArgs: [],
-				originalPath: result,
-				source: "path",
-			};
-			return cachedCodexBinary;
-		}
-	} catch {
-		/* not found in PATH */
-	}
-
-	// 4. Fallback
-	logger.warn(
-		"runner",
-		"Could not auto-detect codex binary. Install Codex CLI (npm i -g @openai/codex) or set 'codexBinaryPath' in daemon-config.json",
-	);
-	return {
-		bin: "codex",
-		prefixArgs: [],
-		originalPath: "codex",
-		source: "fallback",
-	};
-}
-
 // ─── CLI Output Parsers ─────────────────────────────────────────────────────
 
 /**
@@ -403,13 +308,11 @@ export class AgentRunner {
 
 	/**
 	 * Spawn an agent CLI session with the given prompt.
-	 * Supports both Claude Code and Codex CLI backends.
 	 * Returns when the process exits or times out.
 	 */
 	async spawnAgent(opts: SpawnOptions): Promise<SpawnResult & { pid: number }> {
-		const backend: AgentBackend = opts.backend ?? "claude";
-		const resolved =
-			backend === "codex" ? findCodexBinary() : findClaudeBinary();
+		const backend: AgentBackend = "claude";
+		const resolved = findClaudeBinary();
 		const cwd = opts.cwd || this.cwd;
 
 		logger.info("runner", "Resolved binary", {
@@ -425,49 +328,29 @@ export class AgentRunner {
 			);
 		}
 
-		let args: string[];
+		// --verbose is required when combining -p with --output-format stream-json
+		const args = [
+			...resolved.prefixArgs,
+			"-p",
+			opts.prompt,
+			"--verbose",
+			"--output-format",
+			"stream-json",
+			"--max-turns",
+			String(opts.maxTurns),
+		];
 
-		if (backend === "codex") {
-			args = [...resolved.prefixArgs, "-q"];
-			if (opts.yolo !== false) {
-				args.push("--full-auto");
-			}
-			if (opts.yolo === true) {
-				args.push("--yolo");
-			}
-			args.push(opts.prompt);
-			logger.info(
-				"runner",
-				`Using Codex CLI backend (yolo=${opts.yolo ?? "default"})`,
-			);
-		} else {
-			// --verbose is required when combining -p with --output-format stream-json
-			args = [
-				...resolved.prefixArgs,
-				"-p",
-				opts.prompt,
-				"--verbose",
-				"--output-format",
-				"stream-json",
-				"--max-turns",
-				String(opts.maxTurns),
-			];
+		if (opts.resumeSessionId) {
+			args.push("--resume", opts.resumeSessionId);
+			logger.info("runner", `Resuming session: ${opts.resumeSessionId}`);
+		}
 
-			if (opts.resumeSessionId) {
-				args.push("--resume", opts.resumeSessionId);
-				logger.info("runner", `Resuming session: ${opts.resumeSessionId}`);
-			}
-
-			if (opts.skipPermissions) {
-				args.push("--dangerously-skip-permissions");
-				logger.security(
-					"runner",
-					"Spawning with --dangerously-skip-permissions",
-				);
-			} else if (opts.allowedTools && opts.allowedTools.length > 0) {
-				args.push("--allowedTools", ...opts.allowedTools);
-				logger.info("runner", `Allowed tools: ${opts.allowedTools.join(", ")}`);
-			}
+		if (opts.skipPermissions) {
+			args.push("--dangerously-skip-permissions");
+			logger.security("runner", "Spawning with --dangerously-skip-permissions");
+		} else if (opts.allowedTools && opts.allowedTools.length > 0) {
+			args.push("--allowedTools", ...opts.allowedTools);
+			logger.info("runner", `Allowed tools: ${opts.allowedTools.join(", ")}`);
 		}
 
 		const spawnEnv: NodeJS.ProcessEnv = { ...process.env, ...opts.env };
@@ -556,16 +439,7 @@ export class AgentRunner {
 					}
 
 					if (streamWriter) {
-						if (backend === "codex") {
-							streamWriter.write(
-								`${JSON.stringify({
-									type: "assistant",
-									content: [{ type: "text", text: line }],
-								})}\n`,
-							);
-						} else {
-							streamWriter.write(`${line}\n`);
-						}
+						streamWriter.write(`${line}\n`);
 					}
 				}
 			});

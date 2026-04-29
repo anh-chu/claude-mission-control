@@ -42,11 +42,10 @@ export interface AgentFormPayload {
 	description: string;
 	instructions: string;
 	status: "active" | "inactive";
-	backend: "claude" | "codex";
+	backend: "claude";
 	model?: string;
 	allowedTools: string[];
 	skipPermissions: "inherit" | "on" | "off";
-	yolo: "inherit" | "on" | "off";
 }
 
 interface AgentFormProps {
@@ -94,10 +93,9 @@ export function AgentForm({
 		description: "",
 		instructions: "",
 		status: "active" as "active" | "inactive",
-		backend: "claude" as "claude" | "codex",
+		backend: "claude" as const,
 		model: "",
 		skipPermissions: "inherit" as "inherit" | "on" | "off",
-		yolo: "inherit" as "inherit" | "on" | "off",
 	});
 	const [allowedTools, setAllowedTools] = useState<string[]>([]);
 	const [toolInput, setToolInput] = useState("");
@@ -119,7 +117,6 @@ export function AgentForm({
 				backend: initialData.backend ?? "claude",
 				model: initialData.model ?? "",
 				skipPermissions: initialData.skipPermissions ?? "inherit",
-				yolo: initialData.yolo ?? "inherit",
 			});
 			setAllowedTools(initialData.allowedTools ?? []);
 			setInitialized(true);
@@ -179,7 +176,6 @@ export function AgentForm({
 				model: form.model,
 				allowedTools,
 				skipPermissions: form.skipPermissions,
-				yolo: form.yolo,
 			});
 		} catch {
 			setError(
@@ -337,38 +333,6 @@ export function AgentForm({
 					/>
 				</div>
 
-				{/* Backend CLI */}
-				<div className="space-y-2">
-					<Label>Backend CLI</Label>
-					<div className="flex gap-2">
-						<Button
-							type="button"
-							variant={form.backend === "claude" ? "default" : "outline"}
-							size="sm"
-							onClick={() =>
-								setForm((prev) => ({ ...prev, backend: "claude" as const }))
-							}
-						>
-							Claude Code
-						</Button>
-						<Button
-							type="button"
-							variant={form.backend === "codex" ? "default" : "outline"}
-							size="sm"
-							onClick={() =>
-								setForm((prev) => ({ ...prev, backend: "codex" as const }))
-							}
-						>
-							Codex CLI
-						</Button>
-					</div>
-					<p className="text-xs text-muted-foreground">
-						{form.backend === "codex"
-							? "Uses OpenAI Codex CLI for task execution"
-							: "Uses Claude Code CLI for task execution (default)"}
-					</p>
-				</div>
-
 				{/* Model */}
 				<div className="space-y-2">
 					<Label htmlFor="model">Model</Label>
@@ -381,59 +345,32 @@ export function AgentForm({
 					</p>
 				</div>
 
-				{form.backend === "claude" ? (
-					<div className="space-y-2">
-						<Label>Skip Permissions</Label>
-						<div className="flex gap-1">
-							{(["inherit", "on", "off"] as const).map((v) => (
-								<Button
-									key={v}
-									type="button"
-									variant={form.skipPermissions === v ? "default" : "outline"}
-									size="sm"
-									className="capitalize"
-									onClick={() =>
-										setForm((prev) => ({ ...prev, skipPermissions: v }))
-									}
-								>
-									{v}
-								</Button>
-							))}
-						</div>
-						<p className="text-xs text-muted-foreground">
-							{form.skipPermissions === "on"
-								? "Agent runs with --dangerously-skip-permissions (bypasses all prompts)"
-								: form.skipPermissions === "off"
-									? "Agent always requires permission prompts regardless of global setting"
-									: "Inherits global skipPermissions setting from Autopilot config"}
-						</p>
+				<div className="space-y-2">
+					<Label>Skip Permissions</Label>
+					<div className="flex gap-1">
+						{(["inherit", "on", "off"] as const).map((v) => (
+							<Button
+								key={v}
+								type="button"
+								variant={form.skipPermissions === v ? "default" : "outline"}
+								size="sm"
+								className="capitalize"
+								onClick={() =>
+									setForm((prev) => ({ ...prev, skipPermissions: v }))
+								}
+							>
+								{v}
+							</Button>
+						))}
 					</div>
-				) : (
-					<div className="space-y-2">
-						<Label>Full-Auto Mode (--yolo)</Label>
-						<div className="flex gap-1">
-							{(["inherit", "on", "off"] as const).map((v) => (
-								<Button
-									key={v}
-									type="button"
-									variant={form.yolo === v ? "default" : "outline"}
-									size="sm"
-									className="capitalize"
-									onClick={() => setForm((prev) => ({ ...prev, yolo: v }))}
-								>
-									{v}
-								</Button>
-							))}
-						</div>
-						<p className="text-xs text-muted-foreground">
-							{form.yolo === "on"
-								? "Agent runs with --full-auto --yolo (maximum autonomy)"
-								: form.yolo === "off"
-									? "Agent runs without --full-auto (manual approval required)"
-									: "Default: runs with --full-auto"}
-						</p>
-					</div>
-				)}
+					<p className="text-xs text-muted-foreground">
+						{form.skipPermissions === "on"
+							? "Agent runs with --dangerously-skip-permissions (bypasses all prompts)"
+							: form.skipPermissions === "off"
+								? "Agent always requires permission prompts regardless of global setting"
+								: "Inherits global skipPermissions setting from Autopilot config"}
+					</p>
+				</div>
 
 				{/* Instructions (system prompt) */}
 				<div className="space-y-2">

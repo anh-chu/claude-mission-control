@@ -20,7 +20,6 @@ export default function NewAgentPage() {
 			backend: payload.backend,
 			allowedTools: payload.allowedTools,
 			skipPermissions: payload.skipPermissions,
-			yolo: payload.yolo,
 			createdAt: new Date().toISOString(),
 			updatedAt: new Date().toISOString(),
 		});

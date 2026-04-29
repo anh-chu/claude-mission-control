@@ -54,7 +54,7 @@ export const AGENT_ROLES: {
 // ─── Agent Definition (dynamic registry) ──────────────────────────────────────
 
 export type AgentStatus = "active" | "inactive";
-export type AgentBackend = "claude" | "codex";
+export type AgentBackend = "claude";
 
 export interface AgentDefinition {
 	id: string;
@@ -68,7 +68,6 @@ export interface AgentDefinition {
 	model?: string;
 	allowedTools?: string[];
 	skipPermissions?: "inherit" | "on" | "off";
-	yolo?: "inherit" | "on" | "off";
 	createdAt: string;
 	updatedAt: string;
 }

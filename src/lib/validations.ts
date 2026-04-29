@@ -298,7 +298,7 @@ export const activityEventCreateSchema = z.object({
 // ─── Agent schemas ───────────────────────────────────────────────────────────
 
 const agentStatusEnum = z.enum(["active", "inactive"]);
-const agentBackendEnum = z.enum(["claude", "codex"]);
+const agentBackendEnum = z.enum(["claude"]);
 
 export const agentCreateSchema = z.object({
 	id: z

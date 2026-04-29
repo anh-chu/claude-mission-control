@@ -54,14 +54,7 @@ export function enforcePromptLimit(prompt: string): string {
 
 // ─── Spawn Safety ────────────────────────────────────────────────────────────
 
-const ALLOWED_BINARIES = [
-	"claude",
-	"claude.cmd",
-	"claude.exe",
-	"codex",
-	"codex.cmd",
-	"codex.exe",
-];
+const ALLOWED_BINARIES = ["claude", "claude.cmd", "claude.exe"];
 
 /**
  * Validate that only approved CLI binaries are being spawned.

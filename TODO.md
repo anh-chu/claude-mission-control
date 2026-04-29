@@ -27,7 +27,7 @@ Open questions: node spec format, storage location in `~/.cmc/workspaces/{id}/`,
 - ~~Comms sidebar grouping~~: Inbox, Decisions, Logs grouped under Messages. Commit `c3e3aa0`.
 - ~~Daemon executor consolidation~~: `getWorkspaceEnv()` → `workspace-env.ts`, shared JSON I/O → `runs-registry.ts`, `ActiveRunEntry`/active-runs I/O → `active-runs.ts`, `extractSummary()` → `spawn-utils.ts`, `readJSON<T>()` → `data-io.ts`. Net -62 LOC across 4 scripts.
 - ~~Missions route evaluated~~ — kept. Polled by `use-active-runs.ts`.
-- ~~Agent field consolidation~~: `capabilities` removed. `allowedTools`, `skipPermissions`, `yolo` kept on Agent type by design.
+- ~~Agent field consolidation~~: `capabilities` removed. `allowedTools` and `skipPermissions` kept on Agent type by design.
 - ~~Remove ventures (duplicate of projects)~~
 - ~~Remove status-board (subset of priority-matrix)~~
 - ~~Remove objectives/goals system, link initiatives to projects~~

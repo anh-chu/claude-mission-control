@@ -97,14 +97,13 @@ export interface DaemonStatus {
 
 // ─── Runner Types ────────────────────────────────────────────────────────────
 
-export type AgentBackend = "claude" | "codex";
+export type AgentBackend = "claude";
 
 export interface SpawnOptions {
 	prompt: string;
 	maxTurns: number;
 	timeoutMinutes: number;
 	skipPermissions: boolean;
-	yolo?: boolean;
 	allowedTools?: string[];
 	agentTeams?: boolean;
 	backend?: AgentBackend;

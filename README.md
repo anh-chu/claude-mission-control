@@ -15,7 +15,7 @@
 
 ## What This Is
 
-A self-hosted task manager that runs your work through AI agents. You add tasks, set priorities, and Autopilot handles execution: it spawns Claude Code or Codex CLI sessions, streams output live, and routes decisions back to you.
+A self-hosted task manager that runs your work through AI agents. You add tasks, set priorities, and Autopilot handles execution: it spawns Claude Code sessions, streams output live, and routes decisions back to you.
 
 Runs entirely on your machine. Data in `~/.mandio/`. No cloud.
 
@@ -51,7 +51,7 @@ Workspace
   │           └── Tasks   (work items; agents run these)
 ```
 
-**Tasks** are things agents *do*: research, write code, analyze, plan. They execute as Claude Code or Codex CLI sessions, stream output live, and mark themselves done.
+**Tasks** are things agents *do*: research, write code, analyze, plan. They execute as Claude Code sessions, stream output live, and mark themselves done.
 
 ---
 
@@ -61,7 +61,7 @@ AI agent tools usually mean handing your tasks, credentials, and decisions to a 
 
 - **Data in `~/.mandio/`:** persists across app updates, never synced anywhere
 - **No database:** plain JSON files you can read, edit, or back up directly
-- **No vendor lock-in:** agents run via Claude Code or Codex CLI, both locally installed
+- **No vendor lock-in:** agents run via Claude Code, locally installed
 - **Full audit trail:** every agent action logged in activity-log.json
 
 Agents read and write the same JSON files the UI uses. There's no API translation layer between "what the agent sees" and "what you see."
@@ -97,7 +97,7 @@ The daemon (`pnpm daemon:start`) is the engine. It runs as a detached background
 - **Autonomous Daemon:** 24/7 background process with concurrency control, retry queue, and live dashboard at `/autopilot`
 - **One-Click Execution:** Press play on any task card to manually spawn an agent session
 - **Real-Time Streaming:** Watch agent output live: tool calls, responses, progress as it happens
-- **Multi-CLI Backend:** Claude Code or Codex CLI, configurable per agent
+- **Claude Code Backend:** task execution via Claude Code CLI
 - **@-Mention in Comments:** Tag any agent in a task or action comment; they read the context and respond inline
 - **Continuous Missions:** Run an entire project; tasks auto-dispatch as dependencies resolve
 - **Loop Detection:** Agents that keep failing the same task are escalated after 3 attempts rather than burning tokens indefinitely — safe to leave running unattended
@@ -130,10 +130,9 @@ The daemon (`pnpm daemon:start`) is the engine. It runs as a detached background
 |-------------|-----|---------|
 | [Node.js](https://nodejs.org) v20+ | Runtime | [nodejs.org](https://nodejs.org) |
 | [pnpm](https://pnpm.io) v9+ | Package manager | `npm install -g pnpm` |
-| [Claude Code](https://docs.anthropic.com/en/docs/claude-code) *(recommended)* | Agent execution | `npm install -g @anthropic-ai/claude-code` |
-| [Codex CLI](https://github.com/openai/codex) *(optional)* | Alternative agent backend | `npm install -g @openai/codex` |
+| [Claude Code](https://docs.anthropic.com/en/docs/claude-code) | Agent execution | `npm install -g @anthropic-ai/claude-code` |
 
-> The web UI runs standalone for task management. Claude Code or Codex CLI is required to actually **execute** tasks via agents.
+> The web UI runs standalone for task management. Claude Code is required to actually **execute** tasks via agents.
 
 ### Install & Run
 
@@ -172,7 +171,7 @@ Or start it from **Settings → Autopilot** in the UI. Once started, Autopilot w
 ```
 Autopilot watches tasks.json for changes
   → Finds tasks: kanban=not-started, assignedTo≠me, unblocked
-  → Spawns a Claude Code / Codex CLI session with agent persona + task context
+  → Spawns a Claude Code session with agent persona + task context
   → Agent executes, streams output live to ~/.mandio/agent-streams/<id>.jsonl
   → Agent marks task done, posts completion report to inbox.json
   → If agent needs human input → sets awaiting-decision, Autopilot pauses
@@ -243,7 +242,7 @@ All write endpoints use **Zod validation** and **async-mutex locking** for concu
 | **Tester** | QA testing, bug reporting, performance analysis |
 | **+ Custom** | Unlimited custom agents with unique instructions and skills |
 
-Each agent can use Claude Code or Codex CLI as its backend, configurable from the Agents page.
+Each agent uses Claude Code as its backend.
 
 ---
 
@@ -270,7 +269,7 @@ Each agent can use Claude Code or Codex CLI as its backend, configurable from th
   scripts/daemon/
     index.ts                             Daemon start/stop/status + startup crash recovery
     dispatcher.ts                        Task dispatch, retry queue, session resume, inbox notifications
-    runner.ts                            CLI runner (Claude Code + Codex, stream-json output)
+    runner.ts                            CLI runner (Claude Code, stream-json output)
     recovery.ts                          Orphan detection + session ID persistence
     runs-registry.ts                     Shared JSON read/write/prune utilities for run-tracking modules
     workspace-env.ts                     Shared workspace env-var loader for daemon scripts
@@ -303,7 +302,7 @@ Each agent can use Claude Code or Codex CLI as its backend, configurable from th
 | Validation | [Zod](https://zod.dev) |
 | Testing | [Vitest](https://vitest.dev) |
 | Storage | Local JSON files (`~/.mandio/`) |
-| Agent CLIs | [Claude Code](https://docs.anthropic.com/en/docs/claude-code), [Codex CLI](https://github.com/openai/codex) |
+| Agent CLI | [Claude Code](https://docs.anthropic.com/en/docs/claude-code) |
 
 ---
 

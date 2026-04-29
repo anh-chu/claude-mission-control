@@ -35,7 +35,7 @@ import {
 } from "./prompt-builder";
 import { AgentRunner, parseClaudeOutput } from "./runner";
 import { extractSummary } from "./spawn-utils";
-import type { AgentBackend, ProjectRun, ProjectRunsFile } from "./types";
+import type { ProjectRun, ProjectRunsFile } from "./types";
 
 const taskLogger = createLogger("task", { sync: true });
 
@@ -56,21 +56,6 @@ const INBOX_FILE = path.join(WORKSPACE_DIR, "inbox.json");
 const ACTIVITY_LOG_FILE = path.join(WORKSPACE_DIR, "activity-log.json");
 const MISSIONS_FILE = path.join(WORKSPACE_DIR, "missions.json");
 const DECISIONS_FILE = path.join(WORKSPACE_DIR, "decisions.json");
-
-// ─── Agent Backend Resolution ─────────────────────────────────────────────
-
-function getAgentBackend(agentId: string): AgentBackend {
-	try {
-		const raw = readFileSync(AGENTS_FILE, "utf-8");
-		const data = JSON.parse(raw) as {
-			agents: Array<{ id: string; backend?: AgentBackend }>;
-		};
-		const agent = data.agents.find((a) => a.id === agentId);
-		return agent?.backend ?? "claude";
-	} catch {
-		return "claude";
-	}
-}
 
 // ─── Active Runs File I/O ─── (ActiveRunEntry, readActiveRuns, writeActiveRuns imported from ./active-runs) ───
 
@@ -1087,7 +1072,6 @@ async function main() {
 	// Merge per-agent allowedTools with global config allowedTools; resolve permission tri-states
 	let agentAllowedToolsArr: string[] = [];
 	let resolvedSkipPermissions = skipPermissions;
-	let resolvedYolo: boolean | undefined;
 	try {
 		const agentsRaw = readFileSync(AGENTS_FILE, "utf-8");
 		const agentsData = JSON.parse(agentsRaw) as {
@@ -1095,7 +1079,6 @@ async function main() {
 				id: string;
 				allowedTools?: string[];
 				skipPermissions?: "inherit" | "on" | "off";
-				yolo?: "inherit" | "on" | "off";
 			}>;
 		};
 		const agentDef = agentsData.agents.find((a) => a.id === task.assignedTo);
@@ -1103,9 +1086,6 @@ async function main() {
 		if (agentDef?.skipPermissions === "on") resolvedSkipPermissions = true;
 		else if (agentDef?.skipPermissions === "off")
 			resolvedSkipPermissions = false;
-		if (agentDef?.yolo === "on") resolvedYolo = true;
-		else if (agentDef?.yolo === "off") resolvedYolo = false;
-		else resolvedYolo = undefined; // runner default: full-auto on
 	} catch {
 		/* non-fatal */
 	}
@@ -1229,8 +1209,8 @@ This is session ${continuationIndex + 1}. Previous session(s) ran out of turns o
 		prompt = contHeader + prompt;
 	}
 
-	// 10. Spawn agent (Claude Code or Codex CLI based on agent config)
-	const backend = getAgentBackend(task.assignedTo);
+	// 10. Spawn agent (Claude Code)
+	const backend = "claude" as const;
 	const runner = new AgentRunner(WORKSPACE_DIR);
 	try {
 		const runStartedAtMs = Date.now();
@@ -1245,7 +1225,6 @@ This is session ${continuationIndex + 1}. Previous session(s) ran out of turns o
 			maxTurns,
 			timeoutMinutes,
 			skipPermissions: resolvedSkipPermissions,
-			yolo: resolvedYolo,
 			allowedTools,
 			agentTeams: useAgentTeams,
 			backend,
@@ -1329,7 +1308,6 @@ This is session ${continuationIndex + 1}. Previous session(s) ran out of turns o
 				maxTurns,
 				timeoutMinutes,
 				skipPermissions: resolvedSkipPermissions,
-				yolo: resolvedYolo,
 				allowedTools,
 				agentTeams: useAgentTeams,
 				backend,

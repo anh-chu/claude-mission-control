@@ -110,10 +110,7 @@ function AgentCard({
 							</span>
 							<div className="flex items-center gap-2">
 								{(() => {
-									const permField =
-										agent.backend === "codex"
-											? agent.yolo
-											: agent.skipPermissions;
+									const permField = agent.skipPermissions;
 									if (permField === "on") {
 										return (
 											<span className="flex items-center gap-1 text-[10px] text-warning font-normal">

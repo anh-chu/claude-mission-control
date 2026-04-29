@@ -65,7 +65,6 @@ export default function EditAgentPage() {
 			backend: payload.backend,
 			allowedTools: payload.allowedTools,
 			skipPermissions: payload.skipPermissions,
-			yolo: payload.yolo,
 			updatedAt: new Date().toISOString(),
 		});
 		router.push(`/crew/${id}`);
