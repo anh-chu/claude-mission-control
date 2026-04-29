@@ -1,3 +1,4 @@
+import { existsSync } from "node:fs";
 import { rm } from "node:fs/promises";
 import path from "node:path";
 import { NextResponse } from "next/server";
@@ -109,6 +110,12 @@ export async function POST(request: Request) {
 	};
 
 	const skillDir = getGlobalSkillDir(id);
+	if (existsSync(path.join(skillDir, "SKILL.md"))) {
+		return NextResponse.json(
+			{ error: "Skill already exists" },
+			{ status: 409 },
+		);
+	}
 	await writeSkillFile(skillDir, skill);
 
 	// Re-sync agent commands for linked agents

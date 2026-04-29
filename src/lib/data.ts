@@ -473,7 +473,7 @@ async function migrateCommandsToFiles(workspaceId: string): Promise<void> {
 		await writeCommandFile(globalCmdDir, {
 			id: name,
 			name,
-			command: name,
+			command: `/${name}`,
 			description: "",
 			longDescription: "",
 			icon: "Terminal",

@@ -101,13 +101,15 @@ export async function listActivatedCommands(
 					const resolved = path.isAbsolute(target)
 						? target
 						: path.resolve(dir, target);
-					if (existsSync(resolved)) {
-						ids.push(entry.name.slice(MANDIO_COMMAND_PREFIX.length));
-					} else {
+					if (!existsSync(resolved)) {
 						console.warn(
 							`Broken command symlink (target missing): ${fullPath}`,
 						);
+						continue;
 					}
+				}
+				if (stats.isSymbolicLink() || stats.isDirectory()) {
+					ids.push(entry.name.slice(MANDIO_COMMAND_PREFIX.length));
 				}
 			} catch {
 				// broken symlink — skip, log warning
@@ -134,13 +136,15 @@ export function listActivatedCommandsSync(workspaceId: string): string[] {
 					const resolved = path.isAbsolute(target)
 						? target
 						: path.resolve(dir, target);
-					if (existsSync(resolved)) {
-						ids.push(entry.name.slice(MANDIO_COMMAND_PREFIX.length));
-					} else {
+					if (!existsSync(resolved)) {
 						console.warn(
 							`Broken command symlink (target missing): ${fullPath}`,
 						);
+						continue;
 					}
+				}
+				if (stats.isSymbolicLink() || stats.isDirectory()) {
+					ids.push(entry.name.slice(MANDIO_COMMAND_PREFIX.length));
 				}
 			} catch {
 				console.warn(`Broken command symlink: ${fullPath}`);
@@ -158,7 +162,7 @@ export async function isCommandActivated(
 	const linkPath = getWorkspaceCommandLink(workspaceId, commandId);
 	try {
 		const stats = await lstat(linkPath);
-		return stats.isSymbolicLink();
+		return stats.isSymbolicLink() || stats.isDirectory();
 	} catch {
 		return false;
 	}
@@ -206,6 +210,12 @@ export async function forkCommand(
 	workspaceId: string,
 	commandId: string,
 ): Promise<void> {
+	const state = await getCommandActivationState(workspaceId, commandId);
+	if (state === "customized")
+		throw new Error("Already customized — reset first to re-fork");
+	if (state === "inactive")
+		throw new Error("Command not activated — activate first");
+
 	const linkPath = getWorkspaceCommandLink(workspaceId, commandId);
 	const globalDir = getGlobalCommandDir(commandId);
 

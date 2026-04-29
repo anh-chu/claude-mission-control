@@ -4,6 +4,7 @@ import {
 	ensureSkillsMigrated,
 	setCurrentWorkspace,
 } from "./data";
+import { assertSafeId } from "./paths";
 
 /**
  * Call this at the top of every API route handler to scope
@@ -13,6 +14,7 @@ import {
 export async function applyWorkspaceContext(): Promise<string> {
 	const headersList = await headers();
 	const workspaceId = headersList.get("x-workspace-id") ?? "default";
+	assertSafeId(workspaceId); // validate before filesystem access
 	setCurrentWorkspace(workspaceId);
 	await ensureSkillsMigrated(workspaceId);
 	await ensureCommandsMigrated(workspaceId);

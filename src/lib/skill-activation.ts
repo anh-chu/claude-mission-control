@@ -93,11 +93,13 @@ export async function listActivatedSkills(
 					const resolved = path.isAbsolute(target)
 						? target
 						: path.resolve(dir, target);
-					if (existsSync(resolved)) {
-						ids.push(entry.name.slice(MANDIO_SKILL_PREFIX.length));
-					} else {
+					if (!existsSync(resolved)) {
 						console.warn(`Broken skill symlink (target missing): ${fullPath}`);
+						continue;
 					}
+				}
+				if (stats.isSymbolicLink() || stats.isDirectory()) {
+					ids.push(entry.name.slice(MANDIO_SKILL_PREFIX.length));
 				}
 			} catch {
 				// broken symlink — skip, log warning
@@ -116,7 +118,7 @@ export async function isSkillActivated(
 	const linkPath = getWorkspaceSkillLink(workspaceId, skillId);
 	try {
 		const stats = await lstat(linkPath);
-		return stats.isSymbolicLink();
+		return stats.isSymbolicLink() || stats.isDirectory();
 	} catch {
 		return false;
 	}
@@ -138,11 +140,13 @@ export function listActivatedSkillsSync(workspaceId: string): string[] {
 					const resolved = path.isAbsolute(target)
 						? target
 						: path.resolve(dir, target);
-					if (existsSync(resolved)) {
-						ids.push(entry.name.slice(MANDIO_SKILL_PREFIX.length));
-					} else {
+					if (!existsSync(resolved)) {
 						console.warn(`Broken skill symlink (target missing): ${fullPath}`);
+						continue;
 					}
+				}
+				if (stats.isSymbolicLink() || stats.isDirectory()) {
+					ids.push(entry.name.slice(MANDIO_SKILL_PREFIX.length));
 				}
 			} catch {
 				console.warn(`Broken skill symlink: ${fullPath}`);
@@ -194,6 +198,12 @@ export async function forkSkill(
 	workspaceId: string,
 	skillId: string,
 ): Promise<void> {
+	const state = await getSkillActivationState(workspaceId, skillId);
+	if (state === "customized")
+		throw new Error("Already customized — reset first to re-fork");
+	if (state === "inactive")
+		throw new Error("Skill not activated — activate first");
+
 	const linkPath = getWorkspaceSkillLink(workspaceId, skillId);
 	const globalDir = getGlobalSkillDir(skillId);
 

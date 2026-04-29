@@ -351,10 +351,30 @@ export default function SkillsPage() {
 										}
 										toggling={togglingIds.has(skill.id)}
 										onCustomize={async () => {
-											await forkSkill(skill.id);
-											router.push(`/skills/${skill.id}`);
+											setTogglingIds((prev) => new Set(prev).add(skill.id));
+											try {
+												await forkSkill(skill.id);
+												router.push(`/skills/${skill.id}`);
+											} finally {
+												setTogglingIds((prev) => {
+													const next = new Set(prev);
+													next.delete(skill.id);
+													return next;
+												});
+											}
 										}}
-										onReset={() => resetSkill(skill.id)}
+										onReset={async () => {
+											setTogglingIds((prev) => new Set(prev).add(skill.id));
+											try {
+												await resetSkill(skill.id);
+											} finally {
+												setTogglingIds((prev) => {
+													const next = new Set(prev);
+													next.delete(skill.id);
+													return next;
+												});
+											}
+										}}
 									/>
 								))}
 							</div>
@@ -383,10 +403,30 @@ export default function SkillsPage() {
 										}
 										toggling={togglingIds.has(skill.id)}
 										onCustomize={async () => {
-											await forkSkill(skill.id);
-											router.push(`/skills/${skill.id}`);
+											setTogglingIds((prev) => new Set(prev).add(skill.id));
+											try {
+												await forkSkill(skill.id);
+												router.push(`/skills/${skill.id}`);
+											} finally {
+												setTogglingIds((prev) => {
+													const next = new Set(prev);
+													next.delete(skill.id);
+													return next;
+												});
+											}
 										}}
-										onReset={() => resetSkill(skill.id)}
+										onReset={async () => {
+											setTogglingIds((prev) => new Set(prev).add(skill.id));
+											try {
+												await resetSkill(skill.id);
+											} finally {
+												setTogglingIds((prev) => {
+													const next = new Set(prev);
+													next.delete(skill.id);
+													return next;
+												});
+											}
+										}}
 									/>
 								))}
 							</div>
@@ -486,8 +526,19 @@ export default function SkillsPage() {
 											onClick={async (e) => {
 												e.preventDefault();
 												e.stopPropagation();
-												await forkCommand(cmd.id);
-												router.push(`/commands/${cmd.id}`);
+												setTogglingCommandIds((prev) =>
+													new Set(prev).add(cmd.id),
+												);
+												try {
+													await forkCommand(cmd.id);
+													router.push(`/commands/${cmd.id}`);
+												} finally {
+													setTogglingCommandIds((prev) => {
+														const next = new Set(prev);
+														next.delete(cmd.id);
+														return next;
+													});
+												}
 											}}
 										>
 											Customize
@@ -499,10 +550,21 @@ export default function SkillsPage() {
 											size="sm"
 											className="h-6 text-[11px] px-2 shrink-0 text-muted-foreground hover:text-foreground"
 											disabled={isToggling}
-											onClick={(e) => {
+											onClick={async (e) => {
 												e.preventDefault();
 												e.stopPropagation();
-												resetCommand(cmd.id);
+												setTogglingCommandIds((prev) =>
+													new Set(prev).add(cmd.id),
+												);
+												try {
+													await resetCommand(cmd.id);
+												} finally {
+													setTogglingCommandIds((prev) => {
+														const next = new Set(prev);
+														next.delete(cmd.id);
+														return next;
+													});
+												}
 											}}
 										>
 											Reset

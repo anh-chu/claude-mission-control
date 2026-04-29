@@ -1,4 +1,6 @@
+import { existsSync } from "node:fs";
 import { rm } from "node:fs/promises";
+import path from "node:path";
 import { NextResponse } from "next/server";
 import {
 	deactivateCommandFromAllWorkspaces,
@@ -113,6 +115,12 @@ export async function POST(request: Request) {
 	};
 
 	const cmdDir = getGlobalCommandDir(id);
+	if (existsSync(path.join(cmdDir, "user.md"))) {
+		return NextResponse.json(
+			{ error: "Command already exists" },
+			{ status: 409 },
+		);
+	}
 	await writeCommandFile(cmdDir, command);
 
 	return NextResponse.json(command, { status: 201 });

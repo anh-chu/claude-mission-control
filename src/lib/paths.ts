@@ -6,14 +6,14 @@ import path from "node:path";
  * Assert that an ID is safe (no path traversal, valid characters).
  * Throws Error if ID contains `..`, `/`, `\`, or doesn't match safe pattern.
  */
-export function assertSafeSkillId(id: string): void {
+export function assertSafeId(id: string): void {
 	if (
 		id.includes("..") ||
 		id.includes("/") ||
 		id.includes("\\") ||
 		!/^[a-zA-Z0-9_-]+$/.test(id)
 	) {
-		throw new Error(`Invalid skill ID: ${id}`);
+		throw new Error(`Invalid ID: ${id}`);
 	}
 }
 
@@ -99,7 +99,7 @@ export function getGlobalSkillsDir(): string {
 
 /** Single global skill dir: ~/.mandio/artifacts/skills/<id>/ */
 export function getGlobalSkillDir(skillId: string): string {
-	assertSafeSkillId(skillId);
+	assertSafeId(skillId);
 	return path.join(getGlobalSkillsDir(), skillId);
 }
 
@@ -116,8 +116,8 @@ export function getWorkspaceSkillLink(
 	workspaceId: string,
 	skillId: string,
 ): string {
-	assertSafeSkillId(workspaceId);
-	assertSafeSkillId(skillId);
+	assertSafeId(workspaceId);
+	assertSafeId(skillId);
 	return path.join(
 		getWorkspaceSkillsDir(workspaceId),
 		`${MANDIO_SKILL_PREFIX}${skillId}`,
@@ -139,7 +139,7 @@ export function getGlobalCommandsDir(): string {
 
 /** Single global command dir: ~/.mandio/artifacts/commands/<id>/ */
 export function getGlobalCommandDir(commandId: string): string {
-	assertSafeSkillId(commandId);
+	assertSafeId(commandId);
 	return path.join(getGlobalCommandsDir(), commandId);
 }
 
@@ -153,7 +153,8 @@ export function getWorkspaceCommandLink(
 	workspaceId: string,
 	commandId: string,
 ): string {
-	assertSafeSkillId(commandId);
+	assertSafeId(workspaceId);
+	assertSafeId(commandId);
 	return path.join(
 		getWorkspaceCommandsDir(workspaceId),
 		`${MANDIO_COMMAND_PREFIX}${commandId}`,

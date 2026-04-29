@@ -2,10 +2,11 @@ import { existsSync, lstatSync, readFileSync } from "node:fs";
 import path from "node:path";
 import {
 	getGlobalCommandDir,
-	getGlobalSkillsDir,
 	getWorkspaceCommandsDir,
 	getWorkspaceDir,
+	getWorkspaceSkillsDir,
 	MANDIO_COMMAND_PREFIX,
+	MANDIO_SKILL_PREFIX,
 } from "../../src/lib/paths";
 import { listActivatedSkillsSync } from "../../src/lib/skill-activation";
 // Paths relative to project root
@@ -61,19 +62,25 @@ interface TaskDef {
 // ─── Skill Reading (Sync for daemon) ──────────────────────────────────────────
 
 function getLinkedSkills(agent: AgentDef, workspaceId: string): SkillDef[] {
-	const allSkills = readAllSkillsSync(getGlobalSkillsDir());
+	// Read skills from workspace activation dir (includes both symlinked and customized)
+	const wsSkillsDir = getWorkspaceSkillsDir(workspaceId);
+	const activatedSkills = readAllSkillsSync(wsSkillsDir);
 	const activatedIds = listActivatedSkillsSync(workspaceId);
 	const seen = new Set<string>();
 	const result: SkillDef[] = [];
 
-	for (const skill of allSkills) {
-		if (!activatedIds.includes(skill.id)) continue;
-		const linkedByAgent = agent.skillIds.includes(skill.id);
+	for (const skill of activatedSkills) {
+		// Strip mandio- prefix for matching with agent definitions
+		const skillId = skill.id.startsWith(MANDIO_SKILL_PREFIX)
+			? skill.id.slice(MANDIO_SKILL_PREFIX.length)
+			: skill.id;
+		if (!activatedIds.includes(skillId)) continue;
+		const linkedByAgent = agent.skillIds.includes(skillId);
 		const linkedBySkill = skill.agentIds.includes(agent.id);
-		if ((linkedByAgent || linkedBySkill) && !seen.has(skill.id)) {
-			seen.add(skill.id);
+		if ((linkedByAgent || linkedBySkill) && !seen.has(skillId)) {
+			seen.add(skillId);
 			result.push({
-				id: skill.id,
+				id: skillId,
 				name: skill.name,
 				content: skill.content,
 				agentIds: skill.agentIds,

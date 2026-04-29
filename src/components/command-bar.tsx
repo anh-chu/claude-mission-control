@@ -44,7 +44,7 @@ export function CommandBar({
 	const [showSuggestions, setShowSuggestions] = useState(false);
 	const inputRef = useRef<HTMLInputElement>(null);
 
-	const matchingSkills = useMemo(() => {
+	const matchingCommands = useMemo(() => {
 		if (!value.startsWith("/")) return [];
 		const query = value.trim().toLowerCase();
 		return commands.filter((s) => s.command.startsWith(query));
@@ -68,9 +68,9 @@ export function CommandBar({
 
 	useEffect(() => {
 		setShowSuggestions(
-			value.startsWith("/") && matchingSkills.length > 0 && focused,
+			value.startsWith("/") && matchingCommands.length > 0 && focused,
 		);
-	}, [value, matchingSkills.length, focused]);
+	}, [value, matchingCommands.length, focused]);
 
 	useEffect(() => {
 		function handleKeyDown(e: KeyboardEvent) {
@@ -215,7 +215,7 @@ export function CommandBar({
 						<p className="px-3 py-1.5 text-xs text-muted-foreground border-b">
 							AI Skills — run in Claude Code or Cowork
 						</p>
-						{matchingSkills.map((skill) => (
+						{matchingCommands.map((skill) => (
 							<button
 								key={skill.command}
 								className="flex items-center gap-2 w-full px-3 py-2 text-left hover:bg-accent/50 transition-colors"
