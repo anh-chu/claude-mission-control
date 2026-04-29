@@ -1,9 +1,11 @@
 import { existsSync, lstatSync, readdirSync, readlinkSync } from "node:fs";
 import {
+	cp,
 	lstat,
 	mkdir,
 	readdir,
 	readlink,
+	rm,
 	symlink,
 	unlink,
 } from "node:fs/promises";
@@ -168,6 +170,99 @@ export async function activateAllCommands(workspaceId: string): Promise<void> {
 	const commandIds = await listCommandIds(globalDir);
 	for (const id of commandIds) {
 		await activateCommand(workspaceId, id);
+	}
+}
+
+/** Check if a workspace command is customized (local copy) vs shared (symlink) */
+export async function isCommandCustomized(
+	workspaceId: string,
+	commandId: string,
+): Promise<boolean> {
+	const linkPath = getWorkspaceCommandLink(workspaceId, commandId);
+	try {
+		const stats = await lstat(linkPath);
+		return stats.isDirectory() && !stats.isSymbolicLink();
+	} catch {
+		return false;
+	}
+}
+
+/** Check if a workspace command is customized (local copy) vs shared (symlink) — sync */
+export function isCommandCustomizedSync(
+	workspaceId: string,
+	commandId: string,
+): boolean {
+	const linkPath = getWorkspaceCommandLink(workspaceId, commandId);
+	try {
+		const stats = lstatSync(linkPath);
+		return stats.isDirectory() && !stats.isSymbolicLink();
+	} catch {
+		return false;
+	}
+}
+
+/** Fork: copy global command to workspace (replace symlink with real dir) */
+export async function forkCommand(
+	workspaceId: string,
+	commandId: string,
+): Promise<void> {
+	const linkPath = getWorkspaceCommandLink(workspaceId, commandId);
+	const globalDir = getGlobalCommandDir(commandId);
+
+	if (!existsSync(globalDir)) {
+		throw new Error(`Command ${commandId} not found in global store`);
+	}
+
+	const parentDir = path.dirname(linkPath);
+	await mkdir(parentDir, { recursive: true });
+
+	try {
+		const stats = await lstat(linkPath);
+		if (stats.isSymbolicLink()) {
+			await unlink(linkPath);
+		} else if (stats.isDirectory()) {
+			await rm(linkPath, { recursive: true, force: true });
+		}
+	} catch (err: unknown) {
+		const code =
+			err && typeof err === "object" && "code" in err
+				? (err as { code: string }).code
+				: undefined;
+		if (code !== "ENOENT") throw err;
+		// path doesn't exist — fine, proceed to copy
+	}
+
+	await cp(globalDir, linkPath, { recursive: true });
+}
+
+/** Reset: delete local copy, re-create symlink to global */
+export async function resetCommand(
+	workspaceId: string,
+	commandId: string,
+): Promise<void> {
+	const linkPath = getWorkspaceCommandLink(workspaceId, commandId);
+	const globalDir = getGlobalCommandDir(commandId);
+
+	if (!existsSync(globalDir))
+		throw new Error(`Global command ${commandId} not found`);
+
+	await rm(linkPath, { recursive: true, force: true });
+	await symlink(globalDir, linkPath, "dir");
+}
+
+/** Get activation state: inactive | shared | customized */
+export async function getCommandActivationState(
+	workspaceId: string,
+	commandId: string,
+): Promise<"inactive" | "shared" | "customized"> {
+	const linkPath = getWorkspaceCommandLink(workspaceId, commandId);
+	try {
+		const stats = await lstat(linkPath);
+		if (stats.isSymbolicLink()) return "shared";
+		if (stats.isDirectory()) return "customized";
+		return "inactive";
+	} catch {
+		return "inactive";
 	}
 }
 

@@ -397,7 +397,33 @@ export function useSkills(workspaceId?: string) {
 		[workspaceId, refetch],
 	);
 
-	return { skills, refetch, ...rest, activate, deactivate };
+	const fork = useCallback(
+		async (skillId: string) => {
+			if (!workspaceId) return;
+			await apiFetch("/api/skills/activate", {
+				method: "POST",
+				headers: { "Content-Type": "application/json" },
+				body: JSON.stringify({ skillId, workspaceId, action: "fork" }),
+			});
+			await refetch();
+		},
+		[workspaceId, refetch],
+	);
+
+	const reset = useCallback(
+		async (skillId: string) => {
+			if (!workspaceId) return;
+			await apiFetch("/api/skills/activate", {
+				method: "POST",
+				headers: { "Content-Type": "application/json" },
+				body: JSON.stringify({ skillId, workspaceId, action: "reset" }),
+			});
+			await refetch();
+		},
+		[workspaceId, refetch],
+	);
+
+	return { skills, refetch, ...rest, activate, deactivate, fork, reset };
 }
 
 export function useCommands(workspaceId?: string) {
@@ -442,7 +468,33 @@ export function useCommands(workspaceId?: string) {
 		[workspaceId, refetch],
 	);
 
-	return { commands, refetch, ...rest, activate, deactivate };
+	const fork = useCallback(
+		async (commandId: string) => {
+			if (!workspaceId) return;
+			await apiFetch("/api/commands/activate", {
+				method: "POST",
+				headers: { "Content-Type": "application/json" },
+				body: JSON.stringify({ commandId, workspaceId, action: "fork" }),
+			});
+			await refetch();
+		},
+		[workspaceId, refetch],
+	);
+
+	const reset = useCallback(
+		async (commandId: string) => {
+			if (!workspaceId) return;
+			await apiFetch("/api/commands/activate", {
+				method: "POST",
+				headers: { "Content-Type": "application/json" },
+				body: JSON.stringify({ commandId, workspaceId, action: "reset" }),
+			});
+			await refetch();
+		},
+		[workspaceId, refetch],
+	);
+
+	return { commands, refetch, ...rest, activate, deactivate, fork, reset };
 }
 
 export function useInitiatives() {

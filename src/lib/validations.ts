@@ -360,7 +360,8 @@ export const skillCreateSchema = z.object({
 export const skillActivateSchema = z.object({
 	skillId: safeId,
 	workspaceId: safeId,
-	active: z.boolean(),
+	active: z.boolean().optional(),
+	action: z.enum(["activate", "deactivate", "fork", "reset"]).optional(),
 });
 
 export const skillUpdateSchema = z.object({
@@ -397,7 +398,8 @@ export const commandUpdateSchema = commandCreateSchema
 
 export const commandActivateSchema = z.object({
 	commandId: safeId,
-	active: z.boolean(),
+	active: z.boolean().optional(),
+	action: z.enum(["activate", "deactivate", "fork", "reset"]).optional(),
 });
 
 // ─── Daemon Config schemas ─────────────────────────────────────────────────────

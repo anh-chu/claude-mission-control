@@ -1,9 +1,11 @@
 import { existsSync, lstatSync, readdirSync, readlinkSync } from "node:fs";
 import {
+	cp,
 	lstat,
 	mkdir,
 	readdir,
 	readlink,
+	rm,
 	symlink,
 	unlink,
 } from "node:fs/promises";
@@ -156,6 +158,99 @@ export async function activateAllSkills(workspaceId: string): Promise<void> {
 	const skillIds = await listSkillIds(globalDir);
 	for (const id of skillIds) {
 		await activateSkill(workspaceId, id);
+	}
+}
+
+/** Check if a workspace skill is customized (local copy) vs shared (symlink) */
+export async function isSkillCustomized(
+	workspaceId: string,
+	skillId: string,
+): Promise<boolean> {
+	const linkPath = getWorkspaceSkillLink(workspaceId, skillId);
+	try {
+		const stats = await lstat(linkPath);
+		return stats.isDirectory() && !stats.isSymbolicLink();
+	} catch {
+		return false;
+	}
+}
+
+/** Check if a workspace skill is customized (local copy) vs shared (symlink) — sync */
+export function isSkillCustomizedSync(
+	workspaceId: string,
+	skillId: string,
+): boolean {
+	const linkPath = getWorkspaceSkillLink(workspaceId, skillId);
+	try {
+		const stats = lstatSync(linkPath);
+		return stats.isDirectory() && !stats.isSymbolicLink();
+	} catch {
+		return false;
+	}
+}
+
+/** Fork: copy global skill to workspace (replace symlink with real dir) */
+export async function forkSkill(
+	workspaceId: string,
+	skillId: string,
+): Promise<void> {
+	const linkPath = getWorkspaceSkillLink(workspaceId, skillId);
+	const globalDir = getGlobalSkillDir(skillId);
+
+	if (!existsSync(globalDir)) {
+		throw new Error(`Skill ${skillId} not found in global store`);
+	}
+
+	const parentDir = path.dirname(linkPath);
+	await mkdir(parentDir, { recursive: true });
+
+	try {
+		const stats = await lstat(linkPath);
+		if (stats.isSymbolicLink()) {
+			await unlink(linkPath);
+		} else if (stats.isDirectory()) {
+			await rm(linkPath, { recursive: true, force: true });
+		}
+	} catch (err: unknown) {
+		const code =
+			err && typeof err === "object" && "code" in err
+				? (err as { code: string }).code
+				: undefined;
+		if (code !== "ENOENT") throw err;
+		// path doesn't exist — fine, proceed to copy
+	}
+
+	await cp(globalDir, linkPath, { recursive: true });
+}
+
+/** Reset: delete local copy, re-create symlink to global */
+export async function resetSkill(
+	workspaceId: string,
+	skillId: string,
+): Promise<void> {
+	const linkPath = getWorkspaceSkillLink(workspaceId, skillId);
+	const globalDir = getGlobalSkillDir(skillId);
+
+	if (!existsSync(globalDir))
+		throw new Error(`Global skill ${skillId} not found`);
+
+	await rm(linkPath, { recursive: true, force: true });
+	await symlink(globalDir, linkPath, "dir");
+}
+
+/** Get activation state: inactive | shared | customized */
+export async function getSkillActivationState(
+	workspaceId: string,
+	skillId: string,
+): Promise<"inactive" | "shared" | "customized"> {
+	const linkPath = getWorkspaceSkillLink(workspaceId, skillId);
+	try {
+		const stats = await lstat(linkPath);
+		if (stats.isSymbolicLink()) return "shared";
+		if (stats.isDirectory()) return "customized";
+		return "inactive";
+	} catch {
+		return "inactive";
 	}
 }
 

@@ -45,18 +45,35 @@ function SkillCard({
 	agentNames,
 	onToggleActivation,
 	toggling,
+	onCustomize,
+	onReset,
 }: {
 	skill: SkillDefinition;
 	agentNames: string[];
 	onToggleActivation?: (active: boolean) => void;
 	toggling?: boolean;
+	onCustomize?: () => void;
+	onReset?: () => void;
 }) {
 	const isActivated = skill.activated === true;
+	const isCustomized = skill.customized === true;
 
 	const handleToggle = (e: React.MouseEvent) => {
 		e.preventDefault();
 		e.stopPropagation();
 		onToggleActivation?.(!isActivated);
+	};
+
+	const handleCustomize = (e: React.MouseEvent) => {
+		e.preventDefault();
+		e.stopPropagation();
+		onCustomize?.();
+	};
+
+	const handleReset = (e: React.MouseEvent) => {
+		e.preventDefault();
+		e.stopPropagation();
+		onReset?.();
 	};
 
 	return (
@@ -68,16 +85,24 @@ function SkillCard({
 			>
 				<div className="flex items-start justify-between gap-3">
 					<div className="min-w-0 flex-1">
-						<div className="flex items-center gap-2">
+						<div className="flex items-center gap-2 flex-wrap">
 							<h3 className="font-normal text-sm group-hover:text-primary transition-colors">
 								{skill.name}
 							</h3>
-							{isActivated && (
+							{isActivated && !isCustomized && (
+								<Badge
+									variant="outline"
+									className="text-[10px] px-1.5 py-0 border-muted-foreground/40 text-muted-foreground shrink-0"
+								>
+									Shared
+								</Badge>
+							)}
+							{isActivated && isCustomized && (
 								<Badge
 									variant="outline"
 									className="text-[10px] px-1.5 py-0 border-primary/40 text-primary shrink-0"
 								>
-									Active
+									Customized
 								</Badge>
 							)}
 						</div>
@@ -105,6 +130,34 @@ function SkillCard({
 						<BookOpen className="h-4 w-4 text-muted-foreground shrink-0" />
 					)}
 				</div>
+
+				{/* Fork / Reset actions */}
+				{isActivated && !isCustomized && onCustomize && (
+					<div className="mt-3" onClick={(e) => e.preventDefault()}>
+						<Button
+							variant="outline"
+							size="sm"
+							className="h-6 text-[11px] px-2 gap-1"
+							onClick={handleCustomize}
+							disabled={toggling}
+						>
+							Customize
+						</Button>
+					</div>
+				)}
+				{isActivated && isCustomized && onReset && (
+					<div className="mt-3" onClick={(e) => e.preventDefault()}>
+						<Button
+							variant="ghost"
+							size="sm"
+							className="h-6 text-[11px] px-2 gap-1 text-muted-foreground hover:text-foreground"
+							onClick={handleReset}
+							disabled={toggling}
+						>
+							Reset to default
+						</Button>
+					</div>
+				)}
 
 				{/* Agents assigned */}
 				{agentNames.length > 0 && (
@@ -157,11 +210,15 @@ export default function SkillsPage() {
 		refetch,
 		activate,
 		deactivate,
+		fork: forkSkill,
+		reset: resetSkill,
 	} = useSkills(workspaceId);
 	const {
 		commands,
 		activate: activateCommand,
 		deactivate: deactivateCommand,
+		fork: forkCommand,
+		reset: resetCommand,
 	} = useCommands(workspaceId);
 	const { agents } = useAgents();
 	const router = useRouter();
@@ -293,6 +350,11 @@ export default function SkillsPage() {
 											handleToggle(skill.id, active)
 										}
 										toggling={togglingIds.has(skill.id)}
+										onCustomize={async () => {
+											await forkSkill(skill.id);
+											router.push(`/skills/${skill.id}`);
+										}}
+										onReset={() => resetSkill(skill.id)}
 									/>
 								))}
 							</div>
@@ -320,6 +382,11 @@ export default function SkillsPage() {
 											handleToggle(skill.id, active)
 										}
 										toggling={togglingIds.has(skill.id)}
+										onCustomize={async () => {
+											await forkSkill(skill.id);
+											router.push(`/skills/${skill.id}`);
+										}}
+										onReset={() => resetSkill(skill.id)}
 									/>
 								))}
 							</div>
@@ -361,6 +428,7 @@ export default function SkillsPage() {
 					<div className="divide-y">
 						{commands.map((cmd: CommandDefinition) => {
 							const isActive = cmd.activated === true;
+							const isCustomized = cmd.customized === true;
 							const isToggling = togglingCommandIds.has(cmd.id);
 							const handleCommandToggle = async (e: React.MouseEvent) => {
 								e.preventDefault();
@@ -393,13 +461,52 @@ export default function SkillsPage() {
 									<span className="text-xs text-muted-foreground flex-1">
 										{cmd.longDescription}
 									</span>
-									{isActive && (
+									{isActive && !isCustomized && (
+										<Badge
+											variant="outline"
+											className="text-[10px] px-1.5 py-0 border-muted-foreground/40 text-muted-foreground shrink-0"
+										>
+											Shared
+										</Badge>
+									)}
+									{isActive && isCustomized && (
 										<Badge
 											variant="outline"
 											className="text-[10px] px-1.5 py-0 border-primary/40 text-primary shrink-0"
 										>
-											Active
+											Customized
 										</Badge>
+									)}
+									{isActive && !isCustomized && (
+										<Button
+											variant="outline"
+											size="sm"
+											className="h-6 text-[11px] px-2 shrink-0"
+											disabled={isToggling}
+											onClick={async (e) => {
+												e.preventDefault();
+												e.stopPropagation();
+												await forkCommand(cmd.id);
+												router.push(`/commands/${cmd.id}`);
+											}}
+										>
+											Customize
+										</Button>
+									)}
+									{isActive && isCustomized && (
+										<Button
+											variant="ghost"
+											size="sm"
+											className="h-6 text-[11px] px-2 shrink-0 text-muted-foreground hover:text-foreground"
+											disabled={isToggling}
+											onClick={(e) => {
+												e.preventDefault();
+												e.stopPropagation();
+												resetCommand(cmd.id);
+											}}
+										>
+											Reset
+										</Button>
 									)}
 									<CopyButton text={cmd.command} />
 									<div

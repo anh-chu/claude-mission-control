@@ -2,10 +2,15 @@ import { rm } from "node:fs/promises";
 import path from "node:path";
 import { NextResponse } from "next/server";
 import { getAgents, getWorkspaces } from "@/lib/data";
-import { getGlobalSkillDir, getGlobalSkillsDir } from "@/lib/paths";
+import {
+	getGlobalSkillDir,
+	getGlobalSkillsDir,
+	getWorkspaceSkillLink,
+} from "@/lib/paths";
 import {
 	activateSkill as _activateSkill,
 	deactivateSkillFromAllWorkspaces,
+	getSkillActivationState,
 	listActivatedSkills,
 } from "@/lib/skill-activation";
 import {
@@ -43,11 +48,13 @@ export async function GET(request: Request) {
 			return NextResponse.json({ error: "Skill not found" }, { status: 404 });
 		}
 		let activated = false;
+		let customized = false;
 		if (workspaceId) {
-			const activatedIds = await listActivatedSkills(workspaceId);
-			activated = activatedIds.includes(id);
+			const state = await getSkillActivationState(workspaceId, id);
+			activated = state !== "inactive";
+			customized = state === "customized";
 		}
-		return NextResponse.json({ skill: { ...skill, activated } });
+		return NextResponse.json({ skill: { ...skill, activated, customized } });
 	}
 
 	// List all skills
@@ -59,10 +66,15 @@ export async function GET(request: Request) {
 		activatedIds = new Set(ids);
 	}
 
-	const skills: SkillDefinition[] = rawSkills.map((s) => ({
-		...s,
-		...(activatedIds !== null ? { activated: activatedIds.has(s.id) } : {}),
-	}));
+	const skills = await Promise.all(
+		rawSkills.map(async (s) => {
+			if (activatedIds === null) return s;
+			const activated = activatedIds.has(s.id);
+			if (!activated) return { ...s, activated: false, customized: false };
+			const state = await getSkillActivationState(workspaceId!, s.id);
+			return { ...s, activated: true, customized: state === "customized" };
+		}),
+	);
 
 	return NextResponse.json({ skills });
 }
@@ -129,7 +141,13 @@ export async function PUT(request: Request) {
 		return NextResponse.json({ error: "Invalid skill ID" }, { status: 400 });
 	}
 
-	const skillDir = getGlobalSkillDir(body.id);
+	// Use workspace-local copy if customized, else global (shared)
+	const skillDir =
+		workspaceId &&
+		(await getSkillActivationState(workspaceId, body.id)) === "customized"
+			? getWorkspaceSkillLink(workspaceId, body.id)
+			: getGlobalSkillDir(body.id);
+
 	const existing = await readSkillFile(skillDir);
 	if (!existing) {
 		return NextResponse.json({ error: "Skill not found" }, { status: 404 });

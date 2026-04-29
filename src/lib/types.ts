@@ -86,6 +86,7 @@ export interface SkillDefinition {
 	agentIds: string[];
 	tags: string[];
 	activated?: boolean;
+	customized?: boolean;
 	createdAt: string;
 	updatedAt: string;
 }
@@ -115,6 +116,7 @@ export interface CommandDefinition {
 	icon: string;
 	content: string;
 	activated?: boolean;
+	customized?: boolean;
 	createdAt: string;
 	updatedAt: string;
 }

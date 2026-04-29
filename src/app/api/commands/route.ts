@@ -2,6 +2,7 @@ import { rm } from "node:fs/promises";
 import { NextResponse } from "next/server";
 import {
 	deactivateCommandFromAllWorkspaces,
+	getCommandActivationState,
 	listActivatedCommands,
 } from "@/lib/command-activation";
 import {
@@ -10,7 +11,11 @@ import {
 	writeCommandFile,
 } from "@/lib/command-files";
 import { getWorkspaces } from "@/lib/data";
-import { getGlobalCommandDir, getGlobalCommandsDir } from "@/lib/paths";
+import {
+	getGlobalCommandDir,
+	getGlobalCommandsDir,
+	getWorkspaceCommandLink,
+} from "@/lib/paths";
 import type { CommandDefinition } from "@/lib/types";
 import { generateId } from "@/lib/utils";
 import {
@@ -43,11 +48,13 @@ export async function GET(request: Request) {
 			return NextResponse.json({ error: "Command not found" }, { status: 404 });
 		}
 		let activated = false;
+		let customized = false;
 		if (workspaceId) {
-			const activatedIds = await listActivatedCommands(workspaceId);
-			activated = activatedIds.includes(id);
+			const state = await getCommandActivationState(workspaceId, id);
+			activated = state !== "inactive";
+			customized = state === "customized";
 		}
-		return NextResponse.json({ command: { ...cmd, activated } });
+		return NextResponse.json({ command: { ...cmd, activated, customized } });
 	}
 
 	// List all commands
@@ -59,10 +66,15 @@ export async function GET(request: Request) {
 		activatedIds = new Set(ids);
 	}
 
-	const commands: CommandDefinition[] = rawCommands.map((c) => ({
-		...c,
-		...(activatedIds !== null ? { activated: activatedIds.has(c.id) } : {}),
-	}));
+	const commands = await Promise.all(
+		rawCommands.map(async (c) => {
+			if (activatedIds === null) return c;
+			const activated = activatedIds.has(c.id);
+			if (!activated) return { ...c, activated: false, customized: false };
+			const state = await getCommandActivationState(workspaceId!, c.id);
+			return { ...c, activated: true, customized: state === "customized" };
+		}),
+	);
 
 	return NextResponse.json({ commands });
 }
@@ -107,7 +119,7 @@ export async function POST(request: Request) {
 }
 
 export async function PUT(request: Request) {
-	await applyWorkspaceContext();
+	const workspaceId = await applyWorkspaceContext();
 	const validation = await validateBody(request, commandUpdateSchema);
 	if (!validation.success) return validation.error;
 	const body = validation.data;
@@ -117,7 +129,13 @@ export async function PUT(request: Request) {
 		return NextResponse.json({ error: "Invalid command ID" }, { status: 400 });
 	}
 
-	const cmdDir = getGlobalCommandDir(body.id);
+	// Use workspace-local copy if customized, else global (shared)
+	const cmdDir =
+		workspaceId &&
+		(await getCommandActivationState(workspaceId, body.id)) === "customized"
+			? getWorkspaceCommandLink(workspaceId, body.id)
+			: getGlobalCommandDir(body.id);
+
 	const existing = await readCommandFile(cmdDir);
 	if (!existing) {
 		return NextResponse.json({ error: "Command not found" }, { status: 404 });

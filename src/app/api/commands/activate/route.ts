@@ -2,7 +2,9 @@ import { NextResponse } from "next/server";
 import {
 	activateCommand,
 	deactivateCommand,
+	forkCommand,
 	listActivatedCommands,
+	resetCommand,
 } from "@/lib/command-activation";
 import { commandActivateSchema, safeId, validateBody } from "@/lib/validations";
 import { applyWorkspaceContext } from "@/lib/workspace-context";
@@ -13,7 +15,7 @@ export async function POST(request: Request) {
 	const workspaceId = await applyWorkspaceContext();
 	const validation = await validateBody(request, commandActivateSchema);
 	if (!validation.success) return validation.error;
-	const { commandId, active } = validation.data;
+	const { commandId, active, action } = validation.data;
 
 	// Additional explicit validation before path operations
 	const cmdParse = safeId.safeParse(commandId);
@@ -25,10 +27,31 @@ export async function POST(request: Request) {
 		);
 	}
 
-	if (active) {
-		await activateCommand(workspaceId, commandId);
-	} else {
-		await deactivateCommand(workspaceId, commandId);
+	// Resolve effective action: explicit action field takes precedence over legacy active boolean
+	const effectiveAction =
+		action ??
+		(active === true ? "activate" : active === false ? "deactivate" : null);
+
+	if (!effectiveAction) {
+		return NextResponse.json(
+			{ error: "Provide action or active field" },
+			{ status: 400 },
+		);
+	}
+
+	switch (effectiveAction) {
+		case "activate":
+			await activateCommand(workspaceId, commandId);
+			break;
+		case "deactivate":
+			await deactivateCommand(workspaceId, commandId);
+			break;
+		case "fork":
+			await forkCommand(workspaceId, commandId);
+			break;
+		case "reset":
+			await resetCommand(workspaceId, commandId);
+			break;
 	}
 
 	return NextResponse.json({ ok: true });
