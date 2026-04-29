@@ -1,6 +1,16 @@
 "use client";
 
-import { BookOpen, Check, Copy, Plus, Tag, Terminal, Zap } from "lucide-react";
+import {
+	BookOpen,
+	Check,
+	Copy,
+	ExternalLink,
+	Plus,
+	Puzzle,
+	Tag,
+	Terminal,
+	Zap,
+} from "lucide-react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
@@ -11,9 +21,16 @@ import { CardSkeleton, GridSkeleton, Skeleton } from "@/components/skeletons";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Switch } from "@/components/ui/switch";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Tip } from "@/components/ui/tip";
-import { useAgents, useCommands, useSkills } from "@/hooks/use-data";
+import {
+	useAgents,
+	useCommands,
+	usePlugins,
+	useSkills,
+} from "@/hooks/use-data";
 import { useWorkspace } from "@/hooks/use-workspace";
+import type { PluginInfo } from "@/lib/plugin-reader";
 import type { CommandDefinition, SkillDefinition } from "@/lib/types";
 
 function CopyButton({ text }: { text: string }) {
@@ -201,6 +218,126 @@ function SkillCard({
 	);
 }
 
+function CopyCommandButton({
+	label,
+	command,
+}: {
+	label: string;
+	command: string;
+}) {
+	const [copied, setCopied] = useState(false);
+	const handleCopy = async () => {
+		await navigator.clipboard.writeText(command);
+		setCopied(true);
+		setTimeout(() => setCopied(false), 2000);
+	};
+	return (
+		<Button
+			variant="outline"
+			size="sm"
+			className="h-6 text-[11px] px-2 gap-1 shrink-0"
+			onClick={handleCopy}
+		>
+			{copied ? (
+				<Check className="h-3 w-3 text-success" />
+			) : (
+				<Copy className="h-3 w-3" />
+			)}
+			{copied ? "Copied!" : label}
+		</Button>
+	);
+}
+
+function PluginCard({ plugin }: { plugin: PluginInfo }) {
+	const caps = plugin.capabilities;
+	const capBadges: { label: string; key: string }[] = [
+		...(caps.hooks.length > 0 ? [{ label: "Hooks", key: "hooks" }] : []),
+		...(caps.hasMcp ? [{ label: "MCP", key: "mcp" }] : []),
+		...(caps.hasSkills ? [{ label: "Skills", key: "skills" }] : []),
+		...(caps.hasAgents ? [{ label: "Agents", key: "agents" }] : []),
+	];
+	const installCmd = `claude plugin install ${plugin.id}`;
+	const uninstallCmd = `claude plugin uninstall ${plugin.id}`;
+
+	return (
+		<div className="rounded-sm border bg-card p-5 space-y-3">
+			{/* Header */}
+			<div className="flex items-start justify-between gap-3">
+				<div className="min-w-0 flex-1">
+					<div className="flex items-center gap-2 flex-wrap">
+						<span className="font-normal text-sm">{plugin.name}</span>
+						<Badge
+							variant="outline"
+							className="text-[10px] px-1.5 py-0 border-muted-foreground/40 text-muted-foreground shrink-0 font-mono"
+						>
+							v{plugin.version}
+						</Badge>
+						<Badge
+							variant="outline"
+							className="text-[10px] px-1.5 py-0 border-muted-foreground/30 text-muted-foreground shrink-0 capitalize"
+						>
+							{plugin.scope}
+						</Badge>
+					</div>
+					<p className="text-xs text-muted-foreground mt-0.5 line-clamp-2">
+						{plugin.description}
+					</p>
+				</div>
+				{/* Enabled dot */}
+				<div className="flex items-center gap-1.5 shrink-0 pt-0.5">
+					<span
+						className={`h-2 w-2 rounded-full ${
+							plugin.enabled ? "bg-success" : "bg-muted-foreground/40"
+						}`}
+					/>
+					<span className="text-[10px] text-muted-foreground">
+						{plugin.enabled ? "Enabled" : "Disabled"}
+					</span>
+				</div>
+			</div>
+
+			{/* Capability badges */}
+			{capBadges.length > 0 && (
+				<div className="flex flex-wrap gap-1">
+					{capBadges.map((cap) => (
+						<Badge
+							key={cap.key}
+							variant="secondary"
+							className="text-[10px] px-1.5 py-0"
+						>
+							{cap.label}
+						</Badge>
+					))}
+				</div>
+			)}
+
+			{/* Footer: marketplace + actions */}
+			<div className="flex items-center justify-between gap-2 pt-2 border-t">
+				<div className="flex items-center gap-1.5 min-w-0">
+					<span className="text-[10px] text-muted-foreground truncate">
+						{plugin.marketplace}
+					</span>
+					{plugin.homepage && (
+						<a
+							href={plugin.homepage}
+							target="_blank"
+							rel="noopener noreferrer"
+							className="text-muted-foreground hover:text-foreground transition-colors shrink-0"
+							aria-label="Open homepage"
+						>
+							<ExternalLink className="h-3 w-3" />
+						</a>
+					)}
+				</div>
+				<div className="flex items-center gap-1.5 shrink-0">
+					<CopyCommandButton label="Install" command={installCmd} />
+					<CopyCommandButton label="Uninstall" command={uninstallCmd} />
+				</div>
+			</div>
+		</div>
+	);
+}
+
 export default function SkillsPage() {
 	const { currentId: workspaceId } = useWorkspace();
 	const {
@@ -221,6 +358,7 @@ export default function SkillsPage() {
 		reset: resetCommand,
 	} = useCommands(workspaceId);
 	const { agents } = useAgents();
+	const { plugins } = usePlugins();
 	const router = useRouter();
 	const [togglingIds, setTogglingIds] = useState<Set<string>>(new Set());
 	const [togglingCommandIds, setTogglingCommandIds] = useState<Set<string>>(
@@ -321,280 +459,312 @@ export default function SkillsPage() {
 				</Tip>
 			</div>
 
-			{skills.length === 0 ? (
-				<EmptyState
-					icon={BookOpen}
-					title="No skills yet"
-					description="Skills define specialized knowledge that agents can use. Create your first skill."
-					actionLabel="Create a skill"
-					onAction={() => router.push("/skills/new")}
-				/>
-			) : (
-				<div className="space-y-6">
-					{/* Active skills */}
-					{activatedSkills.length > 0 && (
-						<div className="space-y-3">
-							<div className="flex items-center gap-2">
-								<Zap className="h-3.5 w-3.5 text-primary" />
-								<h2 className="text-sm font-normal text-primary">
-									Active for this workspace
-								</h2>
-							</div>
-							<div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-								{activatedSkills.map((skill) => (
-									<SkillCard
-										key={skill.id}
-										skill={skill}
-										agentNames={getAgentNames(skill.agentIds)}
-										onToggleActivation={(active) =>
-											handleToggle(skill.id, active)
-										}
-										toggling={togglingIds.has(skill.id)}
-										onCustomize={async () => {
-											setTogglingIds((prev) => new Set(prev).add(skill.id));
-											try {
-												await forkSkill(skill.id);
-												router.push(`/skills/${skill.id}`);
-											} finally {
-												setTogglingIds((prev) => {
-													const next = new Set(prev);
-													next.delete(skill.id);
-													return next;
-												});
-											}
-										}}
-										onReset={async () => {
-											setTogglingIds((prev) => new Set(prev).add(skill.id));
-											try {
-												await resetSkill(skill.id);
-											} finally {
-												setTogglingIds((prev) => {
-													const next = new Set(prev);
-													next.delete(skill.id);
-													return next;
-												});
-											}
-										}}
-									/>
-								))}
-							</div>
-						</div>
-					)}
+			<Tabs defaultValue="skills">
+				<TabsList className="mb-4">
+					<TabsTrigger value="skills">Skills</TabsTrigger>
+					<TabsTrigger value="commands">Commands</TabsTrigger>
+					<TabsTrigger value="plugins">Plugins</TabsTrigger>
+				</TabsList>
 
-					{/* Available skills */}
-					{availableSkills.length > 0 && (
-						<div className="space-y-3">
+				<TabsContent value="skills">
+					{skills.length === 0 ? (
+						<EmptyState
+							icon={BookOpen}
+							title="No skills yet"
+							description="Skills define specialized knowledge that agents can use. Create your first skill."
+							actionLabel="Create a skill"
+							onAction={() => router.push("/skills/new")}
+						/>
+					) : (
+						<div className="space-y-6">
+							{/* Active skills */}
 							{activatedSkills.length > 0 && (
-								<div className="flex items-center gap-2">
-									<BookOpen className="h-3.5 w-3.5 text-muted-foreground" />
-									<h2 className="text-sm font-normal text-muted-foreground">
-										Available
-									</h2>
-								</div>
-							)}
-							<div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-								{availableSkills.map((skill) => (
-									<SkillCard
-										key={skill.id}
-										skill={skill}
-										agentNames={getAgentNames(skill.agentIds)}
-										onToggleActivation={(active) =>
-											handleToggle(skill.id, active)
-										}
-										toggling={togglingIds.has(skill.id)}
-										onCustomize={async () => {
-											setTogglingIds((prev) => new Set(prev).add(skill.id));
-											try {
-												await forkSkill(skill.id);
-												router.push(`/skills/${skill.id}`);
-											} finally {
-												setTogglingIds((prev) => {
-													const next = new Set(prev);
-													next.delete(skill.id);
-													return next;
-												});
-											}
-										}}
-										onReset={async () => {
-											setTogglingIds((prev) => new Set(prev).add(skill.id));
-											try {
-												await resetSkill(skill.id);
-											} finally {
-												setTogglingIds((prev) => {
-													const next = new Set(prev);
-													next.delete(skill.id);
-													return next;
-												});
-											}
-										}}
-									/>
-								))}
-							</div>
-						</div>
-					)}
-				</div>
-			)}
-
-			{/* AI Commands (slash commands) */}
-			<div className="rounded-sm border bg-card">
-				<div className="flex items-center justify-between border-b px-5 py-4">
-					<div className="flex items-center gap-3">
-						<div className="h-9 w-9 rounded-full bg-primary-soft flex items-center justify-center">
-							<Terminal className="h-4 w-4 text-primary" />
-						</div>
-						<div>
-							<h2 className="text-sm font-normal">AI Commands</h2>
-							<p className="text-xs text-muted-foreground">
-								Slash commands for Claude Code — type in the CLI to activate
-							</p>
-						</div>
-					</div>
-					<Tip content="Create a new command">
-						<Button
-							size="sm"
-							variant="outline"
-							onClick={() => router.push("/commands/new")}
-							className="gap-1.5"
-						>
-							<Plus className="h-3.5 w-3.5" /> New Command
-						</Button>
-					</Tip>
-				</div>
-				{commands.length === 0 ? (
-					<div className="px-5 py-8 text-center text-xs text-muted-foreground">
-						No commands yet. Create one to get started.
-					</div>
-				) : (
-					<div className="divide-y">
-						{commands.map((cmd: CommandDefinition) => {
-							const isActive = cmd.activated === true;
-							const isCustomized = cmd.customized === true;
-							const isToggling = togglingCommandIds.has(cmd.id);
-							const handleCommandToggle = async (e: React.MouseEvent) => {
-								e.preventDefault();
-								e.stopPropagation();
-								setTogglingCommandIds((prev) => new Set(prev).add(cmd.id));
-								try {
-									if (isActive) {
-										await deactivateCommand(cmd.id);
-									} else {
-										await activateCommand(cmd.id);
-									}
-								} finally {
-									setTogglingCommandIds((prev) => {
-										const next = new Set(prev);
-										next.delete(cmd.id);
-										return next;
-									});
-								}
-							};
-							return (
-								<div
-									key={cmd.id}
-									className={`flex items-center gap-3 px-5 py-2.5 ${
-										isActive ? "bg-primary-soft/20" : ""
-									}`}
-								>
-									<code className="text-xs font-mono font-normal text-primary min-w-[130px]">
-										{cmd.command}
-									</code>
-									<span className="text-xs text-muted-foreground flex-1">
-										{cmd.longDescription}
-									</span>
-									{isActive && !isCustomized && (
-										<Badge
-											variant="outline"
-											className="text-[10px] px-1.5 py-0 border-muted-foreground/40 text-muted-foreground shrink-0"
-										>
-											Shared
-										</Badge>
-									)}
-									{isActive && isCustomized && (
-										<Badge
-											variant="outline"
-											className="text-[10px] px-1.5 py-0 border-primary/40 text-primary shrink-0"
-										>
-											Customized
-										</Badge>
-									)}
-									{isActive && !isCustomized && (
-										<Button
-											variant="outline"
-											size="sm"
-											className="h-6 text-[11px] px-2 shrink-0"
-											disabled={isToggling}
-											onClick={async (e) => {
-												e.preventDefault();
-												e.stopPropagation();
-												setTogglingCommandIds((prev) =>
-													new Set(prev).add(cmd.id),
-												);
-												try {
-													await forkCommand(cmd.id);
-													router.push(`/commands/${cmd.id}`);
-												} finally {
-													setTogglingCommandIds((prev) => {
-														const next = new Set(prev);
-														next.delete(cmd.id);
-														return next;
-													});
+								<div className="space-y-3">
+									<div className="flex items-center gap-2">
+										<Zap className="h-3.5 w-3.5 text-primary" />
+										<h2 className="text-sm font-normal text-primary">
+											Active for this workspace
+										</h2>
+									</div>
+									<div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+										{activatedSkills.map((skill) => (
+											<SkillCard
+												key={skill.id}
+												skill={skill}
+												agentNames={getAgentNames(skill.agentIds)}
+												onToggleActivation={(active) =>
+													handleToggle(skill.id, active)
 												}
-											}}
-										>
-											Customize
-										</Button>
-									)}
-									{isActive && isCustomized && (
-										<Button
-											variant="ghost"
-											size="sm"
-											className="h-6 text-[11px] px-2 shrink-0 text-muted-foreground hover:text-foreground"
-											disabled={isToggling}
-											onClick={async (e) => {
-												e.preventDefault();
-												e.stopPropagation();
-												setTogglingCommandIds((prev) =>
-													new Set(prev).add(cmd.id),
-												);
-												try {
-													await resetCommand(cmd.id);
-												} finally {
-													setTogglingCommandIds((prev) => {
-														const next = new Set(prev);
-														next.delete(cmd.id);
-														return next;
-													});
-												}
-											}}
-										>
-											Reset
-										</Button>
-									)}
-									<CopyButton text={cmd.command} />
-									<div
-										className="shrink-0"
-										onClick={handleCommandToggle}
-										role="button"
-										tabIndex={0}
-										onKeyDown={(e) =>
-											e.key === " " &&
-											handleCommandToggle(e as unknown as React.MouseEvent)
-										}
-									>
-										<Switch
-											checked={isActive}
-											disabled={isToggling}
-											aria-label={
-												isActive ? "Deactivate command" : "Activate command"
-											}
-										/>
+												toggling={togglingIds.has(skill.id)}
+												onCustomize={async () => {
+													setTogglingIds((prev) => new Set(prev).add(skill.id));
+													try {
+														await forkSkill(skill.id);
+														router.push(`/skills/${skill.id}`);
+													} finally {
+														setTogglingIds((prev) => {
+															const next = new Set(prev);
+															next.delete(skill.id);
+															return next;
+														});
+													}
+												}}
+												onReset={async () => {
+													setTogglingIds((prev) => new Set(prev).add(skill.id));
+													try {
+														await resetSkill(skill.id);
+													} finally {
+														setTogglingIds((prev) => {
+															const next = new Set(prev);
+															next.delete(skill.id);
+															return next;
+														});
+													}
+												}}
+											/>
+										))}
 									</div>
 								</div>
-							);
-						})}
+							)}
+
+							{/* Available skills */}
+							{availableSkills.length > 0 && (
+								<div className="space-y-3">
+									{activatedSkills.length > 0 && (
+										<div className="flex items-center gap-2">
+											<BookOpen className="h-3.5 w-3.5 text-muted-foreground" />
+											<h2 className="text-sm font-normal text-muted-foreground">
+												Available
+											</h2>
+										</div>
+									)}
+									<div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+										{availableSkills.map((skill) => (
+											<SkillCard
+												key={skill.id}
+												skill={skill}
+												agentNames={getAgentNames(skill.agentIds)}
+												onToggleActivation={(active) =>
+													handleToggle(skill.id, active)
+												}
+												toggling={togglingIds.has(skill.id)}
+												onCustomize={async () => {
+													setTogglingIds((prev) => new Set(prev).add(skill.id));
+													try {
+														await forkSkill(skill.id);
+														router.push(`/skills/${skill.id}`);
+													} finally {
+														setTogglingIds((prev) => {
+															const next = new Set(prev);
+															next.delete(skill.id);
+															return next;
+														});
+													}
+												}}
+												onReset={async () => {
+													setTogglingIds((prev) => new Set(prev).add(skill.id));
+													try {
+														await resetSkill(skill.id);
+													} finally {
+														setTogglingIds((prev) => {
+															const next = new Set(prev);
+															next.delete(skill.id);
+															return next;
+														});
+													}
+												}}
+											/>
+										))}
+									</div>
+								</div>
+							)}
+						</div>
+					)}
+				</TabsContent>
+
+				<TabsContent value="commands">
+					{/* AI Commands (slash commands) */}
+					<div className="rounded-sm border bg-card">
+						<div className="flex items-center justify-between border-b px-5 py-4">
+							<div className="flex items-center gap-3">
+								<div className="h-9 w-9 rounded-full bg-primary-soft flex items-center justify-center">
+									<Terminal className="h-4 w-4 text-primary" />
+								</div>
+								<div>
+									<h2 className="text-sm font-normal">AI Commands</h2>
+									<p className="text-xs text-muted-foreground">
+										Slash commands for Claude Code — type in the CLI to activate
+									</p>
+								</div>
+							</div>
+							<Tip content="Create a new command">
+								<Button
+									size="sm"
+									variant="outline"
+									onClick={() => router.push("/commands/new")}
+									className="gap-1.5"
+								>
+									<Plus className="h-3.5 w-3.5" /> New Command
+								</Button>
+							</Tip>
+						</div>
+						{commands.length === 0 ? (
+							<div className="px-5 py-8 text-center text-xs text-muted-foreground">
+								No commands yet. Create one to get started.
+							</div>
+						) : (
+							<div className="divide-y">
+								{commands.map((cmd: CommandDefinition) => {
+									const isActive = cmd.activated === true;
+									const isCustomized = cmd.customized === true;
+									const isToggling = togglingCommandIds.has(cmd.id);
+									const handleCommandToggle = async (e: React.MouseEvent) => {
+										e.preventDefault();
+										e.stopPropagation();
+										setTogglingCommandIds((prev) => new Set(prev).add(cmd.id));
+										try {
+											if (isActive) {
+												await deactivateCommand(cmd.id);
+											} else {
+												await activateCommand(cmd.id);
+											}
+										} finally {
+											setTogglingCommandIds((prev) => {
+												const next = new Set(prev);
+												next.delete(cmd.id);
+												return next;
+											});
+										}
+									};
+									return (
+										<div
+											key={cmd.id}
+											className={`flex items-center gap-3 px-5 py-2.5 ${
+												isActive ? "bg-primary-soft/20" : ""
+											}`}
+										>
+											<code className="text-xs font-mono font-normal text-primary min-w-[130px]">
+												{cmd.command}
+											</code>
+											<span className="text-xs text-muted-foreground flex-1">
+												{cmd.longDescription}
+											</span>
+											{isActive && !isCustomized && (
+												<Badge
+													variant="outline"
+													className="text-[10px] px-1.5 py-0 border-muted-foreground/40 text-muted-foreground shrink-0"
+												>
+													Shared
+												</Badge>
+											)}
+											{isActive && isCustomized && (
+												<Badge
+													variant="outline"
+													className="text-[10px] px-1.5 py-0 border-primary/40 text-primary shrink-0"
+												>
+													Customized
+												</Badge>
+											)}
+											{isActive && !isCustomized && (
+												<Button
+													variant="outline"
+													size="sm"
+													className="h-6 text-[11px] px-2 shrink-0"
+													disabled={isToggling}
+													onClick={async (e) => {
+														e.preventDefault();
+														e.stopPropagation();
+														setTogglingCommandIds((prev) =>
+															new Set(prev).add(cmd.id),
+														);
+														try {
+															await forkCommand(cmd.id);
+															router.push(`/commands/${cmd.id}`);
+														} finally {
+															setTogglingCommandIds((prev) => {
+																const next = new Set(prev);
+																next.delete(cmd.id);
+																return next;
+															});
+														}
+													}}
+												>
+													Customize
+												</Button>
+											)}
+											{isActive && isCustomized && (
+												<Button
+													variant="ghost"
+													size="sm"
+													className="h-6 text-[11px] px-2 shrink-0 text-muted-foreground hover:text-foreground"
+													disabled={isToggling}
+													onClick={async (e) => {
+														e.preventDefault();
+														e.stopPropagation();
+														setTogglingCommandIds((prev) =>
+															new Set(prev).add(cmd.id),
+														);
+														try {
+															await resetCommand(cmd.id);
+														} finally {
+															setTogglingCommandIds((prev) => {
+																const next = new Set(prev);
+																next.delete(cmd.id);
+																return next;
+															});
+														}
+													}}
+												>
+													Reset
+												</Button>
+											)}
+											<CopyButton text={cmd.command} />
+											<div
+												className="shrink-0"
+												onClick={handleCommandToggle}
+												role="button"
+												tabIndex={0}
+												onKeyDown={(e) =>
+													e.key === " " &&
+													handleCommandToggle(e as unknown as React.MouseEvent)
+												}
+											>
+												<Switch
+													checked={isActive}
+													disabled={isToggling}
+													aria-label={
+														isActive ? "Deactivate command" : "Activate command"
+													}
+												/>
+											</div>
+										</div>
+									);
+								})}
+							</div>
+						)}
 					</div>
-				)}
-			</div>
+				</TabsContent>
+
+				<TabsContent value="plugins">
+					{plugins.length === 0 ? (
+						<EmptyState
+							icon={Puzzle}
+							title="No plugins installed"
+							description="Install plugins via Claude Code CLI to extend agent capabilities."
+						/>
+					) : (
+						<div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+							{plugins.map((plugin) => (
+								<PluginCard key={plugin.id} plugin={plugin} />
+							))}
+						</div>
+					)}
+					<p className="text-xs text-muted-foreground mt-6 border-t pt-4">
+						Plugins are managed via Claude Code CLI. Use{" "}
+						<code className="font-mono">/plugin</code> to install or manage.
+					</p>
+				</TabsContent>
+			</Tabs>
 		</div>
 	);
 }

@@ -2,6 +2,7 @@
 
 import { useCallback, useEffect, useRef, useState } from "react";
 import { apiFetch } from "@/lib/api-client";
+import type { PluginInfo } from "@/lib/plugin-reader";
 import { showError, showSuccess } from "@/lib/toast";
 import type {
 	ActivityEvent,
@@ -504,4 +505,31 @@ export function useInitiatives() {
 		"Initiative",
 	);
 	return { initiatives, ...rest };
+}
+
+export function usePlugins() {
+	const [plugins, setPlugins] = useState<PluginInfo[]>([]);
+	const [isLoading, setIsLoading] = useState(true);
+	const [error, setError] = useState<string | null>(null);
+
+	const refetch = useCallback(async () => {
+		setIsLoading(true);
+		try {
+			const res = await apiFetch("/api/plugins");
+			if (!res.ok) throw new Error("Failed to fetch plugins");
+			const json = await res.json();
+			setPlugins(json.data ?? json.plugins ?? []);
+			setError(null);
+		} catch (err) {
+			setError(err instanceof Error ? err.message : "Unknown error");
+		} finally {
+			setIsLoading(false);
+		}
+	}, []);
+
+	useEffect(() => {
+		refetch();
+	}, [refetch]);
+
+	return { plugins, isLoading, error, refresh: refetch };
 }
