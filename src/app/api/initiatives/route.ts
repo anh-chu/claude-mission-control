@@ -71,6 +71,7 @@ export async function POST(request: Request) {
 			teamMembers: body.teamMembers,
 			taskIds: [],
 			tags: body.tags,
+			mapPosition: body.mapPosition,
 			createdAt: new Date().toISOString(),
 			updatedAt: new Date().toISOString(),
 			completedAt: null,

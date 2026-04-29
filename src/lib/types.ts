@@ -183,6 +183,11 @@ export interface TasksFile {
 
 // ─── Projects ─────────────────────────────────────────────────────────────────
 
+export interface CanvasPosition {
+	x: number;
+	y: number;
+}
+
 export interface Project {
 	id: string;
 	name: string;
@@ -192,6 +197,7 @@ export interface Project {
 	teamMembers: string[];
 	createdAt: string;
 	tags: string[];
+	mapPosition?: CanvasPosition;
 	deletedAt: string | null;
 }
 
@@ -445,6 +451,7 @@ export interface Initiative {
 	teamMembers: string[];
 	taskIds: string[];
 	tags: string[];
+	mapPosition?: CanvasPosition;
 	createdAt: string;
 	updatedAt: string;
 	completedAt: string | null;

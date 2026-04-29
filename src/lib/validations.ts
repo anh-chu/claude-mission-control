@@ -188,6 +188,11 @@ export const taskUpdateSchema = z.object({
 
 // ─── Project schemas ───────────────────────────────────────────────────────────
 
+const canvasPositionSchema = z.object({
+	x: z.number().finite(),
+	y: z.number().finite(),
+});
+
 export const projectCreateSchema = z.object({
 	name: z.string().min(1, "Name is required").max(LIMITS.TITLE),
 	description: z.string().max(LIMITS.DESCRIPTION).optional().default(""),
@@ -199,6 +204,7 @@ export const projectCreateSchema = z.object({
 		.max(LIMITS.MAX_TAGS)
 		.optional()
 		.default([]),
+	mapPosition: canvasPositionSchema.optional(),
 	deletedAt: z.string().nullable().optional().default(null),
 });
 
@@ -210,6 +216,7 @@ export const projectUpdateSchema = z.object({
 	color: z.string().max(20).optional(),
 	teamMembers: z.array(z.string().max(50)).max(20).optional(),
 	tags: z.array(z.string().max(LIMITS.TAG)).max(LIMITS.MAX_TAGS).optional(),
+	mapPosition: canvasPositionSchema.optional(),
 	deletedAt: z.string().nullable().optional(),
 });
 
@@ -474,6 +481,7 @@ export const initiativeCreateSchema = z.object({
 		.max(LIMITS.MAX_TAGS)
 		.optional()
 		.default([]),
+	mapPosition: canvasPositionSchema.optional(),
 });
 
 export const initiativeUpdateSchema = z.object({
@@ -486,6 +494,7 @@ export const initiativeUpdateSchema = z.object({
 	teamMembers: z.array(z.string().max(50)).max(20).optional(),
 	taskIds: z.array(z.string()).max(200).optional(),
 	tags: z.array(z.string().max(LIMITS.TAG)).max(LIMITS.MAX_TAGS).optional(),
+	mapPosition: canvasPositionSchema.optional(),
 	completedAt: z.string().nullable().optional(),
 	deletedAt: z.string().nullable().optional(),
 });

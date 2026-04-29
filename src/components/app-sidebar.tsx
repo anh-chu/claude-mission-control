@@ -4,6 +4,7 @@ import {
 	Activity,
 	FileText,
 	FolderKanban,
+	GitFork,
 	Grid2x2,
 	Layers,
 	LayoutDashboard,
@@ -39,6 +40,7 @@ const mainLinks = [
 const workbenchLinks = [
 	{ href: "/projects", label: "Projects", icon: FolderKanban },
 	{ href: "/initiatives", label: "Initiatives", icon: Layers },
+	{ href: "/map", label: "Map", icon: GitFork },
 	{ href: "/priority-matrix", label: "Tasks", icon: Grid2x2 },
 	{ href: "/crew", label: "Agents", icon: Users },
 	{ href: "/documents", label: "Documents", icon: FileText },
