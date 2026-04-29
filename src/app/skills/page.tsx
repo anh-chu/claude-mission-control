@@ -1,6 +1,6 @@
 "use client";
 
-import { BookOpen, Check, Copy, Plus, Tag, Terminal } from "lucide-react";
+import { BookOpen, Check, Copy, Plus, Tag, Terminal, Zap } from "lucide-react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
@@ -10,8 +10,10 @@ import { ErrorState } from "@/components/error-state";
 import { CardSkeleton, GridSkeleton, Skeleton } from "@/components/skeletons";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import { Switch } from "@/components/ui/switch";
 import { Tip } from "@/components/ui/tip";
 import { useAgents, useSkills } from "@/hooks/use-data";
+import { useWorkspace } from "@/hooks/use-workspace";
 import type { SkillDefinition } from "@/lib/types";
 import { SKILLS } from "@/lib/types";
 
@@ -42,23 +44,67 @@ function CopyButton({ text }: { text: string }) {
 function SkillCard({
 	skill,
 	agentNames,
+	onToggleActivation,
+	toggling,
 }: {
 	skill: SkillDefinition;
 	agentNames: string[];
+	onToggleActivation?: (active: boolean) => void;
+	toggling?: boolean;
 }) {
+	const isActivated = skill.activated === true;
+
+	const handleToggle = (e: React.MouseEvent) => {
+		e.preventDefault();
+		e.stopPropagation();
+		onToggleActivation?.(!isActivated);
+	};
+
 	return (
 		<Link href={`/skills/${skill.id}`}>
-			<div className="group rounded-sm border bg-card p-5 transition-all hover:shadow-e-2 hover:border-primary/30">
-				<div className="flex items-start justify-between">
-					<div>
-						<h3 className="font-normal text-sm group-hover:text-primary transition-colors">
-							{skill.name}
-						</h3>
+			<div
+				className={`group rounded-sm border bg-card p-5 transition-all hover:shadow-e-2 hover:border-primary/30 ${
+					isActivated ? "border-primary/40 bg-primary-soft/30" : ""
+				}`}
+			>
+				<div className="flex items-start justify-between gap-3">
+					<div className="min-w-0 flex-1">
+						<div className="flex items-center gap-2">
+							<h3 className="font-normal text-sm group-hover:text-primary transition-colors">
+								{skill.name}
+							</h3>
+							{isActivated && (
+								<Badge
+									variant="outline"
+									className="text-[10px] px-1.5 py-0 border-primary/40 text-primary shrink-0"
+								>
+									Active
+								</Badge>
+							)}
+						</div>
 						<p className="text-xs text-muted-foreground mt-0.5 line-clamp-2">
 							{skill.description}
 						</p>
 					</div>
-					<BookOpen className="h-4 w-4 text-muted-foreground shrink-0" />
+					{onToggleActivation !== undefined ? (
+						<div
+							className="shrink-0"
+							onClick={handleToggle}
+							role="button"
+							tabIndex={0}
+							onKeyDown={(e) =>
+								e.key === " " && handleToggle(e as unknown as React.MouseEvent)
+							}
+						>
+							<Switch
+								checked={isActivated}
+								disabled={toggling}
+								aria-label={isActivated ? "Deactivate skill" : "Activate skill"}
+							/>
+						</div>
+					) : (
+						<BookOpen className="h-4 w-4 text-muted-foreground shrink-0" />
+					)}
 				</div>
 
 				{/* Agents assigned */}
@@ -104,12 +150,38 @@ function SkillCard({
 }
 
 export default function SkillsPage() {
-	const { skills, loading, error: skillsError, refetch } = useSkills();
+	const { currentId: workspaceId } = useWorkspace();
+	const {
+		skills,
+		loading,
+		error: skillsError,
+		refetch,
+		activate,
+		deactivate,
+	} = useSkills(workspaceId);
 	const { agents } = useAgents();
 	const router = useRouter();
+	const [togglingIds, setTogglingIds] = useState<Set<string>>(new Set());
 
 	const getAgentNames = (agentIds: string[]) =>
 		agentIds.map((id) => agents.find((a) => a.id === id)?.name ?? id);
+
+	const handleToggle = async (skillId: string, active: boolean) => {
+		setTogglingIds((prev) => new Set(prev).add(skillId));
+		try {
+			if (active) {
+				await activate(skillId);
+			} else {
+				await deactivate(skillId);
+			}
+		} finally {
+			setTogglingIds((prev) => {
+				const next = new Set(prev);
+				next.delete(skillId);
+				return next;
+			});
+		}
+	};
 
 	if (loading) {
 		return (
@@ -151,6 +223,9 @@ export default function SkillsPage() {
 		);
 	}
 
+	const activatedSkills = skills.filter((s) => s.activated === true);
+	const availableSkills = skills.filter((s) => s.activated !== true);
+
 	return (
 		<div className="space-y-6">
 			<BreadcrumbNav items={[{ label: "Skills Library" }]} />
@@ -160,6 +235,15 @@ export default function SkillsPage() {
 					<h1 className="text-xl font-normal">Skills Library</h1>
 					<p className="text-sm text-muted-foreground mt-0.5">
 						{skills.length} skill{skills.length !== 1 ? "s" : ""} available
+						{activatedSkills.length > 0 && (
+							<>
+								{" "}
+								·{" "}
+								<span className="text-primary">
+									{activatedSkills.length} active
+								</span>
+							</>
+						)}
 					</p>
 				</div>
 				<Tip content="Create a new skill">
@@ -182,14 +266,58 @@ export default function SkillsPage() {
 					onAction={() => router.push("/skills/new")}
 				/>
 			) : (
-				<div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-					{skills.map((skill) => (
-						<SkillCard
-							key={skill.id}
-							skill={skill}
-							agentNames={getAgentNames(skill.agentIds)}
-						/>
-					))}
+				<div className="space-y-6">
+					{/* Active skills */}
+					{activatedSkills.length > 0 && (
+						<div className="space-y-3">
+							<div className="flex items-center gap-2">
+								<Zap className="h-3.5 w-3.5 text-primary" />
+								<h2 className="text-sm font-normal text-primary">
+									Active for this workspace
+								</h2>
+							</div>
+							<div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+								{activatedSkills.map((skill) => (
+									<SkillCard
+										key={skill.id}
+										skill={skill}
+										agentNames={getAgentNames(skill.agentIds)}
+										onToggleActivation={(active) =>
+											handleToggle(skill.id, active)
+										}
+										toggling={togglingIds.has(skill.id)}
+									/>
+								))}
+							</div>
+						</div>
+					)}
+
+					{/* Available skills */}
+					{availableSkills.length > 0 && (
+						<div className="space-y-3">
+							{activatedSkills.length > 0 && (
+								<div className="flex items-center gap-2">
+									<BookOpen className="h-3.5 w-3.5 text-muted-foreground" />
+									<h2 className="text-sm font-normal text-muted-foreground">
+										Available
+									</h2>
+								</div>
+							)}
+							<div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+								{availableSkills.map((skill) => (
+									<SkillCard
+										key={skill.id}
+										skill={skill}
+										agentNames={getAgentNames(skill.agentIds)}
+										onToggleActivation={(active) =>
+											handleToggle(skill.id, active)
+										}
+										toggling={togglingIds.has(skill.id)}
+									/>
+								))}
+							</div>
+						</div>
+					)}
 				</div>
 			)}
 

@@ -3,7 +3,6 @@ import {
 	ensureDocMaintainerAgentForWorkspace,
 	getAgents,
 	mutateAgents,
-	mutateSkillsLibrary,
 	mutateTasks,
 } from "@/lib/data";
 import {
@@ -11,6 +10,8 @@ import {
 	paginateItems,
 	parsePaginationParams,
 } from "@/lib/paginate";
+import { getGlobalSkillDir, getGlobalSkillsDir } from "@/lib/paths";
+import { readAllSkills, writeSkillFile } from "@/lib/skill-files";
 import { syncAgentCommand } from "@/lib/sync-commands";
 import type { AgentDefinition } from "@/lib/types";
 import {
@@ -52,6 +53,7 @@ export async function GET(request: Request) {
 }
 
 export async function POST(request: Request) {
+	const workspaceId = await applyWorkspaceContext();
 	const validation = await validateBody(request, agentCreateSchema);
 	if (!validation.success) return validation.error;
 	const body = validation.data;
@@ -88,7 +90,7 @@ export async function POST(request: Request) {
 
 	// Side effect: regenerate command file
 	try {
-		await syncAgentCommand(newAgent);
+		await syncAgentCommand(newAgent, workspaceId);
 	} catch {
 		// Non-fatal: command sync failure shouldn't break the API
 	}
@@ -97,6 +99,7 @@ export async function POST(request: Request) {
 }
 
 export async function PUT(request: Request) {
+	const workspaceId = await applyWorkspaceContext();
 	const validation = await validateBody(request, agentUpdateSchema);
 	if (!validation.success) return validation.error;
 	const body = validation.data;
@@ -121,7 +124,7 @@ export async function PUT(request: Request) {
 
 	// Side effect: regenerate command file
 	try {
-		await syncAgentCommand(updatedAgent);
+		await syncAgentCommand(updatedAgent, workspaceId);
 	} catch {
 		// Non-fatal
 	}
@@ -201,15 +204,16 @@ export async function DELETE(request: Request) {
 		}
 	});
 
-	// Clean up agentIds in skills
-	await mutateSkillsLibrary(async (data) => {
-		for (const skill of data.skills) {
-			if (skill.agentIds.includes(id)) {
-				skill.agentIds = skill.agentIds.filter((a) => a !== id);
-				skill.updatedAt = new Date().toISOString();
-			}
+	// Clean up agentIds in skills (SKILL.md files in global store)
+	const skillsDir = getGlobalSkillsDir();
+	const allSkills = await readAllSkills(skillsDir);
+	for (const skill of allSkills) {
+		if (skill.agentIds.includes(id)) {
+			skill.agentIds = skill.agentIds.filter((a) => a !== id);
+			const skillDir = getGlobalSkillDir(skill.id);
+			await writeSkillFile(skillDir, skill);
 		}
-	});
+	}
 
 	return NextResponse.json({ ok: true });
 }

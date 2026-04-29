@@ -14,23 +14,7 @@ import {
 import { readdir, stat, unlink } from "node:fs/promises";
 import path from "node:path";
 import cron from "node-cron";
-import { DATA_DIR } from "./paths";
-
-// Get base directory for script resolution.
-// Priority: MANDIO_INSTALL_DIR env var > __dirname-based > process.cwd() fallback.
-function getBaseDir(): string {
-	// CLI wrapper sets MANDIO_INSTALL_DIR when installed as npm package
-	if (process.env.MANDIO_INSTALL_DIR) {
-		return process.env.MANDIO_INSTALL_DIR;
-	}
-	// __dirname-relative: up from lib/ to package root
-	const packageRoot = path.resolve(__dirname, "..", "..");
-	if (existsSync(path.join(packageRoot, "scripts", "daemon"))) {
-		return packageRoot;
-	}
-	// Fallback for dev compatibility (pnpm dev)
-	return process.cwd();
-}
+import { DATA_DIR, getBaseDir } from "./paths";
 
 const GRACE_MS = 60 * 60 * 1000; // 1 hour
 const LOG_RETENTION_MS = 7 * 24 * 60 * 60 * 1000; // 7 days

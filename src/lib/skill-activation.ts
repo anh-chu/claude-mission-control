@@ -1,0 +1,170 @@
+import { existsSync, lstatSync, readdirSync, readlinkSync } from "node:fs";
+import {
+	lstat,
+	mkdir,
+	readdir,
+	readlink,
+	symlink,
+	unlink,
+} from "node:fs/promises";
+import path from "node:path";
+import {
+	getGlobalSkillDir,
+	getGlobalSkillsDir,
+	getWorkspaceSkillLink,
+	getWorkspaceSkillsDir,
+	MANDIO_SKILL_PREFIX,
+} from "./paths";
+import { listSkillIds } from "./skill-files";
+
+/** Activate a skill for a workspace (create directory symlink) */
+export async function activateSkill(
+	workspaceId: string,
+	skillId: string,
+): Promise<void> {
+	const globalDir = getGlobalSkillDir(skillId);
+	if (!existsSync(globalDir)) {
+		throw new Error(`Skill ${skillId} not found in global store`);
+	}
+	const linkPath = getWorkspaceSkillLink(workspaceId, skillId);
+	const parentDir = path.dirname(linkPath);
+	await mkdir(parentDir, { recursive: true });
+
+	// Remove existing link if present (idempotent)
+	try {
+		const st = await lstat(linkPath);
+		if (st.isSymbolicLink()) {
+			await unlink(linkPath); // remove old/broken symlink
+		} else {
+			throw new Error(`Skill path exists and is not a symlink: ${linkPath}`);
+		}
+	} catch (err: unknown) {
+		const code =
+			err && typeof err === "object" && "code" in err
+				? (err as { code: string }).code
+				: undefined;
+		if (code !== "ENOENT") throw err;
+		// doesn't exist — fine, proceed to create
+	}
+	await symlink(globalDir, linkPath, "dir");
+}
+
+/** Deactivate a skill for a workspace (remove symlink) */
+export async function deactivateSkill(
+	workspaceId: string,
+	skillId: string,
+): Promise<void> {
+	const linkPath = getWorkspaceSkillLink(workspaceId, skillId);
+	try {
+		const stats = await lstat(linkPath);
+		if (stats.isSymbolicLink()) {
+			await unlink(linkPath);
+		}
+	} catch (err: unknown) {
+		const code =
+			err && typeof err === "object" && "code" in err
+				? (err as { code: string }).code
+				: undefined;
+		if (err instanceof Error && err.message.includes("not a symlink"))
+			throw err;
+		if (code !== "ENOENT") throw err;
+		// Already gone — fine
+	}
+}
+
+/** List activated skill IDs for a workspace (strips mandio- prefix) */
+export async function listActivatedSkills(
+	workspaceId: string,
+): Promise<string[]> {
+	const dir = getWorkspaceSkillsDir(workspaceId);
+	if (!existsSync(dir)) return [];
+	const entries = await readdir(dir, { withFileTypes: true });
+	const ids: string[] = [];
+	for (const entry of entries) {
+		if (entry.name.startsWith(MANDIO_SKILL_PREFIX)) {
+			// Check if symlink is valid (not broken)
+			const fullPath = path.join(dir, entry.name);
+			try {
+				const stats = await lstat(fullPath);
+				if (stats.isSymbolicLink()) {
+					const target = await readlink(fullPath);
+					const resolved = path.isAbsolute(target)
+						? target
+						: path.resolve(dir, target);
+					if (existsSync(resolved)) {
+						ids.push(entry.name.slice(MANDIO_SKILL_PREFIX.length));
+					} else {
+						console.warn(`Broken skill symlink (target missing): ${fullPath}`);
+					}
+				}
+			} catch {
+				// broken symlink — skip, log warning
+				console.warn(`Broken skill symlink: ${fullPath}`);
+			}
+		}
+	}
+	return ids;
+}
+
+/** Check if a skill is activated for a workspace */
+export async function isSkillActivated(
+	workspaceId: string,
+	skillId: string,
+): Promise<boolean> {
+	const linkPath = getWorkspaceSkillLink(workspaceId, skillId);
+	try {
+		const stats = await lstat(linkPath);
+		return stats.isSymbolicLink();
+	} catch {
+		return false;
+	}
+}
+
+/** List activated skill IDs for a workspace synchronously (strips mandio- prefix) */
+export function listActivatedSkillsSync(workspaceId: string): string[] {
+	const dir = getWorkspaceSkillsDir(workspaceId);
+	if (!existsSync(dir)) return [];
+	const entries = readdirSync(dir, { withFileTypes: true });
+	const ids: string[] = [];
+	for (const entry of entries) {
+		if (entry.name.startsWith(MANDIO_SKILL_PREFIX)) {
+			const fullPath = path.join(dir, entry.name);
+			try {
+				const stats = lstatSync(fullPath);
+				if (stats.isSymbolicLink()) {
+					const target = readlinkSync(fullPath);
+					const resolved = path.isAbsolute(target)
+						? target
+						: path.resolve(dir, target);
+					if (existsSync(resolved)) {
+						ids.push(entry.name.slice(MANDIO_SKILL_PREFIX.length));
+					} else {
+						console.warn(`Broken skill symlink (target missing): ${fullPath}`);
+					}
+				}
+			} catch {
+				console.warn(`Broken skill symlink: ${fullPath}`);
+			}
+		}
+	}
+	return ids;
+}
+
+/** Activate all global skills for a workspace */
+export async function activateAllSkills(workspaceId: string): Promise<void> {
+	const globalDir = getGlobalSkillsDir();
+	const skillIds = await listSkillIds(globalDir);
+	for (const id of skillIds) {
+		await activateSkill(workspaceId, id);
+	}
+}
+
+/** Remove all workspace symlinks for a specific skill across all workspaces */
+export async function deactivateSkillFromAllWorkspaces(
+	skillId: string,
+	workspaceIds: string[],
+): Promise<void> {
+	for (const wsId of workspaceIds) {
+		await deactivateSkill(wsId, skillId);
+	}
+}

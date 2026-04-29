@@ -36,7 +36,6 @@ describe("ensureWorkspaceDir", () => {
 			"inbox.json",
 			"decisions.json",
 			"agents.json",
-			"skills-library.json",
 			"active-runs.json",
 			"daemon-config.json",
 		];
@@ -59,13 +58,11 @@ describe("ensureWorkspaceDir", () => {
 		expect(ids).toContain("researcher");
 	});
 
-	it("seeds skills-library from artifacts (not empty)", async () => {
-		const raw = await readFile(
-			path.join(WS_DIR, "skills-library.json"),
-			"utf-8",
-		);
-		const data = JSON.parse(raw);
-		expect(data.skills.length).toBeGreaterThan(0);
+	it("seeds global skills from artifacts", async () => {
+		// Skills are now stored as SKILL.md files in the global skills dir
+		const { getGlobalSkillsDir } = await import("@/lib/paths");
+		const globalSkillsDir = getGlobalSkillsDir();
+		expect(existsSync(globalSkillsDir)).toBe(true);
 	});
 
 	it("seeds daemon-config from artifacts (not empty object)", async () => {

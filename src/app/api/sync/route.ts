@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
-import { syncAllAgentCommands, syncAllSkillFiles } from "@/lib/sync-commands";
+import { syncAllAgentCommands } from "@/lib/sync-commands";
+import { applyWorkspaceContext } from "@/lib/workspace-context";
 
 export const dynamic = "force-dynamic";
 
@@ -8,12 +9,12 @@ export const dynamic = "force-dynamic";
  * from the agent registry and skills library JSON data.
  */
 export async function POST() {
+	const workspaceId = await applyWorkspaceContext();
 	try {
-		await syncAllAgentCommands();
-		await syncAllSkillFiles();
+		await syncAllAgentCommands(workspaceId);
 		return NextResponse.json({
 			ok: true,
-			message: "All agent commands and skill files synced.",
+			message: "All agent commands synced.",
 		});
 	} catch (err) {
 		const message = err instanceof Error ? err.message : "Unknown error";

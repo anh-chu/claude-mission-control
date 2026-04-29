@@ -40,6 +40,14 @@ const eventTypeEnum = z.enum([
 
 // ─── Shared limits (exported for frontend validation) ──────────────────────────
 
+/** Safe ID: alphanumeric, hyphens, underscores, 1-80 chars */
+export const safeId = z
+	.string()
+	.regex(
+		/^[a-zA-Z0-9_-]{1,80}$/,
+		"ID must be alphanumeric with hyphens/underscores, max 80 chars",
+	);
+
 /** Default max items returned by GET endpoints when no ?limit is specified */
 export const DEFAULT_LIMIT = 200;
 
@@ -337,7 +345,7 @@ export const agentUpdateSchema = z.object({
 // ─── Skill schemas ──────────────────────────────────────────────────────────
 
 export const skillCreateSchema = z.object({
-	id: z.string().optional(),
+	id: safeId.optional(),
 	name: z.string().min(1, "Name is required").max(LIMITS.TITLE),
 	description: z.string().max(LIMITS.DESCRIPTION).optional().default(""),
 	content: z.string().max(50000).optional().default(""),
@@ -349,8 +357,14 @@ export const skillCreateSchema = z.object({
 		.default([]),
 });
 
+export const skillActivateSchema = z.object({
+	skillId: safeId,
+	workspaceId: safeId,
+	active: z.boolean(),
+});
+
 export const skillUpdateSchema = z.object({
-	id: z.string().min(1, "Skill ID is required"),
+	id: safeId,
 	name: z.string().min(1).max(LIMITS.TITLE).optional(),
 	description: z.string().max(LIMITS.DESCRIPTION).optional(),
 	content: z.string().max(50000).optional(),

@@ -22,6 +22,7 @@ function useDataResource<T extends { id: string }>(
 	dataKey: string,
 	label: string,
 	pollInterval?: number,
+	getQueryString?: string,
 ) {
 	const [items, setItems] = useState<T[]>([]);
 	const [loading, setLoading] = useState(true);
@@ -32,7 +33,10 @@ function useDataResource<T extends { id: string }>(
 		try {
 			// Only show loading spinner on initial fetch, not on background polls
 			if (!initialLoadDone.current) setLoading(true);
-			const res = await apiFetch(`/api/${endpoint}`);
+			const url = getQueryString
+				? `/api/${endpoint}?${getQueryString}`
+				: `/api/${endpoint}`;
+			const res = await apiFetch(url);
 			if (!res.ok) throw new Error(`Failed to fetch ${endpoint}`);
 			const json = await res.json();
 			// Support both new envelope { data: [...] } and legacy { [dataKey]: [...] }
@@ -44,7 +48,7 @@ function useDataResource<T extends { id: string }>(
 		} finally {
 			setLoading(false);
 		}
-	}, [endpoint, dataKey]);
+	}, [endpoint, dataKey, getQueryString]);
 
 	// Initial fetch + optional polling
 	useEffect(() => {
@@ -350,13 +354,49 @@ export function useAgents() {
 	return { agents, ...rest };
 }
 
-export function useSkills() {
-	const { items: skills, ...rest } = useDataResource<SkillDefinition>(
+export function useSkills(workspaceId?: string) {
+	const getQueryString = workspaceId
+		? `workspaceId=${encodeURIComponent(workspaceId)}`
+		: undefined;
+	const {
+		items: skills,
+		refetch,
+		...rest
+	} = useDataResource<SkillDefinition>(
 		"skills",
 		"skills",
 		"Skill",
+		undefined,
+		getQueryString,
 	);
-	return { skills, ...rest };
+
+	const activate = useCallback(
+		async (skillId: string) => {
+			if (!workspaceId) return;
+			await apiFetch("/api/skills/activate", {
+				method: "POST",
+				headers: { "Content-Type": "application/json" },
+				body: JSON.stringify({ skillId, workspaceId, active: true }),
+			});
+			await refetch();
+		},
+		[workspaceId, refetch],
+	);
+
+	const deactivate = useCallback(
+		async (skillId: string) => {
+			if (!workspaceId) return;
+			await apiFetch("/api/skills/activate", {
+				method: "POST",
+				headers: { "Content-Type": "application/json" },
+				body: JSON.stringify({ skillId, workspaceId, active: false }),
+			});
+			await refetch();
+		},
+		[workspaceId, refetch],
+	);
+
+	return { skills, refetch, ...rest, activate, deactivate };
 }
 
 export function useInitiatives() {

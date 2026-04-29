@@ -1,13 +1,28 @@
 import { existsSync } from "node:fs";
-import { copyFile, cp, mkdir, readFile, writeFile } from "node:fs/promises";
+import {
+	copyFile,
+	cp,
+	mkdir,
+	readdir,
+	readFile,
+	rename,
+	writeFile,
+} from "node:fs/promises";
 import path from "node:path";
 import { Mutex } from "async-mutex";
 import {
 	DATA_DIR,
+	getArtifactsSkillsDir,
+	getBaseDir,
 	getDefaultWikiDir,
+	getGlobalSkillDir,
+	getGlobalSkillsDir,
 	getWikiDir,
 	getWikiPathFile,
+	getWorkspaceDir,
 } from "./paths";
+import { activateAllSkills, activateSkill } from "./skill-activation";
+import { writeSkillFile } from "./skill-files";
 import type {
 	ActiveRunsFile,
 	ActivityLogFile,
@@ -30,9 +45,40 @@ export const DOC_MAINTAINER_AGENT_INSTRUCTIONS =
 // ─── Workspace path helpers ───────────────────────────────────────────────────
 
 let _currentWorkspaceId = "default";
+const _migratedWorkspaces = new Set<string>();
 
 export function setCurrentWorkspace(id: string): void {
 	_currentWorkspaceId = id;
+}
+
+/**
+ * Ensure global skills are seeded and workspace skills are migrated.
+ * Safe to call repeatedly — tracks already-migrated workspaces in memory
+ * and uses .skills-migrated sentinel on disk for cross-restart idempotency.
+ */
+export async function ensureSkillsMigrated(workspaceId: string): Promise<void> {
+	if (_migratedWorkspaces.has(workspaceId)) return;
+
+	const wsDir = getWorkspaceDataDir(workspaceId);
+	const sentinel = path.join(wsDir, ".skills-migrated");
+
+	// Seed global skills (per-skill, skip existing)
+	await seedGlobalSkills();
+
+	// Run migration if sentinel doesn't exist yet
+	if (!existsSync(sentinel)) {
+		await migrateSkillsToFiles(workspaceId);
+		try {
+			await writeFile(sentinel, new Date().toISOString(), "utf-8");
+		} catch (err) {
+			console.warn(
+				`[data] Failed to write .skills-migrated sentinel for workspace ${workspaceId}:`,
+				err,
+			);
+		}
+	}
+
+	_migratedWorkspaces.add(workspaceId);
 }
 
 export function getWorkspaceDataDir(workspaceId: string): string {
@@ -41,22 +87,6 @@ export function getWorkspaceDataDir(workspaceId: string): string {
 
 function filePath(name: string): string {
 	return path.join(getWorkspaceDataDir(_currentWorkspaceId), name);
-}
-
-// Get base directory for artifacts resolution.
-// Priority: MANDIO_INSTALL_DIR env var > __dirname-based > process.cwd() fallback.
-function getBaseDir(): string {
-	// CLI wrapper sets MANDIO_INSTALL_DIR when installed as npm package
-	if (process.env.MANDIO_INSTALL_DIR) {
-		return process.env.MANDIO_INSTALL_DIR;
-	}
-	// __dirname-relative: up from lib/ to package root
-	const packageRoot = path.resolve(__dirname, "..", "..");
-	if (existsSync(path.join(packageRoot, "artifacts"))) {
-		return packageRoot;
-	}
-	// Fallback for dev compatibility (pnpm dev)
-	return process.cwd();
 }
 
 // Lazy-initialized artifacts directory.
@@ -112,11 +142,6 @@ export async function ensureWorkspaceDir(workspaceId: string): Promise<void> {
 			artifact: path.join(getArtifactsDir(), "agents.json"),
 			fallback: { agents: [] },
 		},
-		{
-			name: "skills-library.json",
-			artifact: path.join(getArtifactsDir(), "skills-library.json"),
-			fallback: { skills: [] },
-		},
 		{ name: "active-runs.json", fallback: { runs: [] } },
 		{
 			name: "daemon-config.json",
@@ -152,6 +177,9 @@ export async function ensureWorkspaceDir(workspaceId: string): Promise<void> {
 	// Bootstrap wiki structure for llm-wiki-pm skill
 	await initWikiDir(workspaceId);
 	await ensureDocMaintainerAgentForWorkspace(workspaceId);
+
+	// Seed and migrate global skills
+	await ensureSkillsMigrated(workspaceId);
 }
 
 // ─── Wiki bootstrap (plugin-first) ──────────────────────────────────────────
@@ -171,8 +199,11 @@ export async function initWikiDir(workspaceId: string): Promise<void> {
 			`${wikiDir !== defaultDir ? wikiDir : defaultDir}\n`,
 			"utf-8",
 		);
-	} catch {
-		// non-fatal: plugin falls back to WIKI_PATH env var
+	} catch (err) {
+		console.warn(
+			`[data] Failed to write .wiki-path sentinel for workspace ${workspaceId}:`,
+			err,
+		);
 	}
 }
 
@@ -193,7 +224,6 @@ const fileMutexes = {
 	inbox: new Mutex(),
 	decisions: new Mutex(),
 	agents: new Mutex(),
-	skillsLibrary: new Mutex(),
 	activeRuns: new Mutex(),
 	daemonConfig: new Mutex(),
 };
@@ -311,15 +341,6 @@ export async function getAgents(): Promise<AgentsFile> {
 	}
 }
 
-export async function getSkillsLibrary(): Promise<SkillsLibraryFile> {
-	try {
-		const raw = await readFile(filePath("skills-library.json"), "utf-8");
-		return JSON.parse(raw) as SkillsLibraryFile;
-	} catch {
-		return { skills: [] };
-	}
-}
-
 export async function getActiveRuns(): Promise<ActiveRunsFile> {
 	try {
 		const raw = await readFile(filePath("active-runs.json"), "utf-8");
@@ -370,6 +391,68 @@ export async function getDaemonConfig(): Promise<Record<string, unknown>> {
 	}
 }
 
+// ─── Global skills seeding and migration ───────────────────────────────────
+
+// Seed global skills directory from package artifacts.
+async function seedGlobalSkills(): Promise<void> {
+	const globalSkillsDir = getGlobalSkillsDir();
+	await mkdir(globalSkillsDir, { recursive: true });
+
+	const pkgSkillsSrc = getArtifactsSkillsDir();
+	if (!existsSync(pkgSkillsSrc)) return;
+
+	// Seed individual skills that are missing (not all-or-nothing)
+	const entries = await readdir(pkgSkillsSrc, { withFileTypes: true });
+	for (const entry of entries) {
+		if (!entry.isDirectory()) continue;
+		const dest = path.join(globalSkillsDir, entry.name);
+		if (existsSync(dest)) continue; // user already has this skill
+		await cp(path.join(pkgSkillsSrc, entry.name), dest, { recursive: true });
+	}
+}
+
+// Migrate legacy skills-library.json to SKILL.md files and activate them.
+async function migrateSkillsToFiles(workspaceId: string): Promise<void> {
+	const wsDir = getWorkspaceDir(workspaceId);
+	const legacyFile = path.join(wsDir, "skills-library.json");
+
+	let skillsData: SkillsLibraryFile;
+	try {
+		const raw = await readFile(legacyFile, "utf-8");
+		skillsData = JSON.parse(raw) as SkillsLibraryFile;
+	} catch {
+		// No legacy file — nothing to migrate
+		return;
+	}
+
+	// Migrate each skill to global store, tracking which were migrated from legacy
+	const migratedIds: string[] = [];
+	for (const skill of skillsData.skills) {
+		const skillDir = getGlobalSkillDir(skill.id);
+		if (existsSync(path.join(skillDir, "SKILL.md"))) {
+			// Skill already exists in global store — still activate for this workspace
+			migratedIds.push(skill.id);
+			continue;
+		}
+		await writeSkillFile(skillDir, {
+			id: skill.id,
+			name: skill.name,
+			description: skill.description,
+			content: skill.instructions,
+			tags: skill.tags || [],
+			agentIds: skill.agentIds || [],
+		});
+		migratedIds.push(skill.id);
+	}
+
+	// Activate only the skills this workspace had (not all global skills)
+	for (const id of migratedIds) {
+		await activateSkill(workspaceId, id);
+	}
+
+	// Rename legacy file to mark migration complete
+	await rename(legacyFile, `${legacyFile}.migrated`);
+}
 // ─── Save functions (mutex-protected to prevent concurrent write corruption) ──
 
 export async function saveTasks(data: TasksFile): Promise<void> {
@@ -521,23 +604,6 @@ export async function mutateAgents<T>(
 		}
 		const result = await fn(data);
 		await _writeJson("agents.json", data);
-		return result;
-	});
-}
-
-export async function mutateSkillsLibrary<T>(
-	fn: (data: SkillsLibraryFile) => Promise<T>,
-): Promise<T> {
-	return fileMutexes.skillsLibrary.runExclusive(async () => {
-		let data: SkillsLibraryFile;
-		try {
-			const raw = await readFile(filePath("skills-library.json"), "utf-8");
-			data = JSON.parse(raw) as SkillsLibraryFile;
-		} catch {
-			data = { skills: [] };
-		}
-		const result = await fn(data);
-		await _writeJson("skills-library.json", data);
 		return result;
 	});
 }

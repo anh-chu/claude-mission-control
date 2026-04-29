@@ -1,173 +1,225 @@
+import { rm } from "node:fs/promises";
+import path from "node:path";
 import { NextResponse } from "next/server";
-import { getAgents, getSkillsLibrary, mutateSkillsLibrary } from "@/lib/data";
+import { getAgents, getWorkspaces } from "@/lib/data";
+import { getGlobalSkillDir, getGlobalSkillsDir } from "@/lib/paths";
 import {
-	CACHE_HEADERS,
-	paginateItems,
-	parsePaginationParams,
-} from "@/lib/paginate";
-import { syncAgentCommand, syncSkillFile } from "@/lib/sync-commands";
+	activateSkill as _activateSkill,
+	deactivateSkillFromAllWorkspaces,
+	listActivatedSkills,
+} from "@/lib/skill-activation";
+import {
+	readAllSkills,
+	readSkillFile,
+	writeSkillFile,
+} from "@/lib/skill-files";
+import { syncAgentCommand } from "@/lib/sync-commands";
 import type { SkillDefinition } from "@/lib/types";
 import { generateId } from "@/lib/utils";
 import {
+	safeId,
 	skillCreateSchema,
 	skillUpdateSchema,
 	validateBody,
 } from "@/lib/validations";
+import { applyWorkspaceContext } from "@/lib/workspace-context";
 
 export const dynamic = "force-dynamic";
 
 export async function GET(request: Request) {
+	const workspaceId = await applyWorkspaceContext();
 	const { searchParams } = new URL(request.url);
 	const id = searchParams.get("id");
-	const agentId = searchParams.get("agentId");
 
-	const data = await getSkillsLibrary();
-	const total = data.skills.length;
-	let skills = data.skills;
-
+	// Single skill fetch: validate ID before path operations
 	if (id) {
-		skills = skills.filter((s) => s.id === id);
-	}
-	if (agentId) {
-		skills = skills.filter((s) => s.agentIds.includes(agentId));
+		const parseResult = safeId.safeParse(id);
+		if (!parseResult.success) {
+			return NextResponse.json({ error: "Invalid skill ID" }, { status: 400 });
+		}
+		const skillDir = getGlobalSkillDir(id);
+		const skill = await readSkillFile(skillDir);
+		if (!skill) {
+			return NextResponse.json({ error: "Skill not found" }, { status: 404 });
+		}
+		let activated = false;
+		if (workspaceId) {
+			const activatedIds = await listActivatedSkills(workspaceId);
+			activated = activatedIds.includes(id);
+		}
+		return NextResponse.json({ skill: { ...skill, activated } });
 	}
 
-	// Pagination
-	const pagination = parsePaginationParams(searchParams);
-	const paginated = paginateItems(skills, pagination, total);
-	skills = paginated.data;
+	// List all skills
+	const rawSkills = await readAllSkills(getGlobalSkillsDir());
 
-	return NextResponse.json(
-		{ data: skills, skills, meta: paginated.meta },
-		{ headers: CACHE_HEADERS },
-	);
+	let activatedIds: Set<string> | null = null;
+	if (workspaceId) {
+		const ids = await listActivatedSkills(workspaceId);
+		activatedIds = new Set(ids);
+	}
+
+	const skills: SkillDefinition[] = rawSkills.map((s) => ({
+		...s,
+		...(activatedIds !== null ? { activated: activatedIds.has(s.id) } : {}),
+	}));
+
+	return NextResponse.json({ skills });
 }
 
 export async function POST(request: Request) {
+	const workspaceId = await applyWorkspaceContext();
 	const validation = await validateBody(request, skillCreateSchema);
 	if (!validation.success) return validation.error;
 	const body = validation.data;
 
-	const newSkill = await mutateSkillsLibrary(async (data) => {
-		const now = new Date().toISOString();
-		const skill: SkillDefinition = {
-			id: body.id || generateId("skill"),
-			name: body.name,
-			description: body.description,
-			content: body.content,
-			agentIds: body.agentIds,
-			tags: body.tags,
-			createdAt: now,
-			updatedAt: now,
-		};
-
-		// Check for duplicate ID
-		if (data.skills.some((s) => s.id === skill.id)) {
-			return null;
+	// Use supplied ID if valid, otherwise generate a collision-safe ID
+	let id: string;
+	if (body.id) {
+		const parseResult = safeId.safeParse(body.id);
+		if (!parseResult.success) {
+			return NextResponse.json({ error: "Invalid skill ID" }, { status: 400 });
 		}
+		id = body.id;
+	} else {
+		id = generateId("skill");
+	}
+	const now = new Date().toISOString();
+	const skill: SkillDefinition = {
+		id,
+		name: body.name,
+		description: body.description,
+		content: body.content,
+		agentIds: body.agentIds,
+		tags: body.tags,
+		createdAt: now,
+		updatedAt: now,
+	};
 
-		data.skills.push(skill);
-		return skill;
-	});
+	const skillDir = getGlobalSkillDir(id);
+	await writeSkillFile(skillDir, skill);
 
-	if (!newSkill) {
-		return NextResponse.json(
-			{ error: `Skill with id "${body.id || "(generated)"}" already exists` },
-			{ status: 409 },
+	// Re-sync agent commands for linked agents
+	try {
+		const agentsData = await getAgents();
+		for (const agent of agentsData.agents) {
+			if (agent.status === "active" && skill.agentIds.includes(agent.id)) {
+				await syncAgentCommand(agent, workspaceId);
+			}
+		}
+	} catch (err) {
+		console.warn(
+			`[skills] POST: failed to sync agent commands for skill ${id}:`,
+			err,
 		);
 	}
 
-	// Side effects: regenerate skill file + re-sync affected agent commands
-	try {
-		await syncSkillFile(newSkill);
-		// Re-sync command files for agents linked to this skill
-		const agentsData = await getAgents();
-		for (const agent of agentsData.agents) {
-			if (agent.status === "active" && newSkill.agentIds.includes(agent.id)) {
-				await syncAgentCommand(agent);
-			}
-		}
-	} catch {
-		// Non-fatal: sync failure shouldn't break the API
-	}
-
-	return NextResponse.json(newSkill, { status: 201 });
+	return NextResponse.json(skill, { status: 201 });
 }
 
 export async function PUT(request: Request) {
+	const workspaceId = await applyWorkspaceContext();
 	const validation = await validateBody(request, skillUpdateSchema);
 	if (!validation.success) return validation.error;
 	const body = validation.data;
 
-	const result = await mutateSkillsLibrary(async (data) => {
-		const idx = data.skills.findIndex((s) => s.id === body.id);
-		if (idx === -1) {
-			return null;
-		}
+	// Validate ID before path operations
+	const parseResult = safeId.safeParse(body.id);
+	if (!parseResult.success) {
+		return NextResponse.json({ error: "Invalid skill ID" }, { status: 400 });
+	}
 
-		const previousAgentIds = data.skills[idx].agentIds;
-		data.skills[idx] = {
-			...data.skills[idx],
-			...body,
-			updatedAt: new Date().toISOString(),
-		};
-		return { updatedSkill: data.skills[idx], previousAgentIds };
-	});
-
-	if (!result) {
+	const skillDir = getGlobalSkillDir(body.id);
+	const existing = await readSkillFile(skillDir);
+	if (!existing) {
 		return NextResponse.json({ error: "Skill not found" }, { status: 404 });
 	}
 
-	const { updatedSkill, previousAgentIds } = result;
+	const previousAgentIds = existing.agentIds;
+	const updated: SkillDefinition = {
+		...existing,
+		...(body.name !== undefined ? { name: body.name } : {}),
+		...(body.description !== undefined
+			? { description: body.description }
+			: {}),
+		...(body.content !== undefined ? { content: body.content } : {}),
+		...(body.agentIds !== undefined ? { agentIds: body.agentIds } : {}),
+		...(body.tags !== undefined ? { tags: body.tags } : {}),
+		updatedAt: new Date().toISOString(),
+	};
 
-	// Side effects: regenerate skill file + re-sync affected agent commands
+	await writeSkillFile(skillDir, updated);
+
+	// Re-sync agents that were linked before OR after the update
 	try {
-		await syncSkillFile(updatedSkill);
-		// Re-sync agents that were linked before OR after the update
 		const affectedAgentIds = new Set([
 			...previousAgentIds,
-			...updatedSkill.agentIds,
+			...updated.agentIds,
 		]);
 		const agentsData = await getAgents();
 		for (const agent of agentsData.agents) {
 			if (agent.status === "active" && affectedAgentIds.has(agent.id)) {
-				await syncAgentCommand(agent);
+				await syncAgentCommand(agent, workspaceId);
 			}
 		}
-	} catch {
-		// Non-fatal
+	} catch (err) {
+		console.warn(
+			`[skills] PUT: failed to sync agent commands for skill ${body.id}:`,
+			err,
+		);
 	}
 
-	return NextResponse.json(updatedSkill);
+	return NextResponse.json(updated);
 }
 
 export async function DELETE(request: Request) {
+	const workspaceId = await applyWorkspaceContext();
 	const { searchParams } = new URL(request.url);
 	const id = searchParams.get("id");
 	if (!id) {
 		return NextResponse.json({ error: "id required" }, { status: 400 });
 	}
 
-	const deletedSkill = await mutateSkillsLibrary(async (data) => {
-		const skill = data.skills.find((s) => s.id === id);
-		data.skills = data.skills.filter((s) => s.id !== id);
-		return skill ?? null;
-	});
+	// Validate ID before path operations
+	const parseResult = safeId.safeParse(id);
+	if (!parseResult.success) {
+		return NextResponse.json({ error: "Invalid skill ID" }, { status: 400 });
+	}
 
-	// Side effect: re-sync agent commands that referenced the deleted skill
-	if (deletedSkill) {
+	const skillDir = getGlobalSkillDir(id);
+	const existing = await readSkillFile(skillDir);
+
+	if (existing) {
+		// Remove symlinks from all workspaces
+		try {
+			const workspacesData = await getWorkspaces();
+			const workspaceIds = workspacesData.workspaces.map((w) => w.id);
+			await deactivateSkillFromAllWorkspaces(id, workspaceIds);
+		} catch (err) {
+			console.warn(
+				`[skills] DELETE: failed to deactivate skill ${id} from workspaces:`,
+				err,
+			);
+		}
+
+		// Remove global skill directory
+		await rm(skillDir, { recursive: true, force: true });
+
+		// Re-sync agent commands that referenced the deleted skill
 		try {
 			const agentsData = await getAgents();
 			for (const agent of agentsData.agents) {
 				const wasLinked =
-					agent.skillIds.includes(id) ||
-					deletedSkill.agentIds.includes(agent.id);
+					agent.skillIds.includes(id) || existing.agentIds.includes(agent.id);
 				if (agent.status === "active" && wasLinked) {
-					await syncAgentCommand(agent);
+					await syncAgentCommand(agent, workspaceId);
 				}
 			}
-		} catch {
-			// Non-fatal
+		} catch (err) {
+			console.warn(
+				`[skills] DELETE: failed to sync agent commands after deleting skill ${id}:`,
+				err,
+			);
 		}
 	}
 

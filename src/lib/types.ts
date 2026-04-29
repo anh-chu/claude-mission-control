@@ -85,12 +85,23 @@ export interface SkillDefinition {
 	content: string;
 	agentIds: string[];
 	tags: string[];
+	activated?: boolean;
 	createdAt: string;
 	updatedAt: string;
 }
 
+// Legacy skills-library.json format (migrated to SKILL.md files)
+export interface LegacySkillDefinition {
+	id: string;
+	name: string;
+	description: string;
+	instructions: string;
+	agentIds: string[];
+	tags: string[];
+}
+
 export interface SkillsLibraryFile {
-	skills: SkillDefinition[];
+	skills: LegacySkillDefinition[];
 }
 
 // ─── AI Skills (slash commands) ───────────────────────────────────────────────

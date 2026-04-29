@@ -8,7 +8,6 @@ import {
 	getDecisions,
 	getInbox,
 	getProjects,
-	getSkillsLibrary,
 	getTasks,
 	getTasksArchive,
 	getWorkspaceDataDir,
@@ -190,14 +189,7 @@ describe("getAgents", () => {
 });
 
 // ─── Skills Library ──────────────────────────────────────────────────────────
-
-describe("getSkillsLibrary", () => {
-	it("reads skills-library.json and returns a SkillsLibraryFile object", async () => {
-		const data = await getSkillsLibrary();
-		expect(data).toHaveProperty("skills");
-		expect(Array.isArray(data.skills)).toBe(true);
-	});
-});
+// Skills are now stored as SKILL.md files; legacy getSkillsLibrary removed.
 
 // ─── Tasks Archive ────────────────────────────────────────────────────────────
 

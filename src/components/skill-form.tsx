@@ -8,17 +8,30 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { Switch } from "@/components/ui/switch";
 import { Textarea } from "@/components/ui/textarea";
 import { useAgents, useSkills } from "@/hooks/use-data";
 import type { SkillDefinition } from "@/lib/types";
+
+interface ActivationProps {
+	activated: boolean;
+	onToggle: () => void;
+	loading?: boolean;
+}
 
 interface SkillFormProps {
 	mode: "create" | "edit";
 	initialData?: SkillDefinition;
 	onDelete?: () => void;
+	activationProps?: ActivationProps;
 }
 
-export function SkillForm({ mode, initialData, onDelete }: SkillFormProps) {
+export function SkillForm({
+	mode,
+	initialData,
+	onDelete,
+	activationProps,
+}: SkillFormProps) {
 	const router = useRouter();
 	const { create: createSkill, update: updateSkill } = useSkills();
 	const { agents } = useAgents();
@@ -147,6 +160,19 @@ export function SkillForm({ mode, initialData, onDelete }: SkillFormProps) {
 					<ArrowLeft className="h-4 w-4" />
 				</Button>
 				<h1 className="text-xl font-normal flex-1">{pageTitle}</h1>
+				{!isCreate && activationProps && (
+					<div className="flex items-center gap-2">
+						<span className="text-xs text-muted-foreground">
+							{activationProps.activated ? "Active" : "Inactive"}
+						</span>
+						<Switch
+							checked={activationProps.activated}
+							onCheckedChange={activationProps.onToggle}
+							disabled={activationProps.loading}
+							aria-label="Toggle skill activation"
+						/>
+					</div>
+				)}
 				{!isCreate && onDelete && (
 					<Button
 						variant="destructive"

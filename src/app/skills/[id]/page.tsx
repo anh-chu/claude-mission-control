@@ -1,15 +1,24 @@
 "use client";
 
 import { useParams, useRouter } from "next/navigation";
+import { useState } from "react";
 import { BreadcrumbNav } from "@/components/breadcrumb-nav";
 import { SkillForm } from "@/components/skill-form";
 import { useSkills } from "@/hooks/use-data";
+import { useWorkspace } from "@/hooks/use-workspace";
 
 export default function SkillEditorPage() {
 	const params = useParams();
 	const skillId = params.id as string;
 	const router = useRouter();
-	const { skills, remove: deleteSkill } = useSkills();
+	const { currentId: workspaceId } = useWorkspace();
+	const {
+		skills,
+		remove: deleteSkill,
+		activate,
+		deactivate,
+	} = useSkills(workspaceId);
+	const [toggling, setToggling] = useState(false);
 
 	const skill = skills.find((s) => s.id === skillId);
 
@@ -33,5 +42,29 @@ export default function SkillEditorPage() {
 		router.push("/skills");
 	};
 
-	return <SkillForm mode="edit" initialData={skill} onDelete={handleDelete} />;
+	const handleToggleActivation = async () => {
+		setToggling(true);
+		try {
+			if (skill.activated) {
+				await deactivate(skill.id);
+			} else {
+				await activate(skill.id);
+			}
+		} finally {
+			setToggling(false);
+		}
+	};
+
+	return (
+		<SkillForm
+			mode="edit"
+			initialData={skill}
+			onDelete={handleDelete}
+			activationProps={{
+				activated: skill.activated === true,
+				onToggle: handleToggleActivation,
+				loading: toggling,
+			}}
+		/>
+	);
 }

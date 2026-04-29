@@ -1,7 +1,9 @@
 import { existsSync, readFileSync } from "node:fs";
 import path from "node:path";
+import { getGlobalSkillsDir, getWorkspaceDir } from "../../src/lib/paths";
+import { listActivatedSkillsSync } from "../../src/lib/skill-activation";
 // Paths relative to project root
-import { getWorkspaceDir } from "../../src/lib/paths";
+import { readAllSkillsSync, SkillFileData } from "../../src/lib/skill-files";
 import { logger } from "./logger";
 import { enforcePromptLimit, fenceTaskData } from "./security";
 import type { ProjectRunsFile } from "./types";
@@ -50,7 +52,31 @@ interface TaskDef {
 	estimatedMinutes: number | null;
 }
 
-// ─── Data Reading ────────────────────────────────────────────────────────────
+// ─── Skill Reading (Sync for daemon) ──────────────────────────────────────────
+
+function getLinkedSkills(agent: AgentDef, workspaceId: string): SkillDef[] {
+	const allSkills = readAllSkillsSync(getGlobalSkillsDir());
+	const activatedIds = listActivatedSkillsSync(workspaceId);
+	const seen = new Set<string>();
+	const result: SkillDef[] = [];
+
+	for (const skill of allSkills) {
+		if (!activatedIds.includes(skill.id)) continue;
+		const linkedByAgent = agent.skillIds.includes(skill.id);
+		const linkedBySkill = skill.agentIds.includes(agent.id);
+		if ((linkedByAgent || linkedBySkill) && !seen.has(skill.id)) {
+			seen.add(skill.id);
+			result.push({
+				id: skill.id,
+				name: skill.name,
+				content: skill.content,
+				agentIds: skill.agentIds,
+			});
+		}
+	}
+
+	return result;
+}
 
 function readJSON<T>(filename: string): T {
 	const filePath = path.join(getWorkspaceDir("default"), filename);
@@ -61,23 +87,6 @@ function readJSON<T>(filename: string): T {
 function getAgent(agentId: string): AgentDef | null {
 	const data = readJSON<{ agents: AgentDef[] }>("agents.json");
 	return data.agents.find((a) => a.id === agentId) ?? null;
-}
-
-function getLinkedSkills(agent: AgentDef): SkillDef[] {
-	const data = readJSON<{ skills: SkillDef[] }>("skills-library.json");
-	const seen = new Set<string>();
-	const result: SkillDef[] = [];
-
-	for (const skill of data.skills) {
-		const linkedByAgent = agent.skillIds.includes(skill.id);
-		const linkedBySkill = skill.agentIds.includes(agent.id);
-		if ((linkedByAgent || linkedBySkill) && !seen.has(skill.id)) {
-			seen.add(skill.id);
-			result.push(skill);
-		}
-	}
-
-	return result;
 }
 
 // ─── Prompt Construction ─────────────────────────────────────────────────────
@@ -407,13 +416,14 @@ export function buildTaskPrompt(
 	agentId: string,
 	task: TaskDef,
 	missionId?: string,
+	workspaceId: string = process.env.MANDIO_WORKSPACE_ID ?? "default",
 ): string {
 	const agent = getAgent(agentId);
 	if (!agent) {
 		throw new Error(`Agent not found: ${agentId}`);
 	}
 
-	const skills = getLinkedSkills(agent);
+	const skills = getLinkedSkills(agent, workspaceId);
 	const persona = buildAgentPersona(agent, skills);
 	const taskInstructions = fenceTaskData(buildTaskInstructions(task));
 	const sop = buildSOP(agentId, task);

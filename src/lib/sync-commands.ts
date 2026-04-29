@@ -1,12 +1,14 @@
 import { mkdir, writeFile } from "node:fs/promises";
 import path from "node:path";
-import { getAgents, getSkillsLibrary } from "./data";
+import { getAgents } from "./data";
+import { getGlobalSkillsDir } from "./paths";
+import { listActivatedSkills } from "./skill-activation";
+import { readAllSkills } from "./skill-files";
 import type { AgentDefinition, SkillDefinition } from "./types";
 
 // Workspace root is the project root (cwd)
 const WORKSPACE_ROOT = process.cwd();
 const COMMANDS_DIR = path.join(WORKSPACE_ROOT, ".claude", "commands");
-const SKILLS_DIR = path.join(WORKSPACE_ROOT, "skills");
 
 // ─── Agent Command Generation ──────────────────────────────────────────────
 
@@ -48,21 +50,19 @@ export function generateAgentCommandMarkdown(
 	return lines.join("\n");
 }
 
-/**
- * Resolves all skills linked to an agent from both directions:
- * 1. Skills referenced in the agent's `skillIds` array
- * 2. Skills that list the agent in their `agentIds` array
- * Returns deduplicated skills in stable order.
- */
-export async function syncAgentCommand(agent: AgentDefinition): Promise<void> {
+export async function syncAgentCommand(
+	agent: AgentDefinition,
+	workspaceId: string,
+): Promise<void> {
 	// Skip "me" — no command file needed for the human
 	if (agent.id === "me") return;
 
-	const skillsData = await getSkillsLibrary();
-	const allSkills = skillsData.skills;
+	const allSkills = await readAllSkills(getGlobalSkillsDir());
+	const activatedIds = await listActivatedSkills(workspaceId);
 	const linkedSkills = allSkills.filter(
 		(skill) =>
-			agent.skillIds.includes(skill.id) || skill.agentIds.includes(agent.id),
+			activatedIds.includes(skill.id) &&
+			(agent.skillIds.includes(skill.id) || skill.agentIds.includes(agent.id)),
 	);
 
 	const content = generateAgentCommandMarkdown(agent, linkedSkills);
@@ -74,45 +74,11 @@ export async function syncAgentCommand(agent: AgentDefinition): Promise<void> {
 /**
  * Syncs all active agent commands from the registry.
  */
-export async function syncAllAgentCommands(): Promise<void> {
+export async function syncAllAgentCommands(workspaceId: string): Promise<void> {
 	const data = await getAgents();
 	for (const agent of data.agents) {
 		if (agent.status === "active") {
-			await syncAgentCommand(agent);
+			await syncAgentCommand(agent, workspaceId);
 		}
-	}
-}
-
-// ─── Skill File Generation ──────────────────────────────────────────────────
-
-function generateSkillFileContent(skill: SkillDefinition): string {
-	const lines: string[] = [];
-	lines.push("---");
-	lines.push(`name: ${skill.id}`);
-	lines.push(`description: >`);
-	lines.push(`  ${skill.description}`);
-	lines.push("---");
-	lines.push("");
-	lines.push(skill.content);
-	return lines.join("\n");
-}
-
-/**
- * Writes/updates `skills/<skill.id>/SKILL.md` from skill data.
- */
-export async function syncSkillFile(skill: SkillDefinition): Promise<void> {
-	const content = generateSkillFileContent(skill);
-	const dir = path.join(SKILLS_DIR, skill.id);
-	await mkdir(dir, { recursive: true });
-	await writeFile(path.join(dir, "SKILL.md"), content, "utf-8");
-}
-
-/**
- * Syncs all skill files from the library.
- */
-export async function syncAllSkillFiles(): Promise<void> {
-	const data = await getSkillsLibrary();
-	for (const skill of data.skills) {
-		await syncSkillFile(skill);
 	}
 }

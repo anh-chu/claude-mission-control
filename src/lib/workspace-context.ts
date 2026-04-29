@@ -1,5 +1,5 @@
 import { headers } from "next/headers";
-import { setCurrentWorkspace } from "./data";
+import { ensureSkillsMigrated, setCurrentWorkspace } from "./data";
 
 /**
  * Call this at the top of every API route handler to scope
@@ -10,5 +10,6 @@ export async function applyWorkspaceContext(): Promise<string> {
 	const headersList = await headers();
 	const workspaceId = headersList.get("x-workspace-id") ?? "default";
 	setCurrentWorkspace(workspaceId);
+	await ensureSkillsMigrated(workspaceId);
 	return workspaceId;
 }
