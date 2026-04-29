@@ -46,7 +46,7 @@ interface InstalledPluginEntry {
 
 interface InstalledPluginsFile {
 	version: 2;
-	plugins: Record<string, InstalledPluginEntry>;
+	plugins: Record<string, InstalledPluginEntry[]>;
 }
 
 interface SettingsFile {
@@ -183,7 +183,11 @@ export async function listInstalledPlugins(): Promise<PluginInfo[]> {
 
 	const plugins: PluginInfo[] = [];
 
-	for (const [id, entry] of Object.entries(installedPlugins.plugins)) {
+	for (const [id, entries] of Object.entries(installedPlugins.plugins)) {
+		if (!Array.isArray(entries) || entries.length === 0) continue;
+
+		// Use first entry (most recent install)
+		const entry = entries[0];
 		const { name, marketplace } = parsePluginId(id);
 		const pluginDir = entry.installPath;
 
