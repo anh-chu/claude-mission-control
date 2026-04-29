@@ -8,6 +8,7 @@ import {
 	Layers,
 	LayoutDashboard,
 	Lightbulb,
+	Puzzle,
 	Terminal,
 	User,
 	Users,
@@ -41,6 +42,7 @@ const workbenchLinks = [
 	{ href: "/priority-matrix", label: "Tasks", icon: Grid2x2 },
 	{ href: "/crew", label: "Agents", icon: Users },
 	{ href: "/documents", label: "Documents", icon: FileText },
+	{ href: "/skills", label: "Extensions", icon: Puzzle },
 ];
 
 const utilityLinks = [
