@@ -218,36 +218,6 @@ function SkillCard({
 	);
 }
 
-function CopyCommandButton({
-	label,
-	command,
-}: {
-	label: string;
-	command: string;
-}) {
-	const [copied, setCopied] = useState(false);
-	const handleCopy = async () => {
-		await navigator.clipboard.writeText(command);
-		setCopied(true);
-		setTimeout(() => setCopied(false), 2000);
-	};
-	return (
-		<Button
-			variant="outline"
-			size="sm"
-			className="h-6 text-[11px] px-2 gap-1 shrink-0"
-			onClick={handleCopy}
-		>
-			{copied ? (
-				<Check className="h-3 w-3 text-success" />
-			) : (
-				<Copy className="h-3 w-3" />
-			)}
-			{copied ? "Copied!" : label}
-		</Button>
-	);
-}
-
 function PluginCard({ plugin }: { plugin: PluginInfo }) {
 	const caps = plugin.capabilities;
 	const capBadges: { label: string; key: string }[] = [
@@ -256,8 +226,6 @@ function PluginCard({ plugin }: { plugin: PluginInfo }) {
 		...(caps.hasSkills ? [{ label: "Skills", key: "skills" }] : []),
 		...(caps.hasAgents ? [{ label: "Agents", key: "agents" }] : []),
 	];
-	const installCmd = `claude plugin install ${plugin.id}`;
-	const uninstallCmd = `claude plugin uninstall ${plugin.id}`;
 
 	return (
 		<div className="rounded-sm border bg-card p-5 space-y-3">
@@ -328,10 +296,6 @@ function PluginCard({ plugin }: { plugin: PluginInfo }) {
 							<ExternalLink className="h-3 w-3" />
 						</a>
 					)}
-				</div>
-				<div className="flex items-center gap-1.5 shrink-0">
-					<CopyCommandButton label="Install" command={installCmd} />
-					<CopyCommandButton label="Uninstall" command={uninstallCmd} />
 				</div>
 			</div>
 		</div>
