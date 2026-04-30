@@ -24,6 +24,7 @@ import {
 } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
 import { useAgents, useInitiatives, useProjects } from "@/hooks/use-data";
+import { COLOR_SWATCHES } from "@/lib/constants";
 import type { Initiative, ProjectStatus } from "@/lib/types";
 
 const ProjectInitiativeCanvas = dynamic(
@@ -33,17 +34,6 @@ const ProjectInitiativeCanvas = dynamic(
 		),
 	{ ssr: false },
 );
-
-const COLOR_SWATCHES = [
-	"#fa520f",
-	"#fb6424",
-	"#ff8105",
-	"#ffa110",
-	"#ffb83e",
-	"#ffd06a",
-	"#ffd900",
-	"#1f1f1f",
-];
 
 function CreateInitiativeDialog({
 	open,
@@ -58,7 +48,7 @@ function CreateInitiativeDialog({
 }) {
 	const [title, setTitle] = useState("");
 	const [description, setDescription] = useState("");
-	const [color, setColor] = useState(COLOR_SWATCHES[0]);
+	const [color, setColor] = useState<string>(COLOR_SWATCHES[0]);
 	const [projectId, setProjectId] = useState<string>("none");
 	const [saving, setSaving] = useState(false);
 
@@ -232,7 +222,7 @@ export default function MapPage() {
 				<div>
 					<h1 className="text-xl font-normal">Map</h1>
 					<p className="text-sm text-muted-foreground">
-						Visualize projects and initiatives
+						Visualize projects, initiatives, and tasks
 					</p>
 				</div>
 				<div className="flex gap-2">

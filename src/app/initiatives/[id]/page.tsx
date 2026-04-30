@@ -11,10 +11,11 @@ import {
 	Plus,
 	Rocket,
 	Trash2,
+	X,
 } from "lucide-react";
 import Link from "next/link";
 import { useParams, useRouter } from "next/navigation";
-import { useState } from "react";
+import { useRef, useState } from "react";
 import { BreadcrumbNav } from "@/components/breadcrumb-nav";
 import { ConfirmDialog } from "@/components/confirm-dialog";
 import { MarkdownContent } from "@/components/markdown-content";
@@ -28,8 +29,14 @@ import {
 	DialogHeader,
 	DialogTitle,
 } from "@/components/ui/dialog";
+import { Input } from "@/components/ui/input";
+import {
+	Popover,
+	PopoverContent,
+	PopoverTrigger,
+} from "@/components/ui/popover";
 import { Skeleton } from "@/components/ui/skeleton";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+
 import {
 	useActivityLog,
 	useInitiatives,
@@ -37,6 +44,7 @@ import {
 	useProjects,
 } from "@/hooks/use-data";
 import { apiFetch } from "@/lib/api-client";
+import { COLOR_SWATCHES } from "@/lib/constants";
 import { showError, showSuccess } from "@/lib/toast";
 import type { InitiativeStatus, Task } from "@/lib/types";
 
@@ -150,10 +158,13 @@ export default function InitiativeDetailPage() {
 	const [deployingAll, setDeployingAll] = useState(false);
 
 	const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
+	const [tagInput, setTagInput] = useState("");
 	const [editingTitle, setEditingTitle] = useState(false);
 	const [titleDraft, setTitleDraft] = useState("");
 	const [editingDesc, setEditingDesc] = useState(false);
 	const [descDraft, setDescDraft] = useState("");
+	const cancelTitleRef = useRef(false);
+	const cancelDescRef = useRef(false);
 
 	const initiative = initiatives.find((i) => i.id === initiativeId);
 
@@ -283,10 +294,36 @@ export default function InitiativeDetailPage() {
 
 			<div className="space-y-3">
 				<div className="flex items-start gap-3 min-w-0">
-					<span
-						className="h-4 w-4 rounded-full shrink-0 mt-2"
-						style={{ backgroundColor: initiative.color }}
-					/>
+					<Popover>
+						<PopoverTrigger asChild>
+							<button
+								type="button"
+								className="h-4 w-4 rounded-full shrink-0 mt-2 cursor-pointer ring-offset-background transition-all hover:ring-2 hover:ring-ring hover:ring-offset-2"
+								style={{ backgroundColor: initiative.color }}
+								title="Click to change color"
+							/>
+						</PopoverTrigger>
+						<PopoverContent className="w-auto p-3" align="start">
+							<div className="flex flex-wrap gap-2">
+								{COLOR_SWATCHES.map((c) => (
+									<button
+										key={c}
+										type="button"
+										className="h-6 w-6 rounded-full border-2 transition-all"
+										style={{
+											backgroundColor: c,
+											borderColor:
+												initiative.color === c ? "white" : "transparent",
+											outline:
+												initiative.color === c ? `2px solid ${c}` : "none",
+											outlineOffset: "2px",
+										}}
+										onClick={() => update(initiative.id, { color: c })}
+									/>
+								))}
+							</div>
+						</PopoverContent>
+					</Popover>
 					<div className="min-w-0 flex-1 space-y-1">
 						{editingTitle ? (
 							<input
@@ -294,10 +331,24 @@ export default function InitiativeDetailPage() {
 								className="w-full text-2xl font-normal bg-transparent border-b border-primary outline-none"
 								value={titleDraft}
 								onChange={(e) => setTitleDraft(e.target.value)}
-								onBlur={handleSaveTitle}
+								onBlur={() => {
+									if (cancelTitleRef.current) {
+										cancelTitleRef.current = false;
+										return;
+									}
+									handleSaveTitle();
+								}}
 								onKeyDown={(e) => {
-									if (e.key === "Enter") handleSaveTitle();
-									if (e.key === "Escape") setEditingTitle(false);
+									if (e.key === "Enter") {
+										e.preventDefault();
+										e.currentTarget.blur();
+									}
+									if (e.key === "Escape") {
+										e.preventDefault();
+										cancelTitleRef.current = true;
+										setTitleDraft(initiative.title);
+										setEditingTitle(false);
+									}
 								}}
 							/>
 						) : (
@@ -319,9 +370,20 @@ export default function InitiativeDetailPage() {
 								value={descDraft}
 								rows={2}
 								onChange={(e) => setDescDraft(e.target.value)}
-								onBlur={handleSaveDesc}
+								onBlur={() => {
+									if (cancelDescRef.current) {
+										cancelDescRef.current = false;
+										return;
+									}
+									handleSaveDesc();
+								}}
 								onKeyDown={(e) => {
-									if (e.key === "Escape") setEditingDesc(false);
+									if (e.key === "Escape") {
+										e.preventDefault();
+										cancelDescRef.current = true;
+										setDescDraft(initiative.description ?? "");
+										setEditingDesc(false);
+									}
 								}}
 							/>
 						) : (
@@ -356,6 +418,57 @@ export default function InitiativeDetailPage() {
 								</Link>
 							</p>
 						)}
+						<div className="flex flex-wrap items-center gap-1.5 pt-1">
+							{(initiative.tags ?? []).map((tag) => (
+								<Badge
+									key={tag}
+									variant="secondary"
+									className="gap-1 pr-1 text-xs"
+								>
+									{tag}
+									<button
+										type="button"
+										onClick={() =>
+											update(initiative.id, {
+												tags: initiative.tags.filter((t) => t !== tag),
+											})
+										}
+										className="rounded-full hover:bg-muted-foreground/20 p-0.5 ml-0.5"
+									>
+										<X className="h-3 w-3" />
+									</button>
+								</Badge>
+							))}
+							<Input
+								className="h-6 w-24 text-xs px-1.5"
+								placeholder="Add tag…"
+								value={tagInput}
+								onChange={(e) => setTagInput(e.target.value)}
+								onKeyDown={(e) => {
+									if (e.key === "Enter" && tagInput.trim()) {
+										e.preventDefault();
+										const newTag = tagInput.trim();
+										if (!initiative.tags.includes(newTag)) {
+											update(initiative.id, {
+												tags: [...initiative.tags, newTag],
+											});
+										}
+										setTagInput("");
+									}
+								}}
+								onBlur={() => {
+									if (tagInput.trim()) {
+										const newTag = tagInput.trim();
+										if (!initiative.tags.includes(newTag)) {
+											update(initiative.id, {
+												tags: [...initiative.tags, newTag],
+											});
+										}
+										setTagInput("");
+									}
+								}}
+							/>
+						</div>
 					</div>
 				</div>
 
@@ -429,18 +542,14 @@ export default function InitiativeDetailPage() {
 				</div>
 			</div>
 
-			<Tabs defaultValue="tasks">
+			<div className="space-y-4">
 				<div className="flex items-center justify-between">
-					<TabsList>
-						<TabsTrigger value="tasks">
-							Tasks{" "}
-							{!loadingTasks && (
-								<span className="ml-1.5 text-xs opacity-60">
-									({tasks.length})
-								</span>
-							)}
-						</TabsTrigger>
-					</TabsList>
+					<h2 className="text-sm font-normal">
+						Tasks{" "}
+						{!loadingTasks && (
+							<span className="text-xs opacity-60">({tasks.length})</span>
+						)}
+					</h2>
 					{!loadingTasks && totalCount > 0 && (
 						<div className="flex items-center gap-1.5 text-xs text-muted-foreground">
 							<CheckCircle2 className="h-3.5 w-3.5 text-success" />
@@ -451,7 +560,7 @@ export default function InitiativeDetailPage() {
 					)}
 				</div>
 
-				<TabsContent value="tasks" className="mt-4">
+				<div>
 					<Card>
 						<CardHeader className="pb-3">
 							<div className="flex items-center justify-between">
@@ -511,8 +620,8 @@ export default function InitiativeDetailPage() {
 							)}
 						</CardContent>
 					</Card>
-				</TabsContent>
-			</Tabs>
+				</div>
+			</div>
 
 			<InitiativeActivitySection taskIds={initiative.taskIds} />
 
@@ -523,7 +632,6 @@ export default function InitiativeDetailPage() {
 					</DialogHeader>
 					<TaskForm
 						initial={{ initiativeId }}
-						projects={projects}
 						allTasks={tasks}
 						onSubmit={async (data: TaskFormData) => {
 							const res = await apiFetch("/api/tasks", {

@@ -8,12 +8,10 @@ import {
 	DialogHeader,
 	DialogTitle,
 } from "@/components/ui/dialog";
-import type { Project } from "@/lib/types";
 
 interface CreateTaskDialogProps {
 	open: boolean;
 	onOpenChange: (open: boolean) => void;
-	projects: Project[];
 	onSubmit: (data: TaskFormData) => void;
 	defaultValues?: Partial<TaskFormData>;
 }
@@ -21,7 +19,6 @@ interface CreateTaskDialogProps {
 export function CreateTaskDialog({
 	open,
 	onOpenChange,
-	projects,
 	onSubmit,
 	defaultValues,
 }: CreateTaskDialogProps) {
@@ -36,7 +33,6 @@ export function CreateTaskDialog({
 				</DialogHeader>
 				<TaskForm
 					initial={defaultValues}
-					projects={projects}
 					onSubmit={(data) => {
 						onSubmit(data);
 						onOpenChange(false);

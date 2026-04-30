@@ -13,32 +13,14 @@ import {
 } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import {
-	Select,
-	SelectContent,
-	SelectItem,
-	SelectTrigger,
-	SelectValue,
-} from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
 import { getAgentIcon } from "@/lib/agent-icons";
-import type { AgentDefinition, Project, ProjectStatus } from "@/lib/types";
-
-const PROJECT_COLORS = [
-	"#fa520f",
-	"#fb6424",
-	"#ff8105",
-	"#ffa110",
-	"#ffb83e",
-	"#ffd06a",
-	"#ffd900",
-	"#1f1f1f",
-];
+import { COLOR_SWATCHES } from "@/lib/constants";
+import type { AgentDefinition, ProjectStatus } from "@/lib/types";
 
 interface ProjectDialogProps {
 	open: boolean;
 	onOpenChange: (open: boolean) => void;
-	project?: Project;
 	agents: AgentDefinition[];
 	onSubmit: (data: {
 		name: string;
@@ -53,48 +35,27 @@ interface ProjectDialogProps {
 export function ProjectDialog({
 	open,
 	onOpenChange,
-	project,
 	agents,
 	onSubmit,
 }: ProjectDialogProps) {
-	const isEditMode = !!project;
 	const activeAgents = agents.filter((a) => a.status === "active");
 
-	// Initialize state based on mode
-	const [name, setName] = useState(project?.name ?? "");
-	const [description, setDescription] = useState(project?.description ?? "");
-	const [status, setStatus] = useState<ProjectStatus>(
-		project?.status ?? "active",
-	);
-	const [color, setColor] = useState(project?.color ?? PROJECT_COLORS[0]);
-	const [tags, setTags] = useState(project?.tags.join(", ") ?? "");
-	const [teamMembers, setTeamMembers] = useState<string[]>(
-		project?.teamMembers ?? [],
-	);
+	const [name, setName] = useState("");
+	const [description, setDescription] = useState("");
+	const [color, setColor] = useState<string>(COLOR_SWATCHES[0]);
+	const [tags, setTags] = useState("");
+	const [teamMembers, setTeamMembers] = useState<string[]>([]);
 
-	// Reset form when project changes (edit mode only)
+	// Reset form when dialog opens
 	useEffect(() => {
-		if (project) {
-			setName(project.name);
-			setDescription(project.description);
-			setStatus(project.status);
-			setColor(project.color);
-			setTags(project.tags.join(", "));
-			setTeamMembers([...project.teamMembers]);
-		}
-	}, [project]);
-
-	// Reset form for create mode when opened
-	useEffect(() => {
-		if (!isEditMode && open) {
+		if (open) {
 			setName("");
 			setDescription("");
-			setStatus("active");
-			setColor(PROJECT_COLORS[0]);
+			setColor(COLOR_SWATCHES[0]);
 			setTags("");
 			setTeamMembers([]);
 		}
-	}, [open, isEditMode]);
+	}, [open]);
 
 	const toggleTeamMember = (agentId: string) => {
 		setTeamMembers((prev) =>
@@ -116,35 +77,29 @@ export function ProjectDialog({
 		onSubmit({
 			name: name.trim(),
 			description,
-			status: isEditMode ? status : "active",
+			status: "active",
 			color,
 			teamMembers,
 			tags: parsedTags,
 		});
 
-		// Reset form only in create mode
-		if (!isEditMode) {
-			setName("");
-			setDescription("");
-			setColor(PROJECT_COLORS[0]);
-			setTags("");
-			setTeamMembers([]);
-		}
+		setName("");
+		setDescription("");
+		setColor(COLOR_SWATCHES[0]);
+		setTags("");
+		setTeamMembers([]);
 		onOpenChange(false);
 	};
-
-	const title = isEditMode ? "Edit Project" : "Create Project";
-	const descriptionText = isEditMode
-		? "Update project details and team."
-		: "A project is a business, product, or initiative you're building. Group related tasks, assign agents, and track progress.";
-	const submitButtonText = isEditMode ? "Save Changes" : "Create Project";
 
 	return (
 		<Dialog open={open} onOpenChange={onOpenChange}>
 			<DialogContent className="max-w-md">
 				<DialogHeader>
-					<DialogTitle>{title}</DialogTitle>
-					<DialogDescription>{descriptionText}</DialogDescription>
+					<DialogTitle>Create Project</DialogTitle>
+					<DialogDescription>
+						A project is a business, product, or initiative you're building.
+						Group related tasks, assign agents, and track progress.
+					</DialogDescription>
 				</DialogHeader>
 				<form onSubmit={handleSubmit} className="space-y-4">
 					<div className="space-y-2">
@@ -168,64 +123,24 @@ export function ProjectDialog({
 						/>
 					</div>
 
-					{isEditMode ? (
-						<div className="grid grid-cols-2 gap-3">
-							<div className="space-y-2">
-								<Label>Status</Label>
-								<Select
-									value={status}
-									onValueChange={(v) => setStatus(v as ProjectStatus)}
-								>
-									<SelectTrigger>
-										<SelectValue />
-									</SelectTrigger>
-									<SelectContent>
-										<SelectItem value="active">Active</SelectItem>
-										<SelectItem value="paused">Paused</SelectItem>
-										<SelectItem value="completed">Completed</SelectItem>
-										<SelectItem value="archived">Archived</SelectItem>
-									</SelectContent>
-								</Select>
-							</div>
-							<div className="space-y-2">
-								<Label>Color</Label>
-								<div className="flex gap-1.5 pt-1">
-									{PROJECT_COLORS.map((c) => (
-										<button
-											key={c}
-											type="button"
-											className={`h-6 w-6 rounded-full border-2 transition-transform ${
-												color === c
-													? "scale-110 border-foreground"
-													: "border-transparent hover:scale-105"
-											}`}
-											style={{ backgroundColor: c }}
-											onClick={() => setColor(c)}
-										/>
-									))}
-								</div>
-							</div>
+					<div className="space-y-2">
+						<Label>Color</Label>
+						<div className="flex gap-2">
+							{COLOR_SWATCHES.map((c) => (
+								<button
+									key={c}
+									type="button"
+									className={`h-7 w-7 rounded-full border-2 transition-transform ${
+										color === c
+											? "scale-110 border-foreground"
+											: "border-transparent hover:scale-105"
+									}`}
+									style={{ backgroundColor: c }}
+									onClick={() => setColor(c)}
+								/>
+							))}
 						</div>
-					) : (
-						<div className="space-y-2">
-							<Label>Color</Label>
-							<div className="flex gap-2">
-								{PROJECT_COLORS.map((c) => (
-									<button
-										key={c}
-										type="button"
-										className={`h-7 w-7 rounded-full border-2 transition-transform ${
-											color === c
-												? "scale-110 border-foreground"
-												: "border-transparent hover:scale-105"
-										}`}
-										style={{ backgroundColor: c }}
-										onClick={() => setColor(c)}
-									/>
-								))}
-							</div>
-						</div>
-					)}
+					</div>
 
 					{/* Team Members */}
 					{activeAgents.length > 0 && (
@@ -305,7 +220,7 @@ export function ProjectDialog({
 							Cancel
 						</Button>
 						<Button type="submit" disabled={!name.trim()}>
-							{submitButtonText}
+							Create Project
 						</Button>
 					</div>
 				</form>

@@ -12,7 +12,7 @@ import { CardSkeleton, GridSkeleton, Skeleton } from "@/components/skeletons";
 import { Button } from "@/components/ui/button";
 import { Tip } from "@/components/ui/tip";
 import { useAgents, useProjects, useTasks } from "@/hooks/use-data";
-import type { Project, ProjectStatus } from "@/lib/types";
+import type { ProjectStatus } from "@/lib/types";
 import { useActiveRunsContext as useActiveRuns } from "@/providers/active-runs-provider";
 
 export default function ProjectsPage() {
@@ -31,7 +31,6 @@ export default function ProjectsPage() {
 		useActiveRuns();
 
 	const [showCreateProject, setShowCreateProject] = useState(false);
-	const [editingProject, setEditingProject] = useState<Project | null>(null);
 	const [deletingProjectId, setDeletingProjectId] = useState<string | null>(
 		null,
 	);
@@ -55,19 +54,6 @@ export default function ProjectsPage() {
 			tags: data.tags,
 			createdAt: new Date().toISOString(),
 		});
-	};
-
-	const handleEditProject = async (data: {
-		name: string;
-		description: string;
-		status: ProjectStatus;
-		color: string;
-		teamMembers: string[];
-		tags: string[];
-	}) => {
-		if (!editingProject) return;
-		await updateProject(editingProject.id, data);
-		setEditingProject(null);
 	};
 
 	const handleArchiveProject = async (id: string) => {
@@ -182,10 +168,6 @@ export default function ProjectsPage() {
 							isProjectRunActive={isProjectRunActive(project.id)}
 							onRun={runProject}
 							onStop={stopProject}
-							onEdit={(id) => {
-								const p = projects.find((proj) => proj.id === id);
-								if (p) setEditingProject(p);
-							}}
 							onArchive={handleArchiveProject}
 							onDelete={setDeletingProjectId}
 						/>
@@ -199,18 +181,6 @@ export default function ProjectsPage() {
 				agents={agents}
 				onSubmit={handleCreateProject}
 			/>
-
-			{editingProject && (
-				<ProjectDialog
-					open={!!editingProject}
-					onOpenChange={(open) => {
-						if (!open) setEditingProject(null);
-					}}
-					project={editingProject}
-					agents={agents}
-					onSubmit={handleEditProject}
-				/>
-			)}
 
 			<ConfirmDialog
 				open={!!deletingProjectId}

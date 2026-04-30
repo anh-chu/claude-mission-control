@@ -320,12 +320,10 @@ export function useSelection() {
 // ─── Shared panels (detail + create) ────────────────────────────────────────
 
 export function BoardPanels({
-	projects,
 	showCreateTask,
 	onCloseCreate,
 	onSubmitCreate,
 }: {
-	projects: Project[];
 	showCreateTask: boolean;
 	onCloseCreate: (open: boolean) => void;
 	onSubmitCreate: (data: TaskFormData) => void;
@@ -334,7 +332,6 @@ export function BoardPanels({
 		<CreateTaskDialog
 			open={showCreateTask}
 			onOpenChange={onCloseCreate}
-			projects={projects}
 			onSubmit={onSubmitCreate}
 		/>
 	);

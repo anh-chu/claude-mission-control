@@ -353,7 +353,6 @@ export default function CrewPage() {
 					onOpenChange={(open) => {
 						if (!open) setNewTaskForAgentId(null);
 					}}
-					projects={projects}
 					onSubmit={async (data) => {
 						await createTask({
 							id: `task_${Date.now()}`,

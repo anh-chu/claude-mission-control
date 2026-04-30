@@ -430,7 +430,6 @@ export default function BrainDumpPage() {
 				onOpenChange={(open) => {
 					if (!open) setConvertingEntry(null);
 				}}
-				projects={projects}
 				onSubmit={handleConvertToTask}
 				defaultValues={
 					convertingEntry

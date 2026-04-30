@@ -29,6 +29,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { Textarea } from "@/components/ui/textarea";
 import { useInitiatives, useProjects } from "@/hooks/use-data";
 
+import { COLOR_SWATCHES } from "@/lib/constants";
 import type { Initiative, InitiativeStatus } from "@/lib/types";
 
 interface InitiativeStats {
@@ -42,17 +43,6 @@ const STATUS_GROUPS: { status: InitiativeStatus; label: string }[] = [
 	{ status: "paused", label: "Paused" },
 	{ status: "completed", label: "Completed" },
 	{ status: "archived", label: "Archived" },
-];
-
-const COLOR_SWATCHES = [
-	"#fa520f",
-	"#fb6424",
-	"#ff8105",
-	"#ffa110",
-	"#ffb83e",
-	"#ffd06a",
-	"#ffd900",
-	"#1f1f1f",
 ];
 
 function statusBadge(status: InitiativeStatus) {
@@ -99,7 +89,7 @@ function CreateInitiativeDialog({
 }: CreateInitiativeDialogProps) {
 	const [title, setTitle] = useState("");
 	const [description, setDescription] = useState("");
-	const [color, setColor] = useState(COLOR_SWATCHES[0]);
+	const [color, setColor] = useState<string>(COLOR_SWATCHES[0]);
 	const [projectId, setProjectId] = useState<string>("none");
 	const [saving, setSaving] = useState(false);
 

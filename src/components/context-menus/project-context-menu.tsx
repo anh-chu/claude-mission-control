@@ -10,7 +10,6 @@ import type { Project } from "@/lib/types";
 interface ProjectContextMenuContentProps {
 	project: Project;
 	href: string;
-	onEdit?: (projectId: string) => void;
 	onRun?: (projectId: string) => void;
 	onArchive?: (projectId: string) => void;
 	onDelete?: (projectId: string) => void;
@@ -19,7 +18,6 @@ interface ProjectContextMenuContentProps {
 export function ProjectContextMenuContent({
 	project,
 	href,
-	onEdit,
 	onRun,
 	onArchive,
 	onDelete,
@@ -29,15 +27,6 @@ export function ProjectContextMenuContent({
 			<ContextMenuItem onClick={() => window.open(href, "_blank")}>
 				Open in New Tab
 			</ContextMenuItem>
-
-			{onEdit && (
-				<>
-					<ContextMenuSeparator />
-					<ContextMenuItem onClick={() => onEdit(project.id)}>
-						Edit
-					</ContextMenuItem>
-				</>
-			)}
 
 			{onRun && (
 				<ContextMenuItem onClick={() => onRun(project.id)}>

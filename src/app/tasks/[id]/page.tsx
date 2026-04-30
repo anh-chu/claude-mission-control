@@ -507,7 +507,6 @@ export default function TaskDetailPage() {
 									dueDate: task.dueDate ?? null,
 									acceptanceCriteria: task.acceptanceCriteria ?? "",
 								}}
-								projects={projects}
 								allTasks={tasks}
 								currentTaskId={task.id}
 								onSubmit={handleUpdate}

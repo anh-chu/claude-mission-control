@@ -4,6 +4,8 @@ import {
 	CalendarDays,
 	CheckSquare,
 	Clock,
+	FolderKanban,
+	Layers,
 	Link2,
 	Paperclip,
 	Plus,
@@ -11,7 +13,7 @@ import {
 	Users,
 	X,
 } from "lucide-react";
-import { useCallback, useRef, useState } from "react";
+import { Fragment, useCallback, useRef, useState } from "react";
 import { MarkdownContent } from "@/components/markdown-content";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -21,24 +23,22 @@ import {
 	Select,
 	SelectContent,
 	SelectItem,
+	SelectSeparator,
 	SelectTrigger,
 	SelectValue,
 } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
-import { useAgents, useInitiatives } from "@/hooks/use-data";
+import { useAgents, useInitiatives, useProjects } from "@/hooks/use-data";
 import { getAgentIcon } from "@/lib/agent-icons";
 import type {
 	AgentRole,
 	Importance,
 	KanbanStatus,
-	Project,
 	Subtask,
 	Task,
 	Urgency,
 } from "@/lib/types";
 import { cn } from "@/lib/utils";
-// AGENT_ROLES kept for backward compat reference
-// import { AGENT_ROLES } from "@/lib/types";
 import { LIMITS } from "@/lib/validations";
 
 export interface TaskFormData {
@@ -62,7 +62,6 @@ export interface TaskFormData {
 
 interface TaskFormProps {
 	initial?: Partial<TaskFormData>;
-	projects: Project[];
 	allTasks?: Task[];
 	currentTaskId?: string;
 	onSubmit: (data: TaskFormData) => void;
@@ -70,7 +69,6 @@ interface TaskFormProps {
 	submitLabel?: string;
 }
 
-// projects kept in props for backward compat with callers
 export function TaskForm({
 	initial,
 	allTasks,
@@ -83,6 +81,8 @@ export function TaskForm({
 	const activeAgents = agents.filter((a) => a.status === "active");
 	const { initiatives } = useInitiatives();
 	const activeInitiatives = initiatives.filter((i) => !i.deletedAt);
+	const { projects } = useProjects();
+	const activeProjects = projects.filter((p) => !p.deletedAt);
 
 	const [editingDesc, setEditingDesc] = useState(false);
 	const descFileInputRef = useRef<HTMLInputElement>(null);
@@ -507,31 +507,96 @@ export function TaskForm({
 			)}
 
 			<div className="space-y-2">
-				<Label>Initiative</Label>
+				<Label>Parent</Label>
 				<Select
-					value={form.initiativeId ?? "none"}
-					onValueChange={(v) =>
-						setForm({ ...form, initiativeId: v === "none" ? null : v })
+					value={
+						form.initiativeId
+							? `initiative:${form.initiativeId}`
+							: form.projectId
+								? `project:${form.projectId}`
+								: "none"
 					}
+					onValueChange={(v) => {
+						if (v === "none") {
+							setForm({ ...form, projectId: null, initiativeId: null });
+						} else if (v.startsWith("project:")) {
+							setForm({ ...form, projectId: v.slice(8), initiativeId: null });
+						} else if (v.startsWith("initiative:")) {
+							const initId = v.slice(11);
+							const init = activeInitiatives.find((i) => i.id === initId);
+							if (!init) return;
+							setForm({
+								...form,
+								initiativeId: init.id,
+								projectId: init.projectId ?? null,
+							});
+						}
+					}}
 				>
 					<SelectTrigger>
-						<SelectValue placeholder="No Initiative" />
+						<SelectValue placeholder="No Parent" />
 					</SelectTrigger>
 					<SelectContent>
-						<SelectItem value="none">No Initiative</SelectItem>
-						{activeInitiatives.map((initiative) => (
-							<SelectItem key={initiative.id} value={initiative.id}>
-								<span className="flex items-center gap-2">
-									{initiative.color && (
-										<span
-											className="inline-block h-2 w-2 rounded-full shrink-0"
-											style={{ backgroundColor: initiative.color }}
-										/>
-									)}
-									{initiative.title}
-								</span>
-							</SelectItem>
-						))}
+						<SelectItem value="none">No Parent</SelectItem>
+						{activeProjects.map((project) => {
+							const projectInitiatives = activeInitiatives.filter(
+								(i) => i.projectId === project.id,
+							);
+							return (
+								<Fragment key={project.id}>
+									<SelectItem value={`project:${project.id}`}>
+										<span className="flex items-center gap-2 font-medium">
+											<FolderKanban className="h-3.5 w-3.5 shrink-0 text-muted-foreground" />
+											{project.color && (
+												<span
+													className="inline-block h-2 w-2 rounded-full shrink-0"
+													style={{ backgroundColor: project.color }}
+												/>
+											)}
+											{project.name}
+										</span>
+									</SelectItem>
+									{projectInitiatives.map((initiative) => (
+										<SelectItem
+											key={initiative.id}
+											value={`initiative:${initiative.id}`}
+										>
+											<span className="flex items-center gap-2 pl-4">
+												<Layers className="h-3.5 w-3.5 shrink-0 text-muted-foreground" />
+												{initiative.color && (
+													<span
+														className="inline-block h-2 w-2 rounded-full shrink-0"
+														style={{ backgroundColor: initiative.color }}
+													/>
+												)}
+												{initiative.title}
+											</span>
+										</SelectItem>
+									))}
+								</Fragment>
+							);
+						})}
+						{activeInitiatives.filter((i) => !i.projectId).length > 0 &&
+							activeProjects.length > 0 && <SelectSeparator />}
+						{activeInitiatives
+							.filter((i) => !i.projectId)
+							.map((initiative) => (
+								<SelectItem
+									key={initiative.id}
+									value={`initiative:${initiative.id}`}
+								>
+									<span className="flex items-center gap-2">
+										<Layers className="h-3.5 w-3.5 shrink-0 text-muted-foreground" />
+										{initiative.color && (
+											<span
+												className="inline-block h-2 w-2 rounded-full shrink-0"
+												style={{ backgroundColor: initiative.color }}
+											/>
+										)}
+										{initiative.title}
+									</span>
+								</SelectItem>
+							))}
 					</SelectContent>
 				</Select>
 			</div>

@@ -389,7 +389,6 @@ export default function CommandCenterPage() {
 				<CreateTaskDialog
 					open={showCreateTask}
 					onOpenChange={setShowCreateTask}
-					projects={projects}
 					onSubmit={handleCreateTask}
 				/>
 				<ProjectDialog
@@ -808,7 +807,6 @@ export default function CommandCenterPage() {
 			<CreateTaskDialog
 				open={showCreateTask}
 				onOpenChange={setShowCreateTask}
-				projects={projects}
 				onSubmit={handleCreateTask}
 			/>
 			<ProjectDialog

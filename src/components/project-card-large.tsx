@@ -1,6 +1,6 @@
 "use client";
 
-import { Archive, MoreHorizontal, Pencil, Trash2 } from "lucide-react";
+import { Archive, MoreHorizontal, Trash2 } from "lucide-react";
 import Link from "next/link";
 import { ProjectContextMenuContent } from "@/components/context-menus/project-context-menu";
 import { RunButton } from "@/components/run-button";
@@ -25,7 +25,6 @@ interface ProjectCardLargeProps {
 	isProjectRunActive?: boolean;
 	onRun?: (projectId: string) => void;
 	onStop?: (projectId: string) => void;
-	onEdit?: (projectId: string) => void;
 	onArchive?: (projectId: string) => void;
 	onDelete?: (projectId: string) => void;
 }
@@ -37,7 +36,6 @@ export function ProjectCardLarge({
 	isProjectRunActive,
 	onRun,
 	onStop,
-	onEdit,
 	onArchive,
 	onDelete,
 }: ProjectCardLargeProps) {
@@ -107,7 +105,7 @@ export function ProjectCardLarge({
 										{project.status}
 									</Badge>
 									{/* More actions dropdown */}
-									{(onEdit || onArchive || onDelete) && (
+									{(onArchive || onDelete) && (
 										<DropdownMenu>
 											<DropdownMenuTrigger asChild>
 												<Button
@@ -130,12 +128,6 @@ export function ProjectCardLarge({
 													e.stopPropagation();
 												}}
 											>
-												{onEdit && (
-													<DropdownMenuItem onClick={() => onEdit(project.id)}>
-														<Pencil className="h-3.5 w-3.5 mr-2" />
-														Edit
-													</DropdownMenuItem>
-												)}
 												{onArchive && project.status !== "archived" && (
 													<DropdownMenuItem
 														onClick={() => onArchive(project.id)}
@@ -259,7 +251,6 @@ export function ProjectCardLarge({
 			<ProjectContextMenuContent
 				project={project}
 				href={`/projects/${project.id}`}
-				onEdit={onEdit}
 				onRun={hasEligibleTasks ? onRun : undefined}
 				onArchive={onArchive}
 				onDelete={onDelete}

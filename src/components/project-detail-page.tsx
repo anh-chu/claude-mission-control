@@ -13,16 +13,23 @@ import {
 } from "@dnd-kit/core";
 import { Plus, Users, X } from "lucide-react";
 import { useParams, useRouter } from "next/navigation";
-import { useState } from "react";
+import { useRef, useState } from "react";
 import { BreadcrumbNav } from "@/components/breadcrumb-nav";
 import { CreateTaskDialog } from "@/components/create-task-dialog";
+import { MarkdownContent } from "@/components/markdown-content";
 import { ProjectRunProgress } from "@/components/mission-progress";
 import { RunButton } from "@/components/run-button";
 import { TaskCard } from "@/components/task-card";
 import type { TaskFormData } from "@/components/task-form";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Input } from "@/components/ui/input";
+import {
+	Popover,
+	PopoverContent,
+	PopoverTrigger,
+} from "@/components/ui/popover";
+
 import {
 	useAgents,
 	useDecisions,
@@ -31,7 +38,13 @@ import {
 } from "@/hooks/use-data";
 import { useFastTaskPoll } from "@/hooks/use-fast-task-poll";
 import { getAgentIcon } from "@/lib/agent-icons";
-import type { EisenhowerQuadrant, KanbanStatus, Task } from "@/lib/types";
+import { COLOR_SWATCHES } from "@/lib/constants";
+import type {
+	EisenhowerQuadrant,
+	KanbanStatus,
+	ProjectStatus,
+	Task,
+} from "@/lib/types";
 import { getQuadrant, valuesFromQuadrant } from "@/lib/types";
 import { cn } from "@/lib/utils";
 import { useActiveRunsContext as useActiveRuns } from "@/providers/active-runs-provider";
@@ -160,6 +173,14 @@ export function ProjectDetailPage({
 	const [activeTask, setActiveTask] = useState<Task | null>(null);
 	const [showCreateTask, setShowCreateTask] = useState(false);
 
+	const [editingTitle, setEditingTitle] = useState(false);
+	const [titleDraft, setTitleDraft] = useState("");
+	const [editingDesc, setEditingDesc] = useState(false);
+	const [descDraft, setDescDraft] = useState("");
+	const cancelTitleRef = useRef(false);
+	const cancelDescRef = useRef(false);
+	const [tagInput, setTagInput] = useState("");
+
 	const project = projects.find((p) => p.id === projectId);
 	const projectTasks = tasks.filter((t) => t.projectId === projectId);
 
@@ -260,6 +281,26 @@ export function ProjectDetailPage({
 		await deleteTask(taskId);
 	};
 
+	async function handleSaveTitle() {
+		if (!project) return;
+		if (!titleDraft.trim() || titleDraft === project.name) {
+			setEditingTitle(false);
+			return;
+		}
+		await updateProject(project.id, { name: titleDraft.trim() });
+		setEditingTitle(false);
+	}
+
+	async function handleSaveDesc() {
+		if (!project) return;
+		if (descDraft === project.description) {
+			setEditingDesc(false);
+			return;
+		}
+		await updateProject(project.id, { description: descDraft.trim() });
+		setEditingDesc(false);
+	}
+
 	return (
 		<div className="space-y-4">
 			<BreadcrumbNav
@@ -270,42 +311,216 @@ export function ProjectDetailPage({
 			/>
 
 			{/* Project Header */}
-			<div className="flex items-center justify-between">
-				<div className="flex items-center gap-3">
-					<div
-						className="h-4 w-4 rounded-full"
-						style={{ backgroundColor: project.color }}
-					/>
-					<h1 className="text-xl font-normal">{project.name}</h1>
-					<Badge variant="outline" className="text-xs capitalize">
-						{project.status}
-					</Badge>
-				</div>
-				<div className="flex items-center gap-2">
-					<RunButton
-						isRunning={isProjectRunning(projectId)}
-						isProjectRunActive={isProjectRunActive(projectId)}
-						onClick={() => runProject(projectId)}
-						onStop={() => stopProject(projectId)}
-						size="md"
-						title={
-							isProjectRunActive(projectId)
-								? "Project running — click to stop"
-								: "Run all project tasks"
-						}
-					/>
-					<Button
-						size="sm"
-						onClick={() => setShowCreateTask(true)}
-						className="gap-1.5"
-					>
-						<Plus className="h-3.5 w-3.5" /> Task
-					</Button>
+			<div className="flex items-start gap-3 min-w-0">
+				<Popover>
+					<PopoverTrigger asChild>
+						<button
+							type="button"
+							className="h-4 w-4 rounded-full shrink-0 mt-2 cursor-pointer ring-offset-background transition-all hover:ring-2 hover:ring-ring hover:ring-offset-2"
+							style={{ backgroundColor: project.color }}
+							title="Click to change color"
+						/>
+					</PopoverTrigger>
+					<PopoverContent className="w-auto p-3" align="start">
+						<div className="flex flex-wrap gap-2">
+							{COLOR_SWATCHES.map((c) => (
+								<button
+									key={c}
+									type="button"
+									className="h-6 w-6 rounded-full border-2 transition-all"
+									style={{
+										backgroundColor: c,
+										borderColor: project.color === c ? "white" : "transparent",
+										outline: project.color === c ? `2px solid ${c}` : "none",
+										outlineOffset: "2px",
+									}}
+									onClick={() => updateProject(project.id, { color: c })}
+								/>
+							))}
+						</div>
+					</PopoverContent>
+				</Popover>
+				<div className="min-w-0 flex-1 space-y-1">
+					<div className="flex items-center gap-2">
+						{editingTitle ? (
+							<input
+								autoFocus
+								className="w-full text-2xl font-normal bg-transparent border-b border-primary outline-none"
+								value={titleDraft}
+								onChange={(e) => setTitleDraft(e.target.value)}
+								onBlur={() => {
+									if (cancelTitleRef.current) {
+										cancelTitleRef.current = false;
+										return;
+									}
+									handleSaveTitle();
+								}}
+								onKeyDown={(e) => {
+									if (e.key === "Enter") {
+										e.preventDefault();
+										e.currentTarget.blur();
+									}
+									if (e.key === "Escape") {
+										e.preventDefault();
+										cancelTitleRef.current = true;
+										setTitleDraft(project.name);
+										setEditingTitle(false);
+									}
+								}}
+							/>
+						) : (
+							<h1
+								className="text-2xl font-normal cursor-text hover:opacity-80 transition-opacity"
+								onClick={() => {
+									setTitleDraft(project.name);
+									setEditingTitle(true);
+								}}
+								title="Click to edit"
+							>
+								{project.name}
+							</h1>
+						)}
+					</div>
+					{editingDesc ? (
+						<textarea
+							autoFocus
+							className="w-full text-sm text-muted-foreground bg-transparent border-b border-primary outline-none resize-none"
+							value={descDraft}
+							rows={2}
+							onChange={(e) => setDescDraft(e.target.value)}
+							onBlur={() => {
+								if (cancelDescRef.current) {
+									cancelDescRef.current = false;
+									return;
+								}
+								handleSaveDesc();
+							}}
+							onKeyDown={(e) => {
+								if (e.key === "Escape") {
+									e.preventDefault();
+									cancelDescRef.current = true;
+									setDescDraft(project.description ?? "");
+									setEditingDesc(false);
+								}
+							}}
+						/>
+					) : (
+						<div
+							className="cursor-text hover:opacity-80 transition-opacity"
+							onClick={() => {
+								setDescDraft(project.description ?? "");
+								setEditingDesc(true);
+							}}
+							title="Click to edit"
+						>
+							{project.description ? (
+								<MarkdownContent
+									content={project.description}
+									className="text-sm"
+								/>
+							) : (
+								<p className="text-sm text-muted-foreground/40 italic">
+									Click to add description
+								</p>
+							)}
+						</div>
+					)}
+					<div className="flex flex-wrap items-center gap-1.5 pt-1">
+						{(project.tags ?? []).map((tag) => (
+							<Badge
+								key={tag}
+								variant="secondary"
+								className="gap-1 pr-1 text-xs"
+							>
+								{tag}
+								<button
+									type="button"
+									onClick={() =>
+										updateProject(project.id, {
+											tags: project.tags.filter((t) => t !== tag),
+										})
+									}
+									className="rounded-full hover:bg-muted-foreground/20 p-0.5 ml-0.5"
+								>
+									<X className="h-3 w-3" />
+								</button>
+							</Badge>
+						))}
+						<Input
+							className="h-6 w-24 text-xs px-1.5"
+							placeholder="Add tag…"
+							value={tagInput}
+							onChange={(e) => setTagInput(e.target.value)}
+							onKeyDown={(e) => {
+								if (e.key === "Enter" && tagInput.trim()) {
+									e.preventDefault();
+									const newTag = tagInput.trim();
+									if (!project.tags.includes(newTag)) {
+										updateProject(project.id, {
+											tags: [...project.tags, newTag],
+										});
+									}
+									setTagInput("");
+								}
+							}}
+							onBlur={() => {
+								if (tagInput.trim()) {
+									const newTag = tagInput.trim();
+									if (!project.tags.includes(newTag)) {
+										updateProject(project.id, {
+											tags: [...project.tags, newTag],
+										});
+									}
+									setTagInput("");
+								}
+							}}
+						/>
+					</div>
 				</div>
 			</div>
-			{project.description && (
-				<p className="text-sm text-muted-foreground">{project.description}</p>
-			)}
+
+			{/* Status */}
+			<div className="flex flex-wrap items-center gap-2">
+				<span className="text-xs text-muted-foreground">Status:</span>
+				{(["active", "paused", "completed", "archived"] as ProjectStatus[]).map(
+					(s) => (
+						<button
+							key={s}
+							type="button"
+							onClick={() => updateProject(project.id, { status: s })}
+							className={`text-xs px-2.5 py-1 rounded-sm border transition-all capitalize ${
+								project.status === s
+									? "bg-primary text-primary-foreground border-primary"
+									: "bg-card text-muted-foreground border-border hover:bg-accent"
+							}`}
+						>
+							{s}
+						</button>
+					),
+				)}
+			</div>
+
+			<div className="flex items-center gap-2">
+				<RunButton
+					isRunning={isProjectRunning(projectId)}
+					isProjectRunActive={isProjectRunActive(projectId)}
+					onClick={() => runProject(projectId)}
+					onStop={() => stopProject(projectId)}
+					size="md"
+					title={
+						isProjectRunActive(projectId)
+							? "Project running — click to stop"
+							: "Run all project tasks"
+					}
+				/>
+				<Button
+					size="sm"
+					onClick={() => setShowCreateTask(true)}
+					className="gap-1.5"
+				>
+					<Plus className="h-3.5 w-3.5" /> Task
+				</Button>
+			</div>
 
 			{/* Progress */}
 			<div className="flex items-center gap-3">
@@ -408,86 +623,80 @@ export function ProjectDetailPage({
 				</div>
 			</div>
 
-			{/* Tabs */}
-			<Tabs defaultValue="priority-matrix" className="space-y-4">
-				<TabsList>
-					<TabsTrigger value="priority-matrix">Priority Matrix</TabsTrigger>
-				</TabsList>
-
-				<TabsContent value="priority-matrix">
-					<DndContext
-						sensors={sensors}
-						collisionDetection={closestCenter}
-						onDragStart={handleDragStart}
-						onDragEnd={handleEisenhowerDragEnd}
-					>
-						<div className="grid grid-cols-2 gap-3">
-							<DroppableZone
-								id="do"
-								label="DO"
-								dotColor="bg-quadrant-do"
-								tasks={eGrouped.do}
-								onTaskClick={(t) => router.push(`/tasks/${t.id}`)}
-								isTaskRunning={isTaskRunning}
-								onRunTask={runTask}
-								pendingDecisionTaskIds={pendingDecisionTaskIds}
-								onStatusChange={handleStatusChange}
-								onDuplicate={handleDuplicate}
-								onDelete={handleDeleteById}
-							/>
-							<DroppableZone
-								id="schedule"
-								label="SCHEDULE"
-								dotColor="bg-quadrant-schedule"
-								tasks={eGrouped.schedule}
-								onTaskClick={(t) => router.push(`/tasks/${t.id}`)}
-								isTaskRunning={isTaskRunning}
-								onRunTask={runTask}
-								pendingDecisionTaskIds={pendingDecisionTaskIds}
-								onStatusChange={handleStatusChange}
-								onDuplicate={handleDuplicate}
-								onDelete={handleDeleteById}
-							/>
-							<DroppableZone
-								id="delegate"
-								label="DELEGATE"
-								dotColor="bg-quadrant-delegate"
-								tasks={eGrouped.delegate}
-								onTaskClick={(t) => router.push(`/tasks/${t.id}`)}
-								isTaskRunning={isTaskRunning}
-								onRunTask={runTask}
-								pendingDecisionTaskIds={pendingDecisionTaskIds}
-								onStatusChange={handleStatusChange}
-								onDuplicate={handleDuplicate}
-								onDelete={handleDeleteById}
-							/>
-							<DroppableZone
-								id="eliminate"
-								label="ELIMINATE"
-								dotColor="bg-quadrant-eliminate"
-								tasks={eGrouped.eliminate}
-								onTaskClick={(t) => router.push(`/tasks/${t.id}`)}
-								isTaskRunning={isTaskRunning}
-								onRunTask={runTask}
-								pendingDecisionTaskIds={pendingDecisionTaskIds}
-								onStatusChange={handleStatusChange}
-								onDuplicate={handleDuplicate}
-								onDelete={handleDeleteById}
-							/>
-						</div>
-						<DragOverlay>
-							{activeTask ? (
-								<TaskCard task={activeTask} className="shadow-golden" />
-							) : null}
-						</DragOverlay>
-					</DndContext>
-				</TabsContent>
-			</Tabs>
+			{/* Priority Matrix */}
+			<div className="space-y-4">
+				<h2 className="text-sm font-normal">Priority Matrix</h2>
+				<DndContext
+					sensors={sensors}
+					collisionDetection={closestCenter}
+					onDragStart={handleDragStart}
+					onDragEnd={handleEisenhowerDragEnd}
+				>
+					<div className="grid grid-cols-2 gap-3">
+						<DroppableZone
+							id="do"
+							label="DO"
+							dotColor="bg-quadrant-do"
+							tasks={eGrouped.do}
+							onTaskClick={(t) => router.push(`/tasks/${t.id}`)}
+							isTaskRunning={isTaskRunning}
+							onRunTask={runTask}
+							pendingDecisionTaskIds={pendingDecisionTaskIds}
+							onStatusChange={handleStatusChange}
+							onDuplicate={handleDuplicate}
+							onDelete={handleDeleteById}
+						/>
+						<DroppableZone
+							id="schedule"
+							label="SCHEDULE"
+							dotColor="bg-quadrant-schedule"
+							tasks={eGrouped.schedule}
+							onTaskClick={(t) => router.push(`/tasks/${t.id}`)}
+							isTaskRunning={isTaskRunning}
+							onRunTask={runTask}
+							pendingDecisionTaskIds={pendingDecisionTaskIds}
+							onStatusChange={handleStatusChange}
+							onDuplicate={handleDuplicate}
+							onDelete={handleDeleteById}
+						/>
+						<DroppableZone
+							id="delegate"
+							label="DELEGATE"
+							dotColor="bg-quadrant-delegate"
+							tasks={eGrouped.delegate}
+							onTaskClick={(t) => router.push(`/tasks/${t.id}`)}
+							isTaskRunning={isTaskRunning}
+							onRunTask={runTask}
+							pendingDecisionTaskIds={pendingDecisionTaskIds}
+							onStatusChange={handleStatusChange}
+							onDuplicate={handleDuplicate}
+							onDelete={handleDeleteById}
+						/>
+						<DroppableZone
+							id="eliminate"
+							label="ELIMINATE"
+							dotColor="bg-quadrant-eliminate"
+							tasks={eGrouped.eliminate}
+							onTaskClick={(t) => router.push(`/tasks/${t.id}`)}
+							isTaskRunning={isTaskRunning}
+							onRunTask={runTask}
+							pendingDecisionTaskIds={pendingDecisionTaskIds}
+							onStatusChange={handleStatusChange}
+							onDuplicate={handleDuplicate}
+							onDelete={handleDeleteById}
+						/>
+					</div>
+					<DragOverlay>
+						{activeTask ? (
+							<TaskCard task={activeTask} className="shadow-golden" />
+						) : null}
+					</DragOverlay>
+				</DndContext>
+			</div>
 
 			<CreateTaskDialog
 				open={showCreateTask}
 				onOpenChange={setShowCreateTask}
-				projects={projects}
 				onSubmit={handleCreateTask}
 				defaultValues={{ projectId }}
 			/>

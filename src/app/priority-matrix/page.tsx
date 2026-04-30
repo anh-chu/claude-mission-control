@@ -435,7 +435,6 @@ export default function TasksPage() {
 			)}
 
 			<BoardPanels
-				projects={projects}
 				showCreateTask={showCreateTask}
 				onCloseCreate={setShowCreateTask}
 				onSubmitCreate={handleCreateTask}
