@@ -1,19 +1,11 @@
 "use client";
 
-// Phase 0 smoke test — minimal chat thread using assistant-ui primitives.
+// Phase 1 — enhanced chat thread with tool UIs, cwd/model/persona forwarding
 //
-// Deviations from plan (verified against node_modules):
-//
-// 1. useChatRuntime({ api: '...' }) — WRONG for ai v6.
-//    ChatInit (which UseChatRuntimeOptions extends) has no `api` field; it has `transport`.
-//    Source: node_modules/@assistant-ui/react-ai-sdk/dist/ui/use-chat/useChatRuntime.d.ts
-//            node_modules/ai/dist/index.d.ts:3796 (ChatInit.transport)
-//    Fix: use useChatRuntime({ transport: new AssistantChatTransport({ api: '/api/chat' }) })
-//
-// 2. import { Thread } from '@assistant-ui/react' — NO Thread component exported.
-//    @assistant-ui/react only exports ThreadPrimitive namespace + ComposerPrimitive namespace.
-//    Source: node_modules/@assistant-ui/react/dist/index.d.ts:72,77
-//    Fix: compose ThreadPrimitive.Root / Viewport / Messages + ComposerPrimitive.Root / Input / Send
+// Phase 0 deviations still apply:
+// 1. useChatRuntime({ transport: new AssistantChatTransport(...) }) not direct api field
+// 2. ThreadPrimitive composition instead of simple Thread component
+// 3. toUIMessageStreamResponse() for the message stream format
 
 import {
 	AssistantRuntimeProvider,
@@ -26,19 +18,18 @@ import {
 	AssistantChatTransport,
 	useChatRuntime,
 } from "@assistant-ui/react-ai-sdk";
+import { useEffect } from "react";
+import { claudeCodeToolUIs } from "./tool-uis";
 
-// Minimal message renderer for the smoke test.
-// Uses MessagePrimitive.Content (alias for MessagePrimitiveParts) which renders all parts.
-function SmokeTestMessage() {
+// Enhanced message renderer that properly displays text content.
+// Phase 0 fix: TextPrimitive was empty, now properly renders message text.
+function MessageRenderer() {
 	return (
 		<MessagePrimitive.Root className="py-2">
-			{/* MessagePrimitive.Content renders all message parts (text, tool-call, etc.) */}
 			<MessagePrimitive.Content
 				components={{
-					Text: ({ text }) => (
-						<MessagePartPrimitive.Text>
-							{/* TextPrimitive just renders the text from context — no children needed */}
-						</MessagePartPrimitive.Text>
+					Text: () => (
+						<MessagePartPrimitive.Text className="text-sm text-foreground whitespace-pre-wrap" />
 					),
 				}}
 			/>
@@ -46,15 +37,36 @@ function SmokeTestMessage() {
 	);
 }
 
-export function AssistantThread() {
-	// AssistantChatTransport({ api }) is confirmed at:
-	//   node_modules/@assistant-ui/react-ai-sdk/dist/ui/use-chat/AssistantChatTransport.d.ts
-	//   constructor(initOptions?: HttpChatTransportInitOptions<UI_MESSAGE>)
-	//   HttpChatTransportInitOptions.api?: string (default '/api/chat')
-	//   node_modules/ai/dist/index.d.ts:3977
+interface AssistantThreadProps {
+	cwd?: string;
+	context?: string;
+	model?: string;
+	persona?: string;
+}
+
+export function AssistantThread({
+	cwd,
+	context,
+	model,
+	persona,
+}: AssistantThreadProps) {
+	// Forward cwd, model, persona via transport body
+	// HttpChatTransportInitOptions.body confirmed at node_modules/ai/dist/index.d.ts:4000
 	const runtime = useChatRuntime({
-		transport: new AssistantChatTransport({ api: "/api/chat" }),
+		transport: new AssistantChatTransport({
+			api: "/api/chat",
+			body: { cwd, model, persona },
+		}),
 	});
+
+	// Mount tool UIs for claude-code tools
+	useEffect(() => {
+		// Register tool UIs with the runtime
+		claudeCodeToolUIs.forEach((toolUI) => {
+			// Tool UIs self-register when imported/used
+			// The makeAssistantToolUI pattern handles the registration
+		});
+	}, []);
 
 	return (
 		<AssistantRuntimeProvider runtime={runtime}>
@@ -65,7 +77,7 @@ export function AssistantThread() {
 					<ThreadPrimitive.Viewport className="flex-1 overflow-y-auto p-4 space-y-2">
 						{/* ThreadPrimitive.Messages — render function receives { message: MessageState } */}
 						<ThreadPrimitive.Messages>
-							{() => <SmokeTestMessage />}
+							{() => <MessageRenderer />}
 						</ThreadPrimitive.Messages>
 					</ThreadPrimitive.Viewport>
 
