@@ -50,14 +50,13 @@ async function buildDaemon() {
 			// createRequire so bundled CJS deps (gray-matter, etc.) keep working.
 			// The shebang stays on the daemon entry only.
 			banner: {
+				// Note: __dirname / __filename are declared at the source-file level
+				// via import.meta.url so both tsx (raw .ts) and esbuild bundles work.
+				// We only inject `require` here for bundled CJS deps (gray-matter, etc.).
 				js: [
 					file.src.includes("index") ? "#!/usr/bin/env node" : "",
 					"import { createRequire as __mandioCreateRequire } from 'node:module';",
-					"import { fileURLToPath as __mandioFileURLToPath } from 'node:url';",
-					"import { dirname as __mandioDirname } from 'node:path';",
 					"const require = __mandioCreateRequire(import.meta.url);",
-					"const __filename = __mandioFileURLToPath(import.meta.url);",
-					"const __dirname = __mandioDirname(__filename);",
 				]
 					.filter(Boolean)
 					.join("\n"),

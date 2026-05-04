@@ -19,7 +19,13 @@
 import { execSync, spawn } from "node:child_process";
 import { existsSync, readFileSync, unlinkSync, writeFileSync } from "node:fs";
 import path from "node:path";
+import { fileURLToPath } from "node:url";
 import { createLogger } from "../../src/lib/logger";
+
+// ESM shim for __dirname (package.json has "type": "module").
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
+
 import {
 	type ActiveRunEntry,
 	readActiveRuns,

@@ -1,7 +1,13 @@
 import { spawn } from "node:child_process";
 import { existsSync, readFileSync, renameSync, writeFileSync } from "node:fs";
 import path from "node:path";
+import { fileURLToPath } from "node:url";
 import { getWorkspaceDir } from "../../src/lib/paths";
+
+// ESM shim for __dirname (package.json has "type": "module").
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
+
 import type { HealthMonitor } from "./health";
 import { logger } from "./logger";
 import {

@@ -1,5 +1,6 @@
 import { existsSync, lstatSync, readFileSync } from "node:fs";
 import path from "node:path";
+import { fileURLToPath } from "node:url";
 import {
 	getGlobalCommandDir,
 	getWorkspaceCommandsDir,
@@ -8,6 +9,11 @@ import {
 	MANDIO_COMMAND_PREFIX,
 	MANDIO_SKILL_PREFIX,
 } from "../../src/lib/paths";
+
+// ESM shim for __dirname (package.json has "type": "module").
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
+
 import { listActivatedSkillsSync } from "../../src/lib/skill-activation";
 // Paths relative to project root
 import { readAllSkillsSync, SkillFileData } from "../../src/lib/skill-files";
