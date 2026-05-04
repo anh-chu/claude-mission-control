@@ -2,6 +2,7 @@ import { readdir, rmdir, stat, unlink } from "node:fs/promises";
 import path from "node:path";
 import { NextResponse } from "next/server";
 import { getWikiDir } from "@/lib/paths";
+import { isAppFolder } from "@/lib/wiki-helpers";
 import { applyWorkspaceContext } from "@/lib/workspace-context";
 
 function safeWikiPath(wikiDir: string, rel: string): string | null {
@@ -34,19 +35,28 @@ export async function GET(request: Request) {
 			names.map(async (name) => {
 				const filePath = path.join(targetDir, name);
 				const info = await stat(filePath);
-				return info.isDirectory()
-					? { name, type: "dir" as const, modifiedAt: info.mtime.toISOString() }
-					: {
-							name,
-							type: "file" as const,
-							size: info.size,
-							modifiedAt: info.mtime.toISOString(),
-						};
+				if (info.isDirectory()) {
+					const relPath = dir ? `${dir}/${name}` : name;
+					const isApp = await isAppFolder(wikiDir, relPath);
+					return {
+						name,
+						type: (isApp ? "app" : "dir") as "app" | "dir",
+						modifiedAt: info.mtime.toISOString(),
+					};
+				}
+				return {
+					name,
+					type: "file" as const,
+					size: info.size,
+					modifiedAt: info.mtime.toISOString(),
+				};
 			}),
 		);
 
 		entries.sort((a, b) => {
-			if (a.type !== b.type) return a.type === "dir" ? -1 : 1;
+			const aIsDir = a.type === "dir" || a.type === "app";
+			const bIsDir = b.type === "dir" || b.type === "app";
+			if (aIsDir !== bIsDir) return aIsDir ? -1 : 1;
 			return a.name.localeCompare(b.name);
 		});
 

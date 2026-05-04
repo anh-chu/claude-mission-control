@@ -108,6 +108,14 @@ The daemon (`pnpm daemon:start`) is the engine. It runs as a detached background
 - **Crash Recovery Sweep:** Orphaned in-progress tasks detected on startup and reset for redispatch
 - **Persistent Retry Queue:** Survives daemon restarts; retries resume with correct backoff timing
 
+### Wiki & Documents
+- **Rich Editor:** WYSIWYG markdown editing with headings, lists, tables, callouts, code blocks with syntax highlighting, task lists, and resizable images. Slash commands, drag handles, and a floating table menu for fast structural edits
+- **Wiki Links:** `[[slug]]`, `[[slug|alias]]`, and `[[slug#anchor]]` syntax aligned with the [llm-wiki-pm](https://github.com/anh-chu/llm-wiki-pm) contract. Type `[[` for fuzzy autocomplete across `entities/`, `concepts/`, and `comparisons/`. Broken links render with a dashed warning. Click any link to navigate, or create a new stub page from the autocomplete
+- **File Viewers:** Markdown, plain text, CSV, PDF, Mermaid diagrams, Jupyter notebooks, images, audio/video, source files (with syntax highlighting), and Office formats (docx, xlsx, pptx) all open natively in the browser
+- **Embedded Apps:** Drop a folder containing `index.html` under your wiki and it auto-flips to an embedded sandboxed iframe. Open as a full-screen mini-app or render inline. Forms, scripts, and same-origin asset fetches all work
+- **Frontmatter Header:** YAML frontmatter renders as a clean metadata strip (type, status, dates, tags, sources) instead of leaking into prose
+- **Asset Pipeline:** Paste or drop images directly into the editor. Files upload to `~/.mandio/uploads/` and are served back through `/api/assets/`
+
 ### Rich Task Detail
 - **Markdown Descriptions:** Full markdown rendering in task descriptions; click to edit
 - **File Attachments:** Attach images and files to task descriptions and comments; stored in `~/.mandio/uploads/`

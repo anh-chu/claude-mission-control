@@ -32,8 +32,10 @@ import {
 	Folder,
 	FolderOpen,
 	FolderPlus,
+	Globe,
 	Image as ImageIcon,
 	Loader2,
+	Maximize2,
 	Pencil,
 	RefreshCw,
 	Trash2,
@@ -46,21 +48,38 @@ import remarkGfm from "remark-gfm";
 import { prepareConsoleLines, StreamEntry } from "@/components/agent-console";
 import { BreadcrumbNav } from "@/components/breadcrumb-nav";
 import { ConfirmDialog } from "@/components/confirm-dialog";
+import { CsvViewer } from "@/components/editor/csv-viewer";
+import { KBEditor } from "@/components/editor/editor";
+import { FileFallbackViewer } from "@/components/editor/file-fallback-viewer";
+import { ImageViewer } from "@/components/editor/image-viewer";
+import { MediaViewer } from "@/components/editor/media-viewer";
+import { MermaidViewer } from "@/components/editor/mermaid-viewer";
+import { NotebookViewer } from "@/components/editor/notebook-viewer";
+import { DocxViewer } from "@/components/editor/office/docx-viewer";
+import { PptxViewer } from "@/components/editor/office/pptx-viewer";
+import { XlsxViewer } from "@/components/editor/office/xlsx-viewer";
+import { PdfViewer } from "@/components/editor/pdf-viewer";
+import { SourceViewer } from "@/components/editor/source-viewer";
+import { WebsiteViewer } from "@/components/editor/website-viewer";
 import { ModelSelect } from "@/components/model-select";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
-import { Textarea } from "@/components/ui/textarea";
+import { FrontmatterHeader } from "@/components/wiki/frontmatter-header";
 import type { StreamLine } from "@/hooks/use-agent-stream";
 import { useAgentStream } from "@/hooks/use-agent-stream";
 import { useAgents, useCommands } from "@/hooks/use-data";
 import { useWorkspace } from "@/hooks/use-workspace";
+import { parseFrontmatter } from "@/lib/markdown/parse-frontmatter";
+import remarkWikilinks from "@/lib/markdown/remark-wikilinks";
 import { cn } from "@/lib/utils";
+import { useEditorStore } from "@/stores/editor-store";
+import { useWikiSlugsStore } from "@/stores/wiki-slugs-store";
 
 interface TreeNode {
 	name: string;
 	path: string;
-	type: "dir" | "file";
+	type: "dir" | "file" | "app";
 	size?: number;
 	modifiedAt: string;
 	children?: TreeNode[];
@@ -85,29 +104,97 @@ interface WikiRun {
 
 const DOC_MAINTAINER_AGENT_ID = "doc-maintainer";
 
-const TEXT_EXTS = new Set([
-	"txt",
-	"md",
-	"markdown",
-	"json",
-	"yaml",
-	"yml",
-	"toml",
-	"csv",
-	"xml",
-	"html",
-	"sh",
-]);
-const IMAGE_EXTS = new Set(["jpg", "jpeg", "png", "gif", "webp", "svg"]);
+export type ViewerKind =
+	| "editor"
+	| "csv"
+	| "pdf"
+	| "mermaid"
+	| "notebook"
+	| "image"
+	| "media"
+	| "docx"
+	| "xlsx"
+	| "pptx"
+	| "source"
+	| "fallback"
+	| "app"
+	| "text";
 
 function ext(name: string) {
 	return name.split(".").pop()?.toLowerCase() ?? "";
 }
+
+export function viewerKindFor(
+	filename: string,
+	nodeType: "file" | "app" | "dir",
+): ViewerKind {
+	if (nodeType === "app") return "app";
+	if (nodeType === "dir") return "fallback";
+	const fileExt = ext(filename);
+	if (!fileExt) return "fallback";
+	if (["md", "markdown"].includes(fileExt)) return "editor";
+	if (fileExt === "txt") return "text";
+	if (["csv", "tsv"].includes(fileExt)) return "csv";
+	if (fileExt === "pdf") return "pdf";
+	if (["mmd", "mermaid"].includes(fileExt)) return "mermaid";
+	if (fileExt === "ipynb") return "notebook";
+	if (
+		["png", "jpg", "jpeg", "gif", "webp", "svg", "avif", "ico", "bmp"].includes(
+			fileExt,
+		)
+	)
+		return "image";
+	if (
+		["mp4", "webm", "mov", "m4v", "mp3", "wav", "ogg", "m4a", "aac"].includes(
+			fileExt,
+		)
+	)
+		return "media";
+	if (fileExt === "docx") return "docx";
+	if (["xlsx", "xlsm"].includes(fileExt)) return "xlsx";
+	if (fileExt === "pptx") return "pptx";
+	if (
+		[
+			"py",
+			"js",
+			"ts",
+			"tsx",
+			"jsx",
+			"go",
+			"rs",
+			"java",
+			"c",
+			"cpp",
+			"h",
+			"sh",
+			"bash",
+			"zsh",
+			"rb",
+			"php",
+			"swift",
+			"kt",
+			"lua",
+			"sql",
+			"yaml",
+			"yml",
+			"toml",
+			"json",
+			"xml",
+			"html",
+			"css",
+			"scss",
+		].includes(fileExt)
+	)
+		return "source";
+	return "fallback";
+}
+
 function isText(name: string) {
-	return TEXT_EXTS.has(ext(name));
+	const kind = viewerKindFor(name, "file");
+	return kind === "editor" || kind === "text";
 }
 function isImage(name: string) {
-	return IMAGE_EXTS.has(ext(name));
+	return viewerKindFor(name, "file") === "image";
 }
 
 async function fetchDir(dir: string): Promise<TreeNode[]> {
@@ -116,7 +203,7 @@ async function fetchDir(dir: string): Promise<TreeNode[]> {
 	const data: {
 		entries: Array<{
 			name: string;
-			type: "dir" | "file";
+			type: "dir" | "file" | "app";
 			size?: number;
 			modifiedAt: string;
 		}>;
@@ -132,6 +219,19 @@ async function fetchDir(dir: string): Promise<TreeNode[]> {
 }
 
 export default function BrainPage() {
+	// Subscribe to slug store loadedAt so the markdown viewer re-renders
+	// broken-state styling once the index arrives.
+	const slugsLoadedAt = useWikiSlugsStore((s) => s.loadedAt);
+	useEffect(() => {
+		void useWikiSlugsStore.getState().load();
+	}, []);
+	void slugsLoadedAt;
+
+	// Sync openFile when editor-store navigates internally (wiki-link click
+	// from inside the editor calls loadPage directly without going through
+	// openViewer). This catches that and updates the page-level state.
+	const editorCurrentPath = useEditorStore((s) => s.currentPath);
+
 	const [roots, setRoots] = useState<TreeNode[]>([]);
 	const [rootLoaded, setRootLoaded] = useState(false);
 	const [rootLoading, setRootLoading] = useState(false);
@@ -152,7 +252,9 @@ export default function BrainPage() {
 	const [openFile, setOpenFile] = useState<{
 		path: string;
 		name: string;
+		nodeType: "file" | "app";
 	} | null>(null);
+	const [appFullscreen, setAppFullscreen] = useState(false);
 	const [fileContent, setFileContent] = useState<string | null>(null);
 	const [fileLoading, setFileLoading] = useState(false);
 	const [editing, setEditing] = useState(false);
@@ -347,12 +449,21 @@ export default function BrainPage() {
 		}
 	}
 
+	useEffect(() => {
+		setAppFullscreen(false);
+	}, []); // eslint-disable-line react-hooks/exhaustive-deps
+
 	async function openViewer(node: TreeNode) {
-		setOpenFile({ path: node.path, name: node.name });
+		setOpenFile({
+			path: node.path,
+			name: node.name,
+			nodeType: node.type === "app" ? "app" : "file",
+		});
 		setEditing(false);
 		setSaveError(null);
 		setFileContent(null);
-		if (!isText(node.name)) return;
+		const kind = viewerKindFor(node.name, node.type);
+		if (!["editor", "text"].includes(kind)) return;
 		setFileLoading(true);
 		try {
 			const res = await fetch(
@@ -367,6 +478,19 @@ export default function BrainPage() {
 		}
 		setFileLoading(false);
 	}
+
+	useEffect(() => {
+		if (!editorCurrentPath) return;
+		if (openFile && openFile.path === editorCurrentPath) return;
+		// Editor navigated internally (e.g. wiki-link click). Sync page state.
+		const name = editorCurrentPath.split("/").pop() ?? editorCurrentPath;
+		void openViewer({
+			path: editorCurrentPath,
+			name,
+			type: "file",
+		} as TreeNode);
+		// eslint-disable-next-line react-hooks/exhaustive-deps
+	}, [editorCurrentPath]);
 
 	async function handleSave() {
 		if (!openFile) return;
@@ -683,9 +807,17 @@ export default function BrainPage() {
 			await reloadDir(sourceParent);
 			if (targetDirPath !== sourceParent) await reloadDir(targetDirPath);
 			if (openFile?.path === node.path)
-				setOpenFile({ path: newPath, name: node.name });
+				setOpenFile({
+					path: newPath,
+					name: node.name,
+					nodeType: openFile.nodeType,
+				});
 		}
 	}
+
+	const openFileViewerKind = openFile
+		? viewerKindFor(openFile.name, openFile.nodeType)
+		: null;
 
 	// --- Render tree ---
 	function renderNodes(nodes: TreeNode[], depth = 0): React.ReactNode {
@@ -746,6 +878,8 @@ export default function BrainPage() {
 						) : (
 							<Folder className="h-4 w-4 shrink-0 text-warning" />
 						)
+					) : node.type === "app" ? (
+						<Globe className="h-4 w-4 shrink-0 text-accent" />
 					) : isImage(node.name) ? (
 						<ImageIcon className="h-4 w-4 shrink-0 text-sunshine-700" />
 					) : isText(node.name) ? (
@@ -794,7 +928,7 @@ export default function BrainPage() {
 							title="Delete"
 							onClick={() => {
 								setDeletingPath(node.path);
-								setDeletingIsDir(node.type === "dir");
+								setDeletingIsDir(node.type !== "file");
 							}}
 						>
 							<Trash2 className="h-3 w-3" />
@@ -1041,222 +1175,360 @@ export default function BrainPage() {
 
 			{/* Right panel */}
 			{openFile ? (
-				<Card className="flex-1 flex flex-col overflow-hidden min-w-0">
-					<div className="flex items-center justify-between px-4 py-2 border-b bg-muted shrink-0">
-						<div className="flex items-center gap-2 min-w-0">
-							{isImage(openFile.name) ? (
-								<ImageIcon className="h-4 w-4 shrink-0 text-sunshine-700" />
-							) : isText(openFile.name) ? (
-								<FileText className="h-4 w-4 shrink-0 text-accent" />
-							) : (
-								<File className="h-4 w-4 shrink-0 text-muted-foreground" />
-							)}
-							<span
-								className="text-sm font-normal truncate"
-								title={openFile.path}
-							>
-								{openFile.path}
-							</span>
-						</div>
-						<div className="flex items-center gap-1 shrink-0">
-							{isText(openFile.name) && !editing && fileContent !== null && (
+				openFileViewerKind === "app" ? (
+					appFullscreen ? (
+						<WebsiteViewer
+							path={openFile.path}
+							title={openFile.name}
+							fullscreen
+							onExit={() => setAppFullscreen(false)}
+						/>
+					) : (
+						<Card className="flex-1 flex flex-col overflow-hidden min-w-0">
+							<div className="flex items-center justify-between px-4 py-2 border-b bg-muted shrink-0">
+								<div className="flex items-center gap-2 min-w-0">
+									<Globe className="h-4 w-4 shrink-0 text-accent" />
+									<span
+										className="text-sm font-normal truncate"
+										title={openFile.path}
+									>
+										{openFile.path}
+									</span>
+								</div>
+								<div className="flex items-center gap-1 shrink-0">
+									<Button
+										size="sm"
+										variant="ghost"
+										className="h-7 gap-1.5 text-xs"
+										onClick={() => setAppFullscreen(true)}
+									>
+										<Maximize2 className="h-3.5 w-3.5" />
+										Open as app
+									</Button>
+									<Button
+										size="sm"
+										variant="ghost"
+										className="h-7 w-7 p-0"
+										onClick={() => setOpenFile(null)}
+									>
+										<X className="h-3.5 w-3.5" />
+									</Button>
+								</div>
+							</div>
+							<WebsiteViewer path={openFile.path} title={openFile.name} />
+						</Card>
+					)
+				) : (
+					<Card className="flex-1 flex flex-col overflow-hidden min-w-0">
+						<div className="flex items-center justify-between px-4 py-2 border-b bg-muted shrink-0">
+							<div className="flex items-center gap-2 min-w-0">
+								{isImage(openFile.name) ? (
+									<ImageIcon className="h-4 w-4 shrink-0 text-sunshine-700" />
+								) : isText(openFile.name) ? (
+									<FileText className="h-4 w-4 shrink-0 text-accent" />
+								) : (
+									<File className="h-4 w-4 shrink-0 text-muted-foreground" />
+								)}
+								<span
+									className="text-sm font-normal truncate"
+									title={openFile.path}
+								>
+									{openFile.path}
+								</span>
+							</div>
+							<div className="flex items-center gap-1 shrink-0">
+								{isText(openFile.name) && !editing && fileContent !== null && (
+									<Button
+										size="sm"
+										variant="ghost"
+										className="h-7 w-7 p-0"
+										onClick={() => {
+											setEditing(true);
+											setEditContent(fileContent);
+											setSaveError(null);
+											void useEditorStore.getState().loadPage(openFile.path);
+										}}
+									>
+										<Pencil className="h-3.5 w-3.5" />
+									</Button>
+								)}
 								<Button
 									size="sm"
 									variant="ghost"
 									className="h-7 w-7 p-0"
 									onClick={() => {
-										setEditing(true);
-										setEditContent(fileContent);
+										setOpenFile(null);
+										setFileContent(null);
+										setEditing(false);
+									}}
+								>
+									<X className="h-3.5 w-3.5" />
+								</Button>
+							</div>
+						</div>
+
+						{editing ? (
+							<div className="flex-1 flex flex-col overflow-hidden min-h-0">
+								<KBEditor />
+							</div>
+						) : (
+							<div className="flex-1 overflow-auto p-4 min-h-0">
+								{fileLoading ? (
+									<div className="flex justify-center py-8">
+										<Loader2 className="h-5 w-5 animate-spin text-muted-foreground" />
+									</div>
+								) : openFileViewerKind === "csv" ? (
+									<CsvViewer path={openFile.path} title={openFile.name} />
+								) : openFileViewerKind === "pdf" ? (
+									<PdfViewer path={openFile.path} title={openFile.name} />
+								) : openFileViewerKind === "mermaid" ? (
+									<MermaidViewer path={openFile.path} title={openFile.name} />
+								) : openFileViewerKind === "notebook" ? (
+									<NotebookViewer path={openFile.path} title={openFile.name} />
+								) : openFileViewerKind === "image" ? (
+									<ImageViewer path={openFile.path} title={openFile.name} />
+								) : openFileViewerKind === "media" ? (
+									<MediaViewer
+										path={openFile.path}
+										title={openFile.name}
+										type={
+											["mp4", "webm", "mov", "m4v"].includes(ext(openFile.name))
+												? "video"
+												: "audio"
+										}
+									/>
+								) : openFileViewerKind === "docx" ? (
+									<DocxViewer path={openFile.path} title={openFile.name} />
+								) : openFileViewerKind === "xlsx" ? (
+									<XlsxViewer path={openFile.path} title={openFile.name} />
+								) : openFileViewerKind === "pptx" ? (
+									<PptxViewer path={openFile.path} title={openFile.name} />
+								) : openFileViewerKind === "source" ? (
+									<SourceViewer path={openFile.path} title={openFile.name} />
+								) : openFileViewerKind === "fallback" ? (
+									<FileFallbackViewer
+										path={openFile.path}
+										title={openFile.name}
+									/>
+								) : fileContent !== null ? (
+									["md", "markdown"].includes(ext(openFile.name)) ? (
+										(() => {
+											const { data, body } = parseFrontmatter(fileContent);
+											return (
+												<>
+													<FrontmatterHeader
+														data={data as Record<string, never>}
+													/>
+													<ReactMarkdown
+														remarkPlugins={[remarkGfm, remarkWikilinks]}
+														components={{
+															h1: ({ children }) => (
+																<h1 className="text-2xl font-normal mt-6 mb-3 pb-1 border-b">
+																	{children}
+																</h1>
+															),
+															h2: ({ children }) => (
+																<h2 className="text-xl font-normal mt-5 mb-2 pb-1 border-b">
+																	{children}
+																</h2>
+															),
+															h3: ({ children }) => (
+																<h3 className="text-lg font-normal mt-4 mb-2">
+																	{children}
+																</h3>
+															),
+															h4: ({ children }) => (
+																<h4 className="text-base font-normal mt-3 mb-1">
+																	{children}
+																</h4>
+															),
+															p: ({ children }) => (
+																<p className="text-sm leading-relaxed mb-3">
+																	{children}
+																</p>
+															),
+															ul: ({ children }) => (
+																<ul className="list-disc pl-5 mb-3 space-y-1 text-sm">
+																	{children}
+																</ul>
+															),
+															ol: ({ children }) => (
+																<ol className="list-decimal pl-5 mb-3 space-y-1 text-sm">
+																	{children}
+																</ol>
+															),
+															li: ({ children }) => (
+																<li className="leading-relaxed">{children}</li>
+															),
+															blockquote: ({ children }) => (
+																<blockquote className="border-l-4 border-muted-foreground/30 pl-4 italic text-muted-foreground my-3 text-sm">
+																	{children}
+																</blockquote>
+															),
+															code: ({ className, children, ...props }) => {
+																const isBlock =
+																	className?.includes("language-");
+																return isBlock ? (
+																	<code
+																		className={`block bg-muted rounded-sm px-3 py-2 text-xs font-mono overflow-x-auto my-3 ${className ?? ""}`}
+																		{...props}
+																	>
+																		{children}
+																	</code>
+																) : (
+																	<code
+																		className="bg-muted rounded-sm px-1 py-0.5 text-xs font-mono"
+																		{...props}
+																	>
+																		{children}
+																	</code>
+																);
+															},
+															pre: ({ children }) => (
+																<pre className="my-3 overflow-x-auto">
+																	{children}
+																</pre>
+															),
+															a: ({ href, children, ...rest }) => {
+																const props = rest as Record<string, unknown>;
+																if (props["data-wiki-link"] === "true") {
+																	const slug =
+																		(props["data-slug"] as string) ?? "";
+																	const anchor = props["data-anchor"] as
+																		| string
+																		| undefined;
+																	const broken =
+																		slug &&
+																		!useWikiSlugsStore.getState().has(slug);
+																	return (
+																		<a
+																			href={href}
+																			className="wiki-link"
+																			data-wiki-link="true"
+																			data-slug={slug}
+																			data-anchor={anchor}
+																			data-broken={broken ? "true" : undefined}
+																			onClick={(e) => {
+																				e.preventDefault();
+																				if (!slug) return;
+																				const dir = useWikiSlugsStore
+																					.getState()
+																					.getDir(slug);
+																				if (!dir) return;
+																				const targetPath =
+																					dir === "root"
+																						? `${slug}.md`
+																						: `${dir}/${slug}.md`;
+																				void openViewer({
+																					path: targetPath,
+																					name: `${slug}.md`,
+																					type: "file",
+																				} as TreeNode);
+																				if (anchor) {
+																					setTimeout(() => {
+																						document
+																							.getElementById(anchor)
+																							?.scrollIntoView({
+																								behavior: "smooth",
+																							});
+																					}, 200);
+																				}
+																			}}
+																		>
+																			{children}
+																		</a>
+																	);
+																}
+																return (
+																	<a
+																		href={href}
+																		className="text-primary underline hover:no-underline"
+																		target="_blank"
+																		rel="noreferrer"
+																	>
+																		{children}
+																	</a>
+																);
+															},
+															strong: ({ children }) => (
+																<strong className="font-normal">
+																	{children}
+																</strong>
+															),
+															em: ({ children }) => (
+																<em className="italic">{children}</em>
+															),
+															hr: () => <hr className="my-4 border-border" />,
+															table: ({ children }) => (
+																<div className="overflow-x-auto my-3">
+																	<table className="w-full text-sm border-collapse">
+																		{children}
+																	</table>
+																</div>
+															),
+															th: ({ children }) => (
+																<th className="border border-border px-3 py-1.5 bg-muted font-normal text-left">
+																	{children}
+																</th>
+															),
+															td: ({ children }) => (
+																<td className="border border-border px-3 py-1.5">
+																	{children}
+																</td>
+															),
+														}}
+													>
+														{body}
+													</ReactMarkdown>
+												</>
+											);
+										})()
+									) : (
+										<pre className="text-xs font-mono whitespace-pre-wrap break-words leading-relaxed">
+											{fileContent}
+										</pre>
+									)
+								) : isText(openFile.name) ? (
+									<p className="text-sm text-muted-foreground">
+										Could not load file.
+									</p>
+								) : (
+									<p className="text-sm text-muted-foreground">
+										Preview not available for this file type.
+									</p>
+								)}
+							</div>
+						)}
+
+						{editing && (
+							<div className="border-t px-4 py-2 flex items-center justify-end gap-2 bg-muted shrink-0">
+								{saveError && (
+									<span className="text-xs text-destructive mr-auto">
+										{saveError}
+									</span>
+								)}
+								<Button
+									size="sm"
+									variant="ghost"
+									onClick={() => {
+										setEditing(false);
 										setSaveError(null);
 									}}
 								>
-									<Pencil className="h-3.5 w-3.5" />
+									Cancel
 								</Button>
-							)}
-							<Button
-								size="sm"
-								variant="ghost"
-								className="h-7 w-7 p-0"
-								onClick={() => {
-									setOpenFile(null);
-									setFileContent(null);
-									setEditing(false);
-								}}
-							>
-								<X className="h-3.5 w-3.5" />
-							</Button>
-						</div>
-					</div>
-
-					<div className="flex-1 overflow-auto p-4 min-h-0">
-						{fileLoading ? (
-							<div className="flex justify-center py-8">
-								<Loader2 className="h-5 w-5 animate-spin text-muted-foreground" />
-							</div>
-						) : isImage(openFile.name) ? (
-							// eslint-disable-next-line @next/next/no-img-element
-							// biome-ignore lint/performance/noImgElement: dynamic API URL
-							<img
-								src={`/api/wiki/file?path=${encodeURIComponent(openFile.path)}`}
-								alt={openFile.name}
-								className="max-w-full max-h-full object-contain rounded-sm"
-							/>
-						) : editing ? (
-							<Textarea
-								className="min-h-[400px] font-mono text-xs resize-none w-full"
-								value={editContent}
-								onChange={(e) => setEditContent(e.target.value)}
-								autoFocus
-							/>
-						) : fileContent !== null ? (
-							["md", "markdown"].includes(ext(openFile.name)) ? (
-								<ReactMarkdown
-									remarkPlugins={[remarkGfm]}
-									components={{
-										h1: ({ children }) => (
-											<h1 className="text-2xl font-normal mt-6 mb-3 pb-1 border-b">
-												{children}
-											</h1>
-										),
-										h2: ({ children }) => (
-											<h2 className="text-xl font-normal mt-5 mb-2 pb-1 border-b">
-												{children}
-											</h2>
-										),
-										h3: ({ children }) => (
-											<h3 className="text-lg font-normal mt-4 mb-2">
-												{children}
-											</h3>
-										),
-										h4: ({ children }) => (
-											<h4 className="text-base font-normal mt-3 mb-1">
-												{children}
-											</h4>
-										),
-										p: ({ children }) => (
-											<p className="text-sm leading-relaxed mb-3">{children}</p>
-										),
-										ul: ({ children }) => (
-											<ul className="list-disc pl-5 mb-3 space-y-1 text-sm">
-												{children}
-											</ul>
-										),
-										ol: ({ children }) => (
-											<ol className="list-decimal pl-5 mb-3 space-y-1 text-sm">
-												{children}
-											</ol>
-										),
-										li: ({ children }) => (
-											<li className="leading-relaxed">{children}</li>
-										),
-										blockquote: ({ children }) => (
-											<blockquote className="border-l-4 border-muted-foreground/30 pl-4 italic text-muted-foreground my-3 text-sm">
-												{children}
-											</blockquote>
-										),
-										code: ({ className, children, ...props }) => {
-											const isBlock = className?.includes("language-");
-											return isBlock ? (
-												<code
-													className={`block bg-muted rounded-sm px-3 py-2 text-xs font-mono overflow-x-auto my-3 ${className ?? ""}`}
-													{...props}
-												>
-													{children}
-												</code>
-											) : (
-												<code
-													className="bg-muted rounded-sm px-1 py-0.5 text-xs font-mono"
-													{...props}
-												>
-													{children}
-												</code>
-											);
-										},
-										pre: ({ children }) => (
-											<pre className="my-3 overflow-x-auto">{children}</pre>
-										),
-										a: ({ href, children }) => (
-											<a
-												href={href}
-												className="text-primary underline hover:no-underline"
-												target="_blank"
-												rel="noreferrer"
-											>
-												{children}
-											</a>
-										),
-										strong: ({ children }) => (
-											<strong className="font-normal">{children}</strong>
-										),
-										em: ({ children }) => (
-											<em className="italic">{children}</em>
-										),
-										hr: () => <hr className="my-4 border-border" />,
-										table: ({ children }) => (
-											<div className="overflow-x-auto my-3">
-												<table className="w-full text-sm border-collapse">
-													{children}
-												</table>
-											</div>
-										),
-										th: ({ children }) => (
-											<th className="border border-border px-3 py-1.5 bg-muted font-normal text-left">
-												{children}
-											</th>
-										),
-										td: ({ children }) => (
-											<td className="border border-border px-3 py-1.5">
-												{children}
-											</td>
-										),
-									}}
+								<Button
+									size="sm"
+									className="gap-1"
+									onClick={handleSave}
+									disabled={saving}
 								>
-									{fileContent}
-								</ReactMarkdown>
-							) : (
-								<pre className="text-xs font-mono whitespace-pre-wrap break-words leading-relaxed">
-									{fileContent}
-								</pre>
-							)
-						) : isText(openFile.name) ? (
-							<p className="text-sm text-muted-foreground">
-								Could not load file.
-							</p>
-						) : (
-							<p className="text-sm text-muted-foreground">
-								Preview not available for this file type.
-							</p>
+									{saving && <Loader2 className="h-3 w-3 animate-spin" />}Save
+								</Button>
+							</div>
 						)}
-					</div>
-
-					{editing && (
-						<div className="border-t px-4 py-2 flex items-center justify-end gap-2 bg-muted shrink-0">
-							{saveError && (
-								<span className="text-xs text-destructive mr-auto">
-									{saveError}
-								</span>
-							)}
-							<Button
-								size="sm"
-								variant="ghost"
-								onClick={() => {
-									setEditing(false);
-									setSaveError(null);
-								}}
-							>
-								Cancel
-							</Button>
-							<Button
-								size="sm"
-								className="gap-1"
-								onClick={handleSave}
-								disabled={saving}
-							>
-								{saving && <Loader2 className="h-3 w-3 animate-spin" />}Save
-							</Button>
-						</div>
-					)}
-				</Card>
+					</Card>
+				)
 			) : (
 				<Card className="flex-1 flex flex-col overflow-hidden min-w-0">
 					{/* Shared header: agent, model, init/sync */}

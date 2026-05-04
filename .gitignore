@@ -28,6 +28,14 @@ data/daemon-status.json
 data/active-runs.json
 data/respond-runs.json
 
+# llm-wiki-pm runtime artifacts (live in repo root when wiki dir is colocated)
+.wiki-lock
+_status.md
+queries/
+
+# Local package tarballs
+*.tgz
+
 # Checkpoint data (user checkpoints not pushed to repo, demo included)
 data/checkpoints/*.json
 !data/checkpoints/snap_demo.json
