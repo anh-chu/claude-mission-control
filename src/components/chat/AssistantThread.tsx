@@ -26,6 +26,7 @@ import {
 	Trash2,
 } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
+import { MarkdownContent } from "@/components/markdown-content";
 import { useCommands } from "@/hooks/use-data";
 import { cn } from "@/lib/utils";
 import { claudeCodeToolUIs } from "./tool-uis";
@@ -101,25 +102,45 @@ function MessageBody() {
 		>
 			<div
 				className={cn(
-					"max-w-[85%] rounded-md px-3 py-2 text-sm whitespace-pre-wrap break-words",
+					"max-w-[85%] rounded-md px-3 py-2 text-sm break-words",
 					isUser
-						? "bg-primary text-primary-foreground"
+						? "bg-primary text-primary-foreground whitespace-pre-wrap"
 						: "bg-muted text-foreground",
 				)}
 			>
-				{message.content.map((part, i) => {
-					if (part.type === "text") {
-						// biome-ignore lint/suspicious/noArrayIndexKey: parts are append-only
-						return <span key={i}>{part.text}</span>;
-					}
-					if (part.type === "reasoning") {
-						return (
-							// biome-ignore lint/suspicious/noArrayIndexKey: parts are append-only
-							<ReasoningBlock key={i} text={part.text} />
-						);
-					}
-					return null;
-				})}
+				{(() => {
+					const nodes: React.ReactNode[] = [];
+					let textBuf = "";
+					let textKey = 0;
+					const flushText = () => {
+						if (!textBuf) return;
+						if (isUser) {
+							nodes.push(<span key={`t-${textKey}`}>{textBuf}</span>);
+						} else {
+							nodes.push(
+								<MarkdownContent
+									key={`t-${textKey}`}
+									content={textBuf}
+									className="text-sm text-foreground"
+								/>,
+							);
+						}
+						textBuf = "";
+						textKey++;
+					};
+					message.content.forEach((part, i) => {
+						if (part.type === "text") {
+							textBuf += part.text;
+							return;
+						}
+						if (part.type === "reasoning") {
+							flushText();
+							nodes.push(<ReasoningBlock key={`r-${i}`} text={part.text} />);
+						}
+					});
+					flushText();
+					return nodes;
+				})()}
 				{message.status?.type === "running" &&
 					!message.content.some((p) => p.type === "text") && (
 						<span className="text-muted-foreground italic">Thinking…</span>
