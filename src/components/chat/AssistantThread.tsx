@@ -25,7 +25,7 @@ import {
 	Send,
 	Trash2,
 } from "lucide-react";
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useCommands } from "@/hooks/use-data";
 import { cn } from "@/lib/utils";
 import { claudeCodeToolUIs } from "./tool-uis";
@@ -61,110 +61,6 @@ export interface SessionEntry {
 	updatedAt: string;
 }
 
-// ---- Permission card types -----------------------------------------------
-
-interface PermissionData {
-	requestId: string;
-	toolName: string;
-	input: Record<string, unknown>;
-	title?: string;
-	displayName?: string;
-	description?: string;
-}
-
-interface PermissionSettledData {
-	requestId: string;
-	behavior: "allow" | "deny";
-}
-
-// ---- Permission card -------------------------------------------------------
-
-function PermissionCard({
-	data,
-	settled,
-	streamComplete,
-}: {
-	data: PermissionData;
-	settled: "allow" | "deny" | null;
-	streamComplete: boolean;
-}) {
-	const [pending, setPending] = useState(false);
-
-	const handleDecision = useCallback(
-		async (decision: "allow" | "deny") => {
-			setPending(true);
-			try {
-				await fetch("/api/chat/permission", {
-					method: "POST",
-					headers: { "Content-Type": "application/json" },
-					body: JSON.stringify({ requestId: data.requestId, decision }),
-				});
-			} catch {
-				// Ignore network errors; the stream will timeout server-side.
-				setPending(false);
-			}
-		},
-		[data.requestId],
-	);
-
-	if (settled === "allow") {
-		return (
-			<span className="inline-flex items-center gap-1 text-xs rounded-full px-2 py-0.5 font-medium bg-green-500/20 text-green-700 dark:text-green-400 my-1">
-				Approved
-			</span>
-		);
-	}
-
-	if (settled === "deny") {
-		return (
-			<span className="inline-flex items-center gap-1 text-xs rounded-full px-2 py-0.5 font-medium bg-destructive/20 text-destructive my-1">
-				Denied
-			</span>
-		);
-	}
-
-	if (streamComplete) {
-		return (
-			<span className="text-xs text-muted-foreground italic my-1">
-				Pending. Reload to retry.
-			</span>
-		);
-	}
-
-	const label = data.title ?? data.displayName ?? data.toolName;
-	const inputPreview = JSON.stringify(data.input).slice(0, 100);
-
-	return (
-		<div className="border rounded-md px-3 py-2 my-1 bg-card text-foreground text-xs space-y-1.5 max-w-full">
-			<div className="font-medium">{label}</div>
-			{data.description && (
-				<div className="text-muted-foreground">{data.description}</div>
-			)}
-			<div className="font-mono text-muted-foreground truncate">
-				{data.toolName}: {inputPreview}
-			</div>
-			<div className="flex gap-2 pt-0.5">
-				<button
-					type="button"
-					disabled={pending}
-					onClick={() => handleDecision("allow")}
-					className="rounded-sm bg-primary px-2 py-1 text-primary-foreground hover:bg-primary/90 disabled:opacity-50 text-xs"
-				>
-					Approve
-				</button>
-				<button
-					type="button"
-					disabled={pending}
-					onClick={() => handleDecision("deny")}
-					className="rounded-sm bg-destructive px-2 py-1 text-destructive-foreground hover:bg-destructive/90 disabled:opacity-50 text-xs"
-				>
-					Deny
-				</button>
-			</div>
-		</div>
-	);
-}
-
 // ---- Reasoning block -------------------------------------------------------
 
 function ReasoningBlock({ text }: { text: string }) {
@@ -198,19 +94,6 @@ function ReasoningBlock({ text }: { text: string }) {
 function MessageBody() {
 	const message = useMessage();
 	const isUser = message.role === "user";
-	const streamComplete = message.status?.type !== "running";
-
-	// Collect settled permission IDs from data-permission-settled parts.
-	const settledMap = useMemo(() => {
-		const map = new Map<string, "allow" | "deny">();
-		for (const part of message.content) {
-			if (part.type === "data" && part.name === "permission-settled") {
-				const d = part.data as PermissionSettledData;
-				map.set(d.requestId, d.behavior);
-			}
-		}
-		return map;
-	}, [message.content]);
 
 	return (
 		<div
@@ -235,23 +118,11 @@ function MessageBody() {
 							<ReasoningBlock key={i} text={part.text} />
 						);
 					}
-					if (part.type === "data" && part.name === "permission") {
-						const perm = part.data as PermissionData;
-						return (
-							// biome-ignore lint/suspicious/noArrayIndexKey: parts are append-only
-							<PermissionCard
-								key={i}
-								data={perm}
-								settled={settledMap.get(perm.requestId) ?? null}
-								streamComplete={streamComplete}
-							/>
-						);
-					}
 					return null;
 				})}
 				{message.status?.type === "running" &&
 					!message.content.some((p) => p.type === "text") && (
-						<span className="text-muted-foreground italic">Thinking...</span>
+						<span className="text-muted-foreground italic">Thinking…</span>
 					)}
 			</div>
 		</div>
