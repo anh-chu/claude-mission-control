@@ -6,7 +6,7 @@
 import * as fs from "node:fs";
 import * as path from "node:path";
 import type { Query } from "@anthropic-ai/claude-agent-sdk";
-import { type ModelMessage, streamText } from "ai";
+import { convertToModelMessages, streamText, type UIMessage } from "ai";
 import { claudeCode } from "ai-sdk-provider-claude-code";
 import { getSessionId, saveSessionId } from "@/lib/chat-sessions";
 import { getWikiDir, getWorkspaceDir } from "@/lib/paths";
@@ -72,7 +72,7 @@ export async function POST(request: Request) {
 	const workspaceId = await applyWorkspaceContext();
 
 	const body = (await request.json()) as {
-		messages: ModelMessage[];
+		messages: UIMessage[];
 		data?: {
 			cwd?: string;
 			model?: string;
@@ -125,10 +125,11 @@ export async function POST(request: Request) {
 			},
 		});
 
+		const modelMessages = await convertToModelMessages(messages);
 		// persona: if provided, prepend a { role: 'system', content: persona } to messages
 		const enhancedMessages = data?.persona
-			? [{ role: "system" as const, content: data.persona }, ...messages]
-			: messages;
+			? [{ role: "system" as const, content: data.persona }, ...modelMessages]
+			: modelMessages;
 
 		const result = streamText({ model, messages: enhancedMessages });
 

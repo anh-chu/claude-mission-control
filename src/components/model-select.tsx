@@ -21,9 +21,14 @@ const FALLBACK_MODELS: ModelInfo[] = [
 ];
 
 export function ModelSelect({ value, onChange, className }: ModelSelectProps) {
+	const [mounted, setMounted] = useState(false);
 	const [models, setModels] = useState<ModelInfo[]>([]);
 	const [loading, setLoading] = useState(true);
 	const [error, setError] = useState(false);
+
+	useEffect(() => {
+		setMounted(true);
+	}, []);
 
 	useEffect(() => {
 		let mounted = true;
@@ -68,7 +73,8 @@ export function ModelSelect({ value, onChange, className }: ModelSelectProps) {
 		<select
 			value={value}
 			onChange={(e) => onChange(e.target.value)}
-			disabled={loading}
+			disabled={mounted && loading ? true : undefined}
+			suppressHydrationWarning
 			className={cn(
 				"h-7 rounded-sm border bg-secondary px-2 text-xs",
 				className,
