@@ -17,13 +17,21 @@ import type { UIMessage } from "ai";
 
 // ---- Path helpers ----------------------------------------------------------
 
+/**
+ * Encode a cwd into Claude Code's project-directory naming scheme.
+ * Both `/` and `.` are replaced with `-`, so `/home/sil/.mandio/workspaces/default`
+ * becomes `-home-sil--mandio-workspaces-default` (note the double dash).
+ */
+function encodeCwd(cwd: string): string {
+	return cwd.replaceAll(/[/.]/g, "-");
+}
+
 export function getSessionLogPath(cwd: string, sessionId: string): string {
-	const encoded = cwd.replaceAll("/", "-");
 	return path.join(
 		os.homedir(),
 		".claude",
 		"projects",
-		encoded,
+		encodeCwd(cwd),
 		`${sessionId}.jsonl`,
 	);
 }
