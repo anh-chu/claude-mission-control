@@ -1,12 +1,20 @@
 // Phase 2 — enhanced API route with session resume + persistence
 // Phase 6 — multi-session support; GET returns sessions list.
+// Phase 7 — inline permission prompts via canUseTool + createUIMessageStream.
 // Deviations from plan documented in Phase 0:
 // - toUIMessageStreamResponse() instead of toDataStreamResponse()
 // - AssistantChatTransport expects UIMessageStream format
 
 import * as fs from "node:fs";
 import * as path from "node:path";
-import { convertToModelMessages, streamText, type UIMessage } from "ai";
+import {
+	convertToModelMessages,
+	createUIMessageStream,
+	createUIMessageStreamResponse,
+	streamText,
+	type UIMessage,
+} from "ai";
+import type { CanUseTool } from "ai-sdk-provider-claude-code";
 import { claudeCode } from "ai-sdk-provider-claude-code";
 import {
 	createSession,
@@ -15,6 +23,7 @@ import {
 	updateSession,
 } from "@/lib/chat-sessions";
 import { getWikiDir, getWorkspaceDir } from "@/lib/paths";
+import { registerPending } from "@/lib/permission-bus";
 import { applyWorkspaceContext } from "@/lib/workspace-context";
 
 /** Resolve a default cwd from context when client did not pass one. */
@@ -200,51 +209,102 @@ export async function POST(request: Request) {
 
 	const sessionId = currentSession.id;
 
-	try {
-		const model = claudeCode(body.model ?? "sonnet", {
-			cwd,
-			persistSession: true,
-			allowDangerouslySkipPermissions: true,
-			...(currentClaudeSessionId ? { resume: currentClaudeSessionId } : {}),
-		});
+	const modelMessages = await convertToModelMessages(messages);
+	const enhancedMessages = body.persona
+		? [{ role: "system" as const, content: body.persona }, ...modelMessages]
+		: modelMessages;
 
-		const modelMessages = await convertToModelMessages(messages);
-		const enhancedMessages = body.persona
-			? [{ role: "system" as const, content: body.persona }, ...modelMessages]
-			: modelMessages;
+	const stream = createUIMessageStream({
+		execute: async ({ writer }) => {
+			// canUseTool intercepts MCP tool permission gates. allowDangerouslySkipPermissions
+			// does not bypass MCP tool permissions, so this callback fires for Slack, Gmail,
+			// and similar external tools regardless of that setting.
+			const canUseTool: CanUseTool = async (toolName, input, opts) => {
+				const requestId = opts.toolUseID;
+				const permPromise = registerPending(requestId);
 
-		const result = streamText({
-			model,
-			messages: enhancedMessages,
-			onFinish: (event) => {
+				// Emit the permission request to the client stream.
+				writer.write({
+					type: "data-permission",
+					id: requestId,
+					data: {
+						requestId,
+						toolName,
+						input,
+						title: opts.title,
+						displayName: opts.displayName,
+						description: opts.description,
+					},
+				});
+
 				try {
-					const meta = event.providerMetadata?.["claude-code"];
-					const sid =
-						meta && typeof meta.sessionId === "string"
-							? meta.sessionId
-							: undefined;
-					if (sid) {
-						updateSession(workspaceId, context, sessionId, { sessionId: sid });
-					}
-				} catch (err) {
-					console.warn("Failed to save session ID:", err);
-				} finally {
-					safeReleaseSlot();
+					const result = await permPromise;
+					// Let the client collapse the card to a settled pill.
+					writer.write({
+						type: "data-permission-settled",
+						id: requestId,
+						data: { requestId, behavior: result.behavior },
+					});
+					return result;
+				} catch {
+					// Timeout or abort: treat as denial so the SDK does not hang.
+					return {
+						behavior: "deny",
+						message: "Permission request timed out or was aborted.",
+					};
 				}
-			},
-			onError: (event) => {
-				console.warn("Chat stream error:", event.error);
-				safeReleaseSlot();
-			},
-			onAbort: () => {
-				safeReleaseSlot();
-			},
-		});
+			};
 
-		return result.toUIMessageStreamResponse();
-	} catch (err) {
-		// Setup failed before stream lifecycle hooks were wired.
-		safeReleaseSlot();
-		throw err;
-	}
+			const model = claudeCode(body.model ?? "sonnet", {
+				cwd,
+				persistSession: true,
+				// MCP tool permission gates fire even with this flag set, so we
+				// keep it true for file-system/bash bypass while canUseTool handles
+				// the remaining gates.
+				allowDangerouslySkipPermissions: true,
+				canUseTool,
+				...(currentClaudeSessionId ? { resume: currentClaudeSessionId } : {}),
+			});
+
+			const result = streamText({
+				model,
+				messages: enhancedMessages,
+				onFinish: (event) => {
+					try {
+						const meta = event.providerMetadata?.["claude-code"];
+						const sid =
+							meta && typeof meta.sessionId === "string"
+								? meta.sessionId
+								: undefined;
+						if (sid) {
+							updateSession(workspaceId, context, sessionId, {
+								sessionId: sid,
+							});
+						}
+					} catch (err) {
+						console.warn("Failed to save session ID:", err);
+					} finally {
+						safeReleaseSlot();
+					}
+				},
+				onError: (event) => {
+					console.warn("Chat stream error:", event.error);
+					safeReleaseSlot();
+				},
+				onAbort: () => {
+					safeReleaseSlot();
+				},
+			});
+
+			writer.merge(result.toUIMessageStream());
+		},
+		onError: (err) => {
+			// execute() threw before the stream lifecycle hooks were wired.
+			console.warn("Chat stream setup error:", err);
+			safeReleaseSlot();
+			return err instanceof Error ? err.message : "An error occurred.";
+		},
+	});
+
+	return createUIMessageStreamResponse({ stream });
 }
