@@ -6,7 +6,6 @@
 
 import * as fs from "node:fs";
 import * as path from "node:path";
-import type { Query } from "@anthropic-ai/claude-agent-sdk";
 import { convertToModelMessages, streamText, type UIMessage } from "ai";
 import { claudeCode } from "ai-sdk-provider-claude-code";
 import {
@@ -147,9 +146,6 @@ export async function POST(request: Request) {
 	// Acquire chat slot
 	await acquireChatSlot();
 
-	// Track the new session ID from claude-code
-	let newClaudeSessionId: string | undefined;
-
 	const sessionId = currentSession.id;
 
 	try {
@@ -158,10 +154,6 @@ export async function POST(request: Request) {
 			persistSession: true,
 			allowDangerouslySkipPermissions: true,
 			...(currentClaudeSessionId ? { resume: currentClaudeSessionId } : {}),
-			onQueryCreated: (query: Query) => {
-				const q = query as { sessionId?: string; id?: string };
-				newClaudeSessionId = q.sessionId || q.id;
-			},
 		});
 
 		const modelMessages = await convertToModelMessages(messages);
@@ -169,24 +161,24 @@ export async function POST(request: Request) {
 			? [{ role: "system" as const, content: data.persona }, ...modelMessages]
 			: modelMessages;
 
-		const result = streamText({ model, messages: enhancedMessages });
-
-		// Save Claude Code session ID after stream completes
-		Promise.resolve(result.text)
-			.then(() => {
-				if (newClaudeSessionId) {
+		const result = streamText({
+			model,
+			messages: enhancedMessages,
+			onFinish: (event) => {
+				const meta = event.providerMetadata?.["claude-code"];
+				const sid =
+					meta && typeof meta.sessionId === "string"
+						? meta.sessionId
+						: undefined;
+				if (sid) {
 					try {
-						updateSession(workspaceId, context, sessionId, {
-							sessionId: newClaudeSessionId,
-						});
-					} catch (error) {
-						console.warn("Failed to save session ID:", error);
+						updateSession(workspaceId, context, sessionId, { sessionId: sid });
+					} catch (err) {
+						console.warn("Failed to save session ID:", err);
 					}
 				}
-			})
-			.catch((error: unknown) => {
-				console.warn("Stream completion error:", error);
-			});
+			},
+		});
 
 		return result.toUIMessageStreamResponse();
 	} finally {
