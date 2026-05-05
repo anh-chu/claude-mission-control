@@ -3,6 +3,7 @@
 import { usePathname, useRouter } from "next/navigation";
 import { useCallback, useEffect, useState } from "react";
 import { AppSidebar } from "@/components/app-sidebar";
+import { ChatSidebar } from "@/components/chat/ChatSidebar";
 import { CommandBar } from "@/components/command-bar";
 import { KeyboardShortcuts } from "@/components/keyboard-shortcuts";
 import { SearchDialog } from "@/components/search-dialog";
@@ -22,6 +23,7 @@ interface LayoutShellProps {
 
 export function LayoutShell({ children }: LayoutShellProps) {
 	const [sidebarOpen, setSidebarOpen] = useState(true);
+	const [chatOpen, setChatOpen] = useState(false);
 	const [isMobile, setIsMobile] = useState(false);
 	const pathname = usePathname();
 	const router = useRouter();
@@ -29,6 +31,25 @@ export function LayoutShell({ children }: LayoutShellProps) {
 	const { online } = useConnection();
 	const { currentId: workspaceId } = useWorkspace();
 	const { commands } = useCommands(workspaceId);
+
+	// Restore chat sidebar state from localStorage
+	useEffect(() => {
+		try {
+			const stored = localStorage.getItem("mandio.chat-sidebar.open");
+			if (stored === "true") setChatOpen(true);
+		} catch {
+			// localStorage unavailable
+		}
+	}, []);
+
+	// Persist chat sidebar state
+	useEffect(() => {
+		try {
+			localStorage.setItem("mandio.chat-sidebar.open", String(chatOpen));
+		} catch {
+			// localStorage unavailable
+		}
+	}, [chatOpen]);
 
 	// Detect mobile viewport and auto-close sidebar
 	useEffect(() => {
@@ -109,6 +130,7 @@ export function LayoutShell({ children }: LayoutShellProps) {
 					className={cn(
 						"min-h-[calc(100vh-3.5rem)] transition-all duration-200 p-4 md:p-6",
 						isMobile ? "ml-0" : sidebarOpen ? "ml-56" : "ml-14",
+						!isMobile && (chatOpen ? "mr-[380px]" : "mr-10"),
 					)}
 				>
 					{!online && (
@@ -119,6 +141,11 @@ export function LayoutShell({ children }: LayoutShellProps) {
 					)}
 					<ActiveRunsProvider>{children}</ActiveRunsProvider>
 				</main>
+				<ChatSidebar
+					open={chatOpen}
+					onToggle={() => setChatOpen((v) => !v)}
+					isMobile={isMobile}
+				/>
 			</div>
 		</TooltipProvider>
 	);
