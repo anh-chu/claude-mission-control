@@ -24,7 +24,6 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
 import { BreadcrumbNav } from "@/components/breadcrumb-nav";
-import { AssistantThread } from "@/components/chat/AssistantThread";
 import { ConfirmDialog } from "@/components/confirm-dialog";
 import { CsvViewer } from "@/components/editor/csv-viewer";
 import { KBEditor } from "@/components/editor/editor";
@@ -39,26 +38,13 @@ import { XlsxViewer } from "@/components/editor/office/xlsx-viewer";
 import { PdfViewer } from "@/components/editor/pdf-viewer";
 import { SourceViewer } from "@/components/editor/source-viewer";
 import { WebsiteViewer } from "@/components/editor/website-viewer";
-import { ModelSelect } from "@/components/model-select";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { FrontmatterHeader } from "@/components/wiki/frontmatter-header";
 import { parseFrontmatter } from "@/lib/markdown/parse-frontmatter";
 import remarkWikilinks from "@/lib/markdown/remark-wikilinks";
 
-function useAgents(): {
-	agents: Array<{
-		id: string;
-		name: string;
-		status: string;
-		model: string;
-		instructions?: string;
-	}>;
-} {
-	return { agents: [] };
-}
-
-import { useWorkspace } from "@/hooks/use-workspace";
+import { showError, showSuccess } from "@/lib/toast";
 import { cn } from "@/lib/utils";
 import { useEditorStore } from "@/stores/editor-store";
 import { useWikiSlugsStore } from "@/stores/wiki-slugs-store";
@@ -73,8 +59,6 @@ interface TreeNode {
 	expanded?: boolean;
 	loading?: boolean;
 }
-
-const DOC_MAINTAINER_AGENT_ID = "doc-maintainer";
 
 export type ViewerKind =
 	| "editor"
@@ -234,23 +218,10 @@ export default function BrainPage() {
 	const [saving, setSaving] = useState(false);
 	const [saveError, setSaveError] = useState<string | null>(null);
 
-	const [runError, setRunError] = useState<string | null>(null);
-	const [runMessage, setRunMessage] = useState<string | null>(null);
 	const [initingWiki, setInitingWiki] = useState(false);
 	const [wikiInitialized, setWikiInitialized] = useState(false);
 	const [pluginVersion, setPluginVersion] = useState<string | null>(null);
 	const [pluginJustUpdated, setPluginJustUpdated] = useState(false);
-
-	const [selectedAgentId, setSelectedAgentId] = useState(
-		DOC_MAINTAINER_AGENT_ID,
-	);
-	const { currentId: workspaceId } = useWorkspace();
-	const { agents } = useAgents();
-	const runAgents = agents.filter((a) => a.status === "active");
-	const hasDocMaintainer = runAgents.some(
-		(a) => a.id === DOC_MAINTAINER_AGENT_ID,
-	);
-	const [selectedModel, setSelectedModel] = useState("sonnet");
 
 	// Drag state
 	const dragNodeRef = useRef<TreeNode | null>(null);
@@ -416,25 +387,8 @@ export default function BrainPage() {
 		setSaving(false);
 	}
 
-	useEffect(() => {
-		if (runAgents.length === 0) return;
-		if (!runAgents.some((a) => a.id === selectedAgentId)) {
-			setSelectedAgentId(DOC_MAINTAINER_AGENT_ID);
-		}
-	}, [runAgents, selectedAgentId]);
-
-	// Sync model when agent changes
-	useEffect(() => {
-		const agent = runAgents.find((a) => a.id === selectedAgentId);
-		if (agent?.model) {
-			setSelectedModel(agent.model);
-		}
-	}, [selectedAgentId, runAgents]);
-
 	const handleInitWiki = useCallback(async () => {
 		setInitingWiki(true);
-		setRunError(null);
-		setRunMessage(null);
 		try {
 			const res = await fetch("/api/wiki/init", { method: "POST" });
 			if (!res.ok) {
@@ -463,7 +417,7 @@ export default function BrainPage() {
 				parts.push("wiki bootstrapped");
 			}
 			if (data.pluginVersion) parts.push(`v${data.pluginVersion}`);
-			setRunMessage(parts.join(" · "));
+			showSuccess(parts.join(" / "));
 			if (
 				data.bootstrapStatus === "bootstrapped" ||
 				data.bootstrapStatus === "already-initialized"
@@ -472,7 +426,7 @@ export default function BrainPage() {
 			}
 			await reloadDir("");
 		} catch (err) {
-			setRunError(
+			showError(
 				err instanceof Error ? err.message : "Failed to initialize wiki",
 			);
 		} finally {
@@ -1341,60 +1295,12 @@ export default function BrainPage() {
 					</Card>
 				)
 			) : (
-				<Card className="flex-1 flex flex-col overflow-hidden min-w-0">
-					{/* Shared header: agent, model, init/sync */}
-					<div className="flex items-center justify-between px-4 py-2 border-b bg-muted shrink-0">
-						<div className="flex items-center gap-2">
-							<select
-								className="h-7 rounded-sm border bg-secondary px-2 text-xs"
-								value={selectedAgentId}
-								onChange={(e) => setSelectedAgentId(e.target.value)}
-							>
-								{!hasDocMaintainer ? (
-									<option value={DOC_MAINTAINER_AGENT_ID}>
-										Doc Maintainer
-									</option>
-								) : null}
-								{runAgents.map((agent) => (
-									<option key={agent.id} value={agent.id}>
-										{agent.name}
-									</option>
-								))}
-							</select>
-							<ModelSelect
-								value={selectedModel}
-								onChange={setSelectedModel}
-								className="h-7 rounded-sm border bg-secondary px-2 text-xs"
-							/>
-						</div>
-					</div>
-
-					{/* Error/message banners */}
-					{(runError || runMessage) && (
-						<div className="px-4 pt-3 space-y-2">
-							{runError && (
-								<div className="rounded-sm border border-destructive/30 bg-destructive-soft px-3 py-2 text-xs text-destructive">
-									{runError}
-								</div>
-							)}
-							{runMessage && (
-								<div className="rounded-sm border border-primary/30 bg-primary-soft px-3 py-2 text-xs text-primary">
-									{runMessage}
-								</div>
-							)}
-						</div>
-					)}
-
-					{/* Chat: AssistantThread owns its own composer */}
-					<div className="flex-1 overflow-hidden">
-						<AssistantThread
-							workspaceId={workspaceId}
-							context="wiki:index"
-							model={selectedModel}
-							persona={
-								runAgents.find((a) => a.id === selectedAgentId)?.instructions
-							}
-						/>
+				<Card className="flex-1 flex flex-col items-center justify-center overflow-hidden min-w-0">
+					<div className="flex flex-col items-center gap-2 text-center px-4">
+						<FileText className="h-8 w-8 text-muted-foreground" />
+						<p className="text-sm text-muted-foreground">
+							Select a file to view or edit
+						</p>
 					</div>
 				</Card>
 			)}
