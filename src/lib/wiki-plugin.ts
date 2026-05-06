@@ -35,6 +35,12 @@ interface ListedPlugin {
 const REPO = "anh-chu/llm-wiki-pm";
 const PKG = "llm-wiki-pm@anh-chu-plugins";
 const MIN_PLUGIN_VERSION = "2.5.0";
+const STATUS_TTL_MS = 30_000;
+
+const statusCache = new Map<
+	string,
+	{ installed: boolean; version: string | null; expiresAt: number }
+>();
 
 function parseVersionParts(version: string): [number, number, number] {
 	const [majorRaw = "0", minorRaw = "0", patchRaw = "0"] = version
@@ -135,12 +141,22 @@ export function getPluginStatus(cwd: string): {
 	installed: boolean;
 	version: string | null;
 } {
+	const key = path.resolve(cwd);
+	const cached = statusCache.get(key);
+	if (cached && cached.expiresAt > Date.now()) {
+		return { installed: cached.installed, version: cached.version };
+	}
+
 	const plugin = getInstalledPlugin(cwd);
-	if (!plugin) return { installed: false, version: null };
-	return {
-		installed: true,
-		version: typeof plugin.version === "string" ? plugin.version : null,
-	};
+	const result = !plugin
+		? { installed: false, version: null }
+		: {
+				installed: true,
+				version: typeof plugin.version === "string" ? plugin.version : null,
+			};
+
+	statusCache.set(key, { ...result, expiresAt: Date.now() + STATUS_TTL_MS });
+	return result;
 }
 
 export function ensureWikiPluginInstalledDetailed(

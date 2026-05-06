@@ -254,30 +254,35 @@ export default function BrainPage() {
 		rootLoadingRef.current = true;
 		setRootLoading(true);
 
-		Promise.all([
-			fetchDir(""),
-			fetch("/api/wiki/status")
-				.then(
-					(r) =>
-						r.json() as Promise<{ installed: boolean; version: string | null }>,
-				)
-				.catch(() => ({ installed: false, version: null })),
-		])
-			.then(([nodes, status]) => {
+		fetchDir("")
+			.then((nodes) => {
 				setRoots(nodes);
 				setRootLoaded(true);
-				if (status.installed) {
-					setWikiInitialized(true);
-					if (status.version) setPluginVersion(status.version);
-				} else if (nodes.length > 0) {
-					setWikiInitialized(true);
-				}
+				if (nodes.length > 0) setWikiInitialized(true);
+				setRootLoading(false);
+
+				// Fetch plugin status separately so it never blocks the tree
+				fetch("/api/wiki/status")
+					.then(
+						(r) =>
+							r.json() as Promise<{
+								installed: boolean;
+								version: string | null;
+							}>,
+					)
+					.then((status) => {
+						if (status.installed) {
+							setWikiInitialized(true);
+							if (status.version) setPluginVersion(status.version);
+						}
+					})
+					.catch(() => {
+						// status check failed — tree is still usable
+					});
 			})
 			.catch(() => {
 				// fetch failed — allow retry on next mount
 				rootLoadingRef.current = false;
-			})
-			.finally(() => {
 				setRootLoading(false);
 			});
 	}, [rootLoaded]); // eslint-disable-line react-hooks/exhaustive-deps
