@@ -26,7 +26,6 @@ import type { BrainDumpEntry } from "@/lib/types";
 export function DashboardInbox() {
 	const {
 		entries,
-		create: createEntry,
 		update: updateEntry,
 		remove: deleteEntry,
 		loading,
