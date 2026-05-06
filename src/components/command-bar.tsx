@@ -1,16 +1,9 @@
 "use client";
 
-import {
-	Bot,
-	Lightbulb,
-	Menu,
-	PanelLeft,
-	PanelLeftClose,
-	Search,
-	X,
-	Zap,
-} from "lucide-react";
+import { Bot, Lightbulb, Search, Settings2, X, Zap } from "lucide-react";
+import Link from "next/link";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { TopNav } from "@/components/top-nav";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Tip } from "@/components/ui/tip";
@@ -19,9 +12,6 @@ import { cn } from "@/lib/utils";
 
 interface CommandBarProps {
 	onCapture: (content: string) => void;
-	sidebarOpen: boolean;
-	onToggleSidebar: () => void;
-	isMobile?: boolean;
 	tasks?: Task[];
 	onTaskClick?: (task: Task) => void;
 	commands?: CommandDefinition[];
@@ -29,9 +19,6 @@ interface CommandBarProps {
 
 export function CommandBar({
 	onCapture,
-	sidebarOpen,
-	onToggleSidebar,
-	isMobile = false,
 	tasks = [],
 	onTaskClick,
 	commands = [],
@@ -134,23 +121,7 @@ export function CommandBar({
 				<div className="flex-1 bg-[#fb6424]" />
 				<div className="flex-1 bg-[#fa520f]" />
 			</div>
-			<Tip content="Toggle sidebar">
-				<Button
-					variant="ghost"
-					size="icon"
-					onClick={onToggleSidebar}
-					className="shrink-0 text-muted-foreground hover:text-foreground"
-					aria-label="Toggle sidebar"
-				>
-					{isMobile ? (
-						<Menu className="h-5 w-5" />
-					) : sidebarOpen ? (
-						<PanelLeftClose className="h-5 w-5" />
-					) : (
-						<PanelLeft className="h-5 w-5" />
-					)}
-				</Button>
-			</Tip>
+			<TopNav />
 
 			<div
 				className={cn(
@@ -298,6 +269,16 @@ export function CommandBar({
 					</div>
 				)}
 			</div>
+			<Link
+				href="/settings"
+				className={cn(
+					"shrink-0 flex items-center rounded-md px-2 py-1.5 text-sm font-medium transition-all duration-200",
+					"text-muted-foreground hover:bg-accent/60 hover:text-accent-foreground",
+				)}
+				aria-label="Settings"
+			>
+				<Settings2 className="h-4 w-4 shrink-0" />
+			</Link>
 		</header>
 	);
 }
