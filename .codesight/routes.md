@@ -5,6 +5,7 @@
 - **`/api/activity-log`** GET | POST | DELETE/:id → Activity-log
 - **`/api/agents`** GET | POST | PUT/:id | DELETE/:id → Agent
 - **`/api/brain-dump`** GET | POST | PUT/:id | DELETE/:id → Brain-dump
+- **`/api/chat/session`** POST | PATCH/:id | DELETE/:id → Session
 - **`/api/commands`** GET | POST | PUT/:id | DELETE/:id → Command
 - **`/api/daemon`** GET | POST | PUT/:id → Daemon
 - **`/api/decisions`** GET | POST | PUT/:id | DELETE/:id → Decision
@@ -20,6 +21,9 @@
 - `GET` `/api/assets/[...path]` → out: { error } [cache, upload]
 - `PUT` `/api/assets/[...path]` → out: { error } [cache, upload]
 - `POST` `/api/brain-dump/automate` → out: { error }
+- `GET` `/api/chat/messages` → out: { error } [auth, ai]
+- `GET` `/api/chat` [auth, queue, ai]
+- `POST` `/api/chat` [auth, queue, ai]
 - `GET` `/api/claude/models` → out: { models } [db, cache, ai]
 - `GET` `/api/claude/slash-commands` → out: { commands } [db, cache, ai]
 - `GET` `/api/commands/activate` → out: { error }
@@ -54,7 +58,7 @@
 - `PUT` `/api/wiki/content` → out: { error }
 - `GET` `/api/wiki/file` → out: { error } [cache]
 - `POST` `/api/wiki/folder` → out: { error }
-- `POST` `/api/wiki/generate` → out: { runId, workspaceId, startedAt, via } [auth]
+- `POST` `/api/wiki/generate` → out: { error } [auth]
 - `POST` `/api/wiki/init` → out: { error } [cache]
 - `POST` `/api/wiki/move` → out: { error }
 - `POST` `/api/wiki/page` → out: { error }

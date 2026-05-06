@@ -2,9 +2,9 @@
 
 > **Stack:** next-app | none | react | typescript
 
-> 93 routes | 0 models | 95 components | 60 lib files | 24 env vars | 1 middleware | 0% test coverage
-> **Token savings:** this file is ~8,100 tokens. Without it, AI exploration would cost ~107,300 tokens. **Saves ~99,200 tokens per conversation.**
-> **Last scanned:** 2026-05-04 17:16 — re-run after significant changes
+> 99 routes | 0 models | 102 components | 58 lib files | 24 env vars | 1 middleware | 0% test coverage
+> **Token savings:** this file is ~8,500 tokens. Without it, AI exploration would cost ~112,200 tokens. **Saves ~103,700 tokens per conversation.**
+> **Last scanned:** 2026-05-06 22:46 — re-run after significant changes
 
 ---
 
@@ -15,6 +15,7 @@
 - **`/api/activity-log`** GET | POST | DELETE/:id → Activity-log
 - **`/api/agents`** GET | POST | PUT/:id | DELETE/:id → Agent
 - **`/api/brain-dump`** GET | POST | PUT/:id | DELETE/:id → Brain-dump
+- **`/api/chat/session`** POST | PATCH/:id | DELETE/:id → Session
 - **`/api/commands`** GET | POST | PUT/:id | DELETE/:id → Command
 - **`/api/daemon`** GET | POST | PUT/:id → Daemon
 - **`/api/decisions`** GET | POST | PUT/:id | DELETE/:id → Decision
@@ -30,6 +31,9 @@
 - `GET` `/api/assets/[...path]` → out: { error } [cache, upload]
 - `PUT` `/api/assets/[...path]` → out: { error } [cache, upload]
 - `POST` `/api/brain-dump/automate` → out: { error }
+- `GET` `/api/chat/messages` → out: { error } [auth, ai]
+- `GET` `/api/chat` [auth, queue, ai]
+- `POST` `/api/chat` [auth, queue, ai]
 - `GET` `/api/claude/models` → out: { models } [db, cache, ai]
 - `GET` `/api/claude/slash-commands` → out: { commands } [db, cache, ai]
 - `GET` `/api/commands/activate` → out: { error }
@@ -64,7 +68,7 @@
 - `PUT` `/api/wiki/content` → out: { error }
 - `GET` `/api/wiki/file` → out: { error } [cache]
 - `POST` `/api/wiki/folder` → out: { error }
-- `POST` `/api/wiki/generate` → out: { runId, workspaceId, startedAt, via } [auth]
+- `POST` `/api/wiki/generate` → out: { error } [auth]
 - `POST` `/api/wiki/init` → out: { error } [cache]
 - `POST` `/api/wiki/move` → out: { error }
 - `POST` `/api/wiki/page` → out: { error }
@@ -79,10 +83,6 @@
 
 # Components
 
-- **ActivityPage** [client] — `src/app/activity/page.tsx`
-- **AutopilotPage** [client] — `src/app/autopilot/page.tsx`
-- **BrainDumpLoading** — `src/app/brain-dump/loading.tsx`
-- **BrainDumpPage** [client] — `src/app/brain-dump/page.tsx`
 - **CommandEditorPage** [client] — `src/app/commands/[id]/page.tsx`
 - **NewCommandPage** [client] — `src/app/commands/new/page.tsx`
 - **EditAgentPage** [client] — `src/app/crew/[id]/edit/page.tsx`
@@ -96,9 +96,8 @@
 - **InitiativeDetailPage** [client] — `src/app/initiatives/[id]/page.tsx`
 - **InitiativesPage** — `src/app/initiatives/page.tsx`
 - **RootLayout** — `src/app/layout.tsx`
-- **DashboardLoading** — `src/app/loading.tsx`
-- **LogsPage** [client] — `src/app/logs/page.tsx`
-- **MapPage** [client] — `src/app/map/page.tsx`
+- **HomeContentSkeleton** — `src/app/loading.tsx`
+- **HomeLoading** — `src/app/loading.tsx`
 - **NotFound** — `src/app/not-found.tsx`
 - **CommandCenterPage** [client] — `src/app/page.tsx`
 - **PriorityMatrixLoading** — `src/app/priority-matrix/loading.tsx`
@@ -108,51 +107,60 @@
 - **SettingsPage** [client] — `src/app/settings/page.tsx`
 - **SkillEditorPage** [client] — `src/app/skills/[id]/page.tsx`
 - **NewSkillPage** [client] — `src/app/skills/new/page.tsx`
-- **SkillsPage** [client] — `src/app/skills/page.tsx`
 - **TaskDetailPage** [client] — `src/app/tasks/[id]/page.tsx`
-- **StreamEntry** [client] — props: runId, onStop — `src/components/agent-console.tsx`
 - **AgentForm** [client] — props: mode, initialData, currentStatus, onSave, onDelete, onStatusToggle, onCancel — `src/components/agent-form.tsx`
-- **AppSidebar** [client] — props: href, label, icon, isActive, collapsed, onClick, size, badge, badgeDot, tooltipSuffix — `src/components/app-sidebar.tsx`
 - **DraggableTaskCard** [client] — props: task, project, onClick, isSelected, onToggleSelect, isRunning, onRun, pendingDecisionTaskIds, onStatusChange, onDuplicate — `src/components/board-view.tsx`
+- **BoardColumn** [client] — props: config, tasks, projects, onTaskClick, minHeight, maxHeight, selected, onToggleSelect, runningTaskIds, onRunTask — `src/components/board-view.tsx`
+- **BoardPanels** [client] — props: showCreateTask, onCloseCreate, onSubmitCreate — `src/components/board-view.tsx`
+- **BoardDndWrapper** [client] — props: activeTask, projects, onDragStart, onDragEnd — `src/components/board-view.tsx`
 - **BreadcrumbNav** [client] — props: items, className — `src/components/breadcrumb-nav.tsx`
-- **CommandBar** [client] — props: onCapture, sidebarOpen, onToggleSidebar, isMobile, tasks, onTaskClick, commands — `src/components/command-bar.tsx`
-- **CommandForm** [client] — props: activated, onToggle, loading — `src/components/command-form.tsx`
+- **AssistantThread** [client] — props: cwd, context, model, persona, workspaceId — `src/components/chat/AssistantThread.tsx`
+- **ChatSidebar** [client] — props: open, onToggle, isMobile — `src/components/chat/ChatSidebar.tsx`
+- **DaemonRunViewer** [client] — props: runId — `src/components/chat/DaemonRunViewer.tsx`
+- **ReadToolUI** [client] — `src/components/chat/tool-uis.tsx`
+- **CommandBar** [client] — props: onCapture, tasks, onTaskClick, commands — `src/components/command-bar.tsx`
+- **CommandForm** [client] — props: mode, initialData, onDelete, activationProps — `src/components/command-form.tsx`
 - **ConfirmDialog** [client] — props: open, onOpenChange, title, description, confirmLabel, onConfirm, variant — `src/components/confirm-dialog.tsx`
-- **AgentContextMenuContent** [client] — props: agent, href, onEdit, onNewTask, onToggleStatus, agentId, currentStatus — `src/components/context-menus/agent-context-menu.tsx`
+- **AgentContextMenuContent** [client] — props: agent, href, onEdit, onNewTask, onToggleStatus — `src/components/context-menus/agent-context-menu.tsx`
 - **InitiativeContextMenuContent** [client] — props: initiative, onTogglePause, onArchive, onDelete — `src/components/context-menus/initiative-context-menu.tsx`
 - **ProjectContextMenuContent** [client] — props: project, href, onRun, onArchive, onDelete — `src/components/context-menus/project-context-menu.tsx`
 - **TaskContextMenuContent** [client] — props: task, onOpen, onStatusChange, onDuplicate, onRun, onDelete — `src/components/context-menus/task-context-menu.tsx`
 - **CreateTaskDialog** [client] — props: open, onOpenChange, onSubmit, defaultValues — `src/components/create-task-dialog.tsx`
+- **CrewAutopilot** [client] — `src/components/crew-autopilot.tsx`
+- **CrewSkills** [client] — `src/components/crew-skills.tsx`
 - **DecisionDialog** [client] — props: open, onOpenChange, decision, onAnswered — `src/components/decision-dialog.tsx`
 - **EditorBubbleMenu** [client] — props: editor — `src/components/editor/bubble-menu.tsx`
-- **CsvViewer** [client] — props: path, title — `src/components/editor/csv-viewer.tsx`
+- **CsvViewer** [client] — props: path — `src/components/editor/csv-viewer.tsx`
 - **EditorToolbar** [client] — props: editor — `src/components/editor/editor-toolbar.tsx`
 - **KBEditor** [client] — `src/components/editor/editor.tsx`
 - **ResizableImage** [client] — `src/components/editor/extensions/resizable-image.tsx`
-- **FileFallbackViewer** [client] — props: path, title — `src/components/editor/file-fallback-viewer.tsx`
+- **FileFallbackViewer** [client] — props: path — `src/components/editor/file-fallback-viewer.tsx`
 - **FolderIndex** [client] — props: folderPath, entries — `src/components/editor/folder-index.tsx`
 - **GoogleDocViewer** [client] — props: path, title, google — `src/components/editor/google-doc-viewer.tsx`
 - **ImageViewer** [client] — props: path, title — `src/components/editor/image-viewer.tsx`
-- **LinkPopover** [client] — props: anchor — `src/components/editor/link-popover.tsx`
-- **MediaPopover** [client] — props: kind, pagePath, onCancel, onInsert — `src/components/editor/media-popover.tsx`
-- **MediaViewer** [client] — props: path, title, type — `src/components/editor/media-viewer.tsx`
+- **LinkPopover** [client] — props: anchor, initialUrl, onCancel, onApply, onRemove — `src/components/editor/link-popover.tsx`
+- **MediaPopover** [client] — props: kind, pagePath, onCancel, onInsert, anchor — `src/components/editor/media-popover.tsx`
+- **MediaViewer** [client] — props: path, type — `src/components/editor/media-viewer.tsx`
 - **MermaidViewer** [client] — props: path, title — `src/components/editor/mermaid-viewer.tsx`
-- **NotebookViewer** [client] — props: path, title — `src/components/editor/notebook-viewer.tsx`
+- **NotebookViewer** [client] — props: path — `src/components/editor/notebook-viewer.tsx`
 - **DocxViewer** [client] — props: path, title — `src/components/editor/office/docx-viewer.tsx`
-- **OfficeChrome** [client] — props: path, title, extLabel, external — `src/components/editor/office/office-chrome.tsx`
+- **OfficeChrome** [client] — props: path, extLabel, external, hideFinder — `src/components/editor/office/office-chrome.tsx`
 - **PptxViewer** [client] — props: path, title — `src/components/editor/office/pptx-viewer.tsx`
 - **XlsxViewer** [client] — props: path, title — `src/components/editor/office/xlsx-viewer.tsx`
 - **PdfViewer** [client] — props: path, title — `src/components/editor/pdf-viewer.tsx`
 - **SlashCommands** [client] — props: editor — `src/components/editor/slash-commands.tsx`
-- **SourceViewer** [client] — props: path, title — `src/components/editor/source-viewer.tsx`
+- **SourceViewer** [client] — props: path — `src/components/editor/source-viewer.tsx`
 - **TableMenu** [client] — props: editor — `src/components/editor/table-menu.tsx`
 - **WebsiteViewer** [client] — props: path, title, fullscreen, onExit — `src/components/editor/website-viewer.tsx`
 - **DIRS** [client] — `src/components/editor/wiki-link-create-dialog.tsx`
 - **WikiLinkPicker** [client] — props: editor, onCreateRequest — `src/components/editor/wiki-link-picker.tsx`
-- **EmptyState** — props: icon, title, description, actionLabel, onAction, className, compact — `src/components/empty-state.tsx`
+- **EmptyState** — props: Icon, title, description, actionLabel, onAction, className, compact — `src/components/empty-state.tsx`
 - **ErrorState** — props: message, onRetry, className, compact — `src/components/error-state.tsx`
+- **HomeActivity** [client] — `src/components/home-activity.tsx`
+- **HomeInbox** [client] — `src/components/home-inbox.tsx`
+- **HomeLogs** [client] — `src/components/home-logs.tsx`
 - **KeyboardShortcuts** [client] — props: onCreateTask — `src/components/keyboard-shortcuts.tsx`
-- **ViewerToolbar** [client] — props: path, badge, sublabel, showBreadcrumb, leading, className — `src/components/layout/viewer-toolbar.tsx`
+- **ViewerToolbar** [client] — props: path, badge, sublabel, _showBreadcrumb, leading, className — `src/components/layout/viewer-toolbar.tsx`
 - **LayoutShell** [client] — `src/components/layout-shell.tsx`
 - **MarkdownContent** [client] — props: content, className — `src/components/markdown-content.tsx`
 - **MentionTextarea** [client] — props: value, onChange, agents, placeholder, className, onSubmit, stagedFiles, onFilesChange — `src/components/mention-textarea.tsx`
@@ -160,19 +168,22 @@
 - **ModelSelect** [client] — props: value, onChange, className — `src/components/model-select.tsx`
 - **ProjectCardLarge** [client] — props: project, tasks, isRunning, isProjectRunActive, onRun, onStop, onArchive, onDelete — `src/components/project-card-large.tsx`
 - **ProjectDetailPage** [client] — props: parentLabel, parentHref — `src/components/project-detail-page.tsx`
-- **ProjectDialog** [client] — props: open, onOpenChange, agents, onSubmit, name, description, status, color, teamMembers, tags — `src/components/project-dialog.tsx`
+- **ProjectDialog** [client] — props: open, onOpenChange, agents, onSubmit — `src/components/project-dialog.tsx`
 - **ProjectInitiativeCanvas** [client] — `src/components/project-initiative-canvas.tsx`
 - **RunButton** [client] — props: isRunning, onClick, size, disabled, title, isProjectRunActive, onStop — `src/components/run-button.tsx`
 - **SearchDialog** [client] — `src/components/search-dialog.tsx`
-- **SidebarFooter** [client] — props: collapsed — `src/components/sidebar-footer.tsx`
 - **CardSkeleton** — props: className, lines, footer, footerClassName, childrenPosition — `src/components/skeletons.tsx`
-- **SkillForm** [client] — props: activated, onToggle, loading — `src/components/skill-form.tsx`
+- **RowSkeleton** — props: className, leading, lines, trailing, linesClassName, trailingClassName — `src/components/skeletons.tsx`
+- **GridSkeleton** — props: className, count, renderItem — `src/components/skeletons.tsx`
+- **PageSkeleton** — props: className — `src/components/skeletons.tsx`
+- **SkillForm** [client] — props: mode, initialData, onDelete, activationProps — `src/components/skill-form.tsx`
 - **TaskCard** [client] — props: task, project, agents, className, isDragging, onClick, allTasks, pendingDecisionTaskIds, isRunning, onRun — `src/components/task-card.tsx`
 - **TaskForm** [client] — props: initial, allTasks, currentTaskId, onSubmit, onCancel, submitLabel — `src/components/task-form.tsx`
 - **ThemeProvider** [client] — `src/components/theme-provider.tsx`
 - **ThemeToggle** [client] — `src/components/theme-toggle.tsx`
+- **TopNav** [client] — `src/components/top-nav.tsx`
 - **FrontmatterHeader** [client] — props: data — `src/components/wiki/frontmatter-header.tsx`
-- **WorkspaceSwitcher** [client] — props: collapsed — `src/components/workspace-switcher.tsx`
+- **WorkMapView** [client] — `src/components/work-map-view.tsx`
 - **ActiveRunsProvider** [client] — `src/providers/active-runs-provider.tsx`
 
 ---
@@ -191,8 +202,6 @@
   - interface ActiveRunEntry
 - `scripts/daemon/config.ts` — function loadConfig: (workspaceId) => DaemonConfig, function saveConfig: (config, workspaceId) => void
 - `scripts/daemon/data-io.ts` — function readJSON: (filePath) => T | null
-- `scripts/daemon/dispatcher.ts` — class Dispatcher
-- `scripts/daemon/health.ts` — class HealthMonitor
 - `scripts/daemon/prompt-builder.ts`
   - function buildTaskPrompt: (agentId, task, missionId?, workspaceId) => string
   - function buildScheduledPrompt: (command, workspaceId) => string
@@ -200,15 +209,8 @@
   - function getPendingTasks: () => TaskDef[]
   - function isTaskUnblocked: (task) => boolean
   - function hasPendingDecision: (taskId) => boolean
-- `scripts/daemon/recovery.ts`
-  - function persistSessionRecord: (taskId, agentId, sessionId) => void
-  - function clearSessionRecord: (taskId) => void
-  - function runCrashRecovery: (workspaceId) => RecoveryResult
-  - interface SessionRecord
-  - interface RecoveryResult
 - `scripts/daemon/runner.ts` — function parseClaudeOutput: (stdout) => ClaudeOutputMeta, class AgentRunner
 - `scripts/daemon/runs-registry.ts` — function readJsonFile: (filePath, defaultValue) => T, function atomicWriteJson: (filePath, data) => void
-- `scripts/daemon/scheduler.ts` — class Scheduler
 - `scripts/daemon/security.ts`
   - function validatePathWithinWorkspace: (filePath, workspaceRoot) => boolean
   - function escapeFenceContent: (content) => string
@@ -226,13 +228,8 @@
   - function getWarmHandle: (expectedKey) => WarmQuery | null
 - `scripts/daemon/workspace-env.ts` — function getWorkspaceEnv: (workspaceId) => Record<string, string>
 - `src/hooks/use-active-runs.ts` — function useActiveRuns: () => void
-- `src/hooks/use-agent-stream.ts` — function useAgentStream: (runId) => UseAgentStreamReturn, interface StreamLine
 - `src/hooks/use-connection.ts` — function useConnection: () => void
 - `src/hooks/use-daemon.ts` — function useDaemon: () => DaemonData
-- `src/hooks/use-dashboard-data.ts`
-  - function useDashboardData: () => void
-  - interface DashboardStats
-  - interface DashboardData
 - `src/hooks/use-data.ts`
   - function useTasks: () => void
   - function useInitiativeTasks: (initiativeId) => void
@@ -242,6 +239,10 @@
   - function useInbox: () => void
   - _...6 more_
 - `src/hooks/use-fast-task-poll.ts` — function useFastTaskPoll: (hasRunningTasks, refetchTasks) => void
+- `src/hooks/use-home-data.ts`
+  - function useHomeData: () => void
+  - interface HomeStats
+  - interface HomeData
 - `src/hooks/use-processing-entries.ts` — function useProcessingEntries: (entries) => void
 - `src/hooks/use-sidebar.ts` — function useSidebar: () => void
 - `src/hooks/use-workspace.ts` — function useWorkspace: () => void
@@ -253,7 +254,16 @@
   - function findNodeByPath: (nodes, path) => TreeNode | null
   - function findDeepestCabinetNode: (nodes, targetPath) => TreeNode | null
   - function findParentCabinetNode: (nodes, cabinetPath, cabinetAncestor) => TreeNode | null
+- `src/lib/chat-sessions.ts`
+  - function listSessions: (workspaceId, context?) => SessionEntry[]
+  - function getCurrentSession: (workspaceId, context?) => SessionEntry | null
+  - function createSession: (workspaceId, context?) => SessionEntry
+  - function setCurrentSession: (workspaceId, context, id) => SessionEntry | null
+  - function clearCurrentSession: (workspaceId, context) => void
+  - function updateSession: (workspaceId, context, id, patch) => SessionEntry | null
+  - _...6 more_
 - `src/lib/claude-sdk.ts` — function resolveClaudeExecutable: () => string | null
+- `src/lib/claude-session-log.ts` — function getSessionLogPath: (cwd, sessionId) => string, function readSessionMessages: (cwd, sessionId) => UIMessage[]
 - `src/lib/command-activation.ts`
   - function activateCommand: (workspaceId, commandId) => Promise<void>
   - function deactivateCommand: (workspaceId, commandId) => Promise<void>
@@ -319,7 +329,9 @@
 - `src/lib/scheduled-jobs.ts`
   - function scheduleUploadsCleanup: () => void
   - function scheduleLogCleanup: () => void
-  - function scheduleDaemonWatchdog: () => void
+  - function runStartupRecovery: () => Promise<void>
+  - function scheduleAutopilotPoller: () => void
+- `src/lib/script-entrypoints.ts` — function resolveScriptEntrypoint: (name) => void, type ScriptName
 - `src/lib/scrub.ts` — function scrubCredentials: (text) => string
 - `src/lib/skill-activation.ts`
   - function activateSkill: (workspaceId, skillId) => Promise<void>
@@ -393,7 +405,7 @@
 - `LOCALAPPDATA` **required** — scripts/daemon/runner.ts
 - `MANDIO_API_TOKEN` **required** — src/proxy.ts
 - `MANDIO_BOOTSTRAP_STANDALONE` **required** — bin/bootstrap.ts
-- `MANDIO_DATA_DIR` **required** — __tests__/helpers.ts
+- `MANDIO_DATA_DIR` **required** — __tests__/chat-sessions.test.ts
 - `MANDIO_INSTALL_DIR` **required** — src/lib/paths.ts
 - `MANDIO_WORKSPACE_ID` **required** — scripts/daemon/prompt-builder.ts
 - `NEXT_PUBLIC_MANDIO_API_TOKEN` **required** — src/lib/api-client.ts
@@ -418,6 +430,7 @@
 
 ## Key Dependencies
 
+- ai: ^6.0.174
 - next: 16.2.4
 - react: 19.2.5
 - zod: ^4.3.6
@@ -437,44 +450,44 @@
 
 - `src/lib/utils.ts` — imported by **62** files
 - `src/lib/types.ts` — imported by **51** files
-- `src/lib/paths.ts` — imported by **49** files
-- `src/components/ui/button.tsx` — imported by **48** files
-- `src/lib/workspace-context.ts` — imported by **27** files
-- `src/components/breadcrumb-nav.tsx` — imported by **25** files
-- `src/components/ui/badge.tsx` — imported by **25** files
+- `src/lib/paths.ts` — imported by **48** files
+- `src/components/ui/button.tsx` — imported by **45** files
+- `src/lib/workspace-context.ts` — imported by **31** files
+- `src/components/ui/badge.tsx` — imported by **24** files
+- `src/lib/data.ts` — imported by **18** files
+- `src/components/breadcrumb-nav.tsx` — imported by **18** files
 - `src/components/ui/input.tsx` — imported by **18** files
-- `src/lib/data.ts` — imported by **17** files
-- `src/hooks/use-data.ts` — imported by **16** files
-- `src/lib/api-client.ts` — imported by **13** files
-- `scripts/daemon/logger.ts` — imported by **12** files
+- `src/hooks/use-data.ts` — imported by **17** files
+- `src/lib/api-client.ts` — imported by **12** files
 - `src/components/ui/card.tsx` — imported by **10** files
-- `src/lib/toast.ts` — imported by **10** files
 - `src/components/ui/tip.tsx` — imported by **10** files
-- `src/components/ui/textarea.tsx` — imported by **10** files
+- `src/lib/toast.ts` — imported by **10** files
 - `src/components/ui/label.tsx` — imported by **10** files
 - `src/components/layout/viewer-toolbar.tsx` — imported by **10** files
 - `src/components/error-state.tsx` — imported by **9** files
-- `src/lib/json-io.ts` — imported by **8** files
+- `src/components/ui/textarea.tsx` — imported by **9** files
+- `scripts/daemon/logger.ts` — imported by **8** files
+- `src/providers/active-runs-provider.tsx` — imported by **8** files
 
 ## Import Map (who imports what)
 
 - `src/lib/utils.ts` ← `src/app/api/activity-log/route.ts`, `src/app/api/brain-dump/route.ts`, `src/app/api/commands/route.ts`, `src/app/api/decisions/route.ts`, `src/app/api/inbox/route.ts` +57 more
-- `src/lib/types.ts` ← `__tests__/data.test.ts`, `src/app/activity/page.tsx`, `src/app/api/activity-log/route.ts`, `src/app/api/agents/route.ts`, `src/app/api/brain-dump/route.ts` +46 more
-- `src/lib/paths.ts` ← `__tests__/seeding.test.ts`, `bin/cli.ts`, `scripts/cleanup-uploads.ts`, `scripts/daemon/config.ts`, `scripts/daemon/dispatcher.ts` +44 more
-- `src/components/ui/button.tsx` ← `src/app/activity/page.tsx`, `src/app/autopilot/page.tsx`, `src/app/brain-dump/page.tsx`, `src/app/crew/[id]/edit/page.tsx`, `src/app/crew/[id]/page.tsx` +43 more
-- `src/lib/workspace-context.ts` ← `src/app/api/agents/route.ts`, `src/app/api/assets/[...path]/route.ts`, `src/app/api/commands/activate/route.ts`, `src/app/api/commands/route.ts`, `src/app/api/initiatives/route.ts` +22 more
-- `src/components/breadcrumb-nav.tsx` ← `src/app/activity/page.tsx`, `src/app/autopilot/page.tsx`, `src/app/brain-dump/loading.tsx`, `src/app/brain-dump/page.tsx`, `src/app/commands/[id]/page.tsx` +20 more
-- `src/components/ui/badge.tsx` ← `src/app/activity/page.tsx`, `src/app/autopilot/page.tsx`, `src/app/brain-dump/page.tsx`, `src/app/crew/[id]/page.tsx`, `src/app/crew/page.tsx` +20 more
-- `src/components/ui/input.tsx` ← `src/app/activity/page.tsx`, `src/app/autopilot/page.tsx`, `src/app/crew/[id]/page.tsx`, `src/app/initiatives/[id]/page.tsx`, `src/app/logs/page.tsx` +13 more
-- `src/lib/data.ts` ← `__tests__/seeding.test.ts`, `src/app/api/activity-log/route.ts`, `src/app/api/brain-dump/route.ts`, `src/app/api/commands/route.ts`, `src/app/api/daemon/route.ts` +12 more
-- `src/hooks/use-data.ts` ← `src/app/activity/page.tsx`, `src/app/brain-dump/page.tsx`, `src/app/commands/[id]/page.tsx`, `src/app/crew/[id]/edit/page.tsx`, `src/app/crew/new/page.tsx` +11 more
+- `src/lib/types.ts` ← `__tests__/data.test.ts`, `src/app/api/activity-log/route.ts`, `src/app/api/agents/route.ts`, `src/app/api/brain-dump/route.ts`, `src/app/api/commands/route.ts` +46 more
+- `src/lib/paths.ts` ← `__tests__/seeding.test.ts`, `bin/cli.ts`, `scripts/cleanup-uploads.ts`, `scripts/daemon/config.ts`, `scripts/daemon/run-brain-dump-triage.ts` +43 more
+- `src/components/ui/button.tsx` ← `src/app/crew/[id]/edit/page.tsx`, `src/app/crew/[id]/page.tsx`, `src/app/crew/page.tsx`, `src/app/documents/page.tsx`, `src/app/error.tsx` +40 more
+- `src/lib/workspace-context.ts` ← `src/app/api/agents/route.ts`, `src/app/api/assets/[...path]/route.ts`, `src/app/api/brain-dump/automate/route.ts`, `src/app/api/chat/messages/route.ts`, `src/app/api/chat/route.ts` +26 more
+- `src/components/ui/badge.tsx` ← `src/app/crew/[id]/page.tsx`, `src/app/crew/page.tsx`, `src/app/initiatives/[id]/page.tsx`, `src/app/page.tsx`, `src/app/settings/page.tsx` +19 more
+- `src/lib/data.ts` ← `__tests__/seeding.test.ts`, `src/app/api/activity-log/route.ts`, `src/app/api/brain-dump/automate/route.ts`, `src/app/api/brain-dump/route.ts`, `src/app/api/commands/route.ts` +13 more
+- `src/components/breadcrumb-nav.tsx` ← `src/app/commands/[id]/page.tsx`, `src/app/crew/[id]/edit/page.tsx`, `src/app/crew/[id]/page.tsx`, `src/app/crew/loading.tsx`, `src/app/crew/page.tsx` +13 more
+- `src/components/ui/input.tsx` ← `src/app/crew/[id]/page.tsx`, `src/app/initiatives/[id]/page.tsx`, `src/app/settings/page.tsx`, `src/components/agent-form.tsx`, `src/components/command-bar.tsx` +13 more
+- `src/hooks/use-data.ts` ← `src/app/commands/[id]/page.tsx`, `src/app/crew/[id]/edit/page.tsx`, `src/app/crew/new/page.tsx`, `src/app/crew/page.tsx`, `src/app/page.tsx` +12 more
 
 ---
 
 # Test Coverage
 
 > **0%** of routes and models are covered by tests
-> 8 test files found
+> 11 test files found
 
 ---
 

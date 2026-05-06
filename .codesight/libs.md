@@ -12,8 +12,6 @@
   - interface ActiveRunEntry
 - `scripts/daemon/config.ts` — function loadConfig: (workspaceId) => DaemonConfig, function saveConfig: (config, workspaceId) => void
 - `scripts/daemon/data-io.ts` — function readJSON: (filePath) => T | null
-- `scripts/daemon/dispatcher.ts` — class Dispatcher
-- `scripts/daemon/health.ts` — class HealthMonitor
 - `scripts/daemon/prompt-builder.ts`
   - function buildTaskPrompt: (agentId, task, missionId?, workspaceId) => string
   - function buildScheduledPrompt: (command, workspaceId) => string
@@ -21,15 +19,8 @@
   - function getPendingTasks: () => TaskDef[]
   - function isTaskUnblocked: (task) => boolean
   - function hasPendingDecision: (taskId) => boolean
-- `scripts/daemon/recovery.ts`
-  - function persistSessionRecord: (taskId, agentId, sessionId) => void
-  - function clearSessionRecord: (taskId) => void
-  - function runCrashRecovery: (workspaceId) => RecoveryResult
-  - interface SessionRecord
-  - interface RecoveryResult
 - `scripts/daemon/runner.ts` — function parseClaudeOutput: (stdout) => ClaudeOutputMeta, class AgentRunner
 - `scripts/daemon/runs-registry.ts` — function readJsonFile: (filePath, defaultValue) => T, function atomicWriteJson: (filePath, data) => void
-- `scripts/daemon/scheduler.ts` — class Scheduler
 - `scripts/daemon/security.ts`
   - function validatePathWithinWorkspace: (filePath, workspaceRoot) => boolean
   - function escapeFenceContent: (content) => string
@@ -47,13 +38,8 @@
   - function getWarmHandle: (expectedKey) => WarmQuery | null
 - `scripts/daemon/workspace-env.ts` — function getWorkspaceEnv: (workspaceId) => Record<string, string>
 - `src/hooks/use-active-runs.ts` — function useActiveRuns: () => void
-- `src/hooks/use-agent-stream.ts` — function useAgentStream: (runId) => UseAgentStreamReturn, interface StreamLine
 - `src/hooks/use-connection.ts` — function useConnection: () => void
 - `src/hooks/use-daemon.ts` — function useDaemon: () => DaemonData
-- `src/hooks/use-dashboard-data.ts`
-  - function useDashboardData: () => void
-  - interface DashboardStats
-  - interface DashboardData
 - `src/hooks/use-data.ts`
   - function useTasks: () => void
   - function useInitiativeTasks: (initiativeId) => void
@@ -63,6 +49,10 @@
   - function useInbox: () => void
   - _...6 more_
 - `src/hooks/use-fast-task-poll.ts` — function useFastTaskPoll: (hasRunningTasks, refetchTasks) => void
+- `src/hooks/use-home-data.ts`
+  - function useHomeData: () => void
+  - interface HomeStats
+  - interface HomeData
 - `src/hooks/use-processing-entries.ts` — function useProcessingEntries: (entries) => void
 - `src/hooks/use-sidebar.ts` — function useSidebar: () => void
 - `src/hooks/use-workspace.ts` — function useWorkspace: () => void
@@ -74,7 +64,16 @@
   - function findNodeByPath: (nodes, path) => TreeNode | null
   - function findDeepestCabinetNode: (nodes, targetPath) => TreeNode | null
   - function findParentCabinetNode: (nodes, cabinetPath, cabinetAncestor) => TreeNode | null
+- `src/lib/chat-sessions.ts`
+  - function listSessions: (workspaceId, context?) => SessionEntry[]
+  - function getCurrentSession: (workspaceId, context?) => SessionEntry | null
+  - function createSession: (workspaceId, context?) => SessionEntry
+  - function setCurrentSession: (workspaceId, context, id) => SessionEntry | null
+  - function clearCurrentSession: (workspaceId, context) => void
+  - function updateSession: (workspaceId, context, id, patch) => SessionEntry | null
+  - _...6 more_
 - `src/lib/claude-sdk.ts` — function resolveClaudeExecutable: () => string | null
+- `src/lib/claude-session-log.ts` — function getSessionLogPath: (cwd, sessionId) => string, function readSessionMessages: (cwd, sessionId) => UIMessage[]
 - `src/lib/command-activation.ts`
   - function activateCommand: (workspaceId, commandId) => Promise<void>
   - function deactivateCommand: (workspaceId, commandId) => Promise<void>
@@ -140,7 +139,9 @@
 - `src/lib/scheduled-jobs.ts`
   - function scheduleUploadsCleanup: () => void
   - function scheduleLogCleanup: () => void
-  - function scheduleDaemonWatchdog: () => void
+  - function runStartupRecovery: () => Promise<void>
+  - function scheduleAutopilotPoller: () => void
+- `src/lib/script-entrypoints.ts` — function resolveScriptEntrypoint: (name) => void, type ScriptName
 - `src/lib/scrub.ts` — function scrubCredentials: (text) => string
 - `src/lib/skill-activation.ts`
   - function activateSkill: (workspaceId, skillId) => Promise<void>

@@ -1,9 +1,5 @@
 # Components
 
-- **ActivityPage** [client] — `src/app/activity/page.tsx`
-- **AutopilotPage** [client] — `src/app/autopilot/page.tsx`
-- **BrainDumpLoading** — `src/app/brain-dump/loading.tsx`
-- **BrainDumpPage** [client] — `src/app/brain-dump/page.tsx`
 - **CommandEditorPage** [client] — `src/app/commands/[id]/page.tsx`
 - **NewCommandPage** [client] — `src/app/commands/new/page.tsx`
 - **EditAgentPage** [client] — `src/app/crew/[id]/edit/page.tsx`
@@ -17,9 +13,8 @@
 - **InitiativeDetailPage** [client] — `src/app/initiatives/[id]/page.tsx`
 - **InitiativesPage** — `src/app/initiatives/page.tsx`
 - **RootLayout** — `src/app/layout.tsx`
-- **DashboardLoading** — `src/app/loading.tsx`
-- **LogsPage** [client] — `src/app/logs/page.tsx`
-- **MapPage** [client] — `src/app/map/page.tsx`
+- **HomeContentSkeleton** — `src/app/loading.tsx`
+- **HomeLoading** — `src/app/loading.tsx`
 - **NotFound** — `src/app/not-found.tsx`
 - **CommandCenterPage** [client] — `src/app/page.tsx`
 - **PriorityMatrixLoading** — `src/app/priority-matrix/loading.tsx`
@@ -29,51 +24,60 @@
 - **SettingsPage** [client] — `src/app/settings/page.tsx`
 - **SkillEditorPage** [client] — `src/app/skills/[id]/page.tsx`
 - **NewSkillPage** [client] — `src/app/skills/new/page.tsx`
-- **SkillsPage** [client] — `src/app/skills/page.tsx`
 - **TaskDetailPage** [client] — `src/app/tasks/[id]/page.tsx`
-- **StreamEntry** [client] — props: runId, onStop — `src/components/agent-console.tsx`
 - **AgentForm** [client] — props: mode, initialData, currentStatus, onSave, onDelete, onStatusToggle, onCancel — `src/components/agent-form.tsx`
-- **AppSidebar** [client] — props: href, label, icon, isActive, collapsed, onClick, size, badge, badgeDot, tooltipSuffix — `src/components/app-sidebar.tsx`
 - **DraggableTaskCard** [client] — props: task, project, onClick, isSelected, onToggleSelect, isRunning, onRun, pendingDecisionTaskIds, onStatusChange, onDuplicate — `src/components/board-view.tsx`
+- **BoardColumn** [client] — props: config, tasks, projects, onTaskClick, minHeight, maxHeight, selected, onToggleSelect, runningTaskIds, onRunTask — `src/components/board-view.tsx`
+- **BoardPanels** [client] — props: showCreateTask, onCloseCreate, onSubmitCreate — `src/components/board-view.tsx`
+- **BoardDndWrapper** [client] — props: activeTask, projects, onDragStart, onDragEnd — `src/components/board-view.tsx`
 - **BreadcrumbNav** [client] — props: items, className — `src/components/breadcrumb-nav.tsx`
-- **CommandBar** [client] — props: onCapture, sidebarOpen, onToggleSidebar, isMobile, tasks, onTaskClick, commands — `src/components/command-bar.tsx`
-- **CommandForm** [client] — props: activated, onToggle, loading — `src/components/command-form.tsx`
+- **AssistantThread** [client] — props: cwd, context, model, persona, workspaceId — `src/components/chat/AssistantThread.tsx`
+- **ChatSidebar** [client] — props: open, onToggle, isMobile — `src/components/chat/ChatSidebar.tsx`
+- **DaemonRunViewer** [client] — props: runId — `src/components/chat/DaemonRunViewer.tsx`
+- **ReadToolUI** [client] — `src/components/chat/tool-uis.tsx`
+- **CommandBar** [client] — props: onCapture, tasks, onTaskClick, commands — `src/components/command-bar.tsx`
+- **CommandForm** [client] — props: mode, initialData, onDelete, activationProps — `src/components/command-form.tsx`
 - **ConfirmDialog** [client] — props: open, onOpenChange, title, description, confirmLabel, onConfirm, variant — `src/components/confirm-dialog.tsx`
-- **AgentContextMenuContent** [client] — props: agent, href, onEdit, onNewTask, onToggleStatus, agentId, currentStatus — `src/components/context-menus/agent-context-menu.tsx`
+- **AgentContextMenuContent** [client] — props: agent, href, onEdit, onNewTask, onToggleStatus — `src/components/context-menus/agent-context-menu.tsx`
 - **InitiativeContextMenuContent** [client] — props: initiative, onTogglePause, onArchive, onDelete — `src/components/context-menus/initiative-context-menu.tsx`
 - **ProjectContextMenuContent** [client] — props: project, href, onRun, onArchive, onDelete — `src/components/context-menus/project-context-menu.tsx`
 - **TaskContextMenuContent** [client] — props: task, onOpen, onStatusChange, onDuplicate, onRun, onDelete — `src/components/context-menus/task-context-menu.tsx`
 - **CreateTaskDialog** [client] — props: open, onOpenChange, onSubmit, defaultValues — `src/components/create-task-dialog.tsx`
+- **CrewAutopilot** [client] — `src/components/crew-autopilot.tsx`
+- **CrewSkills** [client] — `src/components/crew-skills.tsx`
 - **DecisionDialog** [client] — props: open, onOpenChange, decision, onAnswered — `src/components/decision-dialog.tsx`
 - **EditorBubbleMenu** [client] — props: editor — `src/components/editor/bubble-menu.tsx`
-- **CsvViewer** [client] — props: path, title — `src/components/editor/csv-viewer.tsx`
+- **CsvViewer** [client] — props: path — `src/components/editor/csv-viewer.tsx`
 - **EditorToolbar** [client] — props: editor — `src/components/editor/editor-toolbar.tsx`
 - **KBEditor** [client] — `src/components/editor/editor.tsx`
 - **ResizableImage** [client] — `src/components/editor/extensions/resizable-image.tsx`
-- **FileFallbackViewer** [client] — props: path, title — `src/components/editor/file-fallback-viewer.tsx`
+- **FileFallbackViewer** [client] — props: path — `src/components/editor/file-fallback-viewer.tsx`
 - **FolderIndex** [client] — props: folderPath, entries — `src/components/editor/folder-index.tsx`
 - **GoogleDocViewer** [client] — props: path, title, google — `src/components/editor/google-doc-viewer.tsx`
 - **ImageViewer** [client] — props: path, title — `src/components/editor/image-viewer.tsx`
-- **LinkPopover** [client] — props: anchor — `src/components/editor/link-popover.tsx`
-- **MediaPopover** [client] — props: kind, pagePath, onCancel, onInsert — `src/components/editor/media-popover.tsx`
-- **MediaViewer** [client] — props: path, title, type — `src/components/editor/media-viewer.tsx`
+- **LinkPopover** [client] — props: anchor, initialUrl, onCancel, onApply, onRemove — `src/components/editor/link-popover.tsx`
+- **MediaPopover** [client] — props: kind, pagePath, onCancel, onInsert, anchor — `src/components/editor/media-popover.tsx`
+- **MediaViewer** [client] — props: path, type — `src/components/editor/media-viewer.tsx`
 - **MermaidViewer** [client] — props: path, title — `src/components/editor/mermaid-viewer.tsx`
-- **NotebookViewer** [client] — props: path, title — `src/components/editor/notebook-viewer.tsx`
+- **NotebookViewer** [client] — props: path — `src/components/editor/notebook-viewer.tsx`
 - **DocxViewer** [client] — props: path, title — `src/components/editor/office/docx-viewer.tsx`
-- **OfficeChrome** [client] — props: path, title, extLabel, external — `src/components/editor/office/office-chrome.tsx`
+- **OfficeChrome** [client] — props: path, extLabel, external, hideFinder — `src/components/editor/office/office-chrome.tsx`
 - **PptxViewer** [client] — props: path, title — `src/components/editor/office/pptx-viewer.tsx`
 - **XlsxViewer** [client] — props: path, title — `src/components/editor/office/xlsx-viewer.tsx`
 - **PdfViewer** [client] — props: path, title — `src/components/editor/pdf-viewer.tsx`
 - **SlashCommands** [client] — props: editor — `src/components/editor/slash-commands.tsx`
-- **SourceViewer** [client] — props: path, title — `src/components/editor/source-viewer.tsx`
+- **SourceViewer** [client] — props: path — `src/components/editor/source-viewer.tsx`
 - **TableMenu** [client] — props: editor — `src/components/editor/table-menu.tsx`
 - **WebsiteViewer** [client] — props: path, title, fullscreen, onExit — `src/components/editor/website-viewer.tsx`
 - **DIRS** [client] — `src/components/editor/wiki-link-create-dialog.tsx`
 - **WikiLinkPicker** [client] — props: editor, onCreateRequest — `src/components/editor/wiki-link-picker.tsx`
-- **EmptyState** — props: icon, title, description, actionLabel, onAction, className, compact — `src/components/empty-state.tsx`
+- **EmptyState** — props: Icon, title, description, actionLabel, onAction, className, compact — `src/components/empty-state.tsx`
 - **ErrorState** — props: message, onRetry, className, compact — `src/components/error-state.tsx`
+- **HomeActivity** [client] — `src/components/home-activity.tsx`
+- **HomeInbox** [client] — `src/components/home-inbox.tsx`
+- **HomeLogs** [client] — `src/components/home-logs.tsx`
 - **KeyboardShortcuts** [client] — props: onCreateTask — `src/components/keyboard-shortcuts.tsx`
-- **ViewerToolbar** [client] — props: path, badge, sublabel, showBreadcrumb, leading, className — `src/components/layout/viewer-toolbar.tsx`
+- **ViewerToolbar** [client] — props: path, badge, sublabel, _showBreadcrumb, leading, className — `src/components/layout/viewer-toolbar.tsx`
 - **LayoutShell** [client] — `src/components/layout-shell.tsx`
 - **MarkdownContent** [client] — props: content, className — `src/components/markdown-content.tsx`
 - **MentionTextarea** [client] — props: value, onChange, agents, placeholder, className, onSubmit, stagedFiles, onFilesChange — `src/components/mention-textarea.tsx`
@@ -81,17 +85,20 @@
 - **ModelSelect** [client] — props: value, onChange, className — `src/components/model-select.tsx`
 - **ProjectCardLarge** [client] — props: project, tasks, isRunning, isProjectRunActive, onRun, onStop, onArchive, onDelete — `src/components/project-card-large.tsx`
 - **ProjectDetailPage** [client] — props: parentLabel, parentHref — `src/components/project-detail-page.tsx`
-- **ProjectDialog** [client] — props: open, onOpenChange, agents, onSubmit, name, description, status, color, teamMembers, tags — `src/components/project-dialog.tsx`
+- **ProjectDialog** [client] — props: open, onOpenChange, agents, onSubmit — `src/components/project-dialog.tsx`
 - **ProjectInitiativeCanvas** [client] — `src/components/project-initiative-canvas.tsx`
 - **RunButton** [client] — props: isRunning, onClick, size, disabled, title, isProjectRunActive, onStop — `src/components/run-button.tsx`
 - **SearchDialog** [client] — `src/components/search-dialog.tsx`
-- **SidebarFooter** [client] — props: collapsed — `src/components/sidebar-footer.tsx`
 - **CardSkeleton** — props: className, lines, footer, footerClassName, childrenPosition — `src/components/skeletons.tsx`
-- **SkillForm** [client] — props: activated, onToggle, loading — `src/components/skill-form.tsx`
+- **RowSkeleton** — props: className, leading, lines, trailing, linesClassName, trailingClassName — `src/components/skeletons.tsx`
+- **GridSkeleton** — props: className, count, renderItem — `src/components/skeletons.tsx`
+- **PageSkeleton** — props: className — `src/components/skeletons.tsx`
+- **SkillForm** [client] — props: mode, initialData, onDelete, activationProps — `src/components/skill-form.tsx`
 - **TaskCard** [client] — props: task, project, agents, className, isDragging, onClick, allTasks, pendingDecisionTaskIds, isRunning, onRun — `src/components/task-card.tsx`
 - **TaskForm** [client] — props: initial, allTasks, currentTaskId, onSubmit, onCancel, submitLabel — `src/components/task-form.tsx`
 - **ThemeProvider** [client] — `src/components/theme-provider.tsx`
 - **ThemeToggle** [client] — `src/components/theme-toggle.tsx`
+- **TopNav** [client] — `src/components/top-nav.tsx`
 - **FrontmatterHeader** [client] — props: data — `src/components/wiki/frontmatter-header.tsx`
-- **WorkspaceSwitcher** [client] — props: collapsed — `src/components/workspace-switcher.tsx`
+- **WorkMapView** [client] — `src/components/work-map-view.tsx`
 - **ActiveRunsProvider** [client] — `src/providers/active-runs-provider.tsx`

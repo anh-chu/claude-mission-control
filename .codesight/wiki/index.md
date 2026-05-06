@@ -1,6 +1,6 @@
-# mission-control — Wiki
+# mandio — Wiki
 
-_Generated 2026-04-27 — re-run `npx codesight --wiki` if the codebase has changed._
+_Generated 2026-05-06 — re-run `npx codesight --wiki` if the codebase has changed._
 
 Structural map compiled from source code via AST. No LLM — deterministic, 200ms.
 
@@ -15,10 +15,10 @@ Structural map compiled from source code via AST. No LLM — deterministic, 200m
 
 ## Quick Stats
 
-- Routes: **77**
+- Routes: **99**
 - Models: **0**
-- Components: **70**
-- Env vars: **21** required, **0** with defaults
+- Components: **102**
+- Env vars: **24** required, **0** with defaults
 
 ## How to Use
 
@@ -44,4 +44,4 @@ These exist in your codebase but are **not** reflected in wiki articles:
 When in doubt, search the source. The wiki is a starting point, not a complete inventory.
 
 ---
-_Last compiled: 2026-04-27 · 5 articles · [codesight](https://github.com/Houseofmvps/codesight)_
+_Last compiled: 2026-05-06 · 5 articles · [codesight](https://github.com/Houseofmvps/codesight)_

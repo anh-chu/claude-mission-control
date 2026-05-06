@@ -35,3 +35,7 @@ Required environment variables (no defaults):
 
 Read .codesight/wiki/index.md for orientation (WHERE things live). Then read actual source files before implementing. Wiki articles are navigation aids, not implementation guides.
 Read .codesight/CODESIGHT.md for the complete AI context map including all routes, schema, components, libraries, config, middleware, and dependency graph.
+
+## Interview sessions
+
+When a session starts with the "⎔ Interview UI ready" notification, you are in interview mode. The interview UI parses your response text directly — there is NO tool to call. Always end your response with a literal `<interview_state>...</interview_state>` block in the exact format specified by the initiator. Do not switch to the Question tool or any other tool for collecting answers — that breaks the interview UI. Continue using the raw block format until you return zero questions to close the session.

@@ -11,7 +11,7 @@
 - `LOCALAPPDATA` **required** — scripts/daemon/runner.ts
 - `MANDIO_API_TOKEN` **required** — src/proxy.ts
 - `MANDIO_BOOTSTRAP_STANDALONE` **required** — bin/bootstrap.ts
-- `MANDIO_DATA_DIR` **required** — __tests__/helpers.ts
+- `MANDIO_DATA_DIR` **required** — __tests__/chat-sessions.test.ts
 - `MANDIO_INSTALL_DIR` **required** — src/lib/paths.ts
 - `MANDIO_WORKSPACE_ID` **required** — scripts/daemon/prompt-builder.ts
 - `NEXT_PUBLIC_MANDIO_API_TOKEN` **required** — src/lib/api-client.ts
@@ -36,6 +36,7 @@
 
 ## Key Dependencies
 
+- ai: ^6.0.174
 - next: 16.2.4
 - react: 19.2.5
 - zod: ^4.3.6

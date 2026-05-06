@@ -2,49 +2,54 @@
 
 > **Navigation aid.** Library inventory extracted via AST. Read the source files listed here before modifying exported functions.
 
-**42 library files** across 5 modules
+**58 library files** across 7 modules
 
-## Lib (16 files)
+## Lib (34 files)
 
-- `src/lib/types.ts` — getQuadrant, quadrantFromValues, valuesFromQuadrant, AgentDefinition, AgentsFile, SkillDefinition, …
-- `src/lib/data.ts` — setCurrentWorkspace, getWorkspaceDataDir, ensureWorkspaceDir, initWikiDir, ensureDocMaintainerAgentForWorkspace, getTasks, …
-- `src/lib/validations.ts` — validateBody, DEFAULT_LIMIT, LIMITS, commentSchema, taskCreateSchema, taskUpdateSchema, …
-- `src/lib/wiki-plugin.ts` — ensureWikiPluginInstalledDetailed, ensureWikiPluginInstalled, ensureWikiBootstrappedFromPlugin, reconcileWikiWithPlugin, WikiPluginInstall, WikiBootstrapResult, …
-- `src/lib/paths.ts` — getWorkspaceDir, getUploadsDir, getWikiPathFile, getWikiDir, getDefaultWikiDir, DATA_DIR
+- `src/lib/types.ts` — getQuadrant, valuesFromQuadrant, AgentDefinition, AgentsFile, SkillDefinition, LegacySkillDefinition, …
+- `src/lib/data.ts` — setCurrentWorkspace, ensureSkillsMigrated, getWorkspaceDataDir, ensureWorkspaceDir, initWikiDir, ensureDocMaintainerAgentForWorkspace, …
+- `src/lib/validations.ts` — validateBody, safeId, DEFAULT_LIMIT, LIMITS, commentSchema, taskCreateSchema, …
+- `src/lib/paths.ts` — assertSafeId, getWorkspaceDir, getUploadsDir, getWikiPathFile, getWikiDir, getDefaultWikiDir, …
+- `src/lib/chat-sessions.ts` — listSessions, getCurrentSession, createSession, setCurrentSession, clearCurrentSession, updateSession, …
+- `src/lib/command-activation.ts` — activateCommand, deactivateCommand, listActivatedCommands, listActivatedCommandsSync, isCommandActivated, activateAllCommands, …
+- `src/lib/skill-activation.ts` — activateSkill, deactivateSkill, listActivatedSkills, isSkillActivated, listActivatedSkillsSync, activateAllSkills, …
+- `src/lib/command-files.ts` — parseCommandFile, serializeCommandFile, readCommandFile, readCommandFileSync, writeCommandFile, listCommandIds, …
+- `src/lib/skill-files.ts` — parseSkillFile, serializeSkillFile, readSkillFile, readSkillFileSync, writeSkillFile, listSkillIds, …
+- `src/lib/wiki-plugin.ts` — getPluginStatus, ensureWikiPluginInstalledDetailed, ensureWikiBootstrappedFromPlugin, reconcileWikiWithPlugin, WikiPluginInstall, WikiBootstrapResult, …
 - `src/lib/paginate.ts` — parsePaginationParams, paginateItems, PaginationParams, PaginatedResult, CACHE_HEADERS
-- `src/lib/sync-commands.ts` — generateAgentCommandMarkdown, syncAgentCommand, syncAllAgentCommands, syncSkillFile, syncAllSkillFiles
+- `src/lib/cabinets/tree.ts` — findRootCabinetNode, findNodeByPath, findDeepestCabinetNode, findParentCabinetNode
+- `src/lib/embeds/detect.ts` — detectEmbed, providerLabel, DetectedEmbed, EmbedProvider
+- `src/lib/google/detect.ts` — detectGoogle, googleKindLabel, GoogleLink, GoogleKind
+- `src/lib/scheduled-jobs.ts` — scheduleUploadsCleanup, scheduleLogCleanup, runStartupRecovery, scheduleAutopilotPoller
 - `src/lib/log-reader.ts` — isAllowedLogPath, scrubLogLines, tailFile
 - `src/lib/logger.ts` — createLogger, Logger, LogLevel
-- `src/lib/scheduled-jobs.ts` — scheduleUploadsCleanup, scheduleLogCleanup, scheduleDaemonWatchdog
-- `src/lib/toast.ts` — showSuccess, showError, showInfo
+- `src/lib/sync-commands.ts` — generateAgentCommandMarkdown, syncAgentCommand, syncAllAgentCommands
 - `src/lib/utils.ts` — cn, generateId, parseAgentMentions
 - `src/lib/api-client.ts` — apiFetch, ApiFetchInit
-- `src/lib/agent-icons.ts` — getAgentIcon
-- `src/lib/scrub.ts` — scrubCredentials
-- `src/lib/workspace-context.ts` — applyWorkspaceContext
+- `src/lib/claude-session-log.ts` — getSessionLogPath, readSessionMessages
+- `src/lib/json-io.ts` — readJSON, writeJSON
+- `src/lib/markdown/parse-frontmatter.ts` — parseFrontmatter, ParsedFrontmatter
+- `src/lib/plugin-reader.ts` — listInstalledPlugins, PluginInfo
+- `src/lib/script-entrypoints.ts` — resolveScriptEntrypoint, ScriptName
+- _…and 9 more files_
 
-## Scripts (14 files)
+## Scripts (10 files)
 
-- `scripts/daemon/runs-registry.ts` — readJsonFile, writeJsonFile, atomicWriteJson, pruneOldEntries, findEntryById, updateEntryById, …
 - `scripts/daemon/prompt-builder.ts` — buildTaskPrompt, buildScheduledPrompt, getTask, getPendingTasks, isTaskUnblocked, hasPendingDecision
 - `scripts/daemon/security.ts` — validatePathWithinWorkspace, escapeFenceContent, fenceTaskData, enforcePromptLimit, validateBinary, buildSafeEnv
 - `scripts/daemon/warm-sdk.ts` — appendStreamEvent, buildSdkOptions, consumeStream, runWithSdk, preheatSdk, getWarmHandle
-- `scripts/daemon/recovery.ts` — persistSessionRecord, clearSessionRecord, runCrashRecovery, SessionRecord, RecoveryResult
 - `scripts/daemon/active-runs.ts` — readActiveRuns, writeActiveRuns, ActiveRunEntry
-- `scripts/daemon/config.ts` — loadConfig, saveConfig, getConfigPath
+- `scripts/daemon/config.ts` — loadConfig, saveConfig
 - `scripts/daemon/runner.ts` — parseClaudeOutput, AgentRunner
+- `scripts/daemon/runs-registry.ts` — readJsonFile, atomicWriteJson
 - `scripts/daemon/data-io.ts` — readJSON
-- `scripts/daemon/dispatcher.ts` — Dispatcher
-- `scripts/daemon/health.ts` — HealthMonitor
-- `scripts/daemon/scheduler.ts` — Scheduler
 - `scripts/daemon/spawn-utils.ts` — extractSummary
 - `scripts/daemon/workspace-env.ts` — getWorkspaceEnv
 
-## Hooks (10 files)
+## Hooks (9 files)
 
 - `src/hooks/use-data.ts` — useTasks, useInitiativeTasks, useProjects, useBrainDump, useActivityLog, useInbox, …
-- `src/hooks/use-dashboard-data.ts` — useDashboardData, DashboardStats, DashboardData
-- `src/hooks/use-agent-stream.ts` — useAgentStream, StreamLine
+- `src/hooks/use-home-data.ts` — useHomeData, HomeStats, HomeData
 - `src/hooks/use-active-runs.ts` — useActiveRuns
 - `src/hooks/use-connection.ts` — useConnection
 - `src/hooks/use-daemon.ts` — useDaemon
@@ -53,6 +58,11 @@
 - `src/hooks/use-sidebar.ts` — useSidebar
 - `src/hooks/use-workspace.ts` — useWorkspace
 
+## Bin (2 files)
+
+- `bin/checks.ts` — checkNodeVersion, checkClaudeCLI, checkPortAvailable, checkDataDirWritable
+- `bin/bootstrap.ts` — bootstrapDataDir
+
 ## Instrumentation.ts (1 files)
 
 - `src/instrumentation.ts` — register
@@ -60,6 +70,10 @@
 ## Proxy.ts (1 files)
 
 - `src/proxy.ts` — proxy, config
+
+## Stores (1 files)
+
+- `src/stores/editor-store.ts` — FetchPageError, LoadStatus, useEditorStore
 
 ---
 _Back to [overview.md](./overview.md)_
