@@ -3,6 +3,7 @@ import path from "node:path";
 import { NextResponse } from "next/server";
 import { readJSON } from "@/lib/json-io";
 import { DATA_DIR } from "@/lib/paths";
+import { resolveScriptEntrypoint } from "@/lib/script-entrypoints";
 
 // ─── Helpers ─────────────────────────────────────────────────────────────────
 
@@ -62,19 +63,14 @@ export async function POST(request: Request) {
 
 	// 3. Spawn the processing runner as a detached process
 	const cwd = process.cwd();
-	const scriptPath = path.resolve(
-		cwd,
-		"scripts",
-		"daemon",
-		"run-brain-dump-triage.ts",
-	);
+	const brainDumpEntry = resolveScriptEntrypoint("run-brain-dump-triage");
 
 	const entryIds = targetEntries.map((e) => e.id);
 
 	try {
 		const child = spawn(
-			process.execPath,
-			["--import", "tsx", scriptPath, ...entryIds],
+			brainDumpEntry.runner,
+			[...brainDumpEntry.args, ...entryIds],
 			{
 				cwd,
 				detached: true,

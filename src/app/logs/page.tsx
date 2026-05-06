@@ -278,7 +278,7 @@ export default function LogsPage() {
 				<div>
 					<h1 className="text-xl font-normal">Ops / Debug</h1>
 					<p className="text-sm text-muted-foreground">
-						Daemon output, active runs, and per-run consoles.
+						System output, active runs, and per-run consoles.
 					</p>
 				</div>
 				<div className="flex items-center gap-2">
@@ -337,13 +337,13 @@ export default function LogsPage() {
 				>
 					{showDaemon && (
 						<LogTailCard
-							title="Daemon Log Tail"
+							title="System Log Tail"
 							description={
 								live
 									? "Streaming live. New lines appear in real-time."
 									: "Last 50 lines. Refreshes every 5 seconds."
 							}
-							emptyMessage="No daemon log lines available yet."
+							emptyMessage="No system log lines available yet."
 							lines={filteredDaemonLines}
 							isLoading={daemonLog.isLoading}
 							error={daemonLog.error}

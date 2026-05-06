@@ -7,13 +7,17 @@ import {
 	cpSync,
 	existsSync,
 	mkdirSync,
+	readFileSync,
+	unlinkSync,
 	writeFileSync,
 } from "node:fs";
 import os from "node:os";
 import path from "node:path";
 import { createLogger } from "@/lib/logger";
+import { DAEMON_PID_FILE } from "@/lib/paths";
 import {
-	scheduleDaemonWatchdog,
+	runStartupRecovery,
+	scheduleAutopilotPoller,
 	scheduleLogCleanup,
 	scheduleUploadsCleanup,
 } from "@/lib/scheduled-jobs";
@@ -88,8 +92,21 @@ if (!existsSync(wsDir)) {
 	}
 }
 
-// ─── Schedule uploads cleanup + daemon watchdog ─────────────────────────────
+// ─── Schedule uploads cleanup + autopilot poller ────────────────────────────
 
 scheduleUploadsCleanup();
 scheduleLogCleanup();
-scheduleDaemonWatchdog();
+
+// Clean up stale daemon PID file. Do not send SIGTERM — the old daemon
+// process is either already dead or its parent is gone. A blind kill risks
+// terminating an unrelated process that has reused the PID.
+if (existsSync(DAEMON_PID_FILE)) {
+	try {
+		unlinkSync(DAEMON_PID_FILE);
+	} catch {
+		// Non-fatal: startup should continue even if cleanup fails.
+	}
+}
+
+void runStartupRecovery();
+scheduleAutopilotPoller();

@@ -5,6 +5,7 @@ import { NextResponse } from "next/server";
 import { readJSON } from "@/lib/json-io";
 import { DATA_DIR } from "@/lib/paths";
 import { isProcessAlive } from "@/lib/process-utils";
+import { resolveScriptEntrypoint } from "@/lib/script-entrypoints";
 
 export const dynamic = "force-dynamic";
 
@@ -220,13 +221,11 @@ function spawnMissionTasks(
 	agentTeams: boolean,
 ): void {
 	const cwd = process.cwd();
-	const scriptPath = path.resolve(cwd, "scripts", "daemon", "run-task.ts");
+	const runTaskEntry = resolveScriptEntrypoint("run-task");
 
 	for (const task of tasks) {
 		const args = [
-			"--import",
-			"tsx",
-			scriptPath,
+			...runTaskEntry.args,
 			task.id,
 			"--source",
 			"mission-chain",
@@ -238,7 +237,7 @@ function spawnMissionTasks(
 		}
 
 		try {
-			const child = spawn(process.execPath, args, {
+			const child = spawn(runTaskEntry.runner, args, {
 				cwd,
 				detached: true,
 				stdio: "ignore",

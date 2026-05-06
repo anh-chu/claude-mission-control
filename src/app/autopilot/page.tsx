@@ -99,16 +99,8 @@ function cronToHuman(cron: string): string {
 }
 
 export default function AutopilotPage() {
-	const {
-		status,
-		config,
-		isRunning,
-		isLoading,
-		error,
-		start,
-		stop,
-		updateConfig,
-	} = useDaemon();
+	const { status, config, isRunning, isLoading, error, updateConfig } =
+		useDaemon();
 	const { runs } = useActiveRuns();
 	const [expandedSessionId, setExpandedSessionId] = useState<string | null>(
 		null,
@@ -264,37 +256,38 @@ export default function AutopilotPage() {
 					>
 						{isRunning ? "Running" : "Stopped"}
 					</Badge>
-					{isRunning && status.pid && (
-						<span className="text-sm text-muted-foreground">
-							PID: {status.pid}
-						</span>
-					)}
 				</div>
 				<div className="flex gap-2">
-					{isRunning ? (
-						<Tip content="Stop all autonomous processing">
-							<Button variant="destructive" size="sm" onClick={stop}>
+					<Button
+						variant={isRunning ? "destructive" : "default"}
+						size="sm"
+						onClick={() =>
+							void updateConfig({
+								polling: { enabled: !config.polling.enabled },
+							})
+						}
+					>
+						{isRunning ? (
+							<>
 								<Square className="h-4 w-4 mr-2" />
-								Disengage Autopilot
-							</Button>
-						</Tip>
-					) : (
-						<Tip content="Start autonomous agent processing">
-							<Button size="sm" onClick={() => void start()}>
+								Disable Automation
+							</>
+						) : (
+							<>
 								<Rocket className="h-4 w-4 mr-2" />
-								Launch Autopilot
-							</Button>
-						</Tip>
-					)}
+								Enable Automation
+							</>
+						)}
+					</Button>
 				</div>
 			</div>
 
 			<p className="text-sm text-muted-foreground -mt-2">
-				The Autopilot daemon runs in the background, automatically polling for
-				pending tasks and dispatching them to AI agents. It manages concurrency
-				limits, retries failed tasks, and runs scheduled commands (standups,
-				daily plans, weekly reviews) on cron schedules. Start it once and your
-				task queue runs hands-free.
+				Automation runs within the app, polling for pending tasks and
+				dispatching them to AI agents. It manages concurrency limits, retries
+				failed tasks, and runs scheduled commands (standups, daily plans, weekly
+				reviews) on cron schedules. Enable it and your task queue runs
+				hands-free.
 			</p>
 
 			{/* Stats Cards */}

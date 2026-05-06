@@ -9,8 +9,10 @@ import { join, resolve } from "node:path";
 const standaloneDir = resolve(".next/standalone");
 const publicDir = resolve("public");
 const staticDir = resolve(".next/static");
+const distDir = resolve("dist");
 const outputPublicDir = join(standaloneDir, "public");
 const outputStaticDir = join(standaloneDir, ".next/static");
+const outputDistDir = join(standaloneDir, "dist");
 
 if (!existsSync(standaloneDir)) {
 	console.log("No standalone output found, skipping asset copy");
@@ -37,6 +39,17 @@ if (existsSync(staticDir)) {
 	cpSync(staticDir, outputStaticDir, { recursive: true });
 } else {
 	console.log("No .next/static/ directory found, skipping");
+}
+
+// Copy dist/ to standalone/dist/ (compiled daemon scripts for production spawning)
+if (existsSync(distDir)) {
+	console.log("Copying dist/ to standalone/dist/");
+	if (existsSync(outputDistDir)) {
+		rmSync(outputDistDir, { recursive: true });
+	}
+	cpSync(distDir, outputDistDir, { recursive: true });
+} else {
+	console.log("No dist/ directory found — run build:scripts first");
 }
 
 // Remove internal dirs that should not ship in standalone output

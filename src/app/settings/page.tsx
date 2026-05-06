@@ -36,8 +36,6 @@ export default function SettingsPage() {
 		config,
 		isRunning,
 		isLoading: daemonLoading,
-		start,
-		stop,
 		updateConfig,
 	} = useDaemon();
 
@@ -307,24 +305,26 @@ export default function SettingsPage() {
 							) : (
 								<Badge variant="secondary">Stopped</Badge>
 							)}
-							{isRunning ? (
-								<Button
-									size="sm"
-									variant="outline"
-									className="gap-1.5"
-									onClick={() => void stop()}
-								>
-									<Square className="h-3.5 w-3.5" /> Stop
-								</Button>
-							) : (
-								<Button
-									size="sm"
-									className="gap-1.5"
-									onClick={() => void start()}
-								>
-									<Rocket className="h-3.5 w-3.5" /> Start
-								</Button>
-							)}
+							<Button
+								size="sm"
+								variant={isRunning ? "outline" : "default"}
+								className="gap-1.5"
+								onClick={() =>
+									void updateConfig({
+										polling: { enabled: !config.polling.enabled },
+									})
+								}
+							>
+								{isRunning ? (
+									<>
+										<Square className="h-3.5 w-3.5" /> Disable
+									</>
+								) : (
+									<>
+										<Rocket className="h-3.5 w-3.5" /> Enable
+									</>
+								)}
+							</Button>
 						</div>
 
 						<div className="flex items-center justify-between">

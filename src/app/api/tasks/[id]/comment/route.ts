@@ -5,6 +5,7 @@ import { NextResponse } from "next/server";
 import { getWorkspaceDataDir } from "@/lib/data";
 import { readJSON } from "@/lib/json-io";
 import { getUploadsDir } from "@/lib/paths";
+import { resolveScriptEntrypoint } from "@/lib/script-entrypoints";
 import { generateId, parseAgentMentions } from "@/lib/utils";
 import { applyWorkspaceContext } from "@/lib/workspace-context";
 
@@ -139,19 +140,12 @@ export async function POST(
 
 	if (validMentions.length > 0) {
 		const cwd = process.cwd();
-		const scriptPath = path.resolve(
-			cwd,
-			"scripts",
-			"daemon",
-			"run-task-comment.ts",
-		);
+		const commentEntry = resolveScriptEntrypoint("run-task-comment");
 
 		for (const agentId of validMentions) {
 			try {
 				const args = [
-					"--import",
-					"tsx",
-					scriptPath,
+					...commentEntry.args,
 					taskId,
 					"--agent",
 					agentId,
@@ -161,7 +155,7 @@ export async function POST(
 					author,
 				];
 
-				const child = spawn(process.execPath, args, {
+				const child = spawn(commentEntry.runner, args, {
 					cwd,
 					detached: true,
 					stdio: "ignore",

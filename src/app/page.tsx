@@ -105,8 +105,7 @@ export default function CommandCenterPage() {
 	const {
 		isRunning: daemonRunning,
 		status: daemonStatus,
-		start: startDaemon,
-		stop: stopDaemon,
+		updateConfig,
 	} = useDaemon();
 	const {
 		runningTaskIds,
@@ -448,33 +447,17 @@ export default function CommandCenterPage() {
 								</div>
 							</div>
 							<div className="flex items-center gap-2">
-								{!daemonRunning ? (
-									<Tip content="Start autonomous agent processing">
-										<Button
-											size="sm"
-											className="text-xs gap-1.5"
-											onClick={(e) => {
-												e.preventDefault();
-												startDaemon();
-											}}
-										>
-											<Rocket className="h-3 w-3" /> Launch
-										</Button>
-									</Tip>
+								{daemonRunning ? (
+									<Badge
+										variant="outline"
+										className="bg-sunshine-700/10 text-sunshine-700 border-sunshine-700/20 text-xs"
+									>
+										Active
+									</Badge>
 								) : (
-									<Tip content="Stop all autonomous processing">
-										<Button
-											size="sm"
-											variant="destructive"
-											className="text-xs gap-1.5"
-											onClick={(e) => {
-												e.preventDefault();
-												stopDaemon();
-											}}
-										>
-											<Square className="h-3 w-3" /> Stop
-										</Button>
-									</Tip>
+									<Badge variant="outline" className="text-xs">
+										Paused
+									</Badge>
 								)}
 								<span className="text-xs text-muted-foreground">
 									View Details →

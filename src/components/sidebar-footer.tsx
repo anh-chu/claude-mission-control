@@ -33,18 +33,12 @@ interface SidebarFooterProps {
 	collapsed: boolean;
 }
 
-function formatUptime(minutes: number): string {
-	if (minutes < 60) return `${minutes}m`;
-	const hours = Math.floor(minutes / 60);
-	const remainingMinutes = minutes % 60;
-	return remainingMinutes > 0 ? `${hours}h ${remainingMinutes}m` : `${hours}h`;
-}
-
 export function SidebarFooter({ collapsed }: SidebarFooterProps) {
 	const [killDialogOpen, setKillDialogOpen] = useState(false);
 	const [killLoading, setKillLoading] = useState(false);
 
-	const { status: daemonStatus, start, stop } = useDaemon();
+	const { status: daemonStatus, config, updateConfig } = useDaemon();
+	const pollingEnabled = config.polling.enabled;
 
 	async function handleEmergencyStop() {
 		setKillLoading(true);
@@ -72,51 +66,39 @@ export function SidebarFooter({ collapsed }: SidebarFooterProps) {
 						<button
 							type="button"
 							className="flex items-center justify-center h-8 w-8 rounded-sm hover:bg-muted transition-colors"
-							aria-label="Daemon status"
+							aria-label="Automation status"
 						>
 							<Circle
 								className={cn(
 									"h-2.5 w-2.5 fill-current",
-									daemonStatus.status === "running"
+									pollingEnabled
 										? "text-success animate-pulse"
-										: daemonStatus.status === "starting"
-											? "text-warning animate-pulse"
-											: "text-muted-foreground",
+										: "text-muted-foreground",
 								)}
 							/>
 						</button>
 					</PopoverTrigger>
 				</TooltipTrigger>
 				<TooltipContent side={collapsed ? "right" : "top"}>
-					{daemonStatus.status === "running"
-						? "Daemon running"
-						: daemonStatus.status === "starting"
-							? "Daemon starting"
-							: "Daemon stopped"}
+					{pollingEnabled ? "Automation enabled" : "Automation disabled"}
 				</TooltipContent>
 			</Tooltip>
 			<PopoverContent side="top" align="start" className="w-72">
 				<div className="space-y-3">
 					<div className="flex items-center justify-between">
-						<h4 className="text-sm font-normal">Daemon Status</h4>
+						<h4 className="text-sm font-normal">Automation</h4>
 						<Badge
 							className={cn(
-								daemonStatus.status === "running"
+								pollingEnabled
 									? "bg-success-soft text-success border-success/25"
-									: daemonStatus.status === "starting"
-										? "bg-warning-soft text-warning border-warning/25"
-										: "bg-muted text-muted-foreground border-muted",
+									: "bg-muted text-muted-foreground border-muted",
 							)}
 						>
-							{daemonStatus.status === "running"
-								? "Running"
-								: daemonStatus.status === "starting"
-									? "Starting"
-									: "Stopped"}
+							{pollingEnabled ? "Enabled" : "Disabled"}
 						</Badge>
 					</div>
 
-					{daemonStatus.status === "running" && (
+					{pollingEnabled && (
 						<div className="text-xs text-muted-foreground space-y-1">
 							<p>
 								Active Sessions:{" "}
@@ -130,12 +112,6 @@ export function SidebarFooter({ collapsed }: SidebarFooterProps) {
 									{daemonStatus.stats.tasksCompleted}
 								</strong>
 							</p>
-							<p>
-								Uptime:{" "}
-								<strong className="text-foreground">
-									{formatUptime(daemonStatus.stats.uptimeMinutes)}
-								</strong>
-							</p>
 						</div>
 					)}
 
@@ -143,16 +119,13 @@ export function SidebarFooter({ collapsed }: SidebarFooterProps) {
 
 					<Button
 						className="w-full"
-						variant={
-							daemonStatus.status === "running" ? "destructive" : "default"
-						}
+						variant={pollingEnabled ? "destructive" : "default"}
 						size="sm"
 						onClick={() =>
-							daemonStatus.status === "running" ? stop() : start()
+							void updateConfig({ polling: { enabled: !pollingEnabled } })
 						}
-						disabled={daemonStatus.status === "starting"}
 					>
-						{daemonStatus.status === "running" ? "Stop Daemon" : "Start Daemon"}
+						{pollingEnabled ? "Disable Automation" : "Enable Automation"}
 					</Button>
 				</div>
 			</PopoverContent>
@@ -209,9 +182,8 @@ export function SidebarFooter({ collapsed }: SidebarFooterProps) {
 					</DialogHeader>
 
 					<ul className="list-disc pl-6 text-sm space-y-1">
-						<li>Stop the Autopilot daemon</li>
+						<li>Disable automation polling</li>
 						<li>Pause all active initiatives</li>
-
 						<li>Log the emergency stop event</li>
 					</ul>
 

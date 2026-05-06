@@ -79,8 +79,6 @@ interface DaemonData {
 	isRunning: boolean;
 	isLoading: boolean;
 	error: string | null;
-	start: (masterPassword?: string) => Promise<void>;
-	stop: () => Promise<void>;
 	updateConfig: (updates: Partial<DaemonConfig>) => Promise<void>;
 	refetch: () => Promise<void>;
 }
@@ -156,43 +154,6 @@ export function useDaemon(): DaemonData {
 		return () => clearInterval(interval);
 	}, [refetch]);
 
-	const start = useCallback(async () => {
-		try {
-			const payload: Record<string, unknown> = { action: "start" };
-			const res = await apiFetch("/api/daemon", {
-				method: "POST",
-				headers: { "Content-Type": "application/json" },
-				body: JSON.stringify(payload),
-			});
-			if (!res.ok) {
-				const data = await res.json();
-				throw new Error(data.error || "Failed to start daemon");
-			}
-			// Refetch after a short delay to pick up the new status
-			setTimeout(refetch, 2000);
-		} catch (err) {
-			setError(err instanceof Error ? err.message : "Failed to start daemon");
-			throw err; // Re-throw so the caller can handle it
-		}
-	}, [refetch]);
-
-	const stop = useCallback(async () => {
-		try {
-			const res = await apiFetch("/api/daemon", {
-				method: "POST",
-				headers: { "Content-Type": "application/json" },
-				body: JSON.stringify({ action: "stop" }),
-			});
-			if (!res.ok) {
-				const data = await res.json();
-				throw new Error(data.error || "Failed to stop daemon");
-			}
-			setTimeout(refetch, 2000);
-		} catch (err) {
-			setError(err instanceof Error ? err.message : "Failed to stop daemon");
-		}
-	}, [refetch]);
-
 	const updateConfig = useCallback(
 		async (updates: Partial<DaemonConfig>) => {
 			try {
@@ -218,8 +179,6 @@ export function useDaemon(): DaemonData {
 		isRunning,
 		isLoading,
 		error,
-		start,
-		stop,
 		updateConfig,
 		refetch,
 	};

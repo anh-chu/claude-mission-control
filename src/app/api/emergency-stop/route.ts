@@ -1,36 +1,54 @@
-import fs from "node:fs";
 import { NextResponse } from "next/server";
-import { mutateActivityLog } from "@/lib/data";
-import { DAEMON_PID_FILE } from "@/lib/paths";
+import {
+	getActiveRuns,
+	mutateActiveRuns,
+	mutateActivityLog,
+	mutateDaemonConfig,
+} from "@/lib/data";
 
 export async function POST() {
 	const results = {
-		daemonStopped: false,
+		pollingDisabled: false,
+		tasksStopped: 0,
 		activityLogged: false,
 	};
 
-	// 1. Stop the daemon
+	// 1. Disable polling so no new tasks are dispatched
 	try {
-		const pidPath = DAEMON_PID_FILE;
-		if (fs.existsSync(pidPath)) {
-			const raw = fs.readFileSync(pidPath, "utf-8").trim();
-			const pid = parseInt(raw, 10);
-			if (!Number.isNaN(pid)) {
-				try {
-					process.kill(pid, 0); // Check if process exists
-					process.kill(pid, "SIGTERM");
-					results.daemonStopped = true;
-				} catch {
-					// Process not running — skip gracefully
-				}
-			}
-		}
+		await mutateDaemonConfig(async (cfg) => ({
+			...cfg,
+			polling: { ...(cfg.polling as Record<string, unknown>), enabled: false },
+		}));
+		results.pollingDisabled = true;
 	} catch {
-		// No PID file or read error — skip gracefully
+		// Non-fatal — log and continue
 	}
 
-	// 2. Log the event
-	const details = `Daemon ${results.daemonStopped ? "stopped" : "was not running"}`;
+	// 2. Mark all running runs as stopped, then signal their PIDs.
+	// We write first so the UI/API never shows stale "running" state.
+	try {
+		await mutateActiveRuns(async (data) => {
+			const now = new Date().toISOString();
+			for (const run of data.runs) {
+				if (run.status === "running" && run.pid > 0) {
+					try {
+						process.kill(run.pid, "SIGTERM");
+						results.tasksStopped++;
+					} catch {
+						// Process already gone — skip
+					}
+					run.status = "stopped";
+					run.completedAt = now;
+					run.error = "Emergency stop";
+				}
+			}
+		});
+	} catch {
+		// active-runs update failed — skip gracefully
+	}
+
+	// 3. Log the event
+	const details = `Polling disabled. ${results.tasksStopped} task process(es) signaled.`;
 
 	try {
 		await mutateActivityLog(async (data) => {

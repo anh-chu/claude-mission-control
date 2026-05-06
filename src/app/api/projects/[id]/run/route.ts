@@ -4,6 +4,7 @@ import { NextResponse } from "next/server";
 import { readJSON, writeJSON } from "@/lib/json-io";
 import { DATA_DIR } from "@/lib/paths";
 import { isProcessAlive } from "@/lib/process-utils";
+import { resolveScriptEntrypoint } from "@/lib/script-entrypoints";
 
 // ─── Helpers ─────────────────────────────────────────────────────────────────
 
@@ -180,16 +181,14 @@ export async function POST(
 	missionsData.missions.push(mission);
 	writeJSON(missionsPath, missionsData);
 
-	// 9. Spawn run-task.ts for each task (with --mission flag)
+	// 9. Spawn run-task for each task (with --mission flag)
 	const cwd = process.cwd();
-	const scriptPath = path.resolve(cwd, "scripts", "daemon", "run-task.ts");
+	const runTaskEntry = resolveScriptEntrypoint("run-task");
 	const launched: string[] = [];
 
 	for (const task of tasksToLaunch) {
 		const args = [
-			"--import",
-			"tsx",
-			scriptPath,
+			...runTaskEntry.args,
 			task.id,
 			"--source",
 			"project-run",
@@ -201,7 +200,7 @@ export async function POST(
 		}
 
 		try {
-			const child = spawn(process.execPath, args, {
+			const child = spawn(runTaskEntry.runner, args, {
 				cwd,
 				detached: true,
 				stdio: "ignore",

@@ -1,32 +1,15 @@
-import { spawn } from "node:child_process";
-import { existsSync, readFileSync } from "node:fs";
-import path from "node:path";
 import { NextResponse } from "next/server";
-import { getDaemonConfig, mutateDaemonConfig } from "@/lib/data";
+import { getActiveRuns, getDaemonConfig, mutateDaemonConfig } from "@/lib/data";
 import { readJSON } from "@/lib/json-io";
-import { DAEMON_PID_FILE, DAEMON_STATUS_FILE } from "@/lib/paths";
-import { isProcessAlive } from "@/lib/process-utils";
+import { DAEMON_STATUS_FILE } from "@/lib/paths";
 import { daemonConfigUpdateSchema, validateBody } from "@/lib/validations";
 
 const STATUS_FILE = DAEMON_STATUS_FILE;
-const PID_FILE = DAEMON_PID_FILE;
-
-// ─── Helpers ─────────────────────────────────────────────────────────────────
-
-function getPid(): number | null {
-	try {
-		if (!existsSync(PID_FILE)) return null;
-		const pid = parseInt(readFileSync(PID_FILE, "utf-8").trim(), 10);
-		return Number.isNaN(pid) ? null : pid;
-	} catch {
-		return null;
-	}
-}
 
 // ─── GET: Read daemon status + config ────────────────────────────────────────
 
 export async function GET() {
-	const status = readJSON(STATUS_FILE) ?? {
+	const savedStatus = readJSON(STATUS_FILE) ?? {
 		status: "stopped",
 		pid: null,
 		startedAt: null,
@@ -37,22 +20,41 @@ export async function GET() {
 			tasksCompleted: 0,
 			tasksFailed: 0,
 			uptimeMinutes: 0,
+			totalCostUsd: 0,
+			totalInputTokens: 0,
+			totalOutputTokens: 0,
+			totalCacheReadTokens: 0,
+			totalCacheCreationTokens: 0,
 		},
 		lastPollAt: null,
 		nextScheduledRuns: {},
 	};
+
 	const config = await getDaemonConfig();
+	const activeRuns = await getActiveRuns();
 
-	// Verify daemon is actually running (PID check)
-	const pid = getPid();
-	const isRunning = pid !== null && isProcessAlive(pid);
-	const statusObj = status as Record<string, unknown>;
+	// Derive running sessions from active-runs.json
+	const activeSessions = activeRuns.runs
+		.filter((r) => r.status === "running")
+		.map((r) => ({
+			id: r.id,
+			agentId: r.agentId,
+			taskId: r.taskId ?? null,
+			command: r.source ?? "task",
+			pid: r.pid,
+			startedAt: r.startedAt,
+			status: r.status,
+		}));
 
-	if (!isRunning && statusObj.status === "running") {
-		// Daemon crashed — update status
-		statusObj.status = "stopped";
-		statusObj.pid = null;
-	}
+	const isRunning =
+		(config as { polling?: { enabled?: boolean } }).polling?.enabled ?? false;
+	const statusObj = savedStatus as Record<string, unknown>;
+
+	// Override with live data
+	statusObj.status = isRunning ? "running" : "stopped";
+	statusObj.activeSessions = activeSessions;
+	// Keep pid as null — no longer tracked at the daemon level
+	statusObj.pid = null;
 
 	return NextResponse.json({
 		status: statusObj,
@@ -61,75 +63,32 @@ export async function GET() {
 	});
 }
 
-// ─── POST: Start/stop daemon ─────────────────────────────────────────────────
+// ─── POST: Toggle polling on/off ─────────────────────────────────────────────
 
 export async function POST(request: Request) {
 	try {
 		const body = await request.json();
-		const action = body.action;
-
-		if (action === "start") {
-			const pid = getPid();
-			if (pid && isProcessAlive(pid)) {
-				return NextResponse.json(
-					{ error: `Daemon is already running (PID: ${pid})` },
-					{ status: 409 },
-				);
-			}
-
-			// SECURITY: Use process.execPath (node.exe) directly instead of tsx.cmd wrapper.
-			// On Windows, .cmd files cannot be spawned with shell: false (EINVAL error).
-			// Using node --import tsx achieves the same result without a shell.
-			const cwd = process.cwd();
-			const scriptPath = path.resolve(cwd, "scripts", "daemon", "index.ts");
-
-			const child = spawn(
-				process.execPath,
-				["--import", "tsx", scriptPath, "start"],
-				{
-					cwd,
-					detached: true,
-					stdio: "ignore",
-					shell: false,
-				},
+		if (body.action !== "toggle-polling") {
+			return NextResponse.json(
+				{ error: "Invalid action. Use 'toggle-polling'" },
+				{ status: 400 },
 			);
-
-			child.unref();
-
-			// Persist autoStart so the daemon restarts on server reboot
-			await mutateDaemonConfig(async (cfg) => ({ ...cfg, autoStart: true }));
-
-			return NextResponse.json({
-				message: "Daemon starting...",
-				pid: child.pid,
-			});
 		}
 
-		if (action === "stop") {
-			const pid = getPid();
-			if (!pid || !isProcessAlive(pid)) {
-				return NextResponse.json({ message: "Daemon is not running" });
-			}
+		const newConfig = await mutateDaemonConfig(async (cfg) => {
+			const enabled = !(cfg as { polling?: { enabled?: boolean } }).polling
+				?.enabled;
+			(cfg as Record<string, unknown>).polling = {
+				...((cfg as Record<string, unknown>).polling as Record<
+					string,
+					unknown
+				>),
+				enabled,
+			};
+			return cfg;
+		});
 
-			try {
-				process.kill(pid, "SIGTERM");
-				// Clear autoStart so the daemon doesn't restart on next server reboot
-				await mutateDaemonConfig(async (cfg) => ({ ...cfg, autoStart: false }));
-				return NextResponse.json({ message: "Stop signal sent", pid });
-			} catch (err) {
-				return NextResponse.json(
-					{
-						error: `Failed to stop daemon: ${err instanceof Error ? err.message : String(err)}`,
-					},
-					{ status: 500 },
-				);
-			}
-		}
-
-		return NextResponse.json(
-			{ error: "Invalid action. Use 'start' or 'stop'" },
-			{ status: 400 },
-		);
+		return NextResponse.json({ config: newConfig });
 	} catch (err) {
 		return NextResponse.json(
 			{

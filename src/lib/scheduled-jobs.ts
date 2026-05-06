@@ -14,7 +14,18 @@ import {
 import { readdir, stat, unlink } from "node:fs/promises";
 import path from "node:path";
 import cron from "node-cron";
-import { DAEMON_PID_FILE, DATA_DIR, getBaseDir } from "./paths";
+import {
+	getActiveRuns,
+	getDaemonConfig,
+	getDecisions,
+	getTasks,
+	mutateActiveRuns,
+	mutateTasks,
+} from "./data";
+import { createLogger } from "./logger";
+import { DATA_DIR } from "./paths";
+import { isProcessAlive } from "./process-utils";
+import { resolveScriptEntrypoint } from "./script-entrypoints";
 
 const GRACE_MS = 60 * 60 * 1000; // 1 hour
 const LOG_RETENTION_MS = 7 * 24 * 60 * 60 * 1000; // 7 days
@@ -179,78 +190,313 @@ export function scheduleLogCleanup() {
 	console.log("[cleanup:logs] scheduler registered (daily)");
 }
 
-// ─── Daemon Watchdog ─────────────────────────────────────────────────────────
+// ─── Autopilot Poller ────────────────────────────────────────────────────────
 
-function spawnDaemon(): number | null {
-	const baseDir = getBaseDir();
-	const distPath = path.resolve(baseDir, "dist", "daemon.js");
-	if (existsSync(distPath)) {
-		const child = spawn(process.execPath, [distPath, "start"], {
-			cwd: process.cwd(),
-			detached: true,
-			stdio: "ignore",
-			shell: false,
+const autopilotLogger = createLogger("autopilot");
+
+/**
+ * One tick of the autopilot poller:
+ * 1. Recovery sweep — mark dead runs as failed, reset orphaned tasks.
+ * 2. Dispatch — spawn run-task.ts for each dispatchable task up to concurrency limit.
+ */
+async function runAutopilotTick(): Promise<void> {
+	// Read config
+	const rawConfig = await getDaemonConfig();
+	const config = rawConfig as {
+		polling?: { enabled?: boolean };
+		concurrency?: { maxParallelAgents?: number };
+	};
+
+	if (!config.polling?.enabled) return;
+
+	const maxParallelAgents = config.concurrency?.maxParallelAgents ?? 3;
+
+	// ── Recovery sweep ───────────────────────────────────────────────────────
+
+	// Mark runs whose process is no longer alive as failed; collect affected task IDs.
+	const deadTaskIds = await mutateActiveRuns(async (data) => {
+		const dead = new Set<string>();
+		for (const run of data.runs) {
+			if (run.status === "running" && !isProcessAlive(run.pid)) {
+				run.status = "failed";
+				run.completedAt = new Date().toISOString();
+				run.error = "Process died unexpectedly (autopilot recovery)";
+				dead.add(run.taskId);
+				autopilotLogger.warn(
+					"recovery",
+					`Marked run ${run.id} for task ${run.taskId} as failed (pid ${run.pid} not alive)`,
+				);
+			}
+		}
+		return dead;
+	});
+
+	// Reset orphaned in-progress tasks back to not-started.
+	if (deadTaskIds.size > 0) {
+		await mutateTasks(async (data) => {
+			for (const task of data.tasks) {
+				if (task.kanban === "in-progress" && deadTaskIds.has(task.id)) {
+					task.kanban = "not-started";
+					task.updatedAt = new Date().toISOString();
+					autopilotLogger.info(
+						"recovery",
+						`Reset task ${task.id} to not-started`,
+					);
+				}
+			}
+			return undefined;
 		});
-		child.unref();
-		return child.pid ?? null;
 	}
-	// Fallback: use tsx for development
-	const scriptPath = path.resolve(baseDir, "scripts", "daemon", "index.ts");
-	if (!existsSync(scriptPath)) {
-		console.error(
-			`[watchdog:daemon] daemon not found at ${distPath} or ${scriptPath}, skipping restart`,
+
+	// ── Dispatch ─────────────────────────────────────────────────────────────
+
+	const [tasksData, runsData, decisionsData] = await Promise.all([
+		getTasks(),
+		getActiveRuns(),
+		getDecisions(),
+	]);
+
+	// Determine which task IDs currently have a live running process.
+	const aliveRunningTaskIds = new Set<string>();
+	for (const run of runsData.runs) {
+		if (
+			run.status === "running" &&
+			isProcessAlive(run.pid, /* assumeAliveIfZero */ true)
+		) {
+			aliveRunningTaskIds.add(run.taskId);
+		}
+	}
+	const runningCount = aliveRunningTaskIds.size;
+	const availableSlots = Math.max(0, maxParallelAgents - runningCount);
+
+	if (availableSlots <= 0) {
+		autopilotLogger.debug(
+			"dispatch",
+			`No slots available (${runningCount}/${maxParallelAgents} agents running)`,
 		);
-		return null;
+		return;
 	}
-	const child = spawn(
-		process.execPath,
-		["--import", "tsx", scriptPath, "start"],
-		{
-			cwd: process.cwd(),
-			detached: true,
-			stdio: "ignore",
-			shell: false,
-		},
+
+	// Collect task IDs blocked by a pending decision.
+	const pendingDecisionTaskIds = new Set(
+		decisionsData.decisions
+			.filter((d) => d.status === "pending" && d.taskId != null)
+			.map((d) => d.taskId as string),
 	);
-	child.unref();
-	return child.pid ?? null;
-}
 
-function isDaemonRunning(): boolean {
-	const pidFile = DAEMON_PID_FILE;
-	if (!existsSync(pidFile)) return false;
-	try {
-		const pid = parseInt(readFileSync(pidFile, "utf-8").trim(), 10);
-		if (Number.isNaN(pid)) return false;
-		process.kill(pid, 0);
+	// Find tasks that are ready to dispatch.
+	const dispatchable = tasksData.tasks.filter((task) => {
+		if (task.deletedAt) return false;
+		if (task.kanban !== "not-started") return false;
+		if (!task.assignedTo || task.assignedTo === "me") return false;
+		if (aliveRunningTaskIds.has(task.id)) return false;
+		// All blocking dependencies must be done.
+		if (task.blockedBy.length > 0) {
+			const allDone = task.blockedBy.every((depId) => {
+				const dep = tasksData.tasks.find((t) => t.id === depId);
+				return dep?.kanban === "done";
+			});
+			if (!allDone) return false;
+		}
+		// No pending decision gating this task.
+		if (pendingDecisionTaskIds.has(task.id)) return false;
 		return true;
-	} catch {
-		return false;
+	});
+
+	if (dispatchable.length === 0) {
+		autopilotLogger.debug("dispatch", "No dispatchable tasks");
+		return;
+	}
+
+	autopilotLogger.info(
+		"dispatch",
+		`Found ${dispatchable.length} dispatchable task(s), ${availableSlots} slot(s) available`,
+	);
+
+	const toDispatch = dispatchable.slice(0, availableSlots);
+	const cwd = process.cwd();
+	const runTaskEntry = resolveScriptEntrypoint("run-task");
+
+	for (const task of toDispatch) {
+		// Pre-reserve the task by marking it in-progress so the next tick
+		// does not see it as dispatchable. If spawn fails, reset below.
+		await mutateTasks(async (data) => {
+			const t = data.tasks.find((t) => t.id === task.id);
+			if (t && t.kanban === "not-started") {
+				t.kanban = "in-progress";
+				t.updatedAt = new Date().toISOString();
+			}
+		});
+
+		const args = [...runTaskEntry.args, task.id, "--source", "autopilot"];
+		try {
+			const child = spawn(runTaskEntry.runner, args, {
+				cwd,
+				detached: true,
+				stdio: "ignore",
+				shell: false,
+			});
+			child.unref();
+			autopilotLogger.info(
+				"dispatch",
+				`Dispatched task ${task.id} (assignedTo: ${task.assignedTo}, pid: ${child.pid ?? "unknown"})`,
+			);
+		} catch (err) {
+			// Spawn failed — unreserve the task so it can be retried.
+			await mutateTasks(async (data) => {
+				const t = data.tasks.find((t) => t.id === task.id);
+				if (t && t.kanban === "in-progress") {
+					t.kanban = "not-started";
+					t.updatedAt = new Date().toISOString();
+				}
+			});
+			autopilotLogger.error(
+				"dispatch",
+				`Failed to dispatch task ${task.id}: ${
+					err instanceof Error ? err.message : String(err)
+				}`,
+			);
+		}
 	}
 }
 
-function checkAndRestartDaemon() {
+/**
+ * One-shot startup recovery: mark dead runs as failed and reset orphaned tasks.
+ * Called once at server startup before the poller begins.
+ */
+export async function runStartupRecovery(): Promise<void> {
 	try {
-		const configFile = path.join(DATA_DIR, "daemon-config.json");
-		if (!existsSync(configFile)) return;
-		const config = JSON.parse(readFileSync(configFile, "utf-8")) as Record<
-			string,
-			unknown
-		>;
-		if (config.autoStart !== true) return;
-		if (isDaemonRunning()) return;
-		const pid = spawnDaemon();
-		console.log(`[watchdog:daemon] daemon was down, restarted (pid: ${pid})`);
-	} catch {
-		// Non-fatal
+		const deadTaskIds = await mutateActiveRuns(async (data) => {
+			const dead = new Set<string>();
+			for (const run of data.runs) {
+				if (run.status === "running" && !isProcessAlive(run.pid)) {
+					run.status = "failed";
+					run.completedAt = new Date().toISOString();
+					run.error = "Process died unexpectedly (startup recovery)";
+					dead.add(run.taskId);
+					autopilotLogger.warn(
+						"recovery",
+						`Startup: marked run ${run.id} for task ${run.taskId} as failed (pid ${run.pid} not alive)`,
+					);
+				}
+			}
+			return dead;
+		});
+
+		if (deadTaskIds.size > 0) {
+			await mutateTasks(async (data) => {
+				for (const task of data.tasks) {
+					if (task.kanban === "in-progress" && deadTaskIds.has(task.id)) {
+						task.kanban = "not-started";
+						task.updatedAt = new Date().toISOString();
+						autopilotLogger.info(
+							"recovery",
+							`Startup: reset task ${task.id} to not-started`,
+						);
+					}
+				}
+				return undefined;
+			});
+		}
+
+		if (deadTaskIds.size > 0) {
+			autopilotLogger.info(
+				"recovery",
+				`Startup recovery: recovered ${deadTaskIds.size} task(s)`,
+			);
+		} else {
+			autopilotLogger.debug("recovery", "Startup recovery: no dead runs found");
+		}
+	} catch (err) {
+		autopilotLogger.error(
+			"recovery",
+			`Startup recovery error: ${
+				err instanceof Error ? err.message : String(err)
+			}`,
+		);
 	}
 }
 
-export function scheduleDaemonWatchdog() {
-	// Delay the initial check slightly so a concurrently-starting daemon
-	// has time to write its PID file before we probe liveness.
-	setTimeout(checkAndRestartDaemon, 10_000);
-	// Then watch every 60 seconds
-	cron.schedule("* * * * *", checkAndRestartDaemon);
-	console.log("[watchdog:daemon] scheduler registered (every 60s)");
+/**
+ * Register the autopilot poller and any scheduled commands from daemon-config.json.
+ * Runs inside the Next.js server process (registered via instrumentation.ts).
+ */
+export function scheduleAutopilotPoller(): void {
+	// Polling tick: recovery sweep + task dispatch every minute.
+	cron.schedule("* * * * *", () => {
+		void runAutopilotTick().catch((err) => {
+			autopilotLogger.error(
+				"poller",
+				`Unhandled tick error: ${
+					err instanceof Error ? err.message : String(err)
+				}`,
+			);
+		});
+	});
+
+	// Scheduled commands: register each enabled cron entry from daemon-config.json.
+	void getDaemonConfig()
+		.then((rawConfig) => {
+			const config = rawConfig as {
+				schedule?: Record<
+					string,
+					{ enabled?: boolean; cron?: string; command?: string }
+				>;
+			};
+			if (!config.schedule) return;
+
+			const cwd = process.cwd();
+			const runTaskEntry = resolveScriptEntrypoint("run-task");
+
+			for (const [name, entry] of Object.entries(config.schedule)) {
+				if (!entry.enabled || !entry.cron || !entry.command) continue;
+				if (!cron.validate(entry.cron)) {
+					autopilotLogger.warn(
+						"scheduler",
+						`Invalid cron expression for "${name}": ${entry.cron}`,
+					);
+					continue;
+				}
+
+				const command = entry.command;
+				cron.schedule(entry.cron, () => {
+					autopilotLogger.info(
+						"scheduler",
+						`Triggering scheduled command: ${command} (schedule: ${name})`,
+					);
+					const args = [...runTaskEntry.args, command, "--source", "scheduled"];
+					try {
+						const child = spawn(runTaskEntry.runner, args, {
+							cwd,
+							detached: true,
+							stdio: "ignore",
+							shell: false,
+						});
+						child.unref();
+					} catch (spawnErr) {
+						autopilotLogger.error(
+							"scheduler",
+							`Failed to spawn scheduled command ${command}: ${
+								spawnErr instanceof Error ? spawnErr.message : String(spawnErr)
+							}`,
+						);
+					}
+				});
+
+				autopilotLogger.info(
+					"scheduler",
+					`Registered schedule "${name}": ${entry.cron} → ${command}`,
+				);
+			}
+		})
+		.catch((err) => {
+			autopilotLogger.warn(
+				"scheduler",
+				`Could not load schedule config: ${
+					err instanceof Error ? err.message : String(err)
+				}`,
+			);
+		});
+
+	console.log("[autopilot] poller registered (every 60s)");
 }

@@ -10,9 +10,9 @@
 	"scripts": {
 		"dev": "next dev",
 		"build": "next build",
-		"build:daemon": "tsx scripts/build-daemon.ts",
+		"build:scripts": "tsx scripts/build-scripts.ts",
 		"build:cli": "tsx scripts/build-cli.ts && node --check bin/cli.js",
-		"build:all": "pnpm build && pnpm build:daemon && pnpm build:cli && pnpm copy:standalone-assets",
+		"build:all": "pnpm build && pnpm build:scripts && pnpm build:cli && pnpm copy:standalone-assets",
 		"copy:standalone-assets": "tsx scripts/copy-standalone-assets.ts",
 		"prepublishOnly": "pnpm build:all",
 		"start": "next start",
@@ -23,9 +23,6 @@
 		"verify": "pnpm check && pnpm build && pnpm test",
 		"gen:context": "npx tsx scripts/generate-context.ts",
 		"cleanup:uploads": "npx tsx scripts/cleanup-uploads.ts",
-		"daemon:start": "npx tsx scripts/daemon/index.ts start",
-		"daemon:stop": "npx tsx scripts/daemon/index.ts stop",
-		"daemon:status": "npx tsx scripts/daemon/index.ts status",
 		"knip": "knip"
 	},
 	"files": [

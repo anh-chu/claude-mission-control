@@ -3,6 +3,7 @@ import path from "node:path";
 import { NextResponse } from "next/server";
 import { readJSON } from "@/lib/json-io";
 import { DATA_DIR } from "@/lib/paths";
+import { resolveScriptEntrypoint } from "@/lib/script-entrypoints";
 
 interface TaskEntry {
 	id: string;
@@ -133,17 +134,17 @@ export async function POST(
 	}>(path.join(DATA_DIR, "daemon-config.json"));
 	const agentTeams = configData?.execution?.agentTeams ?? false;
 
-	// 8. Spawn run-task.ts as detached process
+	// 8. Spawn run-task as detached process
 	const cwd = process.cwd();
-	const scriptPath = path.resolve(cwd, "scripts", "daemon", "run-task.ts");
+	const runTaskEntry = resolveScriptEntrypoint("run-task");
 
-	const args = ["--import", "tsx", scriptPath, taskId, "--source", "manual"];
+	const args = [...runTaskEntry.args, taskId, "--source", "manual"];
 	if (agentTeams) {
 		args.push("--agent-teams");
 	}
 
 	try {
-		const child = spawn(process.execPath, args, {
+		const child = spawn(runTaskEntry.runner, args, {
 			cwd,
 			detached: true,
 			stdio: "ignore",
