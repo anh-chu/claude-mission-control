@@ -1,7 +1,7 @@
 "use client";
 
 import { ChevronLeft, MessageSquare } from "lucide-react";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { AssistantThread } from "@/components/chat/AssistantThread";
 import { ModelSelect } from "@/components/model-select";
 import { useAgents } from "@/hooks/use-data";
@@ -10,6 +10,8 @@ import { cn } from "@/lib/utils";
 
 const DOC_MAINTAINER_AGENT_ID = "doc-maintainer";
 const CHAT_CONTEXT = "global";
+const AGENT_STORAGE_KEY = "mandio.chat.agent";
+const MODEL_STORAGE_KEY = "mandio.chat.model";
 
 interface ChatSidebarProps {
 	open: boolean;
@@ -29,9 +31,41 @@ export function ChatSidebar({ open, onToggle, isMobile }: ChatSidebarProps) {
 		DOC_MAINTAINER_AGENT_ID,
 	);
 	const [selectedModel, setSelectedModel] = useState("sonnet");
+	const agentChangedByUser = useRef(false);
 
-	// Sync model when agent changes
+	// Restore selections from localStorage after hydration
 	useEffect(() => {
+		try {
+			const storedAgent = localStorage.getItem(AGENT_STORAGE_KEY);
+			const storedModel = localStorage.getItem(MODEL_STORAGE_KEY);
+			if (storedAgent) setSelectedAgentId(storedAgent);
+			if (storedModel) setSelectedModel(storedModel);
+		} catch {
+			// localStorage unavailable
+		}
+	}, []);
+
+	// Persist selections
+	useEffect(() => {
+		try {
+			localStorage.setItem(AGENT_STORAGE_KEY, selectedAgentId);
+		} catch {
+			// localStorage unavailable
+		}
+	}, [selectedAgentId]);
+
+	useEffect(() => {
+		try {
+			localStorage.setItem(MODEL_STORAGE_KEY, selectedModel);
+		} catch {
+			// localStorage unavailable
+		}
+	}, [selectedModel]);
+
+	// Sync model when agent changes by user action only
+	useEffect(() => {
+		if (!agentChangedByUser.current) return;
+		agentChangedByUser.current = false;
 		const agent = activeAgents.find((a) => a.id === selectedAgentId);
 		if (agent?.model) setSelectedModel(agent.model);
 	}, [selectedAgentId, activeAgents]);
@@ -40,6 +74,7 @@ export function ChatSidebar({ open, onToggle, isMobile }: ChatSidebarProps) {
 	useEffect(() => {
 		if (activeAgents.length === 0) return;
 		if (!activeAgents.some((a) => a.id === selectedAgentId)) {
+			agentChangedByUser.current = true;
 			setSelectedAgentId(DOC_MAINTAINER_AGENT_ID);
 		}
 	}, [activeAgents, selectedAgentId]);
@@ -81,7 +116,10 @@ export function ChatSidebar({ open, onToggle, isMobile }: ChatSidebarProps) {
 						<select
 							className="h-7 rounded-sm border bg-secondary px-2 text-xs flex-1 min-w-0"
 							value={selectedAgentId}
-							onChange={(e) => setSelectedAgentId(e.target.value)}
+							onChange={(e) => {
+								agentChangedByUser.current = true;
+								setSelectedAgentId(e.target.value);
+							}}
 						>
 							{!hasDocMaintainer && (
 								<option value={DOC_MAINTAINER_AGENT_ID}>Doc Maintainer</option>

@@ -12,6 +12,7 @@ import {
 	useComposer,
 	useComposerRuntime,
 	useMessage,
+	useThread,
 } from "@assistant-ui/react";
 import {
 	AssistantChatTransport,
@@ -88,6 +89,23 @@ function ReasoningBlock({ text }: { text: string }) {
 			)}
 		</div>
 	);
+}
+
+// ---- Beforeunload guard ----------------------------------------------------
+
+function BeforeunloadGuard() {
+	const isRunning = useThread((s) => s.isRunning);
+	useEffect(() => {
+		if (!isRunning) return;
+		const handler = (e: BeforeUnloadEvent) => {
+			e.preventDefault();
+			// Modern browsers show a generic confirmation dialog when returnValue is set
+			e.returnValue = "";
+		};
+		window.addEventListener("beforeunload", handler);
+		return () => window.removeEventListener("beforeunload", handler);
+	}, [isRunning]);
+	return null;
 }
 
 // ---- Message body ----------------------------------------------------------
@@ -467,6 +485,7 @@ function ThreadWithRuntime({
 
 	return (
 		<AssistantRuntimeProvider runtime={runtime}>
+			<BeforeunloadGuard />
 			{/* Mount tool UIs so makeAssistantToolUI components register with the runtime */}
 			{claudeCodeToolUIs.map((ToolUI, i) => (
 				// biome-ignore lint/suspicious/noArrayIndexKey: tool UI list is static
