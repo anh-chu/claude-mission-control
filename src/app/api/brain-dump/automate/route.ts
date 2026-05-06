@@ -1,9 +1,8 @@
 import { spawn } from "node:child_process";
-import path from "node:path";
 import { NextResponse } from "next/server";
-import { readJSON } from "@/lib/json-io";
-import { DATA_DIR } from "@/lib/paths";
+import { getBrainDump } from "@/lib/data";
 import { resolveScriptEntrypoint } from "@/lib/script-entrypoints";
+import { applyWorkspaceContext } from "@/lib/workspace-context";
 
 // ─── Helpers ─────────────────────────────────────────────────────────────────
 
@@ -16,6 +15,8 @@ interface BrainDumpEntry {
 // ─── POST: Trigger brain dump auto-processing ────────────────────────────────
 
 export async function POST(request: Request) {
+	const workspaceId = await applyWorkspaceContext();
+
 	let body: { entryIds?: string[]; all?: boolean };
 	try {
 		body = (await request.json()) as { entryIds?: string[]; all?: boolean };
@@ -24,15 +25,7 @@ export async function POST(request: Request) {
 	}
 
 	// 1. Read brain dump entries
-	const dumpData = readJSON<{ entries: BrainDumpEntry[] }>(
-		path.join(DATA_DIR, "brain-dump.json"),
-	);
-	if (!dumpData) {
-		return NextResponse.json(
-			{ error: "Could not read brain dump data" },
-			{ status: 500 },
-		);
-	}
+	const dumpData = await getBrainDump();
 
 	// 2. Determine which entries to process
 	let targetEntries: BrainDumpEntry[];
@@ -76,6 +69,10 @@ export async function POST(request: Request) {
 				detached: true,
 				stdio: "ignore",
 				shell: false,
+				env: {
+					...process.env,
+					MANDIO_WORKSPACE_ID: workspaceId,
+				},
 			},
 		);
 
