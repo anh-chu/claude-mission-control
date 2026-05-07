@@ -4,6 +4,7 @@ import { getBaseDir } from "./paths";
 
 export type ScriptName =
 	| "run-task"
+	| "run-conversation"
 	| "wiki-processor"
 	| "run-brain-dump-triage"
 	| "run-task-comment";

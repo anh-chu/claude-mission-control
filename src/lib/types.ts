@@ -174,6 +174,8 @@ export interface Task {
 	completedAt: string | null;
 	deletedAt: string | null;
 	mapPosition?: CanvasPosition;
+	/** Link to the current/latest execution conversation (null until first run). */
+	conversationId?: string | null;
 }
 
 export interface TasksFile {
@@ -292,6 +294,8 @@ export interface DecisionItem {
 	answer: string | null;
 	answeredAt: string | null;
 	createdAt: string;
+	/** Link to conversation that produced this decision (in addition to taskId). */
+	conversationId?: string | null;
 }
 
 export interface DecisionsFile {
@@ -462,3 +466,318 @@ export interface Initiative {
 export interface InitiativesFile {
 	initiatives: Initiative[];
 }
+
+// ─── Conversations (unified chat + task execution) ────────────────────────────
+// Schema locked v1.0 — see docs/conversation-event-schema.md
+
+export type ConversationStatus =
+	| "idle"
+	| "queued"
+	| "starting"
+	| "running"
+	| "awaiting-decision"
+	| "completed"
+	| "failed"
+	| "cancelled";
+
+export type ConversationSource =
+	| "chat"
+	| "task"
+	| "manual"
+	| "project-run"
+	| "mission-chain"
+	| "scheduled"
+	| "webhook"
+	| "inbox-respond"
+	| "comment"
+	| "wiki";
+
+export type ConversationErrorKind =
+	| "cli_not_found"
+	| "auth_expired"
+	| "rate_limited"
+	| "session_expired"
+	| "context_exceeded"
+	| "timeout"
+	| "transport"
+	| "unknown";
+
+export interface ConversationTokens {
+	input: number;
+	output: number;
+	cache?: number;
+	total: number;
+}
+
+export interface Conversation {
+	id: string;
+	title: string;
+	agentId: string | null;
+	model: string | null;
+	status: ConversationStatus;
+	mode: "foreground" | "background";
+	executionSource: ConversationSource;
+
+	// Linking
+	taskId: string | null;
+	parentConversationId: string | null;
+
+	// Run tracking
+	currentRunId: string | null;
+	runCount: number;
+
+	// Aggregate metrics
+	tokens: ConversationTokens;
+	turnCount: number;
+
+	// State
+	error: string | null;
+	errorKind: ConversationErrorKind | null;
+	pausedReason: string | null;
+	pausedDecisionId: string | null;
+	summary: string | null;
+
+	// Artifacts
+	artifactRefs: string[];
+	mentionedPaths: string[];
+	attachmentPaths: string[];
+
+	// Idempotency dedup window
+	recentRequestIds: string[];
+
+	// Timestamps
+	createdAt: string;
+	startedAt: string | null;
+	updatedAt: string;
+	completedAt: string | null;
+	cancelledAt: string | null;
+	archivedAt: string | null;
+	deletedAt: string | null;
+	pausedAt: string | null;
+
+	// Schema version
+	version: number;
+}
+
+export type ConversationRunStatus =
+	| "starting"
+	| "running"
+	| "completed"
+	| "failed"
+	| "stopped"
+	| "timeout";
+
+export interface ConversationRun {
+	id: string;
+	conversationId: string;
+	status: ConversationRunStatus;
+
+	// Process tracking
+	pid: number | null;
+	sessionHandle: string | null;
+	continuationIndex: number;
+
+	// Context
+	source: ConversationSource;
+	projectId: string | null;
+	missionId: string | null;
+
+	// Metrics
+	tokens: ConversationTokens;
+	numTurns: number;
+
+	// Idempotency
+	requestId: string | null;
+
+	// Timestamps
+	startedAt: string;
+	completedAt: string | null;
+
+	// Outcome
+	exitCode: number | null;
+	error: string | null;
+	errorKind: ConversationErrorKind | null;
+
+	// Model snapshot
+	model: string | null;
+	noPrune?: boolean;
+}
+
+export interface ConversationsFile {
+	conversations: Conversation[];
+	runs: Record<string, ConversationRun>;
+}
+
+export type ConversationTurnRole = "user" | "assistant";
+
+export type MessagePartType = "text" | "thinking" | "tool_use" | "tool_result";
+
+export interface MessagePart {
+	type: MessagePartType;
+	content: string;
+	toolName?: string;
+	toolCallId?: string;
+	status?: "running" | "completed" | "error";
+}
+
+export interface ToolCallRecord {
+	id: string;
+	tool: string;
+	args: Record<string, unknown>;
+	result?: string;
+	status: "running" | "completed" | "error";
+	durationMs?: number;
+}
+
+export interface ConversationTurn {
+	id: string;
+	turn: number;
+	role: ConversationTurnRole;
+	ts: string;
+	content: string;
+	parts?: MessagePart[];
+	pending?: boolean;
+	tokens?: { input: number; output: number; cache?: number };
+	runId?: string;
+	exitCode?: number | null;
+	error?: string;
+	toolCalls?: ToolCallRecord[];
+	mentionedPaths?: string[];
+	attachmentPaths?: string[];
+	artifactRefs?: string[];
+}
+
+// ─── Conversation Events (SSE wire format) ────────────────────────────────────
+
+export interface ConversationEventBase {
+	conversationId: string;
+	ts: string;
+	seq: number;
+}
+
+export interface TurnStartedEvent extends ConversationEventBase {
+	type: "turn.started";
+	payload: {
+		turnId: string;
+		turn: number;
+		role: ConversationTurnRole;
+		runId?: string;
+	};
+}
+
+export interface TurnDeltaEvent extends ConversationEventBase {
+	type: "turn.delta";
+	payload: { turnId: string; delta: string; partType?: "text" | "thinking" };
+}
+
+export interface TurnCompletedEvent extends ConversationEventBase {
+	type: "turn.completed";
+	payload: {
+		turnId: string;
+		tokens?: { input: number; output: number; cache?: number };
+		// v1.1: full turn snapshot for clients without refetch
+		content?: string;
+		parts?: MessagePart[];
+		toolCalls?: ToolCallRecord[];
+	};
+}
+
+export interface ToolCallStartedEvent extends ConversationEventBase {
+	type: "tool.started";
+	payload: {
+		turnId: string;
+		toolCallId: string;
+		tool: string;
+		args: Record<string, unknown>;
+	};
+}
+
+export interface ToolCallCompletedEvent extends ConversationEventBase {
+	type: "tool.completed";
+	payload: {
+		turnId: string;
+		toolCallId: string;
+		tool: string;
+		status: "completed" | "error";
+		result?: string;
+		durationMs?: number;
+	};
+}
+
+export interface ConversationStartedEvent extends ConversationEventBase {
+	type: "conversation.started";
+	payload: { runId: string; source: ConversationSource };
+}
+
+export interface ConversationUpdatedEvent extends ConversationEventBase {
+	type: "conversation.updated";
+	payload: {
+		fields: Partial<
+			Pick<
+				Conversation,
+				"title" | "status" | "summary" | "tokens" | "turnCount" | "currentRunId"
+			>
+		>;
+	};
+}
+
+export interface ConversationCompletedEvent extends ConversationEventBase {
+	type: "conversation.completed";
+	payload: {
+		runId: string;
+		exitCode: number | null;
+		tokens: ConversationTokens;
+	};
+}
+
+export interface ConversationPausedEvent extends ConversationEventBase {
+	type: "conversation.paused";
+	payload: { reason: string; decisionId: string };
+}
+
+export interface ConversationResumedEvent extends ConversationEventBase {
+	type: "conversation.resumed";
+	payload: { runId: string; decisionId: string; answer: string };
+}
+
+export interface ConversationErrorEvent extends ConversationEventBase {
+	type: "conversation.error";
+	payload: {
+		runId: string | null;
+		error: string;
+		errorKind: ConversationErrorKind;
+	};
+}
+
+export interface ConversationCancelledEvent extends ConversationEventBase {
+	type: "conversation.cancelled";
+	payload: { runId: string | null; reason?: string };
+}
+
+export interface DecisionCreatedEvent extends ConversationEventBase {
+	type: "decision.created";
+	payload: { decisionId: string; question: string; options: string[] };
+}
+
+export interface DecisionAnsweredEvent extends ConversationEventBase {
+	type: "decision.answered";
+	payload: { decisionId: string; answer: string };
+}
+
+export type ConversationEvent =
+	| TurnStartedEvent
+	| TurnDeltaEvent
+	| TurnCompletedEvent
+	| ToolCallStartedEvent
+	| ToolCallCompletedEvent
+	| ConversationStartedEvent
+	| ConversationUpdatedEvent
+	| ConversationCompletedEvent
+	| ConversationPausedEvent
+	| ConversationResumedEvent
+	| ConversationErrorEvent
+	| ConversationCancelledEvent
+	| DecisionCreatedEvent
+	| DecisionAnsweredEvent;
+
+export type ConversationEventType = ConversationEvent["type"];

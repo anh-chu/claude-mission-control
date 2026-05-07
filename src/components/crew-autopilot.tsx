@@ -15,9 +15,9 @@ import {
 	XCircle,
 	Zap,
 } from "lucide-react";
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 
-import { DaemonRunViewer } from "@/components/chat/DaemonRunViewer";
+import { ConversationView } from "@/components/conversation/ConversationView";
 import { ErrorState } from "@/components/error-state";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -115,6 +115,58 @@ export function CrewAutopilot() {
 		}
 		return map;
 	}, [runs]);
+
+	// Conversation lookup for expanded session
+	const [linkedConversationId, setLinkedConversationId] = useState<
+		string | null
+	>(null);
+	const [lookupLoading, setLookupLoading] = useState(false);
+
+	const expandedSession = expandedSessionId
+		? (status.activeSessions.find((s) => s.id === expandedSessionId) ?? null)
+		: null;
+
+	useEffect(() => {
+		setLinkedConversationId(null);
+		if (!expandedSession?.taskId) return;
+
+		let cancelled = false;
+		setLookupLoading(true);
+
+		fetch(`/api/conversations?taskId=${expandedSession.taskId}`)
+			.then((res) => {
+				if (!res.ok) return null;
+				return res.json();
+			})
+			.then(
+				(
+					data: {
+						conversations?: Array<{ id: string; updatedAt: string }>;
+					} | null,
+				) => {
+					if (cancelled) return;
+					const convs: Array<{ id: string; updatedAt: string }> =
+						data?.conversations ?? [];
+					convs.sort(
+						(a, b) =>
+							new Date(b.updatedAt).getTime() - new Date(a.updatedAt).getTime(),
+					);
+					if (convs.length > 0) {
+						setLinkedConversationId(convs[0].id);
+					}
+				},
+			)
+			.catch(() => {
+				// ignore
+			})
+			.finally(() => {
+				if (!cancelled) setLookupLoading(false);
+			});
+
+		return () => {
+			cancelled = true;
+		};
+	}, [expandedSession?.taskId]);
 
 	// Config editing state
 	const [editingConfig, setEditingConfig] = useState(false);
@@ -444,16 +496,38 @@ export function CrewAutopilot() {
 												</div>
 											</div>
 										</div>
-										{isExpanded && runId && (
-											<div className="border-t px-3 pb-3 pt-2">
-												<DaemonRunViewer runId={runId} />
-											</div>
-										)}
-										{isExpanded && !runId && (
+										{isExpanded && lookupLoading && (
 											<div className="border-t px-3 py-4 text-center text-xs text-muted-foreground">
-												No live stream available for this session
+												Linking conversation...
 											</div>
 										)}
+										{isExpanded && !lookupLoading && linkedConversationId && (
+											<div className="border-t px-3 pb-3 pt-2 max-h-[500px] overflow-y-auto">
+												<ConversationView
+													conversationId={linkedConversationId}
+													embed
+												/>
+											</div>
+										)}
+										{isExpanded &&
+											!lookupLoading &&
+											!linkedConversationId &&
+											runId && (
+												<div className="border-t px-3 pb-3 pt-2">
+													<p className="text-center text-xs text-muted-foreground py-4">
+														No conversation linked to this run (legacy run
+														before unification)
+													</p>
+												</div>
+											)}
+										{isExpanded &&
+											!lookupLoading &&
+											!linkedConversationId &&
+											!runId && (
+												<div className="border-t px-3 py-4 text-center text-xs text-muted-foreground">
+													No live stream available for this session
+												</div>
+											)}
 									</div>
 								);
 							})}

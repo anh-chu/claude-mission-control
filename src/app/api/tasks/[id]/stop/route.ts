@@ -85,6 +85,54 @@ export async function POST(
 		}
 	}
 
+	// 4.5 Cancel linked conversation if any
+	try {
+		const tasksData2 = readJSON<{
+			tasks: Array<{ id: string; conversationId?: string | null }>;
+		}>(tasksPath);
+		const task = tasksData2?.tasks.find((t) => t.id === taskId);
+		const conversationId = task?.conversationId;
+		if (conversationId) {
+			const {
+				setConversationsWorkspace,
+				getConversation,
+				updateConversationRun,
+				updateConversation,
+			} = await import("@/lib/conversations");
+			const { publishAndEmit } = await import("@/lib/conversation-event-bus");
+			setConversationsWorkspace("default"); // TODO: use real workspace
+			const conv = await getConversation(conversationId);
+			if (conv && !["completed", "failed", "cancelled"].includes(conv.status)) {
+				const previousRunId = conv.currentRunId;
+				if (previousRunId) {
+					await updateConversationRun(previousRunId, {
+						status: "stopped",
+						completedAt: now,
+					});
+				}
+				await updateConversation(conversationId, {
+					status: "cancelled",
+					cancelledAt: now,
+					currentRunId: null,
+				});
+				await publishAndEmit({
+					type: "conversation.cancelled",
+					conversationId,
+					payload: {
+						runId: previousRunId,
+						reason: "Stopped by user",
+					},
+				});
+			}
+		}
+	} catch (err) {
+		console.warn(
+			`[stop] Failed to cancel conversation for task ${taskId}:`,
+			err,
+		);
+		// Non-fatal — task PID is already killed
+	}
+
 	return NextResponse.json({
 		taskId,
 		killed,

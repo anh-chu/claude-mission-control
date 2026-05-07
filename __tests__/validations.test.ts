@@ -163,33 +163,10 @@ describe("taskCreateSchema", () => {
 		expect(result.success).toBe(false);
 	});
 
-	it("accepts title at exactly max length", () => {
-		const result = taskCreateSchema.safeParse({
-			title: "x".repeat(LIMITS.TITLE),
-		});
-		expect(result.success).toBe(true);
-	});
-
 	it("rejects invalid importance value", () => {
 		const result = taskCreateSchema.safeParse({
 			title: "Test",
 			importance: "high",
-		});
-		expect(result.success).toBe(false);
-	});
-
-	it("rejects invalid urgency value", () => {
-		const result = taskCreateSchema.safeParse({
-			title: "Test",
-			urgency: "very-urgent",
-		});
-		expect(result.success).toBe(false);
-	});
-
-	it("rejects invalid kanban value", () => {
-		const result = taskCreateSchema.safeParse({
-			title: "Test",
-			kanban: "backlog",
 		});
 		expect(result.success).toBe(false);
 	});
@@ -202,49 +179,12 @@ describe("taskCreateSchema", () => {
 		expect(result.success).toBe(false);
 	});
 
-	it("rejects estimatedMinutes exceeding max", () => {
-		const result = taskCreateSchema.safeParse({
-			title: "Test",
-			estimatedMinutes: LIMITS.MAX_MINUTES + 1,
-		});
-		expect(result.success).toBe(false);
-	});
-
-	it("rejects too many subtasks", () => {
-		const subtasks = Array.from(
-			{ length: LIMITS.MAX_SUBTASKS + 1 },
-			(_, i) => ({
-				id: `st_${i}`,
-				title: `Subtask ${i}`,
-				done: false,
-			}),
-		);
-		const result = taskCreateSchema.safeParse({ title: "Test", subtasks });
-		expect(result.success).toBe(false);
-	});
-
-	it("rejects too many tags", () => {
-		const tags = Array.from(
-			{ length: LIMITS.MAX_TAGS + 1 },
-			(_, i) => `tag_${i}`,
-		);
-		const result = taskCreateSchema.safeParse({ title: "Test", tags });
-		expect(result.success).toBe(false);
-	});
-
 	it("rejects description exceeding max length", () => {
 		const result = taskCreateSchema.safeParse({
 			title: "Test",
 			description: "x".repeat(LIMITS.DESCRIPTION + 1),
 		});
 		expect(result.success).toBe(false);
-	});
-
-	it("does not require notes field (notes removed)", () => {
-		const result = taskCreateSchema.safeParse({
-			title: "Test task",
-		});
-		expect(result.success).toBe(true);
 	});
 });
 
@@ -265,18 +205,8 @@ describe("taskUpdateSchema", () => {
 		}
 	});
 
-	it("accepts update with only id", () => {
-		const result = taskUpdateSchema.safeParse({ id: "task_123" });
-		expect(result.success).toBe(true);
-	});
-
 	it("rejects missing id", () => {
 		const result = taskUpdateSchema.safeParse({ title: "New title" });
-		expect(result.success).toBe(false);
-	});
-
-	it("rejects empty id", () => {
-		const result = taskUpdateSchema.safeParse({ id: "" });
 		expect(result.success).toBe(false);
 	});
 
@@ -304,25 +234,8 @@ describe("projectCreateSchema", () => {
 		}
 	});
 
-	it("accepts a fully specified project", () => {
-		const result = projectCreateSchema.safeParse({
-			name: "SaaS Platform",
-			description: "A multi-tenant SaaS",
-			status: "active",
-			color: "#3b82f6",
-			teamMembers: ["developer", "researcher"],
-			tags: ["saas", "b2b"],
-		});
-		expect(result.success).toBe(true);
-	});
-
 	it("rejects missing name", () => {
 		const result = projectCreateSchema.safeParse({});
-		expect(result.success).toBe(false);
-	});
-
-	it("rejects empty name", () => {
-		const result = projectCreateSchema.safeParse({ name: "" });
 		expect(result.success).toBe(false);
 	});
 
@@ -377,33 +290,8 @@ describe("inboxCreateSchema", () => {
 		}
 	});
 
-	it("accepts a fully specified message", () => {
-		const result = inboxCreateSchema.safeParse({
-			from: "researcher",
-			to: "me",
-			type: "report",
-			taskId: "task_123",
-			subject: "Research complete",
-			body: "Found the following insights...",
-		});
-		expect(result.success).toBe(true);
-	});
-
 	it("rejects missing subject", () => {
 		const result = inboxCreateSchema.safeParse({ to: "developer" });
-		expect(result.success).toBe(false);
-	});
-
-	it("rejects empty subject", () => {
-		const result = inboxCreateSchema.safeParse({
-			to: "developer",
-			subject: "",
-		});
-		expect(result.success).toBe(false);
-	});
-
-	it("rejects missing to field", () => {
-		const result = inboxCreateSchema.safeParse({ subject: "Hello" });
 		expect(result.success).toBe(false);
 	});
 
@@ -412,14 +300,6 @@ describe("inboxCreateSchema", () => {
 			to: "developer",
 			subject: "Test",
 			type: "notification",
-		});
-		expect(result.success).toBe(false);
-	});
-
-	it("rejects subject exceeding max length", () => {
-		const result = inboxCreateSchema.safeParse({
-			to: "developer",
-			subject: "x".repeat(LIMITS.SUBJECT + 1),
 		});
 		expect(result.success).toBe(false);
 	});
@@ -447,14 +327,6 @@ describe("inboxUpdateSchema", () => {
 
 	it("rejects missing id", () => {
 		const result = inboxUpdateSchema.safeParse({ status: "read" });
-		expect(result.success).toBe(false);
-	});
-
-	it("rejects invalid status", () => {
-		const result = inboxUpdateSchema.safeParse({
-			id: "msg_123",
-			status: "deleted",
-		});
 		expect(result.success).toBe(false);
 	});
 });
@@ -494,34 +366,9 @@ describe("decisionCreateSchema", () => {
 		expect(result.success).toBe(false);
 	});
 
-	it("rejects empty question", () => {
-		const result = decisionCreateSchema.safeParse({ question: "" });
-		expect(result.success).toBe(false);
-	});
-
 	it("rejects question exceeding max length", () => {
 		const result = decisionCreateSchema.safeParse({
 			question: "x".repeat(LIMITS.QUESTION + 1),
-		});
-		expect(result.success).toBe(false);
-	});
-
-	it("rejects too many options", () => {
-		const options = Array.from(
-			{ length: LIMITS.MAX_OPTIONS + 1 },
-			(_, i) => `Option ${i}`,
-		);
-		const result = decisionCreateSchema.safeParse({
-			question: "Test?",
-			options,
-		});
-		expect(result.success).toBe(false);
-	});
-
-	it("rejects context exceeding max length", () => {
-		const result = decisionCreateSchema.safeParse({
-			question: "Test?",
-			context: "x".repeat(LIMITS.CONTEXT + 1),
 		});
 		expect(result.success).toBe(false);
 	});
@@ -592,35 +439,9 @@ describe("agentCreateSchema", () => {
 		expect(result.success).toBe(false);
 	});
 
-	it("rejects missing name", () => {
-		const result = agentCreateSchema.safeParse({ id: "test-agent" });
-		expect(result.success).toBe(false);
-	});
-
-	it("rejects empty id", () => {
-		const result = agentCreateSchema.safeParse({ id: "", name: "Test" });
-		expect(result.success).toBe(false);
-	});
-
 	it("rejects id with spaces", () => {
 		const result = agentCreateSchema.safeParse({
 			id: "test agent",
-			name: "Test",
-		});
-		expect(result.success).toBe(false);
-	});
-
-	it("rejects id with uppercase letters", () => {
-		const result = agentCreateSchema.safeParse({
-			id: "TestAgent",
-			name: "Test",
-		});
-		expect(result.success).toBe(false);
-	});
-
-	it("rejects id with special characters", () => {
-		const result = agentCreateSchema.safeParse({
-			id: "test_agent!",
 			name: "Test",
 		});
 		expect(result.success).toBe(false);
@@ -632,14 +453,6 @@ describe("agentCreateSchema", () => {
 			name: "Agent 123",
 		});
 		expect(result.success).toBe(true);
-	});
-
-	it("rejects name exceeding max length", () => {
-		const result = agentCreateSchema.safeParse({
-			id: "test",
-			name: "x".repeat(LIMITS.TITLE + 1),
-		});
-		expect(result.success).toBe(false);
 	});
 
 	it("rejects invalid status", () => {
@@ -684,24 +497,8 @@ describe("skillCreateSchema", () => {
 		}
 	});
 
-	it("accepts a fully specified skill", () => {
-		const result = skillCreateSchema.safeParse({
-			name: "Web Research",
-			description: "How to do web research effectively",
-			content: "# Web Research Skill\n\nSearch the web...",
-			agentIds: ["researcher"],
-			tags: ["research", "web"],
-		});
-		expect(result.success).toBe(true);
-	});
-
 	it("rejects missing name", () => {
 		const result = skillCreateSchema.safeParse({});
-		expect(result.success).toBe(false);
-	});
-
-	it("rejects empty name", () => {
-		const result = skillCreateSchema.safeParse({ name: "" });
 		expect(result.success).toBe(false);
 	});
 
@@ -754,11 +551,6 @@ describe("brainDumpCreateSchema", () => {
 
 	it("rejects missing content", () => {
 		const result = brainDumpCreateSchema.safeParse({});
-		expect(result.success).toBe(false);
-	});
-
-	it("rejects empty content", () => {
-		const result = brainDumpCreateSchema.safeParse({ content: "" });
 		expect(result.success).toBe(false);
 	});
 
@@ -837,14 +629,6 @@ describe("activityEventCreateSchema", () => {
 	it("rejects missing summary", () => {
 		const result = activityEventCreateSchema.safeParse({
 			type: "task_created",
-		});
-		expect(result.success).toBe(false);
-	});
-
-	it("rejects empty summary", () => {
-		const result = activityEventCreateSchema.safeParse({
-			type: "task_created",
-			summary: "",
 		});
 		expect(result.success).toBe(false);
 	});

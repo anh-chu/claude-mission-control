@@ -27,11 +27,24 @@ const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
 import {
+	getConversation,
+	getConversationRun,
+} from "../../src/lib/conversations";
+import type { ConversationSource } from "../../src/lib/types";
+import {
 	type ActiveRunEntry,
 	readActiveRuns,
 	writeActiveRuns,
 } from "./active-runs";
 import { loadConfig } from "./config";
+import {
+	attachPidToRun,
+	completeConversation,
+	failConversation,
+	pauseForDecision,
+	processStreamLine,
+	startConversationForTask,
+} from "./conversation-writer";
 import { logger } from "./logger";
 import {
 	buildTaskPrompt,
@@ -100,11 +113,19 @@ function consumeDecisionSession(taskId: string): string | null {
 		const sessionId = data[taskId] ?? null;
 		if (sessionId) {
 			delete data[taskId];
-			writeFileSync(
-				DECISION_SESSIONS_FILE,
-				JSON.stringify(data, null, 2),
-				"utf-8",
-			);
+			if (Object.keys(data).length === 0) {
+				try {
+					unlinkSync(DECISION_SESSIONS_FILE);
+				} catch {
+					/* non-fatal */
+				}
+			} else {
+				writeFileSync(
+					DECISION_SESSIONS_FILE,
+					JSON.stringify(data, null, 2),
+					"utf-8",
+				);
+			}
 		}
 		return sessionId;
 	} catch {
@@ -936,6 +957,77 @@ function handleProjectRunContinuation(
 	}
 }
 
+// ── Stream Tail for Conversation Writer ──────────────────────────────────────
+
+/**
+ * Best-effort cleanup of a stream file after processing is complete.
+ * Safe to call after stopTail() drain — all turns/events have been parsed.
+ * Continuation sessions have their own streamFile name.
+ */
+function cleanupStreamFile(file: string): void {
+	try {
+		if (existsSync(file)) unlinkSync(file);
+	} catch (err) {
+		logger.warn(
+			"run-task",
+			`Failed to cleanup stream file ${file}: ${String(err)}`,
+		);
+	}
+}
+
+function startStreamTail(
+	file: string,
+	ctx: { conversationId: string; runId: string },
+): { stop: () => Promise<void> } {
+	let offset = 0;
+	let buffer = "";
+	let stopped = false;
+
+	const doRead = async (): Promise<void> => {
+		try {
+			if (!existsSync(file)) return;
+			const { size } = await (await import("node:fs/promises")).stat(file);
+			if (size <= offset) return;
+			const fh = await (await import("node:fs/promises")).open(file, "r");
+			const len = size - offset;
+			const buf = Buffer.alloc(len);
+			await fh.read(buf, 0, len, offset);
+			await fh.close();
+			offset = size;
+			buffer += buf.toString("utf-8");
+			const lines = buffer.split("\n");
+			buffer = lines.pop() ?? "";
+			for (const line of lines) {
+				const trimmed = line.trim();
+				if (!trimmed) continue;
+				try {
+					const parsed = JSON.parse(trimmed);
+					await processStreamLine(ctx, parsed);
+				} catch {
+					// skip malformed line
+				}
+			}
+		} catch (err) {
+			logger.warn("run-task", `Stream tail error: ${String(err)}`);
+		}
+	};
+
+	const interval = setInterval(() => {
+		if (stopped) return;
+		doRead();
+	}, 250);
+
+	return {
+		stop: async () => {
+			if (stopped) return;
+			stopped = true;
+			clearInterval(interval);
+			// Final synchronous drain: catch any bytes written between last poll and stop
+			await doRead();
+		},
+	};
+}
+
 // ─── CLI Argument Parsing ───────────────────────────────────────────────────
 
 function parseArgs(): {
@@ -1108,6 +1200,47 @@ async function main() {
 	const activeRunId = isContinuation ? `${runId}_c${continuationIndex}` : runId;
 	const streamFile = path.join(STREAMS_DIR, `${activeRunId}.jsonl`);
 
+	// ── Conversation writer integration ─────────────────────────────────────
+	// Read previous run's sessionHandle BEFORE startConversationForTask creates a new run
+	// (which overwrites currentRunId, making the previous run unreachable via that path).
+	let conversationResumeSessionId: string | null = null;
+	const existingConvId =
+		(task as { conversationId?: string | null }).conversationId ?? null;
+	if (existingConvId && !isContinuation) {
+		try {
+			const existingConv = await getConversation(existingConvId);
+			if (existingConv?.currentRunId) {
+				const previousRun = await getConversationRun(existingConv.currentRunId);
+				conversationResumeSessionId = previousRun?.sessionHandle ?? null;
+			}
+		} catch (err) {
+			logger.warn(
+				"run-task",
+				`Failed to read previous run sessionHandle: ${String(err)}`,
+			);
+		}
+	}
+
+	let convCtx: { conversationId: string; runId: string } | null = null;
+	try {
+		convCtx = await startConversationForTask({
+			taskId,
+			agentId: task.assignedTo,
+			model: null,
+			source: source as ConversationSource,
+			projectId: task.projectId ?? null,
+			missionId: missionId ?? null,
+			continuationIndex,
+			resumeSessionId: null,
+			existingConversationId: existingConvId,
+		});
+	} catch (err) {
+		logger.error(
+			"run-task",
+			`Failed to start conversation for task ${taskId}: ${String(err)}`,
+		);
+	}
+
 	if (!isContinuation) {
 		const runEntry: ActiveRunEntry = {
 			id: runId,
@@ -1171,6 +1304,9 @@ async function main() {
 			) {
 				taskToUpdate.kanban = "in-progress";
 				taskToUpdate.updatedAt = new Date().toISOString();
+				if (convCtx) {
+					taskToUpdate.conversationId = convCtx.conversationId;
+				}
 				writeFileSync(TASKS_FILE, JSON.stringify(tasksData, null, 2), "utf-8");
 				logger.info("run-task", `Marked task ${taskId} as in-progress`);
 			}
@@ -1184,9 +1320,15 @@ async function main() {
 	}
 
 	// Check for a saved decision session to resume
-	const decisionResumeSessionId = !isContinuation
-		? consumeDecisionSession(taskId)
-		: null;
+	let decisionResumeSessionId: string | null = null;
+	if (!isContinuation) {
+		// Prefer conversation-based session handle (read before startConversationForTask)
+		decisionResumeSessionId = conversationResumeSessionId;
+		// Fallback: legacy decision-sessions.json (pre-conversation migration tasks)
+		if (!decisionResumeSessionId) {
+			decisionResumeSessionId = consumeDecisionSession(taskId);
+		}
+	}
 	if (decisionResumeSessionId) {
 		logger.info(
 			"run-task",
@@ -1218,6 +1360,10 @@ This is session ${continuationIndex + 1}. Previous session(s) ran out of turns o
 	// 10. Spawn agent (Claude Code)
 	const backend = "claude" as const;
 	const runner = new AgentRunner(WORKSPACE_DIR);
+	let stopTail: { stop: () => Promise<void> } | null = null;
+	if (convCtx) {
+		stopTail = startStreamTail(streamFile, convCtx);
+	}
 	try {
 		const runStartedAtMs = Date.now();
 		const runStartedAt = new Date().toISOString();
@@ -1254,6 +1400,12 @@ This is session ${continuationIndex + 1}. Previous session(s) ran out of turns o
 					}
 				} catch {
 					/* non-fatal */
+				}
+
+				if (convCtx) {
+					attachPidToRun(convCtx, pid).catch((err) =>
+						logger.error("run-task", `attachPidToRun failed: ${String(err)}`),
+					);
 				}
 
 				// Start decision watcher — poll every 8s for new pending decisions
@@ -1335,6 +1487,12 @@ This is session ${continuationIndex + 1}. Previous session(s) ran out of turns o
 					} catch {
 						/* non-fatal */
 					}
+
+					if (convCtx) {
+						attachPidToRun(convCtx, pid).catch((err) =>
+							logger.error("run-task", `attachPidToRun failed: ${String(err)}`),
+						);
+					}
 				},
 			});
 			result = await retryPromise;
@@ -1394,32 +1552,43 @@ This is session ${continuationIndex + 1}. Previous session(s) ran out of turns o
 				);
 			}
 
-			// Post inbox question message
-			try {
-				const inboxRaw = existsSync(INBOX_FILE)
-					? readFileSync(INBOX_FILE, "utf-8")
-					: '{"messages":[]}';
-				const inboxData = JSON.parse(inboxRaw) as {
-					messages: Array<Record<string, unknown>>;
-				};
-				inboxData.messages.push({
-					id: `msg_${Date.now()}`,
-					from: "system",
-					to: "me",
-					type: "question",
-					taskId,
-					subject: `Decision needed: ${task.title}`,
-					body: `Agent for task "${task.title}" has requested a human decision and paused execution. Review the pending decision at /decisions and answer it to resume the task.`,
-					status: "unread",
-					createdAt: new Date().toISOString(),
-					readAt: null,
-				});
-				writeFileSync(INBOX_FILE, JSON.stringify(inboxData, null, 2), "utf-8");
-			} catch (err) {
-				logger.error(
-					"run-task",
-					`Failed to post inbox message for task ${taskId}: ${err instanceof Error ? err.message : String(err)}`,
-				);
+			// ── Conversation pause for decision ──
+			if (convCtx && capturedSessionId) {
+				try {
+					const decisionsRaw = existsSync(DECISIONS_FILE)
+						? readFileSync(DECISIONS_FILE, "utf-8")
+						: '{"decisions":[]}';
+					const decisionsData = JSON.parse(decisionsRaw) as {
+						decisions: Array<{
+							id: string;
+							taskId: string | null;
+							status: string;
+							question: string;
+							conversationId?: string | null;
+						}>;
+					};
+					const pending = decisionsData.decisions.find(
+						(d) => d.taskId === taskId && d.status === "pending",
+					);
+					if (pending) {
+						if (!pending.conversationId) {
+							pending.conversationId = convCtx.conversationId;
+							writeFileSync(
+								DECISIONS_FILE,
+								JSON.stringify(decisionsData, null, 2),
+								"utf-8",
+							);
+						}
+						await pauseForDecision(
+							convCtx,
+							pending.id,
+							pending.question,
+							capturedSessionId,
+						);
+					}
+				} catch (err) {
+					logger.error("run-task", `pauseForDecision failed: ${String(err)}`);
+				}
 			}
 
 			logger.info("run-task", `Task ${taskId} paused awaiting human decision`);
@@ -1481,6 +1650,31 @@ This is session ${continuationIndex + 1}. Previous session(s) ran out of turns o
 			run.completedAt = new Date().toISOString();
 			run.exitCode = result.exitCode;
 			writeActiveRuns(ACTIVE_RUNS_FILE, pruneOldRuns(runs));
+		}
+
+		// ── Conversation terminal state ──
+		if (convCtx && !shouldContinue) {
+			const tokens = { input: 0, output: 0, total: 0 };
+			if (finalStatus === "completed") {
+				await completeConversation(convCtx, {
+					exitCode: result.exitCode,
+					tokens,
+					numTurns: meta.numTurns ?? 0,
+				}).catch((err) =>
+					logger.error(
+						"run-task",
+						`completeConversation failed: ${String(err)}`,
+					),
+				);
+			} else if (finalStatus === "failed" || finalStatus === "timeout") {
+				await failConversation(convCtx, {
+					message: errorMsg || `Run ${finalStatus}`,
+					kind: finalStatus === "timeout" ? "timeout" : "unknown",
+					exitCode: result.exitCode,
+				}).catch((err) =>
+					logger.error("run-task", `failConversation failed: ${String(err)}`),
+				);
+			}
 		}
 
 		const costStr =
@@ -1637,6 +1831,16 @@ This is session ${continuationIndex + 1}. Previous session(s) ran out of turns o
 			writeActiveRuns(ACTIVE_RUNS_FILE, pruneOldRuns(runs));
 		}
 
+		if (convCtx) {
+			await failConversation(convCtx, {
+				message: err instanceof Error ? err.message : String(err),
+				kind: "unknown",
+				exitCode: -1,
+			}).catch((err2) =>
+				logger.error("run-task", `failConversation failed: ${String(err2)}`),
+			);
+		}
+
 		logger.error(
 			"run-task",
 			`Run ${activeRunId} failed: ${err instanceof Error ? err.message : String(err)}`,
@@ -1673,6 +1877,11 @@ This is session ${continuationIndex + 1}. Previous session(s) ran out of turns o
 		}
 
 		process.exit(1);
+	} finally {
+		if (stopTail) await stopTail.stop();
+		// Safe: stream fully drained, parsed, and processed into turns/events.
+		// The next continuation has its own streamFile name.
+		cleanupStreamFile(streamFile);
 	}
 }
 

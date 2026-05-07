@@ -17,6 +17,7 @@ import { useCallback, useEffect, useState } from "react";
 import { toast } from "sonner";
 import { BreadcrumbNav } from "@/components/breadcrumb-nav";
 import { ConfirmDialog } from "@/components/confirm-dialog";
+import { ConversationView } from "@/components/conversation/ConversationView";
 import { MarkdownContent } from "@/components/markdown-content";
 import { MentionTextarea } from "@/components/mention-textarea";
 import { TaskForm, type TaskFormData } from "@/components/task-form";
@@ -528,6 +529,43 @@ export default function TaskDetailPage() {
 							<span>Est: {task.estimatedMinutes}m</span>
 						)}
 					</div>
+
+					{/* Conversation section */}
+					<Card>
+						<CardHeader className="pb-3">
+							<div className="flex items-center gap-2 text-sm font-normal">
+								<MessageSquare className="h-4 w-4" />
+								Conversation
+							</div>
+						</CardHeader>
+						<CardContent className="pt-0">
+							{task.conversationId ? (
+								<div className="max-h-[600px] overflow-y-auto border rounded-sm">
+									<ConversationView
+										conversationId={task.conversationId}
+										embed
+									/>
+								</div>
+							) : (
+								<div className="py-6 text-center space-y-3">
+									<p className="text-sm text-muted-foreground">
+										No conversation yet. Run the task to start one.
+									</p>
+									{deployableAgents.length > 0 && (
+										<Button
+											size="sm"
+											variant="outline"
+											className="gap-1.5"
+											onClick={() => handleDeploy(deployableAgents[0].id)}
+										>
+											<Rocket className="h-3.5 w-3.5" />
+											Run task
+										</Button>
+									)}
+								</div>
+							)}
+						</CardContent>
+					</Card>
 				</div>
 
 				{/* Right column: comments + timeline, sticky */}

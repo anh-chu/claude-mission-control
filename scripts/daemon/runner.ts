@@ -20,6 +20,7 @@ import type {
 } from "./types";
 
 const MAX_STDOUT_SIZE = 10_000_000; // 10MB max captured output
+const DEFAULT_TEST_MODEL = "haiku";
 
 // ─── Claude Binary Detection ─────────────────────────────────────────────────
 
@@ -311,9 +312,23 @@ export class AgentRunner {
 	 * Returns when the process exits or times out.
 	 */
 	async spawnAgent(opts: SpawnOptions): Promise<SpawnResult & { pid: number }> {
+		if (
+			process.env.VITEST === "true" &&
+			process.env.MANDIO_ALLOW_AGENT_IN_TESTS !== "1"
+		) {
+			throw new Error(
+				"AgentRunner.spawnAgent is disabled during Vitest. Mock the runner or set MANDIO_ALLOW_AGENT_IN_TESTS=1 explicitly.",
+			);
+		}
+
 		const backend: AgentBackend = "claude";
 		const resolved = findClaudeBinary();
 		const cwd = opts.cwd || this.cwd;
+		const model =
+			opts.model ??
+			(process.env.VITEST === "true"
+				? (process.env.MANDIO_DEFAULT_MODEL ?? DEFAULT_TEST_MODEL)
+				: null);
 
 		logger.info("runner", "Resolved binary", {
 			path: resolved.bin,
@@ -339,6 +354,11 @@ export class AgentRunner {
 			"--max-turns",
 			String(opts.maxTurns),
 		];
+
+		if (model) {
+			args.push("--model", model);
+			logger.info("runner", `Using model: ${model}`);
+		}
 
 		if (opts.resumeSessionId) {
 			args.push("--resume", opts.resumeSessionId);

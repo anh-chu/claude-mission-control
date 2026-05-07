@@ -11,6 +11,8 @@ export default defineConfig({
 		globalSetup: "./__tests__/global-setup.ts",
 		env: {
 			MANDIO_DATA_DIR: path.join(__dirname, ".test-data"),
+			MANDIO_DEFAULT_MODEL: "haiku",
+			MANDIO_ALLOW_AGENT_IN_TESTS: "0",
 		},
 	},
 	resolve: {

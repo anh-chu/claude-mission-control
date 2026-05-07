@@ -105,6 +105,7 @@ export interface SpawnOptions {
 	timeoutMinutes: number;
 	skipPermissions: boolean;
 	allowedTools?: string[];
+	model?: string | null;
 	agentTeams?: boolean;
 	backend?: AgentBackend;
 	cwd: string;

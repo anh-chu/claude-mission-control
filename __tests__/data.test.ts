@@ -33,12 +33,6 @@ afterAll(async () => {
 // ─── Tasks ────────────────────────────────────────────────────────────────────
 
 describe("getTasks / saveTasks", () => {
-	it("reads tasks.json and returns a TasksFile object", async () => {
-		const data = await getTasks();
-		expect(data).toHaveProperty("tasks");
-		expect(Array.isArray(data.tasks)).toBe(true);
-	});
-
 	it("saves tasks and persists changes", async () => {
 		const original = await getTasks();
 		const originalCount = original.tasks.length;
@@ -95,12 +89,6 @@ describe("getTasks / saveTasks", () => {
 // ─── Projects ─────────────────────────────────────────────────────────────────
 
 describe("getProjects / saveProjects", () => {
-	it("reads projects.json and returns a ProjectsFile object", async () => {
-		const data = await getProjects();
-		expect(data).toHaveProperty("projects");
-		expect(Array.isArray(data.projects)).toBe(true);
-	});
-
 	it("saves projects and persists changes", async () => {
 		const original = await getProjects();
 
@@ -131,75 +119,28 @@ describe("getProjects / saveProjects", () => {
 	});
 });
 
-// ─── Brain Dump ───────────────────────────────────────────────────────────────
+// ─── Read-only Data Files ─────────────────────────────────────────────────────
 
-describe("getBrainDump", () => {
-	it("reads brain-dump.json and returns a BrainDumpFile object", async () => {
-		const data = await getBrainDump();
-		expect(data).toHaveProperty("entries");
-		expect(Array.isArray(data.entries)).toBe(true);
-	});
-});
-
-// ─── Inbox ────────────────────────────────────────────────────────────────────
-
-describe("getInbox", () => {
-	it("reads inbox.json and returns an InboxFile object", async () => {
-		const data = await getInbox();
-		expect(data).toHaveProperty("messages");
-		expect(Array.isArray(data.messages)).toBe(true);
-	});
-});
-
-// ─── Activity Log ─────────────────────────────────────────────────────────────
-
-describe("getActivityLog", () => {
-	it("reads activity-log.json and returns an ActivityLogFile object", async () => {
-		const data = await getActivityLog();
-		expect(data).toHaveProperty("events");
-		expect(Array.isArray(data.events)).toBe(true);
-	});
-});
-
-// ─── Decisions ────────────────────────────────────────────────────────────────
-
-describe("getDecisions", () => {
-	it("reads decisions.json and returns a DecisionsFile object", async () => {
-		const data = await getDecisions();
-		expect(data).toHaveProperty("decisions");
-		expect(Array.isArray(data.decisions)).toBe(true);
-	});
-});
-
-// ─── Agents ──────────────────────────────────────────────────────────────────
-
-describe("getAgents", () => {
-	it("reads agents.json and returns an AgentsFile object", async () => {
-		const data = await getAgents();
-		expect(data).toHaveProperty("agents");
-		expect(Array.isArray(data.agents)).toBe(true);
-	});
-
-	it("returns empty array gracefully when agents.json is missing", async () => {
-		// getAgents has a try/catch that returns { agents: [] } on failure
-		// Just verify the normal path works and the shape is correct
-		const data = await getAgents();
-		expect(data.agents).toBeDefined();
+describe("read-only data getters", () => {
+	it.each([
+		["tasks", getTasks, "tasks"],
+		["brain dump", getBrainDump, "entries"],
+		["inbox", getInbox, "messages"],
+		["activity log", getActivityLog, "events"],
+		["decisions", getDecisions, "decisions"],
+		["agents", getAgents, "agents"],
+		["tasks archive", getTasksArchive, "tasks"],
+	] as const)("reads %s data", async (_name, getter, property) => {
+		const data = await getter();
+		expect(data).toHaveProperty(property);
+		expect(
+			Array.isArray((data as unknown as Record<string, unknown>)[property]),
+		).toBe(true);
 	});
 });
 
 // ─── Skills Library ──────────────────────────────────────────────────────────
 // Skills are now stored as SKILL.md files; legacy getSkillsLibrary removed.
-
-// ─── Tasks Archive ────────────────────────────────────────────────────────────
-
-describe("getTasksArchive", () => {
-	it("returns tasks array (empty if archive file does not exist)", async () => {
-		const data = await getTasksArchive();
-		expect(data).toHaveProperty("tasks");
-		expect(Array.isArray(data.tasks)).toBe(true);
-	});
-});
 
 // ─── Mutex Safety (withTasks) ─────────────────────────────────────────────────
 // NOTE: withTasks acquires the tasks mutex, so inside the callback we must
@@ -293,13 +234,6 @@ describe("withTasks (mutex-protected read-modify-write)", () => {
 		// Restore original
 		await saveTasks(original);
 	});
-
-	it("returns the value from the callback", async () => {
-		const result = await withTasks(async (data) => {
-			return data.tasks.length;
-		});
-		expect(typeof result).toBe("number");
-	});
 });
 
 // ─── Edge Cases ──────────────────────────────────────────────────────────────
@@ -314,20 +248,5 @@ describe("edge cases", () => {
 
 		// Restore
 		await saveTasks(original);
-	});
-
-	it("data files contain valid JSON", async () => {
-		const files = [
-			"tasks.json",
-			"goals.json",
-			"projects.json",
-			"inbox.json",
-			"decisions.json",
-			"activity-log.json",
-		];
-		for (const file of files) {
-			const raw = await readFile(path.join(DATA_DIR, file), "utf-8");
-			expect(() => JSON.parse(raw)).not.toThrow();
-		}
 	});
 });

@@ -14,6 +14,7 @@ import {
 import { readdir, stat, unlink } from "node:fs/promises";
 import path from "node:path";
 import cron from "node-cron";
+import { reapStaleRuns, setConversationsWorkspace } from "./conversations";
 import {
 	getActiveRuns,
 	getDaemonConfig,
@@ -248,6 +249,23 @@ async function runAutopilotTick(): Promise<void> {
 		});
 	}
 
+	// Conversation reaper alongside active-runs sweep
+	try {
+		setConversationsWorkspace("default");
+		const reaped = await reapStaleRuns({ gracePeriodMs: 60000 });
+		if (reaped > 0) {
+			autopilotLogger.info(
+				"recovery",
+				`Reaped ${reaped} stale conversation(s)`,
+			);
+		}
+	} catch (err) {
+		autopilotLogger.warn(
+			"recovery",
+			`Conversation reaper failed: ${err instanceof Error ? err.message : String(err)}`,
+		);
+	}
+
 	// ── Dispatch ─────────────────────────────────────────────────────────────
 
 	const [tasksData, runsData, decisionsData] = await Promise.all([
@@ -413,6 +431,23 @@ export async function runStartupRecovery(): Promise<void> {
 			`Startup recovery error: ${
 				err instanceof Error ? err.message : String(err)
 			}`,
+		);
+	}
+
+	// Conversation reaper — mark conversations whose process died as failed
+	try {
+		setConversationsWorkspace("default"); // TODO: multi-workspace support
+		const reaped = await reapStaleRuns({ gracePeriodMs: 10000 });
+		if (reaped > 0) {
+			autopilotLogger.info(
+				"recovery",
+				`Startup: reaped ${reaped} stale conversation(s)`,
+			);
+		}
+	} catch (err) {
+		autopilotLogger.warn(
+			"recovery",
+			`Conversation reaper failed: ${err instanceof Error ? err.message : String(err)}`,
 		);
 	}
 }

@@ -90,6 +90,17 @@ export async function POST(
 
 	// 3. Kill each running process
 	const killed: string[] = [];
+
+	// Pre-load tasks.json to check conversationId for each task
+	const tasksPath = path.join(DATA_DIR, "tasks.json");
+	const tasksFile = readJSON<{
+		tasks: Array<{
+			id: string;
+			conversationId?: string | null;
+			kanban?: string;
+		}>;
+	}>(tasksPath);
+
 	for (const run of runningRuns) {
 		const success = await killProcess(run.pid);
 		if (success) killed.push(run.taskId);
@@ -98,6 +109,58 @@ export async function POST(
 		run.status = "stopped";
 		run.completedAt = now;
 		run.error = "Stopped by user";
+
+		// Cancel linked conversation if any (non-fatal)
+		if (tasksFile) {
+			const task = tasksFile.tasks.find((t) => t.id === run.taskId);
+			const conversationId = task?.conversationId;
+			if (conversationId) {
+				try {
+					const {
+						setConversationsWorkspace,
+						getConversation,
+						updateConversationRun,
+						updateConversation,
+					} = await import("@/lib/conversations");
+					const { publishAndEmit } = await import(
+						"@/lib/conversation-event-bus"
+					);
+					setConversationsWorkspace("default"); // TODO: use real workspace
+					const conv = await getConversation(conversationId);
+					if (
+						conv &&
+						!["completed", "failed", "cancelled"].includes(conv.status)
+					) {
+						const previousRunId = conv.currentRunId;
+						if (previousRunId) {
+							await updateConversationRun(previousRunId, {
+								status: "stopped",
+								completedAt: now,
+							});
+						}
+						await updateConversation(conversationId, {
+							status: "cancelled",
+							cancelledAt: now,
+							currentRunId: null,
+						});
+						await publishAndEmit({
+							type: "conversation.cancelled",
+							conversationId,
+							payload: {
+								runId: previousRunId,
+								reason: "Stopped by project stop",
+							},
+						});
+					}
+				} catch (err) {
+					console.warn(
+						`[stop] Failed to cancel conversation for task ${run.taskId}:`,
+						err,
+					);
+					// Non-fatal — task PID is already killed
+				}
+			}
+		}
 	}
 
 	// 4. Write updated active-runs.json
@@ -109,7 +172,6 @@ export async function POST(
 	writeJSON(missionsPath, missionsData);
 
 	// 6. Revert in-progress tasks back to not-started (for clean restart)
-	const tasksPath = path.join(DATA_DIR, "tasks.json");
 	const tasksData = readJSON<{ tasks: TaskEntry[] }>(tasksPath);
 	if (tasksData) {
 		const stoppedTaskIds = new Set(runningRuns.map((r) => r.taskId));

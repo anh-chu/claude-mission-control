@@ -28,7 +28,7 @@ import {
 	getWorkspaceDir,
 	MANDIO_COMMAND_PREFIX,
 } from "./paths";
-import { activateAllSkills, activateSkill } from "./skill-activation";
+import { activateSkill } from "./skill-activation";
 import { writeSkillFile } from "./skill-files";
 import type {
 	ActiveRunsFile,
@@ -151,6 +151,10 @@ export async function ensureWorkspaceDir(workspaceId: string): Promise<void> {
 			fallback: { agents: [] },
 		},
 		{ name: "active-runs.json", fallback: { runs: [] } },
+		{
+			name: "conversations.json",
+			fallback: { conversations: [], runs: {} },
+		},
 		{
 			name: "daemon-config.json",
 			artifact: path.join(getArtifactsDir(), "daemon-config.json"),

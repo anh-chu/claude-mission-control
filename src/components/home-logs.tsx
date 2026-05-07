@@ -9,7 +9,7 @@ import {
 	useRef,
 	useState,
 } from "react";
-import { DaemonRunViewer } from "@/components/chat/DaemonRunViewer";
+import { ConversationView } from "@/components/conversation/ConversationView";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import {
@@ -139,6 +139,57 @@ export function HomeLogs() {
 	useEffect(() => {
 		pausedRef.current = paused;
 	}, [paused]);
+
+	// Conversation lookup for selected run (by taskId)
+	const [linkedConversationId, setLinkedConversationId] = useState<
+		string | null
+	>(null);
+	const [lookupLoading, setLookupLoading] = useState(false);
+
+	useEffect(() => {
+		setLinkedConversationId(null);
+		if (!selectedRunId) return;
+
+		const run = runs.find((r) => r.id === selectedRunId);
+		if (!run?.taskId) return;
+
+		let cancelled = false;
+		setLookupLoading(true);
+
+		apiFetch(`/api/conversations?taskId=${run.taskId}`)
+			.then((res) => {
+				if (!res.ok) return null;
+				return res.json();
+			})
+			.then(
+				(
+					data: {
+						conversations?: Array<{ id: string; updatedAt: string }>;
+					} | null,
+				) => {
+					if (cancelled) return;
+					const convs: Array<{ id: string; updatedAt: string }> =
+						data?.conversations ?? [];
+					convs.sort(
+						(a, b) =>
+							new Date(b.updatedAt).getTime() - new Date(a.updatedAt).getTime(),
+					);
+					if (convs.length > 0) {
+						setLinkedConversationId(convs[0].id);
+					}
+				},
+			)
+			.catch(() => {
+				// ignore
+			})
+			.finally(() => {
+				if (!cancelled) setLookupLoading(false);
+			});
+
+		return () => {
+			cancelled = true;
+		};
+	}, [selectedRunId, runs]);
 
 	useEffect(() => {
 		let isMounted = true;
@@ -481,7 +532,9 @@ export function HomeLogs() {
 							<div>
 								<CardTitle>Run Console</CardTitle>
 								<CardDescription>
-									Live stream for run {selectedRunId}
+									{linkedConversationId
+										? "Conversation for this run"
+										: `Live stream for run ${selectedRunId}`}
 								</CardDescription>
 							</div>
 							<Button
@@ -494,7 +547,22 @@ export function HomeLogs() {
 						</div>
 					</CardHeader>
 					<CardContent>
-						<DaemonRunViewer runId={selectedRunId} />
+						{lookupLoading ? (
+							<p className="text-sm text-muted-foreground">
+								Linking conversation...
+							</p>
+						) : linkedConversationId ? (
+							<div className="max-h-[600px] overflow-y-auto">
+								<ConversationView conversationId={linkedConversationId} embed />
+							</div>
+						) : (
+							<div className="py-8 text-center">
+								<p className="text-sm text-muted-foreground">
+									No conversation linked to this run (legacy run before
+									unification)
+								</p>
+							</div>
+						)}
 					</CardContent>
 				</Card>
 			) : null}
