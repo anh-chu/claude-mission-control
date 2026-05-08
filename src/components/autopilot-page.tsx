@@ -209,7 +209,7 @@ function ordinalSuffix(n: number): string {
 	}
 }
 
-export function CrewAutopilot() {
+export function AutopilotPage() {
 	const { status, config, isRunning, isLoading, error, updateConfig } =
 		useDaemon();
 	const { runs } = useActiveRuns();

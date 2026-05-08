@@ -11,10 +11,10 @@ import {
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useState } from "react";
+import { AutopilotPage } from "@/components/autopilot-page";
 import { BreadcrumbNav } from "@/components/breadcrumb-nav";
 import { AgentContextMenuContent } from "@/components/context-menus/agent-context-menu";
 import { CreateTaskDialog } from "@/components/create-task-dialog";
-import { CrewAutopilot } from "@/components/crew-autopilot";
 import { CrewSkills } from "@/components/crew-skills";
 import { EmptyState } from "@/components/empty-state";
 import { ErrorState } from "@/components/error-state";
@@ -421,7 +421,7 @@ export default function CrewPage() {
 				</>
 			)}
 
-			{tab === "autopilot" && <CrewAutopilot />}
+			{tab === "autopilot" && <AutopilotPage />}
 			{tab === "skills" && <CrewSkills />}
 		</div>
 	);
