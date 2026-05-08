@@ -339,10 +339,13 @@ async function runWorkspaceTick(
 	// ── Recovery sweep ─────────────────────────────────────────────────────────────
 
 	// Mark runs whose process is no longer alive as failed; collect affected task IDs.
+	// NOTE: intentional asymmetry — pid === 0 is treated as "still starting/unknown" and
+	// preserved in the running count rather than marked failed here. This matches the
+	// global-running-count logic in runAutopilotTick() where pid === 0 counts as alive.
 	const deadTaskIds = await mutateActiveRuns(async (data) => {
 		const dead = new Set<string>();
 		for (const run of data.runs) {
-			if (run.status === "running" && !isProcessAlive(run.pid)) {
+			if (run.status === "running" && run.pid > 0 && !isProcessAlive(run.pid)) {
 				run.status = "failed";
 				run.completedAt = new Date().toISOString();
 				run.error = "Process died unexpectedly (autopilot recovery)";
@@ -579,7 +582,13 @@ export async function runStartupRecovery(): Promise<void> {
 			const deadTaskIds = await mutateActiveRuns(async (data) => {
 				const dead = new Set<string>();
 				for (const run of data.runs) {
-					if (run.status === "running" && !isProcessAlive(run.pid)) {
+					// NOTE: pid === 0 is treated as unknown/still-starting, not dead.
+					// This matches the global-running-count in runAutopilotTick().
+					if (
+						run.status === "running" &&
+						run.pid > 0 &&
+						!isProcessAlive(run.pid)
+					) {
 						run.status = "failed";
 						run.completedAt = new Date().toISOString();
 						run.error = "Process died unexpectedly (startup recovery)";
@@ -660,20 +669,38 @@ export async function runStartupRecovery(): Promise<void> {
 }
 
 /**
+ * Boolean guard to prevent overlapping poller ticks.
+ * Set true when a tick starts, reset in .finally() when it completes.
+ */
+let autopilotTickRunning = false;
+
+/**
  * Register the autopilot poller and any scheduled commands from daemon-config.json.
  * Runs inside the Next.js server process (registered via instrumentation.ts).
  */
 export function scheduleAutopilotPoller(): void {
 	// Polling tick: recovery sweep + task dispatch every minute.
 	cron.schedule("* * * * *", () => {
-		void runAutopilotTick().catch((err) => {
-			autopilotLogger.error(
+		if (autopilotTickRunning) {
+			autopilotLogger.debug(
 				"poller",
-				`Unhandled tick error: ${
-					err instanceof Error ? err.message : String(err)
-				}`,
+				"Skipping tick — previous tick still running",
 			);
-		});
+			return;
+		}
+		autopilotTickRunning = true;
+		void runAutopilotTick()
+			.catch((err) => {
+				autopilotLogger.error(
+					"poller",
+					`Unhandled tick error: ${
+						err instanceof Error ? err.message : String(err)
+					}`,
+				);
+			})
+			.finally(() => {
+				autopilotTickRunning = false;
+			});
 	});
 
 	// Scheduled commands: register cron entries for each workspace.
