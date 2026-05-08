@@ -287,7 +287,7 @@ export default function TasksPage() {
 
 	return (
 		<div className="space-y-4">
-			<BreadcrumbNav items={[{ label: "Tasks" }]} />
+			<BreadcrumbNav items={[{ label: "Work" }]} />
 
 			{tasksError && (
 				<div className="rounded-sm border border-destructive/20 bg-destructive/5 p-3 text-sm text-destructive flex items-center justify-between">

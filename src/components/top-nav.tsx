@@ -7,6 +7,7 @@ import {
 	Grid2x2,
 	Home,
 	Plus,
+	Terminal,
 	Users,
 } from "lucide-react";
 import Link from "next/link";
@@ -49,20 +50,26 @@ interface NavItem {
 }
 
 const navItems: NavItem[] = [
-	{ href: "/", label: "Home", icon: Home },
+	{ href: "/", label: "Home", icon: Home, match: ["/"] },
 	{
-		href: "/priority-matrix",
+		href: "/work",
 		label: "Work",
 		icon: Grid2x2,
-		match: ["/priority-matrix", "/map", "/tasks"],
+		match: ["/work", "/priority-matrix", "/map", "/tasks"],
 	},
-	{ href: "/documents", label: "Wiki", icon: FileText },
+	{
+		href: "/brain",
+		label: "Brain",
+		icon: FileText,
+		match: ["/brain", "/documents"],
+	},
 	{
 		href: "/crew",
-		label: "Agents",
+		label: "Crew",
 		icon: Users,
 		match: ["/crew", "/skills", "/autopilot"],
 	},
+	{ href: "/ops", label: "Ops", icon: Terminal, match: ["/ops"] },
 ];
 
 function isItemActive(item: NavItem, pathname: string): boolean {

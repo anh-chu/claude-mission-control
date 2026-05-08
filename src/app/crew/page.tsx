@@ -214,7 +214,7 @@ export default function CrewPage() {
 	if (loading) {
 		return (
 			<div className="space-y-6">
-				<BreadcrumbNav items={[{ label: "Agents" }]} />
+				<BreadcrumbNav items={[{ label: "Crew" }]} />
 				<GridSkeleton
 					className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3"
 					count={3}
@@ -249,7 +249,7 @@ export default function CrewPage() {
 	if (agentsError) {
 		return (
 			<div className="space-y-6">
-				<BreadcrumbNav items={[{ label: "Agents" }]} />
+				<BreadcrumbNav items={[{ label: "Crew" }]} />
 				<ErrorState message={agentsError} onRetry={refetch} />
 			</div>
 		);
@@ -257,7 +257,7 @@ export default function CrewPage() {
 
 	return (
 		<div className="space-y-6">
-			<BreadcrumbNav items={[{ label: "Agents" }]} />
+			<BreadcrumbNav items={[{ label: "Crew" }]} />
 
 			<div className="flex items-center justify-between">
 				<div>

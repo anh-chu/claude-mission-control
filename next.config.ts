@@ -12,11 +12,7 @@ const nextConfig: NextConfig = {
 		{ source: "/activity", destination: "/?tab=activity", permanent: false },
 		{ source: "/logs", destination: "/?tab=logs", permanent: false },
 		// Merged into Work views
-		{
-			source: "/map",
-			destination: "/priority-matrix?view=map",
-			permanent: false,
-		},
+		{ source: "/map", destination: "/work", permanent: true },
 		// Merged into Agents tabs
 		{
 			source: "/autopilot",
@@ -24,6 +20,11 @@ const nextConfig: NextConfig = {
 			permanent: false,
 		},
 		{ source: "/skills", destination: "/crew?tab=skills", permanent: false },
+		// Renamed routes (Phase 1)
+		{ source: "/priority-matrix", destination: "/work", permanent: true },
+		{ source: "/documents", destination: "/brain", permanent: true },
+		{ source: "/initiatives", destination: "/work", permanent: true },
+		{ source: "/projects", destination: "/work", permanent: true },
 	],
 	allowedDevOrigins: ["localhost", "devvm", "127.0.0.1"],
 	devIndicators: false,
