@@ -1,0 +1,585 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Mandio UI Reorganization — Proposal</title>
+<link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    font-family: 'JetBrains Mono', monospace;
+    background: #020617;
+    color: #e2e8f0;
+    padding: 32px;
+    line-height: 1.5;
+  }
+  .container { max-width: 1400px; margin: 0 auto; }
+  header { margin-bottom: 32px; }
+  h1 {
+    font-size: 22px;
+    font-weight: 700;
+    color: #f8fafc;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+  }
+  .pulse {
+    width: 10px; height: 10px; border-radius: 50%;
+    background: #22d3ee;
+    box-shadow: 0 0 12px #22d3ee;
+    animation: pulse 2s infinite;
+  }
+  @keyframes pulse { 0%,100% { opacity: 1; } 50% { opacity: 0.4; } }
+  .subtitle { color: #94a3b8; font-size: 12px; margin-top: 6px; }
+
+  section { margin-bottom: 40px; }
+  h2 {
+    font-size: 14px;
+    font-weight: 600;
+    color: #f8fafc;
+    margin-bottom: 16px;
+    padding-bottom: 8px;
+    border-bottom: 1px solid #1e293b;
+    letter-spacing: 0.5px;
+    text-transform: uppercase;
+  }
+
+  .card {
+    background: #0f172a;
+    border: 1px solid #1e293b;
+    border-radius: 8px;
+    padding: 20px;
+  }
+
+  .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
+  .grid-3 { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 20px; }
+
+  .label-old, .label-new {
+    font-size: 10px;
+    font-weight: 700;
+    letter-spacing: 1px;
+    text-transform: uppercase;
+    padding: 3px 8px;
+    border-radius: 4px;
+    display: inline-block;
+    margin-bottom: 12px;
+  }
+  .label-old { background: rgba(136, 19, 55, 0.4); color: #fb7185; border: 1px solid #fb7185; }
+  .label-new { background: rgba(6, 78, 59, 0.4); color: #34d399; border: 1px solid #34d399; }
+
+  /* Nav comparison */
+  .nav-bar {
+    display: flex;
+    gap: 4px;
+    padding: 10px;
+    background: #020617;
+    border: 1px solid #1e293b;
+    border-radius: 6px;
+    margin-bottom: 12px;
+  }
+  .nav-item {
+    padding: 8px 14px;
+    font-size: 11px;
+    font-weight: 500;
+    border-radius: 4px;
+    color: #94a3b8;
+    border: 1px solid transparent;
+  }
+  .nav-item.active {
+    color: #22d3ee;
+    background: rgba(8, 51, 68, 0.4);
+    border-color: #22d3ee;
+  }
+
+  table { width: 100%; border-collapse: collapse; font-size: 11px; }
+  th, td { text-align: left; padding: 8px 10px; border-bottom: 1px solid #1e293b; }
+  th { color: #94a3b8; font-weight: 500; font-size: 10px; text-transform: uppercase; letter-spacing: 0.5px; }
+  td { color: #e2e8f0; }
+  td.muted { color: #64748b; text-decoration: line-through; }
+  td.kept { color: #34d399; }
+  td.new { color: #22d3ee; }
+
+  .route-tag {
+    font-family: 'JetBrains Mono', monospace;
+    background: #1e293b;
+    color: #e2e8f0;
+    padding: 2px 6px;
+    border-radius: 3px;
+    font-size: 10px;
+  }
+  .route-tag.old { color: #fb7185; }
+  .route-tag.new { color: #34d399; }
+
+  /* SVG-style flow box */
+  .flow-box {
+    border: 1.5px solid;
+    border-radius: 6px;
+    padding: 10px 12px;
+    font-size: 11px;
+    background: rgba(15, 23, 42, 0.6);
+  }
+  .flow-box.frontend { border-color: #22d3ee; background: rgba(8, 51, 68, 0.4); }
+  .flow-box.backend { border-color: #34d399; background: rgba(6, 78, 59, 0.4); }
+  .flow-box.dim { border-color: #475569; background: rgba(30, 41, 59, 0.5); color: #94a3b8; }
+  .flow-box .title { font-weight: 600; color: #f8fafc; margin-bottom: 4px; }
+  .flow-box .meta { font-size: 9px; color: #94a3b8; }
+
+  .arrow {
+    text-align: center;
+    color: #64748b;
+    font-size: 18px;
+    padding: 6px 0;
+  }
+
+  .pill {
+    display: inline-block;
+    padding: 2px 8px;
+    border-radius: 10px;
+    font-size: 9px;
+    font-weight: 600;
+    margin-right: 4px;
+  }
+  .pill.del { background: rgba(136, 19, 55, 0.4); color: #fb7185; }
+  .pill.new { background: rgba(6, 78, 59, 0.4); color: #34d399; }
+  .pill.move { background: rgba(120, 53, 15, 0.4); color: #fbbf24; }
+  .pill.keep { background: rgba(30, 41, 59, 0.5); color: #94a3b8; }
+
+  .legend {
+    display: flex;
+    gap: 16px;
+    flex-wrap: wrap;
+    font-size: 10px;
+    color: #94a3b8;
+    margin-top: 12px;
+  }
+  .legend span { display: flex; align-items: center; gap: 6px; }
+  .swatch { width: 10px; height: 10px; border-radius: 2px; }
+
+  ul.bullet { list-style: none; padding: 0; }
+  ul.bullet li {
+    padding: 4px 0;
+    font-size: 11px;
+    color: #cbd5e1;
+    padding-left: 14px;
+    position: relative;
+  }
+  ul.bullet li::before {
+    content: "→";
+    position: absolute;
+    left: 0;
+    color: #64748b;
+  }
+
+  .footer {
+    text-align: center;
+    color: #475569;
+    font-size: 10px;
+    margin-top: 40px;
+    padding-top: 20px;
+    border-top: 1px solid #1e293b;
+  }
+
+  /* Sitemap tree */
+  .tree {
+    font-size: 11px;
+    line-height: 1.8;
+  }
+  .tree .node { color: #e2e8f0; }
+  .tree .leaf { color: #94a3b8; padding-left: 24px; }
+  .tree .root { color: #22d3ee; font-weight: 600; }
+  .tree .indent-1 { padding-left: 16px; }
+  .tree .indent-2 { padding-left: 32px; }
+  .tree .badge { font-size: 9px; color: #64748b; margin-left: 8px; }
+
+  .annot {
+    font-size: 10px;
+    color: #fbbf24;
+    font-style: italic;
+    margin-top: 2px;
+  }
+</style>
+</head>
+<body>
+<div class="container">
+
+<header>
+  <h1><span class="pulse"></span> Mandio UI Reorganization</h1>
+  <div class="subtitle">Current state → Proposed state. Top-3 fixes expanded into a full plan.</div>
+</header>
+
+<!-- ============ 1. NAV / NAMING ============ -->
+<section>
+  <h2>1. Unified Naming — Nav, Route, Breadcrumb, Title</h2>
+  <div class="grid-2">
+    <div class="card">
+      <span class="label-old">Current</span>
+      <div class="nav-bar">
+        <div class="nav-item active">Home</div>
+        <div class="nav-item">Work</div>
+        <div class="nav-item">Wiki</div>
+        <div class="nav-item">Agents</div>
+      </div>
+      <table>
+        <tr><th>Nav</th><th>Route</th><th>Page title</th></tr>
+        <tr><td>Home</td><td><span class="route-tag old">/</span></td><td>Command Center</td></tr>
+        <tr><td>Work</td><td><span class="route-tag old">/priority-matrix</span></td><td>Priority Matrix</td></tr>
+        <tr><td>Wiki</td><td><span class="route-tag old">/documents</span></td><td>"Brain"</td></tr>
+        <tr><td>Agents</td><td><span class="route-tag old">/crew</span></td><td>Crew / Agents</td></tr>
+        <tr><td>—</td><td><span class="route-tag old">/map</span></td><td>Project Map</td></tr>
+        <tr><td>—</td><td><span class="route-tag old">/initiatives</span></td><td>(redirects to /map)</td></tr>
+        <tr><td>—</td><td><span class="route-tag old">/projects</span></td><td>(redirects to /map)</td></tr>
+      </table>
+      <div class="annot">3 names per concept. Routes don't match nav. "Map" exists twice.</div>
+    </div>
+
+    <div class="card">
+      <span class="label-new">Proposed</span>
+      <div class="nav-bar">
+        <div class="nav-item active">Home</div>
+        <div class="nav-item">Work</div>
+        <div class="nav-item">Brain</div>
+        <div class="nav-item">Crew</div>
+        <div class="nav-item">Ops</div>
+      </div>
+      <table>
+        <tr><th>Nav</th><th>Route</th><th>Page title</th></tr>
+        <tr><td>Home</td><td><span class="route-tag new">/home</span></td><td>Home</td></tr>
+        <tr><td>Work</td><td><span class="route-tag new">/work</span></td><td>Work</td></tr>
+        <tr><td class="kept">Brain</td><td><span class="route-tag new">/brain</span></td><td>Brain</td></tr>
+        <tr><td>Crew</td><td><span class="route-tag new">/crew</span></td><td>Crew</td></tr>
+        <tr><td class="new">Ops</td><td><span class="route-tag new">/ops</span></td><td>Ops</td></tr>
+      </table>
+      <div class="annot">One name per concept. Nav = route = title. Old paths 301 to new.</div>
+    </div>
+  </div>
+</section>
+
+<!-- ============ 2. WORK / MAP MERGE ============ -->
+<section>
+  <h2>2. Collapse "Map" Duplication — One Canvas</h2>
+  <div class="grid-2">
+    <div class="card">
+      <span class="label-old">Current — two graphs, different scope</span>
+      <div style="display: flex; gap: 12px; margin-bottom: 12px;">
+        <div class="flow-box dim" style="flex: 1;">
+          <div class="title">/priority-matrix → Map tab</div>
+          <div class="meta">ReactFlow inside Work tab</div>
+        </div>
+        <div class="flow-box dim" style="flex: 1;">
+          <div class="title">/map (top-level)</div>
+          <div class="meta">Different ReactFlow scope</div>
+        </div>
+      </div>
+      <ul class="bullet">
+        <li>/initiatives redirects → /map</li>
+        <li>/projects redirects → /map</li>
+        <li>Users can't predict where structure lives</li>
+      </ul>
+    </div>
+
+    <div class="card">
+      <span class="label-new">Proposed — Work has 4 lenses, single source</span>
+      <div class="nav-bar" style="margin-bottom: 16px;">
+        <div class="nav-item active">Matrix</div>
+        <div class="nav-item">Board</div>
+        <div class="nav-item">Map</div>
+        <div class="nav-item">List</div>
+      </div>
+      <ul class="bullet">
+        <li><span class="route-tag new">/work</span> hosts all 4 views</li>
+        <li>Map view spans tasks → initiatives → projects (one canvas, zoom levels)</li>
+        <li><span class="route-tag old">/map</span>, <span class="route-tag old">/initiatives</span>, <span class="route-tag old">/projects</span> all 301 → /work?view=map</li>
+        <li>Detail pages stay: <span class="route-tag new">/work/tasks/[id]</span>, <span class="route-tag new">/work/projects/[id]</span></li>
+      </ul>
+    </div>
+  </div>
+</section>
+
+<!-- ============ 3. LIVE WORK SURFACE ============ -->
+<section>
+  <h2>3. Single "Live Work" Surface — Kill the 4-Way Run Duplication</h2>
+  <div class="card">
+    <span class="label-old">Current — same run visible in 5 places, no source of truth</span>
+    <div class="grid-3" style="margin-top: 12px;">
+      <div class="flow-box dim"><div class="title">Home → Logs tab</div><div class="meta">PIDs, daemon tail, run console</div></div>
+      <div class="flow-box dim"><div class="title">ChatSidebar</div><div class="meta">Conversations, model picker</div></div>
+      <div class="flow-box dim"><div class="title">Crew → Autopilot</div><div class="meta">Per-agent conversations accordion</div></div>
+      <div class="flow-box dim"><div class="title">Task detail → Conversation</div><div class="meta">Embedded ConversationView</div></div>
+      <div class="flow-box dim"><div class="title">Crew/[id] → Conversation</div><div class="meta">Per-agent run history</div></div>
+      <div class="flow-box dim"><div class="title">Home → Automation card</div><div class="meta">Active count, last poll</div></div>
+    </div>
+  </div>
+
+  <div style="height: 16px;"></div>
+
+  <div class="card">
+    <span class="label-new">Proposed — one Runs surface, indexed by every entity</span>
+
+    <svg viewBox="0 0 1300 360" style="width: 100%; height: auto;">
+      <defs>
+        <pattern id="grid" width="40" height="40" patternUnits="userSpaceOnUse">
+          <path d="M 40 0 L 0 0 0 40" fill="none" stroke="#1e293b" stroke-width="0.5"/>
+        </pattern>
+        <marker id="arrow" markerWidth="10" markerHeight="7" refX="9" refY="3.5" orient="auto">
+          <polygon points="0 0, 10 3.5, 0 7" fill="#64748b"/>
+        </marker>
+      </defs>
+      <rect width="1300" height="360" fill="url(#grid)"/>
+
+      <!-- Central RunStore -->
+      <rect x="500" y="140" width="300" height="80" rx="8" fill="#0f172a"/>
+      <rect x="500" y="140" width="300" height="80" rx="8" fill="rgba(76, 29, 149, 0.4)" stroke="#a78bfa" stroke-width="2"/>
+      <text x="650" y="170" fill="white" font-size="13" font-weight="700" text-anchor="middle">RunStore (single source)</text>
+      <text x="650" y="190" fill="#cbd5e1" font-size="10" text-anchor="middle">id, agentId, taskId, status, log[], conversationId</text>
+      <text x="650" y="208" fill="#a78bfa" font-size="9" text-anchor="middle">indexed by: task • agent • project • workspace</text>
+
+      <!-- Inputs -->
+      <rect x="50" y="40" width="180" height="50" rx="6" fill="rgba(8, 51, 68, 0.4)" stroke="#22d3ee" stroke-width="1.5"/>
+      <text x="140" y="60" fill="white" font-size="11" font-weight="600" text-anchor="middle">Run buttons</text>
+      <text x="140" y="76" fill="#94a3b8" font-size="9" text-anchor="middle">task / project / agent card</text>
+
+      <rect x="50" y="110" width="180" height="50" rx="6" fill="rgba(8, 51, 68, 0.4)" stroke="#22d3ee" stroke-width="1.5"/>
+      <text x="140" y="130" fill="white" font-size="11" font-weight="600" text-anchor="middle">Deploy to agent</text>
+      <text x="140" y="146" fill="#94a3b8" font-size="9" text-anchor="middle">task detail dropdown</text>
+
+      <rect x="50" y="180" width="180" height="50" rx="6" fill="rgba(8, 51, 68, 0.4)" stroke="#22d3ee" stroke-width="1.5"/>
+      <text x="140" y="200" fill="white" font-size="11" font-weight="600" text-anchor="middle">Autopilot scheduler</text>
+      <text x="140" y="216" fill="#94a3b8" font-size="9" text-anchor="middle">cron, daemon dispatch</text>
+
+      <rect x="50" y="250" width="180" height="50" rx="6" fill="rgba(8, 51, 68, 0.4)" stroke="#22d3ee" stroke-width="1.5"/>
+      <text x="140" y="270" fill="white" font-size="11" font-weight="600" text-anchor="middle">ChatSidebar</text>
+      <text x="140" y="286" fill="#94a3b8" font-size="9" text-anchor="middle">ad-hoc prompts</text>
+
+      <!-- arrows in -->
+      <line x1="230" y1="65" x2="500" y2="160" stroke="#64748b" stroke-width="1" marker-end="url(#arrow)"/>
+      <line x1="230" y1="135" x2="500" y2="170" stroke="#64748b" stroke-width="1" marker-end="url(#arrow)"/>
+      <line x1="230" y1="205" x2="500" y2="190" stroke="#64748b" stroke-width="1" marker-end="url(#arrow)"/>
+      <line x1="230" y1="275" x2="500" y2="200" stroke="#64748b" stroke-width="1" marker-end="url(#arrow)"/>
+
+      <!-- Outputs (views) -->
+      <rect x="1070" y="40" width="180" height="50" rx="6" fill="rgba(6, 78, 59, 0.4)" stroke="#34d399" stroke-width="1.5"/>
+      <text x="1160" y="60" fill="white" font-size="11" font-weight="600" text-anchor="middle">/ops/runs</text>
+      <text x="1160" y="76" fill="#94a3b8" font-size="9" text-anchor="middle">global feed, filter, search</text>
+
+      <rect x="1070" y="110" width="180" height="50" rx="6" fill="rgba(6, 78, 59, 0.4)" stroke="#34d399" stroke-width="1.5"/>
+      <text x="1160" y="130" fill="white" font-size="11" font-weight="600" text-anchor="middle">Task detail → Runs tab</text>
+      <text x="1160" y="146" fill="#94a3b8" font-size="9" text-anchor="middle">filtered by task</text>
+
+      <rect x="1070" y="180" width="180" height="50" rx="6" fill="rgba(6, 78, 59, 0.4)" stroke="#34d399" stroke-width="1.5"/>
+      <text x="1160" y="200" fill="white" font-size="11" font-weight="600" text-anchor="middle">Crew/[id] → Runs tab</text>
+      <text x="1160" y="216" fill="#94a3b8" font-size="9" text-anchor="middle">filtered by agent</text>
+
+      <rect x="1070" y="250" width="180" height="50" rx="6" fill="rgba(6, 78, 59, 0.4)" stroke="#34d399" stroke-width="1.5"/>
+      <text x="1160" y="270" fill="white" font-size="11" font-weight="600" text-anchor="middle">ChatSidebar</text>
+      <text x="1160" y="286" fill="#94a3b8" font-size="9" text-anchor="middle">unified history view</text>
+
+      <!-- arrows out -->
+      <line x1="800" y1="160" x2="1070" y2="65" stroke="#64748b" stroke-width="1" marker-end="url(#arrow)"/>
+      <line x1="800" y1="170" x2="1070" y2="135" stroke="#64748b" stroke-width="1" marker-end="url(#arrow)"/>
+      <line x1="800" y1="190" x2="1070" y2="205" stroke="#64748b" stroke-width="1" marker-end="url(#arrow)"/>
+      <line x1="800" y1="200" x2="1070" y2="275" stroke="#64748b" stroke-width="1" marker-end="url(#arrow)"/>
+
+      <text x="650" y="335" fill="#94a3b8" font-size="10" text-anchor="middle" font-style="italic">All consumers read the same store — answer "what's running" in one place.</text>
+    </svg>
+  </div>
+</section>
+
+<!-- ============ 4. INFORMATION ARCHITECTURE ============ -->
+<section>
+  <h2>4. Full Sitemap — Before / After</h2>
+  <div class="grid-2">
+    <div class="card">
+      <span class="label-old">Current</span>
+      <div class="tree">
+        <div class="root">/ (Home)</div>
+        <div class="leaf">├── Overview <span class="badge">user-facing</span></div>
+        <div class="leaf">├── Inbox <span class="badge">brain dumps</span></div>
+        <div class="leaf">├── Activity <span class="badge">events</span></div>
+        <div class="leaf">└── Logs <span class="badge" style="color:#fb7185;">⚠ ops mixed in</span></div>
+        <div class="root">/priority-matrix</div>
+        <div class="leaf">├── Matrix / Board / Map</div>
+        <div class="root">/documents (titled "Brain")</div>
+        <div class="root">/map · /initiatives · /projects <span class="badge" style="color:#fb7185;">⚠ duplicate</span></div>
+        <div class="root">/crew</div>
+        <div class="leaf">├── Crew</div>
+        <div class="leaf">├── Autopilot <span class="badge" style="color:#fb7185;">⚠ also in /settings</span></div>
+        <div class="leaf">└── Skills → sub-tabs (Skills/Plugins/Commands) <span class="badge" style="color:#fb7185;">⚠ 3 levels deep</span></div>
+        <div class="root">/settings <span class="badge" style="color:#fb7185;">⚠ junk drawer</span></div>
+        <div class="leaf">├── Appearance</div>
+        <div class="leaf">├── Workspace</div>
+        <div class="leaf">├── Env vars</div>
+        <div class="leaf">├── Autopilot config</div>
+        <div class="leaf">└── Danger zone</div>
+      </div>
+    </div>
+
+    <div class="card">
+      <span class="label-new">Proposed</span>
+      <div class="tree">
+        <div class="root">/home</div>
+        <div class="leaf">├── Overview</div>
+        <div class="leaf">├── Inbox <span class="badge">brain dumps</span></div>
+        <div class="leaf">└── Activity <span class="badge">user events only</span></div>
+        <div class="root">/work <span class="badge" style="color:#34d399;">unifies matrix + map + projects</span></div>
+        <div class="leaf">├── Matrix · Board · Map · List</div>
+        <div class="leaf">├── /work/tasks/[id]</div>
+        <div class="leaf">├── /work/projects/[id]</div>
+        <div class="leaf">└── /work/initiatives/[id]</div>
+        <div class="root">/brain <span class="badge" style="color:#34d399;">renamed from /documents</span></div>
+        <div class="leaf">└── tree + viewer (unchanged)</div>
+        <div class="root">/crew</div>
+        <div class="leaf">├── /crew (list, no tabs)</div>
+        <div class="leaf">├── /crew/[id]</div>
+        <div class="leaf">└── /crew/skills <span class="badge" style="color:#34d399;">flattened</span></div>
+        <div class="root">/ops <span class="badge" style="color:#22d3ee;">new — operator surface</span></div>
+        <div class="leaf">├── Runs <span class="badge">live + history</span></div>
+        <div class="leaf">├── Logs <span class="badge">daemon + app tails</span></div>
+        <div class="leaf">├── Autopilot <span class="badge">scheduler + commands</span></div>
+        <div class="leaf">└── Plugins · Commands</div>
+        <div class="root">/settings</div>
+        <div class="leaf">├── Workspace <span class="badge" style="color:#34d399;">create + delete here</span></div>
+        <div class="leaf">├── Appearance</div>
+        <div class="leaf">└── Env vars</div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ============ 5. CHANGE SUMMARY ============ -->
+<section>
+  <h2>5. Change Summary</h2>
+  <div class="card">
+    <table>
+      <tr>
+        <th style="width: 60px;">Action</th>
+        <th>From</th>
+        <th>To</th>
+        <th>Why</th>
+      </tr>
+      <tr>
+        <td><span class="pill new">RENAME</span></td>
+        <td><span class="route-tag old">/priority-matrix</span></td>
+        <td><span class="route-tag new">/work</span></td>
+        <td>Match nav label, drop jargon</td>
+      </tr>
+      <tr>
+        <td><span class="pill new">RENAME</span></td>
+        <td><span class="route-tag old">/documents</span> ("Brain")</td>
+        <td><span class="route-tag new">/brain</span></td>
+        <td>Title and route already disagree</td>
+      </tr>
+      <tr>
+        <td><span class="pill move">MERGE</span></td>
+        <td><span class="route-tag old">/map</span>, <span class="route-tag old">/initiatives</span>, <span class="route-tag old">/projects</span></td>
+        <td><span class="route-tag new">/work</span> Map view</td>
+        <td>One canvas, multi-zoom (project → initiative → task)</td>
+      </tr>
+      <tr>
+        <td><span class="pill new">NEW</span></td>
+        <td>—</td>
+        <td><span class="route-tag new">/ops</span></td>
+        <td>Separates operator tooling from end-user surfaces</td>
+      </tr>
+      <tr>
+        <td><span class="pill move">MOVE</span></td>
+        <td>Home → Logs tab</td>
+        <td><span class="route-tag new">/ops/logs</span></td>
+        <td>Was mixed with user dashboard</td>
+      </tr>
+      <tr>
+        <td><span class="pill move">MOVE</span></td>
+        <td>Crew → Autopilot tab + Settings → Autopilot</td>
+        <td><span class="route-tag new">/ops/autopilot</span> (single)</td>
+        <td>Two configs in two places caused drift</td>
+      </tr>
+      <tr>
+        <td><span class="pill move">MOVE</span></td>
+        <td>Crew → Skills → Plugins/Commands sub-tabs</td>
+        <td><span class="route-tag new">/ops/plugins</span>, <span class="route-tag new">/ops/commands</span></td>
+        <td>Was 3 levels deep</td>
+      </tr>
+      <tr>
+        <td><span class="pill new">NEW</span></td>
+        <td>5 places showing runs</td>
+        <td><span class="route-tag new">/ops/runs</span> + Runs tab on task/agent</td>
+        <td>RunStore = single source of truth</td>
+      </tr>
+      <tr>
+        <td><span class="pill move">MOVE</span></td>
+        <td>TopNav "New Workspace" dialog</td>
+        <td><span class="route-tag new">/settings/workspaces</span></td>
+        <td>Create + delete in same place (symmetry)</td>
+      </tr>
+      <tr>
+        <td><span class="pill keep">KEEP</span></td>
+        <td>CommandBar (Cmd+K), Search, ChatSidebar, KeyboardShortcuts</td>
+        <td>same</td>
+        <td>Cross-cutting components are fine</td>
+      </tr>
+      <tr>
+        <td><span class="pill del">DEDUPE</span></td>
+        <td>Documents empty state: 2 init buttons</td>
+        <td>1 primary CTA, footer status only</td>
+        <td>First-run guess removed</td>
+      </tr>
+      <tr>
+        <td><span class="pill new">UNIFY</span></td>
+        <td>Per-page filter bars (Matrix, Activity, Logs)</td>
+        <td>Shared <code style="color:#22d3ee;">&lt;FilterBar /&gt;</code></td>
+        <td>Consistent placement, persistence, behavior</td>
+      </tr>
+    </table>
+  </div>
+</section>
+
+<!-- ============ 6. ROLLOUT ============ -->
+<section>
+  <h2>6. Rollout — Low-risk Order</h2>
+  <div class="grid-3">
+    <div class="card">
+      <div style="color: #22d3ee; font-weight: 700; margin-bottom: 8px;">Phase 1 — Renames</div>
+      <ul class="bullet">
+        <li>Add new routes as aliases</li>
+        <li>301 old → new</li>
+        <li>Update nav labels</li>
+        <li>Sync breadcrumb + title</li>
+      </ul>
+      <div class="annot">No behavior change. Reversible.</div>
+    </div>
+    <div class="card">
+      <div style="color: #22d3ee; font-weight: 700; margin-bottom: 8px;">Phase 2 — Consolidate</div>
+      <ul class="bullet">
+        <li>Build /ops shell</li>
+        <li>Move Logs out of Home</li>
+        <li>Merge Autopilot configs</li>
+        <li>Flatten Skills sub-tabs</li>
+      </ul>
+      <div class="annot">Mostly cut/paste, light coupling.</div>
+    </div>
+    <div class="card">
+      <div style="color: #22d3ee; font-weight: 700; margin-bottom: 8px;">Phase 3 — RunStore</div>
+      <ul class="bullet">
+        <li>Define RunStore schema</li>
+        <li>Migrate 5 surfaces to read it</li>
+        <li>Build /ops/runs feed</li>
+        <li>Add Runs tab to task + agent</li>
+      </ul>
+      <div class="annot">Highest value, biggest lift.</div>
+    </div>
+  </div>
+</section>
+
+<div class="legend">
+  <span><div class="swatch" style="background: rgba(8, 51, 68, 0.4); border: 1px solid #22d3ee;"></div>Input / source</span>
+  <span><div class="swatch" style="background: rgba(6, 78, 59, 0.4); border: 1px solid #34d399;"></div>Output / view</span>
+  <span><div class="swatch" style="background: rgba(76, 29, 149, 0.4); border: 1px solid #a78bfa;"></div>Single source of truth</span>
+  <span><div class="swatch" style="background: rgba(30, 41, 59, 0.5); border: 1px solid #475569;"></div>Current (deprecated)</span>
+</div>
+
+<div class="footer">
+  Mandio UI proposal · /home/sil/ccmc/docs/ui-proposal.html · open in browser to view
+</div>
+
+</div>
+</body>
+</html>
