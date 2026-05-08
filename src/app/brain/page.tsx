@@ -931,15 +931,19 @@ export default function BrainPage() {
 					) : (
 						<span />
 					)}
-					<Button
-						size="sm"
-						variant="outline"
-						onClick={handleInitWiki}
-						disabled={initingWiki}
-					>
-						{initingWiki ? <Loader2 className="h-3 w-3 animate-spin" /> : null}
-						{wikiInitialized ? "Check for Updates" : "Initialize Wiki Plugin"}
-					</Button>
+					{wikiInitialized && (
+						<Button
+							size="sm"
+							variant="outline"
+							onClick={handleInitWiki}
+							disabled={initingWiki}
+						>
+							{initingWiki ? (
+								<Loader2 className="h-3 w-3 animate-spin" />
+							) : null}
+							Check for Updates
+						</Button>
+					)}
 				</div>
 			</Card>
 
