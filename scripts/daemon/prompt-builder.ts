@@ -467,66 +467,6 @@ export function buildTaskPrompt(
 }
 
 /**
- * Result of looking up a scheduled command's prompt file.
- */
-export interface ScheduledPromptResult {
-	found: boolean;
-	content: string;
-}
-
-/**
- * Build a prompt for a scheduled command (daily-plan, standup, etc.).
- * Reads the command file from three locations (fallback order):
- * 1. Workspace symlinked location: <wsDir>/.claude/commands/mandio-<command>/user.md
- * 2. Global command store: ~/.mandio/artifacts/commands/<command>/user.md
- * 3. Legacy project location: <project>/.claude/commands/<command>/user.md (backward compat)
- *
- * Returns { found: false } if no command file exists — caller should hard-fail.
- */
-export function buildScheduledPrompt(
-	command: string,
-	workspaceId: string = process.env.MANDIO_WORKSPACE_ID ?? "default",
-): ScheduledPromptResult {
-	// 1. Try workspace symlinked location
-	const wsCommandsDir = getWorkspaceCommandsDir(workspaceId);
-	const linkedCmdFile = path.join(
-		wsCommandsDir,
-		`${MANDIO_COMMAND_PREFIX}${command}`,
-		"user.md",
-	);
-
-	if (existsSync(linkedCmdFile)) {
-		// Ensure it's not a broken symlink
-		try {
-			const stat = lstatSync(linkedCmdFile);
-			if (!stat.isSymbolicLink()) {
-				const content = readFileSync(linkedCmdFile, "utf-8");
-				return { found: true, content: enforcePromptLimit(content) };
-			}
-		} catch {
-			// proceed to fallback
-		}
-	}
-
-	// 2. Try global command store
-	const globalCmdFile = path.join(getGlobalCommandDir(command), "user.md");
-	if (existsSync(globalCmdFile)) {
-		const content = readFileSync(globalCmdFile, "utf-8");
-		return { found: true, content: enforcePromptLimit(content) };
-	}
-
-	// 3. Fallback: legacy project location (backward compat)
-	const cmdFile = path.join(COMMANDS_DIR, command, "user.md");
-	if (existsSync(cmdFile)) {
-		const content = readFileSync(cmdFile, "utf-8");
-		return { found: true, content: enforcePromptLimit(content) };
-	}
-
-	logger.error("prompt-builder", `No command file found for /${command}`);
-	return { found: false, content: "" };
-}
-
-/**
  * Read a task by ID from tasks.json
  */
 export function getTask(taskId: string): TaskDef | null {

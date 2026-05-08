@@ -1,6 +1,7 @@
 import { existsSync, lstatSync, readFileSync } from "node:fs";
 import path from "node:path";
 import { getWorkspaceDir } from "./paths";
+import { generateId } from "./utils";
 
 const COMMANDS_DIR = path.join(process.cwd(), ".claude", "commands");
 const GLOBAL_COMMANDS_DIR = path.join(
@@ -10,10 +11,71 @@ const GLOBAL_COMMANDS_DIR = path.join(
 	"commands",
 );
 const MANDIO_COMMAND_PREFIX = "mandio-";
+const VALID_COMMAND_RE = /^[a-zA-Z0-9_-]+$/;
 
 export interface CommandPromptResult {
 	found: boolean;
 	content: string;
+}
+
+/**
+ * Build a Task object for a scheduled command.
+ * Returns a task payload ready to insert into tasks.json.
+ */
+export function buildScheduledTask(
+	command: string,
+	description: string,
+): {
+	id: string;
+	title: string;
+	description: string;
+	importance: "important";
+	urgency: "urgent";
+	kanban: "not-started";
+	projectId: null;
+	milestoneId: null;
+	assignedTo: "claude";
+	collaborators: [];
+	subtasks: [];
+	blockedBy: [];
+	estimatedMinutes: null;
+	actualMinutes: null;
+	acceptanceCriteria: "";
+	comments: [];
+	tags: [];
+	dueDate: null;
+	createdAt: string;
+	updatedAt: string;
+	completedAt: null;
+	deletedAt: null;
+	isScheduled: true;
+} {
+	const now = new Date().toISOString();
+	return {
+		id: generateId("task"),
+		title: `Command: /${command}`,
+		description,
+		importance: "important",
+		urgency: "urgent",
+		kanban: "not-started",
+		projectId: null,
+		milestoneId: null,
+		assignedTo: "claude",
+		collaborators: [],
+		subtasks: [],
+		blockedBy: [],
+		estimatedMinutes: null,
+		actualMinutes: null,
+		acceptanceCriteria: "",
+		comments: [],
+		tags: [],
+		dueDate: null,
+		createdAt: now,
+		updatedAt: now,
+		completedAt: null,
+		deletedAt: null,
+		isScheduled: true,
+	};
 }
 
 /**
@@ -23,13 +85,18 @@ export interface CommandPromptResult {
  * 2. Global store: ~/.mandio/artifacts/commands/<command>/user.md
  * 3. Legacy project: <project>/.claude/commands/<command>/user.md
  *
- * Strips YAML frontmatter (--- delimited) before returning.
+ * Strips YAML frontmatter (--- delimited) and enforces a 100KB prompt limit.
  * Returns { found: false } when no command file exists.
  */
 export function loadCommandPrompt(
 	command: string,
 	workspaceId: string = process.env.MANDIO_WORKSPACE_ID ?? "default",
 ): CommandPromptResult {
+	// Validate command name to prevent path traversal
+	if (!VALID_COMMAND_RE.test(command)) {
+		return { found: false, content: "" };
+	}
+
 	const wsCommandsDir = path.join(
 		getWorkspaceDir(workspaceId),
 		".claude",
@@ -48,7 +115,9 @@ export function loadCommandPrompt(
 			if (!stat.isSymbolicLink()) {
 				return {
 					found: true,
-					content: stripFrontmatter(readFileSync(linkedCmdFile, "utf-8")),
+					content: enforceMaxLength(
+						stripFrontmatter(readFileSync(linkedCmdFile, "utf-8")),
+					),
 				};
 			}
 		} catch {
@@ -61,7 +130,9 @@ export function loadCommandPrompt(
 	if (existsSync(globalCmdFile)) {
 		return {
 			found: true,
-			content: stripFrontmatter(readFileSync(globalCmdFile, "utf-8")),
+			content: enforceMaxLength(
+				stripFrontmatter(readFileSync(globalCmdFile, "utf-8")),
+			),
 		};
 	}
 
@@ -70,7 +141,9 @@ export function loadCommandPrompt(
 	if (existsSync(cmdFile)) {
 		return {
 			found: true,
-			content: stripFrontmatter(readFileSync(cmdFile, "utf-8")),
+			content: enforceMaxLength(
+				stripFrontmatter(readFileSync(cmdFile, "utf-8")),
+			),
 		};
 	}
 
@@ -93,4 +166,14 @@ function stripFrontmatter(content: string): string {
 		return trimmed.slice(afterFirstDelim + 1).trimStart();
 	}
 	return trimmed.slice(afterSecondDelim + 4).trimStart();
+}
+
+/** Max prompt length before truncation, matches enforcePromptLimit in daemon. */
+const MAX_PROMPT_LENGTH = 100_000;
+
+function enforceMaxLength(content: string): string {
+	if (content.length > MAX_PROMPT_LENGTH) {
+		return `${content.slice(0, MAX_PROMPT_LENGTH)}\n\n[PROMPT TRUNCATED — exceeded 100KB limit]`;
+	}
+	return content;
 }

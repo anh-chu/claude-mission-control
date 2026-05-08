@@ -13,7 +13,7 @@ export async function GET() {
 		getAgents(),
 	]);
 
-	const tasks = tasksData.tasks.filter((t) => !t.deletedAt);
+	const tasks = tasksData.tasks.filter((t) => !t.deletedAt && !t.isScheduled);
 	const unreadInbox = inboxData.messages.filter(
 		(m) => m.status === "unread",
 	).length;

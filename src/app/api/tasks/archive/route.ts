@@ -23,6 +23,9 @@ export async function GET(request: Request) {
 	// Apply filters
 	if (id) {
 		tasks = tasks.filter((t) => t.id === id);
+	} else {
+		// Exclude auto-created scheduled command tasks from archive listing
+		tasks = tasks.filter((t) => !t.isScheduled);
 	}
 	if (assignedTo) {
 		tasks = tasks.filter((t) => t.assignedTo === assignedTo);
@@ -63,8 +66,15 @@ export async function GET(request: Request) {
 // POST — Archive all completed tasks (move from tasks.json to tasks-archive.json)
 export async function POST() {
 	const result = await mutateTasks(async (tasksData) => {
-		const done = tasksData.tasks.filter((t) => t.kanban === "done");
+		// Don't archive auto-created scheduled command tasks — just remove them
+		const done = tasksData.tasks.filter(
+			(t) => t.kanban === "done" && !t.isScheduled,
+		);
+		const scheduledDone = tasksData.tasks.filter(
+			(t) => t.kanban === "done" && t.isScheduled,
+		);
 		tasksData.tasks = tasksData.tasks.filter((t) => t.kanban !== "done");
+		// Scheduled tasks are removed (not archived) to prevent unbounded growth
 
 		if (done.length > 0) {
 			await mutateTasksArchive(async (archive) => {

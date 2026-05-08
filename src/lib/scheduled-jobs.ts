@@ -14,7 +14,7 @@ import {
 import { readdir, stat, unlink } from "node:fs/promises";
 import path from "node:path";
 import cron from "node-cron";
-import { loadCommandPrompt } from "./command-prompt";
+import { buildScheduledTask, loadCommandPrompt } from "./command-prompt";
 import { reapStaleRuns, setConversationsWorkspace } from "./conversations";
 import {
 	getActiveRuns,
@@ -28,7 +28,6 @@ import { createLogger } from "./logger";
 import { DATA_DIR } from "./paths";
 import { isProcessAlive } from "./process-utils";
 import { resolveScriptEntrypoint } from "./script-entrypoints";
-import { generateId } from "./utils";
 
 const GRACE_MS = 60 * 60 * 1000; // 1 hour
 const LOG_RETENTION_MS = 7 * 24 * 60 * 60 * 1000; // 7 days
@@ -515,23 +514,7 @@ export function scheduleAutopilotPoller(): void {
 
 					void (async () => {
 						try {
-							// Dedup: skip if a task for this command is already in-progress or not-started
-							const { tasks: existingTasks } = await getTasks();
-							const alreadyQueued = existingTasks.some(
-								(t) =>
-									t.isScheduled &&
-									t.title === `Command: /${command}` &&
-									(t.kanban === "not-started" || t.kanban === "in-progress"),
-							);
-							if (alreadyQueued) {
-								autopilotLogger.info(
-									"scheduler",
-									`Skipping schedule "${name}": command /${command} already queued or running`,
-								);
-								return;
-							}
-
-							// Load the command prompt
+							// Load the command prompt (outside mutex — safe, just file I/O)
 							const promptResult = loadCommandPrompt(command);
 							if (!promptResult.found) {
 								autopilotLogger.error(
@@ -541,36 +524,30 @@ export function scheduleAutopilotPoller(): void {
 								return;
 							}
 
-							// Create a scheduled task so it flows through normal task dispatch
-							const taskId = generateId("task");
+							// Dedup + create task atomically inside the mutex
+							let taskId: string | null = null;
 							const now = new Date().toISOString();
 							await mutateTasks(async (data) => {
-								data.tasks.push({
-									id: taskId,
-									title: `Command: /${command}`,
-									description: promptResult.content,
-									importance: "important",
-									urgency: "urgent",
-									kanban: "not-started",
-									projectId: null,
-									milestoneId: null,
-									assignedTo: "claude",
-									collaborators: [],
-									subtasks: [],
-									blockedBy: [],
-									estimatedMinutes: null,
-									actualMinutes: null,
-									acceptanceCriteria: "",
-									comments: [],
-									tags: [],
-									dueDate: null,
-									createdAt: now,
-									updatedAt: now,
-									completedAt: null,
-									deletedAt: null,
-									isScheduled: true,
-								});
+								const alreadyQueued = data.tasks.some(
+									(t) =>
+										t.isScheduled &&
+										t.title === `Command: /${command}` &&
+										(t.kanban === "not-started" || t.kanban === "in-progress"),
+								);
+								if (alreadyQueued) return;
+
+								const task = buildScheduledTask(command, promptResult.content);
+								taskId = task.id;
+								data.tasks.push(task);
 							});
+
+							if (!taskId) {
+								autopilotLogger.info(
+									"scheduler",
+									`Skipping schedule "${name}": command /${command} already queued or running`,
+								);
+								return;
+							}
 
 							// Spawn run-task.ts with the new task ID
 							const args = [

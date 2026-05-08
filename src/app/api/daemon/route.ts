@@ -1,17 +1,15 @@
 import { spawn } from "node:child_process";
 import { NextResponse } from "next/server";
-import { loadCommandPrompt } from "@/lib/command-prompt";
+import { buildScheduledTask, loadCommandPrompt } from "@/lib/command-prompt";
 import {
 	getActiveRuns,
 	getDaemonConfig,
-	getTasks,
 	mutateDaemonConfig,
 	mutateTasks,
 } from "@/lib/data";
 import { readJSON } from "@/lib/json-io";
 import { DAEMON_STATUS_FILE } from "@/lib/paths";
 import { resolveScriptEntrypoint } from "@/lib/script-entrypoints";
-import { generateId } from "@/lib/utils";
 import { daemonConfigUpdateSchema, validateBody } from "@/lib/validations";
 
 const STATUS_FILE = DAEMON_STATUS_FILE;
@@ -82,9 +80,16 @@ export async function POST(request: Request) {
 		// ── Ad-hoc command run ──────────────────────────────────────────────────
 		if (body.action === "run-command") {
 			const command = body.command;
-			if (!command || typeof command !== "string") {
+			if (
+				!command ||
+				typeof command !== "string" ||
+				!/^[a-zA-Z0-9_-]+$/.test(command)
+			) {
 				return NextResponse.json(
-					{ error: "Missing or invalid 'command' field" },
+					{
+						error:
+							"Missing or invalid 'command' field. Must be alphanumeric (a-z, 0-9, -, _).",
+					},
 					{ status: 400 },
 				);
 			}
@@ -99,51 +104,28 @@ export async function POST(request: Request) {
 					);
 				}
 
-				// Dedup: skip if a scheduled task for this command is already queued or running
-				const { tasks: existingTasks } = await getTasks();
-				const alreadyQueued = existingTasks.some(
-					(t) =>
-						t.isScheduled &&
-						t.title === `Command: /${command}` &&
-						(t.kanban === "not-started" || t.kanban === "in-progress"),
-				);
-				if (alreadyQueued) {
+				// Dedup + create task atomically inside the mutex
+				let taskId: string | null = null;
+				await mutateTasks(async (data) => {
+					const alreadyQueued = data.tasks.some(
+						(t) =>
+							t.isScheduled &&
+							t.title === `Command: /${command}` &&
+							(t.kanban === "not-started" || t.kanban === "in-progress"),
+					);
+					if (alreadyQueued) return;
+
+					const task = buildScheduledTask(command, promptResult.content);
+					taskId = task.id;
+					data.tasks.push(task);
+				});
+
+				if (!taskId) {
 					return NextResponse.json({
 						message: `Command /${command} is already running`,
 						skipped: true,
 					});
 				}
-
-				// Create a scheduled task so it flows through normal task dispatch
-				const taskId = generateId("task");
-				const now = new Date().toISOString();
-				await mutateTasks(async (data) => {
-					data.tasks.push({
-						id: taskId,
-						title: `Command: /${command}`,
-						description: promptResult.content,
-						importance: "important",
-						urgency: "urgent",
-						kanban: "not-started",
-						projectId: null,
-						milestoneId: null,
-						assignedTo: "claude",
-						collaborators: [],
-						subtasks: [],
-						blockedBy: [],
-						estimatedMinutes: null,
-						actualMinutes: null,
-						acceptanceCriteria: "",
-						comments: [],
-						tags: [],
-						dueDate: null,
-						createdAt: now,
-						updatedAt: now,
-						completedAt: null,
-						deletedAt: null,
-						isScheduled: true,
-					});
-				});
 
 				// Spawn run-task.ts with the new task ID
 				const cwd = process.cwd();
