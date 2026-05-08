@@ -306,7 +306,7 @@ export default function TaskDetailPage() {
 		return (
 			<div className="container mx-auto py-6 max-w-screen-2xl space-y-6">
 				<BreadcrumbNav
-					items={[{ label: "Tasks", href: "/tasks" }, { label: "Not Found" }]}
+					items={[{ label: "Work", href: "/work" }, { label: "Not Found" }]}
 				/>
 				<Card>
 					<CardContent className="py-12 text-center">
@@ -350,7 +350,7 @@ export default function TaskDetailPage() {
 					{ label: "Projects", href: "/projects" },
 					{ label: project.name, href: `/projects/${project.id}` },
 				]
-			: [{ label: "Tasks", href: "/tasks" }]),
+			: [{ label: "Work", href: "/work" }]),
 		{ label: task.title },
 	];
 

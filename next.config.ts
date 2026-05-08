@@ -10,7 +10,7 @@ const nextConfig: NextConfig = {
 		// Merged into Dashboard tabs
 		{ source: "/brain-dump", destination: "/?tab=inbox", permanent: false },
 		{ source: "/activity", destination: "/?tab=activity", permanent: false },
-		{ source: "/logs", destination: "/?tab=logs", permanent: false },
+		{ source: "/logs", destination: "/ops?tab=logs", permanent: false },
 		// Merged into Work views
 		{ source: "/map", destination: "/work", permanent: true },
 		// Merged into Agents tabs

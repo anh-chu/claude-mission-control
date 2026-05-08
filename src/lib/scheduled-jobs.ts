@@ -287,6 +287,9 @@ async function runWorkspaceTick(
 	totalRunningGlobally: number,
 	globalMaxParallel: number,
 ): Promise<number> {
+	// Re-check tombstone — workspace may have been deleted since enumeration
+	if (existsSync(path.join(DATA_DIR, "workspaces", wsId, "disabled"))) return 0;
+
 	// Read daemon-config directly to avoid module-global race
 	const configPath = path.join(
 		DATA_DIR,
