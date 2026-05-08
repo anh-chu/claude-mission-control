@@ -11,12 +11,14 @@ import { readJSON } from "@/lib/json-io";
 import { DAEMON_STATUS_FILE } from "@/lib/paths";
 import { resolveScriptEntrypoint } from "@/lib/script-entrypoints";
 import { daemonConfigUpdateSchema, validateBody } from "@/lib/validations";
+import { applyWorkspaceContext } from "@/lib/workspace-context";
 
 const STATUS_FILE = DAEMON_STATUS_FILE;
 
 // ─── GET: Read daemon status + config ────────────────────────────────────────
 
 export async function GET() {
+	const workspaceId = await applyWorkspaceContext();
 	const savedStatus = readJSON(STATUS_FILE) ?? {
 		status: "stopped",
 		pid: null,
@@ -74,6 +76,7 @@ export async function GET() {
 // ─── POST: Toggle polling on/off or run a command ad-hoc ─────────────────────
 
 export async function POST(request: Request) {
+	const workspaceId = await applyWorkspaceContext();
 	try {
 		const body = await request.json();
 
@@ -136,6 +139,7 @@ export async function POST(request: Request) {
 					detached: true,
 					stdio: "ignore",
 					shell: false,
+					env: { ...process.env, MANDIO_WORKSPACE_ID: workspaceId },
 				});
 				child.unref();
 				return NextResponse.json({
@@ -192,6 +196,7 @@ export async function POST(request: Request) {
 // ─── PUT: Update daemon config ───────────────────────────────────────────────
 
 export async function PUT(request: Request) {
+	await applyWorkspaceContext();
 	// Validate request body against Zod schema
 	const validation = await validateBody(request, daemonConfigUpdateSchema);
 	if (!validation.success) return validation.error;

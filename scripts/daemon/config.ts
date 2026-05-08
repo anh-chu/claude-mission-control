@@ -184,7 +184,9 @@ function validateConfig(config: unknown): DaemonConfig {
 
 // ─── Load / Save ─────────────────────────────────────────────────────────────
 
-export function loadConfig(workspaceId: string = "default"): DaemonConfig {
+export function loadConfig(
+	workspaceId: string = process.env.MANDIO_WORKSPACE_ID ?? "default",
+): DaemonConfig {
 	const configFile = path.join(
 		getWorkspaceDir(workspaceId),
 		"daemon-config.json",
@@ -226,7 +228,7 @@ export function loadConfig(workspaceId: string = "default"): DaemonConfig {
 
 export function saveConfig(
 	config: DaemonConfig,
-	workspaceId: string = "default",
+	workspaceId: string = process.env.MANDIO_WORKSPACE_ID ?? "default",
 ): void {
 	const configFile = path.join(
 		getWorkspaceDir(workspaceId),
