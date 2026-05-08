@@ -4,6 +4,7 @@ import { BarChart3, Bot, Code, Megaphone, Search, User } from "lucide-react";
 import { useMemo, useState } from "react";
 import { EmptyState } from "@/components/empty-state";
 import { ErrorState } from "@/components/error-state";
+import { FilterBar } from "@/components/filter-bar";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
@@ -343,54 +344,50 @@ export function HomeActivity() {
 
 	return (
 		<div className="space-y-4">
-			<div className="flex flex-col gap-3 sm:flex-row sm:items-center">
-				<Input
-					placeholder="Search activity..."
-					value={search}
-					onChange={(e) => setSearch(e.target.value)}
-					className="h-8 text-sm sm:max-w-xs"
-				/>
-				<div className="flex items-center gap-2 flex-wrap">
-					<select
-						value={actorFilter}
-						onChange={(e) => setActorFilter(e.target.value as Actor | "all")}
-						className="h-8 rounded-sm border border-input bg-background px-2 text-xs text-foreground focus:outline-none focus:ring-1 focus:ring-ring"
-					>
-						<option value="all">All actors</option>
-						{actors.map((a) => (
-							<option key={a} value={a}>
-								{ACTOR_LABELS[a] ?? a}
-							</option>
-						))}
-					</select>
-					<select
-						value={typeFilter}
-						onChange={(e) => setTypeFilter(e.target.value as EventType | "all")}
-						className="h-8 rounded-sm border border-input bg-background px-2 text-xs text-foreground focus:outline-none focus:ring-1 focus:ring-ring"
-					>
-						<option value="all">All types</option>
-						{ALL_TYPES.map((t) => (
-							<option key={t} value={t}>
-								{EVENT_META[t]?.label ?? t}
-							</option>
-						))}
-					</select>
-					{(actorFilter !== "all" || typeFilter !== "all" || search) && (
-						<Button
-							size="sm"
-							variant="ghost"
-							className="h-8 text-xs text-muted-foreground"
-							onClick={() => {
+			<FilterBar
+				search={{
+					value: search,
+					onChange: setSearch,
+					placeholder: "Search activity...",
+				}}
+				filters={[
+					{
+						id: "actor",
+						label: "All actors",
+						value: actorFilter,
+						onChange: (v) => setActorFilter(v as Actor | "all"),
+						options: [
+							{ value: "all", label: "All actors" },
+							...actors.map((a) => ({
+								value: a,
+								label: ACTOR_LABELS[a] ?? a,
+							})),
+						],
+					},
+					{
+						id: "type",
+						label: "All types",
+						value: typeFilter,
+						onChange: (v) => setTypeFilter(v as EventType | "all"),
+						options: [
+							{ value: "all", label: "All types" },
+							...ALL_TYPES.map((t) => ({
+								value: t,
+								label: EVENT_META[t]?.label ?? t,
+							})),
+						],
+					},
+				]}
+				onClear={
+					actorFilter !== "all" || typeFilter !== "all" || search
+						? () => {
 								setActorFilter("all");
 								setTypeFilter("all");
 								setSearch("");
-							}}
-						>
-							Clear
-						</Button>
-					)}
-				</div>
-			</div>
+							}
+						: undefined
+				}
+			/>
 
 			{error ? (
 				<ErrorState message={error} onRetry={refetch} />

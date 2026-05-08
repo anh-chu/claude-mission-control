@@ -1,7 +1,7 @@
 "use client";
 
 import type { DragEndEvent } from "@dnd-kit/core";
-import { Columns3, Filter, GitFork, Grid2x2, Plus } from "lucide-react";
+import { Columns3, GitFork, Grid2x2, Plus } from "lucide-react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useState } from "react";
 import {
@@ -13,15 +13,10 @@ import {
 	useTaskHandlers,
 } from "@/components/board-view";
 import { BreadcrumbNav } from "@/components/breadcrumb-nav";
+import { FilterBar } from "@/components/filter-bar";
 import { CardSkeleton, GridSkeleton, Skeleton } from "@/components/skeletons";
 import { Button } from "@/components/ui/button";
-import {
-	Select,
-	SelectContent,
-	SelectItem,
-	SelectTrigger,
-	SelectValue,
-} from "@/components/ui/select";
+
 import { Tip } from "@/components/ui/tip";
 import { WorkMapView } from "@/components/work-map-view";
 import {
@@ -353,36 +348,43 @@ export default function TasksPage() {
 						</Tip>
 					</div>
 
-					<Filter className="h-3.5 w-3.5 text-muted-foreground" />
-					<Select value={filterProject} onValueChange={setFilterProject}>
-						<SelectTrigger className="h-8 w-[140px] text-xs">
-							<SelectValue placeholder="Project" />
-						</SelectTrigger>
-						<SelectContent>
-							<SelectItem value="all">All Projects</SelectItem>
-							{projects.map((p) => (
-								<SelectItem key={p.id} value={p.id}>
-									{p.name}
-								</SelectItem>
-							))}
-						</SelectContent>
-					</Select>
-					<Select value={filterAssignee} onValueChange={setFilterAssignee}>
-						<SelectTrigger className="h-8 w-[130px] text-xs">
-							<SelectValue placeholder="Assignee" />
-						</SelectTrigger>
-						<SelectContent>
-							<SelectItem value="all">All Assignees</SelectItem>
-							<SelectItem value="unassigned">Unassigned</SelectItem>
-							{agents
-								.filter((a) => a.status === "active")
-								.map((a) => (
-									<SelectItem key={a.id} value={a.id}>
-										{a.name}
-									</SelectItem>
-								))}
-						</SelectContent>
-					</Select>
+					<FilterBar
+						filters={[
+							{
+								id: "project",
+								label: "All projects",
+								value: filterProject,
+								onChange: setFilterProject,
+								options: [
+									{ value: "all", label: "All projects" },
+									...projects
+										.filter((p) => p.status === "active")
+										.map((p) => ({ value: p.id, label: p.name })),
+								],
+							},
+							{
+								id: "assignee",
+								label: "All assignees",
+								value: filterAssignee,
+								onChange: setFilterAssignee,
+								options: [
+									{ value: "all", label: "All assignees" },
+									{ value: "unassigned", label: "Unassigned" },
+									...agents
+										.filter((a) => a.status === "active")
+										.map((a) => ({ value: a.id, label: a.name })),
+								],
+							},
+						]}
+						onClear={
+							filterProject !== "all" || filterAssignee !== "all"
+								? () => {
+										setFilterProject("all");
+										setFilterAssignee("all");
+									}
+								: undefined
+						}
+					/>
 					<Tip content="Create a new task">
 						<Button
 							size="sm"
