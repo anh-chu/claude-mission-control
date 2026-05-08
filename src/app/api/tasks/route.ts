@@ -211,246 +211,250 @@ async function handleUnblocking(completedTask: Task) {
 // ─── API Routes ──────────────────────────────────────────────────────────────
 
 export async function GET(request: Request) {
-	await applyWorkspaceContext();
-	const { searchParams } = new URL(request.url);
-	const id = searchParams.get("id");
-	const assignedTo = searchParams.get("assignedTo");
-	const kanban = searchParams.get("kanban");
-	const projectId = searchParams.get("projectId");
-	const initiativeId = searchParams.get("initiativeId");
-	const quadrant = searchParams.get("quadrant");
-	const fields = searchParams.get("fields");
-	const include = searchParams.get("include");
-	const includeDeleted = searchParams.get("includeDeleted") === "true";
+	return applyWorkspaceContext(async (workspaceId) => {
+		const { searchParams } = new URL(request.url);
+		const id = searchParams.get("id");
+		const assignedTo = searchParams.get("assignedTo");
+		const kanban = searchParams.get("kanban");
+		const projectId = searchParams.get("projectId");
+		const initiativeId = searchParams.get("initiativeId");
+		const quadrant = searchParams.get("quadrant");
+		const fields = searchParams.get("fields");
+		const include = searchParams.get("include");
+		const includeDeleted = searchParams.get("includeDeleted") === "true";
 
-	const data = await getTasks();
+		const data = await getTasks();
 
-	// Merge archived tasks if requested
-	let allTasks = data.tasks;
-	if (include === "archived") {
-		try {
-			const archive = await getTasksArchive();
-			allTasks = [...data.tasks, ...archive.tasks];
-		} catch {
-			// Archive file may not exist yet
-		}
-	}
-
-	// Filter soft-deleted unless explicitly requested
-	if (!includeDeleted) {
-		allTasks = allTasks.filter((t) => !t.deletedAt);
-	}
-
-	let tasks = allTasks.map((t) => {
-		return {
-			...t,
-			collaborators: t.collaborators ?? [],
-			subtasks: t.subtasks ?? [],
-			blockedBy: t.blockedBy ?? [],
-			estimatedMinutes: t.estimatedMinutes ?? null,
-			actualMinutes: t.actualMinutes ?? null,
-			acceptanceCriteria: normalizeAcceptanceCriteria(t.acceptanceCriteria),
-			comments: t.comments ?? [],
-			deletedAt: t.deletedAt ?? null,
-		};
-	});
-
-	// Apply filters
-	if (id) {
-		tasks = tasks.filter((t) => t.id === id);
-	} else {
-		// Exclude auto-created scheduled command tasks from general task queries
-		tasks = tasks.filter((t) => !t.isScheduled);
-	}
-	if (assignedTo) tasks = tasks.filter((t) => t.assignedTo === assignedTo);
-	if (kanban) tasks = tasks.filter((t) => t.kanban === kanban);
-	if (projectId) tasks = tasks.filter((t) => t.projectId === projectId);
-	if (initiativeId) {
-		const initiativesData = await getInitiatives();
-		const initiative = initiativesData.initiatives.find(
-			(i) => i.id === initiativeId,
-		);
-		const taskIdSet = new Set(initiative?.taskIds ?? []);
-		tasks = tasks.filter((t) => taskIdSet.has(t.id));
-	}
-	if (quadrant) {
-		const q = quadrant.toLowerCase();
-		tasks = tasks.filter((t) => {
-			if (q === "do")
-				return t.importance === "important" && t.urgency === "urgent";
-			if (q === "schedule")
-				return t.importance === "important" && t.urgency === "not-urgent";
-			if (q === "delegate")
-				return t.importance === "not-important" && t.urgency === "urgent";
-			if (q === "eliminate")
-				return t.importance === "not-important" && t.urgency === "not-urgent";
-			return true;
-		});
-	}
-
-	// Pagination
-	const pagination = parsePaginationParams(searchParams);
-	const paginated = paginateItems(tasks, pagination, allTasks.length);
-	tasks = paginated.data;
-	const { meta } = paginated;
-
-	// Sparse field selection
-	if (fields) {
-		const fieldList = fields.split(",").map((f) => f.trim());
-		if (!fieldList.includes("id")) fieldList.unshift("id");
-		const sparse = tasks.map((t) => {
-			const picked: Record<string, unknown> = {};
-			for (const f of fieldList) {
-				if (f in t) picked[f] = t[f as keyof typeof t];
+		// Merge archived tasks if requested
+		let allTasks = data.tasks;
+		if (include === "archived") {
+			try {
+				const archive = await getTasksArchive();
+				allTasks = [...data.tasks, ...archive.tasks];
+			} catch {
+				// Archive file may not exist yet
 			}
-			return picked;
+		}
+
+		// Filter soft-deleted unless explicitly requested
+		if (!includeDeleted) {
+			allTasks = allTasks.filter((t) => !t.deletedAt);
+		}
+
+		let tasks = allTasks.map((t) => {
+			return {
+				...t,
+				collaborators: t.collaborators ?? [],
+				subtasks: t.subtasks ?? [],
+				blockedBy: t.blockedBy ?? [],
+				estimatedMinutes: t.estimatedMinutes ?? null,
+				actualMinutes: t.actualMinutes ?? null,
+				acceptanceCriteria: normalizeAcceptanceCriteria(t.acceptanceCriteria),
+				comments: t.comments ?? [],
+				deletedAt: t.deletedAt ?? null,
+			};
 		});
+
+		// Apply filters
+		if (id) {
+			tasks = tasks.filter((t) => t.id === id);
+		} else {
+			// Exclude auto-created scheduled command tasks from general task queries
+			tasks = tasks.filter((t) => !t.isScheduled);
+		}
+		if (assignedTo) tasks = tasks.filter((t) => t.assignedTo === assignedTo);
+		if (kanban) tasks = tasks.filter((t) => t.kanban === kanban);
+		if (projectId) tasks = tasks.filter((t) => t.projectId === projectId);
+		if (initiativeId) {
+			const initiativesData = await getInitiatives();
+			const initiative = initiativesData.initiatives.find(
+				(i) => i.id === initiativeId,
+			);
+			const taskIdSet = new Set(initiative?.taskIds ?? []);
+			tasks = tasks.filter((t) => taskIdSet.has(t.id));
+		}
+		if (quadrant) {
+			const q = quadrant.toLowerCase();
+			tasks = tasks.filter((t) => {
+				if (q === "do")
+					return t.importance === "important" && t.urgency === "urgent";
+				if (q === "schedule")
+					return t.importance === "important" && t.urgency === "not-urgent";
+				if (q === "delegate")
+					return t.importance === "not-important" && t.urgency === "urgent";
+				if (q === "eliminate")
+					return t.importance === "not-important" && t.urgency === "not-urgent";
+				return true;
+			});
+		}
+
+		// Pagination
+		const pagination = parsePaginationParams(searchParams);
+		const paginated = paginateItems(tasks, pagination, allTasks.length);
+		tasks = paginated.data;
+		const { meta } = paginated;
+
+		// Sparse field selection
+		if (fields) {
+			const fieldList = fields.split(",").map((f) => f.trim());
+			if (!fieldList.includes("id")) fieldList.unshift("id");
+			const sparse = tasks.map((t) => {
+				const picked: Record<string, unknown> = {};
+				for (const f of fieldList) {
+					if (f in t) picked[f] = t[f as keyof typeof t];
+				}
+				return picked;
+			});
+			return NextResponse.json(
+				{ data: sparse, tasks: sparse, meta },
+				{ headers: CACHE_HEADERS },
+			);
+		}
+
 		return NextResponse.json(
-			{ data: sparse, tasks: sparse, meta },
+			{ data: tasks, tasks, meta },
 			{ headers: CACHE_HEADERS },
 		);
-	}
-
-	return NextResponse.json(
-		{ data: tasks, tasks, meta },
-		{ headers: CACHE_HEADERS },
-	);
+	});
 }
 
 export async function POST(request: Request) {
-	await applyWorkspaceContext();
-	const validation = await validateBody(request, taskCreateSchema);
-	if (!validation.success) return validation.error;
-	const body = validation.data;
+	return applyWorkspaceContext(async (workspaceId) => {
+		const validation = await validateBody(request, taskCreateSchema);
+		if (!validation.success) return validation.error;
+		const body = validation.data;
 
-	// Atomic: lock → read → create → write → unlock
-	const newTask = await mutateTasks(async (data) => {
-		const task: Task = {
-			id: generateId("task"),
-			title: body.title,
-			description: body.description,
-			importance: body.importance,
-			urgency: body.urgency,
-			kanban: body.kanban,
-			projectId: body.projectId,
-			milestoneId: body.milestoneId,
-			initiativeId: body.initiativeId,
-			assignedTo: body.assignedTo,
-			collaborators: body.collaborators,
-			subtasks: body.subtasks,
-			blockedBy: body.blockedBy,
-			estimatedMinutes: body.estimatedMinutes,
-			actualMinutes: body.actualMinutes,
-			acceptanceCriteria: body.acceptanceCriteria,
-			comments: body.comments,
-			tags: body.tags,
-			createdAt: new Date().toISOString(),
-			updatedAt: new Date().toISOString(),
-			dueDate: null,
-			completedAt: null,
-			deletedAt: null,
-			mapPosition: body.mapPosition ?? undefined,
-		};
-		data.tasks.push(task);
-		return task;
-	});
-
-	// Link task to initiative if provided
-	if (body.initiativeId) {
-		await mutateInitiatives(async (data) => {
-			const initiative = data.initiatives.find(
-				(i) => i.id === body.initiativeId,
-			);
-			if (initiative && !initiative.taskIds.includes(newTask.id)) {
-				initiative.taskIds.push(newTask.id);
-				initiative.updatedAt = new Date().toISOString();
-			}
+		// Atomic: lock → read → create → write → unlock
+		const newTask = await mutateTasks(async (data) => {
+			const task: Task = {
+				id: generateId("task"),
+				title: body.title,
+				description: body.description,
+				importance: body.importance,
+				urgency: body.urgency,
+				kanban: body.kanban,
+				projectId: body.projectId,
+				milestoneId: body.milestoneId,
+				initiativeId: body.initiativeId,
+				assignedTo: body.assignedTo,
+				collaborators: body.collaborators,
+				subtasks: body.subtasks,
+				blockedBy: body.blockedBy,
+				estimatedMinutes: body.estimatedMinutes,
+				actualMinutes: body.actualMinutes,
+				acceptanceCriteria: body.acceptanceCriteria,
+				comments: body.comments,
+				tags: body.tags,
+				createdAt: new Date().toISOString(),
+				updatedAt: new Date().toISOString(),
+				dueDate: null,
+				completedAt: null,
+				deletedAt: null,
+				mapPosition: body.mapPosition ?? undefined,
+			};
+			data.tasks.push(task);
+			return task;
 		});
-	}
 
-	// Side effects (best-effort, after atomic write)
-	if (isAgent(newTask.assignedTo)) {
-		await handleDelegation(newTask, null);
-	}
-	if (newTask.collaborators?.length) {
-		await handleCollaboratorChanges(newTask, []);
-	}
-
-	return NextResponse.json(newTask, { status: 201 });
-}
-
-export async function PUT(request: Request) {
-	await applyWorkspaceContext();
-	const validation = await validateBody(request, taskUpdateSchema);
-	if (!validation.success) return validation.error;
-	const body = validation.data;
-
-	// Atomic: lock → read → update → write → unlock
-	const result = await mutateTasks(async (data) => {
-		const idx = data.tasks.findIndex((t) => t.id === body.id);
-		if (idx === -1) return null;
-
-		const oldTask = { ...data.tasks[idx] };
-		const wasCompleted = oldTask.kanban === "done";
-
-		data.tasks[idx] = {
-			...data.tasks[idx],
-			...body,
-			updatedAt: new Date().toISOString(),
-			completedAt:
-				body.kanban === "done"
-					? (data.tasks[idx].completedAt ?? new Date().toISOString())
-					: null,
-		};
-
-		return { updatedTask: data.tasks[idx], oldTask, wasCompleted };
-	});
-
-	if (!result) {
-		return NextResponse.json({ error: "Task not found" }, { status: 404 });
-	}
-
-	const { updatedTask, oldTask, wasCompleted } = result;
-
-	// Update initiative taskIds if initiativeId changed
-	if ("initiativeId" in body) {
-		const oldInitiativeId =
-			(oldTask as Task & { initiativeId?: string | null }).initiativeId ?? null;
-		const newInitiativeId = body.initiativeId ?? null;
-		if (oldInitiativeId !== newInitiativeId) {
+		// Link task to initiative if provided
+		if (body.initiativeId) {
 			await mutateInitiatives(async (data) => {
-				// Remove from old initiative
-				if (oldInitiativeId) {
-					const old = data.initiatives.find((i) => i.id === oldInitiativeId);
-					if (old) {
-						old.taskIds = old.taskIds.filter((tid) => tid !== updatedTask.id);
-						old.updatedAt = new Date().toISOString();
-					}
-				}
-				// Add to new initiative
-				if (newInitiativeId) {
-					const next = data.initiatives.find((i) => i.id === newInitiativeId);
-					if (next && !next.taskIds.includes(updatedTask.id)) {
-						next.taskIds.push(updatedTask.id);
-						next.updatedAt = new Date().toISOString();
-					}
+				const initiative = data.initiatives.find(
+					(i) => i.id === body.initiativeId,
+				);
+				if (initiative && !initiative.taskIds.includes(newTask.id)) {
+					initiative.taskIds.push(newTask.id);
+					initiative.updatedAt = new Date().toISOString();
 				}
 			});
 		}
-	}
 
-	// Side effects (best-effort)
-	if (updatedTask.assignedTo !== oldTask.assignedTo) {
-		await handleDelegation(updatedTask, oldTask.assignedTo);
-	}
-	const oldCollabs = oldTask.collaborators ?? [];
-	const newCollabs = updatedTask.collaborators ?? [];
-	if (JSON.stringify(oldCollabs) !== JSON.stringify(newCollabs)) {
-		await handleCollaboratorChanges(updatedTask, oldCollabs);
-	}
-	await handleCompletion(updatedTask, wasCompleted);
+		// Side effects (best-effort, after atomic write)
+		if (isAgent(newTask.assignedTo)) {
+			await handleDelegation(newTask, null);
+		}
+		if (newTask.collaborators?.length) {
+			await handleCollaboratorChanges(newTask, []);
+		}
 
-	return NextResponse.json(updatedTask);
+		return NextResponse.json(newTask, { status: 201 });
+	});
+}
+
+export async function PUT(request: Request) {
+	return applyWorkspaceContext(async (workspaceId) => {
+		const validation = await validateBody(request, taskUpdateSchema);
+		if (!validation.success) return validation.error;
+		const body = validation.data;
+
+		// Atomic: lock → read → update → write → unlock
+		const result = await mutateTasks(async (data) => {
+			const idx = data.tasks.findIndex((t) => t.id === body.id);
+			if (idx === -1) return null;
+
+			const oldTask = { ...data.tasks[idx] };
+			const wasCompleted = oldTask.kanban === "done";
+
+			data.tasks[idx] = {
+				...data.tasks[idx],
+				...body,
+				updatedAt: new Date().toISOString(),
+				completedAt:
+					body.kanban === "done"
+						? (data.tasks[idx].completedAt ?? new Date().toISOString())
+						: null,
+			};
+
+			return { updatedTask: data.tasks[idx], oldTask, wasCompleted };
+		});
+
+		if (!result) {
+			return NextResponse.json({ error: "Task not found" }, { status: 404 });
+		}
+
+		const { updatedTask, oldTask, wasCompleted } = result;
+
+		// Update initiative taskIds if initiativeId changed
+		if ("initiativeId" in body) {
+			const oldInitiativeId =
+				(oldTask as Task & { initiativeId?: string | null }).initiativeId ??
+				null;
+			const newInitiativeId = body.initiativeId ?? null;
+			if (oldInitiativeId !== newInitiativeId) {
+				await mutateInitiatives(async (data) => {
+					// Remove from old initiative
+					if (oldInitiativeId) {
+						const old = data.initiatives.find((i) => i.id === oldInitiativeId);
+						if (old) {
+							old.taskIds = old.taskIds.filter((tid) => tid !== updatedTask.id);
+							old.updatedAt = new Date().toISOString();
+						}
+					}
+					// Add to new initiative
+					if (newInitiativeId) {
+						const next = data.initiatives.find((i) => i.id === newInitiativeId);
+						if (next && !next.taskIds.includes(updatedTask.id)) {
+							next.taskIds.push(updatedTask.id);
+							next.updatedAt = new Date().toISOString();
+						}
+					}
+				});
+			}
+		}
+
+		// Side effects (best-effort)
+		if (updatedTask.assignedTo !== oldTask.assignedTo) {
+			await handleDelegation(updatedTask, oldTask.assignedTo);
+		}
+		const oldCollabs = oldTask.collaborators ?? [];
+		const newCollabs = updatedTask.collaborators ?? [];
+		if (JSON.stringify(oldCollabs) !== JSON.stringify(newCollabs)) {
+			await handleCollaboratorChanges(updatedTask, oldCollabs);
+		}
+		await handleCompletion(updatedTask, wasCompleted);
+
+		return NextResponse.json(updatedTask);
+	});
 }
 
 export async function DELETE(request: Request) {

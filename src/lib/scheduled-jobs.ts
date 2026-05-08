@@ -22,12 +22,12 @@ import {
 	getTasks,
 	mutateActiveRuns,
 	mutateTasks,
-	setCurrentWorkspace,
 } from "./data";
 import { createLogger } from "./logger";
 import { DATA_DIR } from "./paths";
 import { isProcessAlive } from "./process-utils";
 import { resolveScriptEntrypoint } from "./script-entrypoints";
+import { workspaceStore } from "./workspace-store";
 
 const GRACE_MS = 60 * 60 * 1000; // 1 hour
 const LOG_RETENTION_MS = 7 * 24 * 60 * 60 * 1000; // 7 days
@@ -318,234 +318,240 @@ async function runWorkspaceTick(
 	const maxParallelAgents = config.concurrency?.maxParallelAgents ?? 3;
 	const maxRetries = config.execution?.retries ?? 1;
 
-	// Set workspace context for subsequent data reads
-	setCurrentWorkspace(wsId);
-
-	// Load valid agents once per tick for existence checks
-	let validAgentIds = new Set<string>();
-	try {
-		const agentsRaw = readFileSync(
-			path.join(DATA_DIR, "workspaces", wsId, "agents.json"),
-			"utf-8",
-		);
-		const agentsData = JSON.parse(agentsRaw) as {
-			agents: Array<{ id: string }>;
-		};
-		validAgentIds = new Set(agentsData.agents.map((a) => a.id));
-	} catch {
-		/* agents.json missing — validAgentIds stays empty, all agent tasks will be skipped */
-	}
-
-	// ── Recovery sweep ─────────────────────────────────────────────────────────────
-
-	// Mark runs whose process is no longer alive as failed; collect affected task IDs.
-	// NOTE: intentional asymmetry — pid === 0 is treated as "still starting/unknown" and
-	// preserved in the running count rather than marked failed here. This matches the
-	// global-running-count logic in runAutopilotTick() where pid === 0 counts as alive.
-	const deadTaskIds = await mutateActiveRuns(async (data) => {
-		const dead = new Set<string>();
-		for (const run of data.runs) {
-			if (run.status === "running" && run.pid > 0 && !isProcessAlive(run.pid)) {
-				run.status = "failed";
-				run.completedAt = new Date().toISOString();
-				run.error = "Process died unexpectedly (autopilot recovery)";
-				dead.add(run.taskId);
-				autopilotLogger.warn(
-					"recovery",
-					`Workspace ${wsId}: marked run ${run.id} for task ${run.taskId} as failed (pid ${run.pid} not alive)`,
-				);
-			}
+	return workspaceStore.run(wsId, async () => {
+		// Load valid agents once per tick for existence checks
+		let validAgentIds = new Set<string>();
+		try {
+			const agentsRaw = readFileSync(
+				path.join(DATA_DIR, "workspaces", wsId, "agents.json"),
+				"utf-8",
+			);
+			const agentsData = JSON.parse(agentsRaw) as {
+				agents: Array<{ id: string }>;
+			};
+			validAgentIds = new Set(agentsData.agents.map((a) => a.id));
+		} catch {
+			/* agents.json missing — validAgentIds stays empty, all agent tasks will be skipped */
 		}
-		return dead;
-	});
 
-	// Reset orphaned in-progress tasks back to not-started, or fail if max retries exceeded.
-	if (deadTaskIds.size > 0) {
-		await mutateTasks(async (data) => {
-			for (const task of data.tasks) {
-				if (task.kanban === "in-progress" && deadTaskIds.has(task.id)) {
-					const attempts = (task.attemptCount ?? 0) + 1;
-					if (attempts > maxRetries) {
-						task.kanban = "failed";
-						task.error = `Max retries exceeded (${maxRetries})`;
-						autopilotLogger.warn(
-							"recovery",
-							`Workspace ${wsId}: task ${task.id} failed after ${attempts} attempts (max ${maxRetries})`,
-						);
-					} else {
-						task.kanban = "not-started";
-						autopilotLogger.info(
-							"recovery",
-							`Workspace ${wsId}: reset task ${task.id} to not-started (attempt ${attempts}/${maxRetries + 1})`,
-						);
-					}
-					task.attemptCount = attempts;
-					task.updatedAt = new Date().toISOString();
+		// ── Recovery sweep ─────────────────────────────────────────────────────────────
+
+		// Mark runs whose process is no longer alive as failed; collect affected task IDs.
+		// NOTE: intentional asymmetry — pid === 0 is treated as "still starting/unknown" and
+		// preserved in the running count rather than marked failed here. This matches the
+		// global-running-count logic in runAutopilotTick() where pid === 0 counts as alive.
+		const deadTaskIds = await mutateActiveRuns(async (data) => {
+			const dead = new Set<string>();
+			for (const run of data.runs) {
+				if (
+					run.status === "running" &&
+					run.pid > 0 &&
+					!isProcessAlive(run.pid)
+				) {
+					run.status = "failed";
+					run.completedAt = new Date().toISOString();
+					run.error = "Process died unexpectedly (autopilot recovery)";
+					dead.add(run.taskId);
+					autopilotLogger.warn(
+						"recovery",
+						`Workspace ${wsId}: marked run ${run.id} for task ${run.taskId} as failed (pid ${run.pid} not alive)`,
+					);
 				}
 			}
-			return undefined;
+			return dead;
 		});
-	}
 
-	// Conversation reaper alongside active-runs sweep
-	try {
-		setConversationsWorkspace(wsId);
-		const reaped = await reapStaleRuns({ gracePeriodMs: 60000 });
-		if (reaped > 0) {
-			autopilotLogger.info(
-				"recovery",
-				`Workspace ${wsId}: reaped ${reaped} stale conversation(s)`,
-			);
-		}
-	} catch (err) {
-		autopilotLogger.warn(
-			"recovery",
-			`Workspace ${wsId}: conversation reaper failed: ${err instanceof Error ? err.message : String(err)}`,
-		);
-	}
-
-	// ── Dispatch ────────────────────────────────────────────────────────────────
-
-	const [tasksData, runsData, decisionsData] = await Promise.all([
-		getTasks(),
-		getActiveRuns(),
-		getDecisions(),
-	]);
-
-	// Determine which task IDs currently have a live running process.
-	const aliveRunningTaskIds = new Set<string>();
-	let localRunningCount = 0;
-	for (const run of runsData.runs) {
-		if (
-			run.status === "running" &&
-			isProcessAlive(run.pid, /* assumeAliveIfZero */ true)
-		) {
-			aliveRunningTaskIds.add(run.taskId);
-			localRunningCount++;
-		}
-	}
-
-	// Available slots = min(global remaining, per-workspace remaining)
-	const globalRemaining = Math.max(0, globalMaxParallel - totalRunningGlobally);
-	const wsRemaining = Math.max(0, maxParallelAgents - localRunningCount);
-	const availableSlots = Math.min(globalRemaining, wsRemaining);
-
-	if (availableSlots <= 0) {
-		autopilotLogger.debug(
-			"dispatch",
-			`Workspace ${wsId}: no slots available (${localRunningCount}/${maxParallelAgents} local, ${totalRunningGlobally} global)`,
-		);
-		return 0;
-	}
-
-	// Collect task IDs blocked by a pending decision.
-	const pendingDecisionTaskIds = new Set(
-		decisionsData.decisions
-			.filter((d) => d.status === "pending" && d.taskId != null)
-			.map((d) => d.taskId as string),
-	);
-
-	// Find tasks that are ready to dispatch.
-	const dispatchable = tasksData.tasks.filter((task) => {
-		if (task.deletedAt) return false;
-		if (task.kanban !== "not-started") return false;
-		if (!task.assignedTo || task.assignedTo === "me") return false;
-		if (aliveRunningTaskIds.has(task.id)) return false;
-		// Skip tasks whose assigned agent no longer exists
-		if (!validAgentIds.has(task.assignedTo)) {
-			autopilotLogger.warn(
-				"dispatch",
-				`Workspace ${wsId}: skipping task ${task.id}: assigned agent "${task.assignedTo}" does not exist`,
-			);
-			return false;
-		}
-		// Skip tasks that have exhausted their retry budget
-		if ((task.attemptCount ?? 0) > maxRetries) {
-			autopilotLogger.warn(
-				"dispatch",
-				`Workspace ${wsId}: skipping task ${task.id}: max retries exceeded (${maxRetries})`,
-			);
-			return false;
-		}
-		// All blocking dependencies must be done.
-		if (task.blockedBy.length > 0) {
-			const allDone = task.blockedBy.every((depId) => {
-				const dep = tasksData.tasks.find((t) => t.id === depId);
-				return dep?.kanban === "done";
+		// Reset orphaned in-progress tasks back to not-started, or fail if max retries exceeded.
+		if (deadTaskIds.size > 0) {
+			await mutateTasks(async (data) => {
+				for (const task of data.tasks) {
+					if (task.kanban === "in-progress" && deadTaskIds.has(task.id)) {
+						const attempts = (task.attemptCount ?? 0) + 1;
+						if (attempts > maxRetries) {
+							task.kanban = "failed";
+							task.error = `Max retries exceeded (${maxRetries})`;
+							autopilotLogger.warn(
+								"recovery",
+								`Workspace ${wsId}: task ${task.id} failed after ${attempts} attempts (max ${maxRetries})`,
+							);
+						} else {
+							task.kanban = "not-started";
+							autopilotLogger.info(
+								"recovery",
+								`Workspace ${wsId}: reset task ${task.id} to not-started (attempt ${attempts}/${maxRetries + 1})`,
+							);
+						}
+						task.attemptCount = attempts;
+						task.updatedAt = new Date().toISOString();
+					}
+				}
+				return undefined;
 			});
-			if (!allDone) return false;
 		}
-		// No pending decision gating this task.
-		if (pendingDecisionTaskIds.has(task.id)) return false;
-		return true;
-	});
 
-	if (dispatchable.length === 0) {
-		autopilotLogger.debug(
-			"dispatch",
-			`Workspace ${wsId}: no dispatchable tasks`,
-		);
-		return 0;
-	}
-
-	autopilotLogger.info(
-		"dispatch",
-		`Workspace ${wsId}: found ${dispatchable.length} dispatchable task(s), ${availableSlots} slot(s) available`,
-	);
-
-	const toDispatch = dispatchable.slice(0, availableSlots);
-	const cwd = process.cwd();
-	const runTaskEntry = resolveScriptEntrypoint("run-task");
-
-	let dispatchedCount = 0;
-	for (const task of toDispatch) {
-		// Pre-reserve the task by marking it in-progress so the next tick
-		// does not see it as dispatchable. If spawn fails, reset below.
-		await mutateTasks(async (data) => {
-			const t = data.tasks.find((t) => t.id === task.id);
-			if (t && t.kanban === "not-started") {
-				t.kanban = "in-progress";
-				t.updatedAt = new Date().toISOString();
-			}
-		});
-
-		const args = [...runTaskEntry.args, task.id, "--source", "autopilot"];
+		// Conversation reaper alongside active-runs sweep
 		try {
-			const child = spawn(runTaskEntry.runner, args, {
-				cwd,
-				detached: true,
-				stdio: "ignore",
-				shell: false,
-				env: {
-					...process.env,
-					MANDIO_WORKSPACE_ID: wsId,
-				},
-			});
-			child.unref();
-			dispatchedCount++;
-			autopilotLogger.info(
-				"dispatch",
-				`Workspace ${wsId}: dispatched task ${task.id} (assignedTo: ${task.assignedTo}, pid: ${child.pid ?? "unknown"})`,
-			);
+			setConversationsWorkspace(wsId);
+			const reaped = await reapStaleRuns({ gracePeriodMs: 60000 });
+			if (reaped > 0) {
+				autopilotLogger.info(
+					"recovery",
+					`Workspace ${wsId}: reaped ${reaped} stale conversation(s)`,
+				);
+			}
 		} catch (err) {
-			// Spawn failed — unreserve the task so it can be retried.
+			autopilotLogger.warn(
+				"recovery",
+				`Workspace ${wsId}: conversation reaper failed: ${err instanceof Error ? err.message : String(err)}`,
+			);
+		}
+
+		// ── Dispatch ────────────────────────────────────────────────────────────────
+
+		const [tasksData, runsData, decisionsData] = await Promise.all([
+			getTasks(),
+			getActiveRuns(),
+			getDecisions(),
+		]);
+
+		// Determine which task IDs currently have a live running process.
+		const aliveRunningTaskIds = new Set<string>();
+		let localRunningCount = 0;
+		for (const run of runsData.runs) {
+			if (
+				run.status === "running" &&
+				isProcessAlive(run.pid, /* assumeAliveIfZero */ true)
+			) {
+				aliveRunningTaskIds.add(run.taskId);
+				localRunningCount++;
+			}
+		}
+
+		// Available slots = min(global remaining, per-workspace remaining)
+		const globalRemaining = Math.max(
+			0,
+			globalMaxParallel - totalRunningGlobally,
+		);
+		const wsRemaining = Math.max(0, maxParallelAgents - localRunningCount);
+		const availableSlots = Math.min(globalRemaining, wsRemaining);
+
+		if (availableSlots <= 0) {
+			autopilotLogger.debug(
+				"dispatch",
+				`Workspace ${wsId}: no slots available (${localRunningCount}/${maxParallelAgents} local, ${totalRunningGlobally} global)`,
+			);
+			return 0;
+		}
+
+		// Collect task IDs blocked by a pending decision.
+		const pendingDecisionTaskIds = new Set(
+			decisionsData.decisions
+				.filter((d) => d.status === "pending" && d.taskId != null)
+				.map((d) => d.taskId as string),
+		);
+
+		// Find tasks that are ready to dispatch.
+		const dispatchable = tasksData.tasks.filter((task) => {
+			if (task.deletedAt) return false;
+			if (task.kanban !== "not-started") return false;
+			if (!task.assignedTo || task.assignedTo === "me") return false;
+			if (aliveRunningTaskIds.has(task.id)) return false;
+			// Skip tasks whose assigned agent no longer exists
+			if (!validAgentIds.has(task.assignedTo)) {
+				autopilotLogger.warn(
+					"dispatch",
+					`Workspace ${wsId}: skipping task ${task.id}: assigned agent "${task.assignedTo}" does not exist`,
+				);
+				return false;
+			}
+			// Skip tasks that have exhausted their retry budget
+			if ((task.attemptCount ?? 0) > maxRetries) {
+				autopilotLogger.warn(
+					"dispatch",
+					`Workspace ${wsId}: skipping task ${task.id}: max retries exceeded (${maxRetries})`,
+				);
+				return false;
+			}
+			// All blocking dependencies must be done.
+			if (task.blockedBy.length > 0) {
+				const allDone = task.blockedBy.every((depId) => {
+					const dep = tasksData.tasks.find((t) => t.id === depId);
+					return dep?.kanban === "done";
+				});
+				if (!allDone) return false;
+			}
+			// No pending decision gating this task.
+			if (pendingDecisionTaskIds.has(task.id)) return false;
+			return true;
+		});
+
+		if (dispatchable.length === 0) {
+			autopilotLogger.debug(
+				"dispatch",
+				`Workspace ${wsId}: no dispatchable tasks`,
+			);
+			return 0;
+		}
+
+		autopilotLogger.info(
+			"dispatch",
+			`Workspace ${wsId}: found ${dispatchable.length} dispatchable task(s), ${availableSlots} slot(s) available`,
+		);
+
+		const toDispatch = dispatchable.slice(0, availableSlots);
+		const cwd = process.cwd();
+		const runTaskEntry = resolveScriptEntrypoint("run-task");
+
+		let dispatchedCount = 0;
+		for (const task of toDispatch) {
+			// Pre-reserve the task by marking it in-progress so the next tick
+			// does not see it as dispatchable. If spawn fails, reset below.
 			await mutateTasks(async (data) => {
 				const t = data.tasks.find((t) => t.id === task.id);
-				if (t && t.kanban === "in-progress") {
-					t.kanban = "not-started";
+				if (t && t.kanban === "not-started") {
+					t.kanban = "in-progress";
 					t.updatedAt = new Date().toISOString();
 				}
 			});
-			autopilotLogger.error(
-				"dispatch",
-				`Workspace ${wsId}: failed to dispatch task ${task.id}: ${
-					err instanceof Error ? err.message : String(err)
-				}`,
-			);
-		}
-	}
 
-	return dispatchedCount;
+			const args = [...runTaskEntry.args, task.id, "--source", "autopilot"];
+			try {
+				const child = spawn(runTaskEntry.runner, args, {
+					cwd,
+					detached: true,
+					stdio: "ignore",
+					shell: false,
+					env: {
+						...process.env,
+						MANDIO_WORKSPACE_ID: wsId,
+					},
+				});
+				child.unref();
+				dispatchedCount++;
+				autopilotLogger.info(
+					"dispatch",
+					`Workspace ${wsId}: dispatched task ${task.id} (assignedTo: ${task.assignedTo}, pid: ${child.pid ?? "unknown"})`,
+				);
+			} catch (err) {
+				// Spawn failed — unreserve the task so it can be retried.
+				await mutateTasks(async (data) => {
+					const t = data.tasks.find((t) => t.id === task.id);
+					if (t && t.kanban === "in-progress") {
+						t.kanban = "not-started";
+						t.updatedAt = new Date().toISOString();
+					}
+				});
+				autopilotLogger.error(
+					"dispatch",
+					`Workspace ${wsId}: failed to dispatch task ${task.id}: ${
+						err instanceof Error ? err.message : String(err)
+					}`,
+				);
+			}
+		}
+
+		return dispatchedCount;
+	});
 }
 
 /**
@@ -576,8 +582,6 @@ export async function runStartupRecovery(): Promise<void> {
 
 			const config = configRaw as { execution?: { retries?: number } };
 			const maxRetries = config.execution?.retries ?? 1;
-
-			setCurrentWorkspace(wsId);
 
 			const deadTaskIds = await mutateActiveRuns(async (data) => {
 				const dead = new Set<string>();
@@ -770,9 +774,6 @@ export function scheduleAutopilotPoller(): void {
 
 				void (async () => {
 					try {
-						// Set workspace context for data operations
-						setCurrentWorkspace(wsId);
-
 						// Load the command prompt (outside mutex — safe, just file I/O)
 						const promptResult = loadCommandPrompt(command);
 						if (!promptResult.found) {

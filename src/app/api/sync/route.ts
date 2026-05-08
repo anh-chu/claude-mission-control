@@ -9,18 +9,19 @@ export const dynamic = "force-dynamic";
  * from the agent registry and skills library JSON data.
  */
 export async function POST() {
-	const workspaceId = await applyWorkspaceContext();
-	try {
-		await syncAllAgentCommands(workspaceId);
-		return NextResponse.json({
-			ok: true,
-			message: "All agent commands synced.",
-		});
-	} catch (err) {
-		const message = err instanceof Error ? err.message : "Unknown error";
-		return NextResponse.json(
-			{ error: "Sync failed", details: message },
-			{ status: 500 },
-		);
-	}
+	return applyWorkspaceContext(async (workspaceId) => {
+		try {
+			await syncAllAgentCommands(workspaceId);
+			return NextResponse.json({
+				ok: true,
+				message: "All agent commands synced.",
+			});
+		} catch (err) {
+			const message = err instanceof Error ? err.message : "Unknown error";
+			return NextResponse.json(
+				{ error: "Sync failed", details: message },
+				{ status: 500 },
+			);
+		}
+	});
 }

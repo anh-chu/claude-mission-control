@@ -13,27 +13,31 @@ function safeWikiPath(wikiDir: string, rel: string): string | null {
 }
 
 export async function POST(request: Request) {
-	const workspaceId = await applyWorkspaceContext();
-	const wikiDir = getWikiDir(workspaceId);
+	return applyWorkspaceContext(async (workspaceId) => {
+		const wikiDir = getWikiDir(workspaceId);
 
-	const body: { path?: string } = await request.json();
-	const rel = body.path;
+		const body: { path?: string } = await request.json();
+		const rel = body.path;
 
-	if (!rel || typeof rel !== "string" || /[<>:"|?*]/.test(rel)) {
-		return NextResponse.json({ error: "Invalid folder path" }, { status: 400 });
-	}
+		if (!rel || typeof rel !== "string" || /[<>:"|?*]/.test(rel)) {
+			return NextResponse.json(
+				{ error: "Invalid folder path" },
+				{ status: 400 },
+			);
+		}
 
-	const folderPath = safeWikiPath(wikiDir, rel);
-	if (!folderPath)
-		return NextResponse.json({ error: "Invalid path" }, { status: 400 });
+		const folderPath = safeWikiPath(wikiDir, rel);
+		if (!folderPath)
+			return NextResponse.json({ error: "Invalid path" }, { status: 400 });
 
-	try {
-		await mkdir(folderPath, { recursive: true });
-		return NextResponse.json({ ok: true });
-	} catch {
-		return NextResponse.json(
-			{ error: "Failed to create folder" },
-			{ status: 500 },
-		);
-	}
+		try {
+			await mkdir(folderPath, { recursive: true });
+			return NextResponse.json({ ok: true });
+		} catch {
+			return NextResponse.json(
+				{ error: "Failed to create folder" },
+				{ status: 500 },
+			);
+		}
+	});
 }

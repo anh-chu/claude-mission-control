@@ -2,6 +2,7 @@ import path from "node:path";
 import { NextResponse } from "next/server";
 import { readJSON, writeJSON } from "@/lib/json-io";
 import { DATA_DIR } from "@/lib/paths";
+import { getWorkspaceId } from "@/lib/workspace-store";
 
 interface RunEntry {
 	id: string;
@@ -125,7 +126,7 @@ export async function POST(
 					const { publishAndEmit } = await import(
 						"@/lib/conversation-event-bus"
 					);
-					setConversationsWorkspace("default"); // TODO: use real workspace
+					setConversationsWorkspace(getWorkspaceId());
 					const conv = await getConversation(conversationId);
 					if (
 						conv &&

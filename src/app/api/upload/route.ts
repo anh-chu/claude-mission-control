@@ -36,50 +36,54 @@ function getExtension(filename: string, mimeType: string): string {
 }
 
 export async function POST(request: Request) {
-	const workspaceId = await applyWorkspaceContext();
-	const uploadsDir = getUploadsDir(workspaceId);
+	return applyWorkspaceContext(async (workspaceId) => {
+		const uploadsDir = getUploadsDir(workspaceId);
 
-	let formData: FormData;
-	try {
-		formData = await request.formData();
-	} catch {
-		return NextResponse.json({ error: "Invalid form data" }, { status: 400 });
-	}
+		let formData: FormData;
+		try {
+			formData = await request.formData();
+		} catch {
+			return NextResponse.json({ error: "Invalid form data" }, { status: 400 });
+		}
 
-	const file = formData.get("file");
-	if (!file || !(file instanceof File)) {
-		return NextResponse.json({ error: "No file provided" }, { status: 400 });
-	}
+		const file = formData.get("file");
+		if (!file || !(file instanceof File)) {
+			return NextResponse.json({ error: "No file provided" }, { status: 400 });
+		}
 
-	if (!ALLOWED_MIME_TYPES.has(file.type)) {
-		return NextResponse.json(
-			{ error: `File type not allowed: ${file.type}` },
-			{ status: 400 },
-		);
-	}
+		if (!ALLOWED_MIME_TYPES.has(file.type)) {
+			return NextResponse.json(
+				{ error: `File type not allowed: ${file.type}` },
+				{ status: 400 },
+			);
+		}
 
-	if (file.size > MAX_SIZE_BYTES) {
-		return NextResponse.json(
-			{ error: "File exceeds 10MB limit" },
-			{ status: 400 },
-		);
-	}
+		if (file.size > MAX_SIZE_BYTES) {
+			return NextResponse.json(
+				{ error: "File exceeds 10MB limit" },
+				{ status: 400 },
+			);
+		}
 
-	const ext = getExtension(file.name, file.type);
-	const uuid = randomUUID();
-	const savedFilename = `${uuid}.${ext}`;
-	const filePath = path.join(uploadsDir, savedFilename);
+		const ext = getExtension(file.name, file.type);
+		const uuid = randomUUID();
+		const savedFilename = `${uuid}.${ext}`;
+		const filePath = path.join(uploadsDir, savedFilename);
 
-	try {
-		await mkdir(uploadsDir, { recursive: true });
-		const buffer = Buffer.from(await file.arrayBuffer());
-		await writeFile(filePath, buffer);
-	} catch {
-		return NextResponse.json({ error: "Failed to save file" }, { status: 500 });
-	}
+		try {
+			await mkdir(uploadsDir, { recursive: true });
+			const buffer = Buffer.from(await file.arrayBuffer());
+			await writeFile(filePath, buffer);
+		} catch {
+			return NextResponse.json(
+				{ error: "Failed to save file" },
+				{ status: 500 },
+			);
+		}
 
-	return NextResponse.json({
-		url: `/uploads/${savedFilename}`,
-		filename: file.name,
+		return NextResponse.json({
+			url: `/uploads/${savedFilename}`,
+			filename: file.name,
+		});
 	});
 }

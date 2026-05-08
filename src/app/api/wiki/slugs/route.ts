@@ -28,33 +28,34 @@ async function readMarkdownSlugsFromDir(dirPath: string): Promise<string[]> {
 }
 
 export async function GET() {
-	const workspaceId = await applyWorkspaceContext();
-	const wikiDir = getWikiDir(workspaceId);
+	return applyWorkspaceContext(async (workspaceId) => {
+		const wikiDir = getWikiDir(workspaceId);
 
-	try {
-		const [entities, concepts, comparisons, root] = await Promise.all([
-			readMarkdownSlugsFromDir(path.join(wikiDir, "entities")),
-			readMarkdownSlugsFromDir(path.join(wikiDir, "concepts")),
-			readMarkdownSlugsFromDir(path.join(wikiDir, "comparisons")),
-			readMarkdownSlugsFromDir(wikiDir),
-		]);
+		try {
+			const [entities, concepts, comparisons, root] = await Promise.all([
+				readMarkdownSlugsFromDir(path.join(wikiDir, "entities")),
+				readMarkdownSlugsFromDir(path.join(wikiDir, "concepts")),
+				readMarkdownSlugsFromDir(path.join(wikiDir, "comparisons")),
+				readMarkdownSlugsFromDir(wikiDir),
+			]);
 
-		const body: SlugBuckets = {
-			entities,
-			concepts,
-			comparisons,
-			root,
-		};
+			const body: SlugBuckets = {
+				entities,
+				concepts,
+				comparisons,
+				root,
+			};
 
-		return NextResponse.json(body, {
-			headers: {
-				"Cache-Control": "private, max-age=10",
-			},
-		});
-	} catch {
-		return NextResponse.json(
-			{ error: "Failed to list slugs" },
-			{ status: 500 },
-		);
-	}
+			return NextResponse.json(body, {
+				headers: {
+					"Cache-Control": "private, max-age=10",
+				},
+			});
+		} catch {
+			return NextResponse.json(
+				{ error: "Failed to list slugs" },
+				{ status: 500 },
+			);
+		}
+	});
 }

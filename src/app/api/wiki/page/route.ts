@@ -42,56 +42,57 @@ function singularType(
 }
 
 export async function POST(request: Request) {
-	const workspaceId = await applyWorkspaceContext();
-	const wikiDir = getWikiDir(workspaceId);
+	return applyWorkspaceContext(async (workspaceId) => {
+		const wikiDir = getWikiDir(workspaceId);
 
-	const body: PageBody = await request.json();
-	const { dir, slug } = body;
+		const body: PageBody = await request.json();
+		const { dir, slug } = body;
 
-	if (!dir || !VALID_DIRS.has(dir)) {
-		return NextResponse.json({ error: "Invalid dir" }, { status: 400 });
-	}
-	if (!slug || !SLUG_RE.test(slug)) {
-		return NextResponse.json({ error: "Invalid slug" }, { status: 400 });
-	}
+		if (!dir || !VALID_DIRS.has(dir)) {
+			return NextResponse.json({ error: "Invalid dir" }, { status: 400 });
+		}
+		if (!slug || !SLUG_RE.test(slug)) {
+			return NextResponse.json({ error: "Invalid slug" }, { status: 400 });
+		}
 
-	const relPath = `${dir}/${slug}.md`;
-	const filePath = safeWikiPath(wikiDir, relPath);
-	if (!filePath) {
-		return NextResponse.json({ error: "Invalid path" }, { status: 400 });
-	}
+		const relPath = `${dir}/${slug}.md`;
+		const filePath = safeWikiPath(wikiDir, relPath);
+		if (!filePath) {
+			return NextResponse.json({ error: "Invalid path" }, { status: 400 });
+		}
 
-	try {
-		await stat(filePath);
-		return NextResponse.json(
-			{ error: "Page already exists", path: relPath },
-			{ status: 409 },
-		);
-	} catch (e: unknown) {
-		const code = (e as NodeJS.ErrnoException).code;
-		if (code !== "ENOENT") {
+		try {
+			await stat(filePath);
+			return NextResponse.json(
+				{ error: "Page already exists", path: relPath },
+				{ status: 409 },
+			);
+		} catch (e: unknown) {
+			const code = (e as NodeJS.ErrnoException).code;
+			if (code !== "ENOENT") {
+				return NextResponse.json(
+					{ error: "Failed to create page" },
+					{ status: 500 },
+				);
+			}
+		}
+
+		const safeDir = dir as "entities" | "concepts" | "comparisons";
+		const resolvedTitle =
+			typeof body.title === "string" && body.title.trim().length > 0
+				? body.title
+				: humanizeSlug(slug);
+		const content = `---\ntitle: ${resolvedTitle}\ntype: ${singularType(safeDir)}\ntags: []\nupdated: ${dateStampUTC()}\n---\n\n# ${resolvedTitle}\n\n`;
+
+		try {
+			await mkdir(path.dirname(filePath), { recursive: true });
+			await writeFile(filePath, content, "utf-8");
+			return NextResponse.json({ ok: true, path: relPath, slug, dir: safeDir });
+		} catch {
 			return NextResponse.json(
 				{ error: "Failed to create page" },
 				{ status: 500 },
 			);
 		}
-	}
-
-	const safeDir = dir as "entities" | "concepts" | "comparisons";
-	const resolvedTitle =
-		typeof body.title === "string" && body.title.trim().length > 0
-			? body.title
-			: humanizeSlug(slug);
-	const content = `---\ntitle: ${resolvedTitle}\ntype: ${singularType(safeDir)}\ntags: []\nupdated: ${dateStampUTC()}\n---\n\n# ${resolvedTitle}\n\n`;
-
-	try {
-		await mkdir(path.dirname(filePath), { recursive: true });
-		await writeFile(filePath, content, "utf-8");
-		return NextResponse.json({ ok: true, path: relPath, slug, dir: safeDir });
-	} catch {
-		return NextResponse.json(
-			{ error: "Failed to create page" },
-			{ status: 500 },
-		);
-	}
+	});
 }

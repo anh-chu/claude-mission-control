@@ -27,7 +27,11 @@ import { backupDataFiles, restoreDataFiles } from "./helpers";
 
 // Mock workspace context so routes don't call next/headers
 vi.mock("@/lib/workspace-context", () => ({
-	applyWorkspaceContext: vi.fn().mockResolvedValue("default"),
+	applyWorkspaceContext: vi
+		.fn()
+		.mockImplementation((fn: (id: string) => Promise<unknown>) =>
+			fn("default"),
+		),
 }));
 
 // Prevent continue route from spawning real run-conversation child processes

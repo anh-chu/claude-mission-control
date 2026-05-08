@@ -20,29 +20,30 @@ export async function GET(
 	_request: Request,
 	{ params }: { params: Promise<{ filename: string }> },
 ) {
-	const workspaceId = await applyWorkspaceContext();
-	const uploadsDir = getUploadsDir(workspaceId);
-	const { filename } = await params;
+	return applyWorkspaceContext(async (workspaceId) => {
+		const uploadsDir = getUploadsDir(workspaceId);
+		const { filename } = await params;
 
-	// Prevent path traversal
-	const safe = path.basename(filename);
-	if (!safe || safe !== filename) {
-		return NextResponse.json({ error: "Invalid filename" }, { status: 400 });
-	}
+		// Prevent path traversal
+		const safe = path.basename(filename);
+		if (!safe || safe !== filename) {
+			return NextResponse.json({ error: "Invalid filename" }, { status: 400 });
+		}
 
-	const filePath = path.join(uploadsDir, safe);
-	if (!existsSync(filePath)) {
-		return NextResponse.json({ error: "Not found" }, { status: 404 });
-	}
+		const filePath = path.join(uploadsDir, safe);
+		if (!existsSync(filePath)) {
+			return NextResponse.json({ error: "Not found" }, { status: 404 });
+		}
 
-	const ext = safe.split(".").pop()?.toLowerCase() ?? "";
-	const contentType = MIME_MAP[ext] ?? "application/octet-stream";
+		const ext = safe.split(".").pop()?.toLowerCase() ?? "";
+		const contentType = MIME_MAP[ext] ?? "application/octet-stream";
 
-	const buffer = readFileSync(filePath);
-	return new Response(buffer, {
-		headers: {
-			"Content-Type": contentType,
-			"Cache-Control": "public, max-age=31536000, immutable",
-		},
+		const buffer = readFileSync(filePath);
+		return new Response(buffer, {
+			headers: {
+				"Content-Type": contentType,
+				"Cache-Control": "public, max-age=31536000, immutable",
+			},
+		});
 	});
 }

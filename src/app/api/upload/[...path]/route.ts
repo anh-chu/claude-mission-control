@@ -45,54 +45,58 @@ export async function POST(
 	{ params }: { params: Promise<{ path: string[] }> },
 ) {
 	const { path: segments } = await params;
-	const workspaceId = await applyWorkspaceContext();
-	const uploadsRoot = getUploadsDir(workspaceId);
+	return applyWorkspaceContext(async (workspaceId) => {
+		const uploadsRoot = getUploadsDir(workspaceId);
 
-	const subPath = (segments ?? []).join("/");
-	const targetDir = safeUploadPath(uploadsRoot, subPath);
-	if (!targetDir)
-		return NextResponse.json({ error: "Invalid path" }, { status: 400 });
+		const subPath = (segments ?? []).join("/");
+		const targetDir = safeUploadPath(uploadsRoot, subPath);
+		if (!targetDir)
+			return NextResponse.json({ error: "Invalid path" }, { status: 400 });
 
-	let form: FormData;
-	try {
-		form = await request.formData();
-	} catch {
-		return NextResponse.json(
-			{ error: "Expected multipart/form-data" },
-			{ status: 400 },
-		);
-	}
+		let form: FormData;
+		try {
+			form = await request.formData();
+		} catch {
+			return NextResponse.json(
+				{ error: "Expected multipart/form-data" },
+				{ status: 400 },
+			);
+		}
 
-	const file = form.get("file");
-	if (!(file instanceof File))
-		return NextResponse.json({ error: "Missing file field" }, { status: 400 });
+		const file = form.get("file");
+		if (!(file instanceof File))
+			return NextResponse.json(
+				{ error: "Missing file field" },
+				{ status: 400 },
+			);
 
-	if (file.size > MAX_UPLOAD_BYTES)
-		return NextResponse.json(
-			{ error: "File exceeds 50MB limit" },
-			{ status: 413 },
-		);
+		if (file.size > MAX_UPLOAD_BYTES)
+			return NextResponse.json(
+				{ error: "File exceeds 50MB limit" },
+				{ status: 413 },
+			);
 
-	const filename = sanitizeFilename(file.name || "file");
+		const filename = sanitizeFilename(file.name || "file");
 
-	try {
-		await mkdir(targetDir, { recursive: true });
-		const finalName = await pickAvailableName(targetDir, filename);
-		const targetPath = path.join(targetDir, finalName);
-		const bytes = Buffer.from(await file.arrayBuffer());
-		await writeFile(targetPath, bytes);
+		try {
+			await mkdir(targetDir, { recursive: true });
+			const finalName = await pickAvailableName(targetDir, filename);
+			const targetPath = path.join(targetDir, finalName);
+			const bytes = Buffer.from(await file.arrayBuffer());
+			await writeFile(targetPath, bytes);
 
-		const relParts = [...(segments ?? []), finalName].filter(Boolean);
-		const relUrl = relParts.map(encodeURIComponent).join("/");
-		const relPath = relParts.join("/");
-		return NextResponse.json({
-			url: `/api/assets/uploads/${relUrl}`,
-			path: `uploads/${relPath}`,
-			size: bytes.length,
-			mimeType: file.type || "application/octet-stream",
-		});
-	} catch (err) {
-		const message = err instanceof Error ? err.message : "Write failed";
-		return NextResponse.json({ error: message }, { status: 500 });
-	}
+			const relParts = [...(segments ?? []), finalName].filter(Boolean);
+			const relUrl = relParts.map(encodeURIComponent).join("/");
+			const relPath = relParts.join("/");
+			return NextResponse.json({
+				url: `/api/assets/uploads/${relUrl}`,
+				path: `uploads/${relPath}`,
+				size: bytes.length,
+				mimeType: file.type || "application/octet-stream",
+			});
+		} catch (err) {
+			const message = err instanceof Error ? err.message : "Write failed";
+			return NextResponse.json({ error: message }, { status: 500 });
+		}
+	});
 }

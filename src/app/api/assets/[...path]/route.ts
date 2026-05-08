@@ -86,24 +86,28 @@ export async function GET(
 	if (!segments || segments.length === 0)
 		return NextResponse.json({ error: "Invalid path" }, { status: 400 });
 
-	const workspaceId = await applyWorkspaceContext();
-	const filePath = resolveAssetPath(workspaceId, segments);
-	if (!filePath)
-		return NextResponse.json({ error: "Invalid path" }, { status: 400 });
+	return applyWorkspaceContext(async (workspaceId) => {
+		const filePath = resolveAssetPath(workspaceId, segments);
+		if (!filePath)
+			return NextResponse.json({ error: "Invalid path" }, { status: 400 });
 
-	try {
-		const buffer = await readFile(filePath);
-		return new Response(buffer, {
-			headers: {
-				"Content-Type": mimeFor(path.basename(filePath)),
-				"Cache-Control": cacheHeaderFor(path.basename(filePath)),
-			},
-		});
-	} catch (e: unknown) {
-		if ((e as NodeJS.ErrnoException).code === "ENOENT")
-			return NextResponse.json({ error: "Not found" }, { status: 404 });
-		return NextResponse.json({ error: "Failed to read file" }, { status: 500 });
-	}
+		try {
+			const buffer = await readFile(filePath);
+			return new Response(buffer, {
+				headers: {
+					"Content-Type": mimeFor(path.basename(filePath)),
+					"Cache-Control": cacheHeaderFor(path.basename(filePath)),
+				},
+			});
+		} catch (e: unknown) {
+			if ((e as NodeJS.ErrnoException).code === "ENOENT")
+				return NextResponse.json({ error: "Not found" }, { status: 404 });
+			return NextResponse.json(
+				{ error: "Failed to read file" },
+				{ status: 500 },
+			);
+		}
+	});
 }
 
 export async function PUT(
@@ -114,21 +118,22 @@ export async function PUT(
 	if (!segments || segments.length === 0)
 		return NextResponse.json({ error: "Invalid path" }, { status: 400 });
 
-	const workspaceId = await applyWorkspaceContext();
-	const filePath = resolveAssetPath(workspaceId, segments);
-	if (!filePath)
-		return NextResponse.json({ error: "Invalid path" }, { status: 400 });
+	return applyWorkspaceContext(async (workspaceId) => {
+		const filePath = resolveAssetPath(workspaceId, segments);
+		if (!filePath)
+			return NextResponse.json({ error: "Invalid path" }, { status: 400 });
 
-	try {
-		const arrayBuffer = await request.arrayBuffer();
-		const buffer = Buffer.from(arrayBuffer);
-		await mkdir(path.dirname(filePath), { recursive: true });
-		await writeFile(filePath, buffer);
-		return NextResponse.json({ ok: true, bytes: buffer.byteLength });
-	} catch {
-		return NextResponse.json(
-			{ error: "Failed to write file" },
-			{ status: 500 },
-		);
-	}
+		try {
+			const arrayBuffer = await request.arrayBuffer();
+			const buffer = Buffer.from(arrayBuffer);
+			await mkdir(path.dirname(filePath), { recursive: true });
+			await writeFile(filePath, buffer);
+			return NextResponse.json({ ok: true, bytes: buffer.byteLength });
+		} catch {
+			return NextResponse.json(
+				{ error: "Failed to write file" },
+				{ status: 500 },
+			);
+		}
+	});
 }

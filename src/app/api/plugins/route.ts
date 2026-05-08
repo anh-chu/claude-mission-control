@@ -6,7 +6,8 @@ import { applyWorkspaceContext } from "@/lib/workspace-context";
 export const dynamic = "force-dynamic";
 
 export async function GET() {
-	const workspaceId = await applyWorkspaceContext();
-	const plugins = await listInstalledPlugins(getWorkspaceDir(workspaceId));
-	return NextResponse.json({ plugins });
+	return applyWorkspaceContext(async (workspaceId) => {
+		const plugins = await listInstalledPlugins(getWorkspaceDir(workspaceId));
+		return NextResponse.json({ plugins });
+	});
 }

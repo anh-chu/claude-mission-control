@@ -49,15 +49,12 @@ export const DOC_MAINTAINER_AGENT_ID = "doc-maintainer";
 export const DOC_MAINTAINER_AGENT_INSTRUCTIONS =
 	"Follow llm-wiki-pm plugin skill instructions exactly.";
 
+import { getWorkspaceId } from "./workspace-store";
+
 // ─── Workspace path helpers ───────────────────────────────────────────────────
 
-let _currentWorkspaceId = "default";
 const _migratedWorkspaces = new Set<string>();
 const _migratedCommandWorkspaces = new Set<string>();
-
-export function setCurrentWorkspace(id: string): void {
-	_currentWorkspaceId = id;
-}
 
 /**
  * Ensure global skills are seeded and workspace skills are migrated.
@@ -94,7 +91,7 @@ export function getWorkspaceDataDir(workspaceId: string): string {
 }
 
 function filePath(name: string): string {
-	return path.join(getWorkspaceDataDir(_currentWorkspaceId), name);
+	return path.join(getWorkspaceDataDir(getWorkspaceId()), name);
 }
 
 // Lazy-initialized artifacts directory.

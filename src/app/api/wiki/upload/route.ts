@@ -81,58 +81,65 @@ function safeWikiPath(wikiDir: string, rel: string): string | null {
 }
 
 export async function POST(request: Request) {
-	const workspaceId = await applyWorkspaceContext();
-	const wikiDir = getWikiDir(workspaceId);
+	return applyWorkspaceContext(async (workspaceId) => {
+		const wikiDir = getWikiDir(workspaceId);
 
-	let formData: FormData;
-	try {
-		formData = await request.formData();
-	} catch {
-		return NextResponse.json({ error: "Invalid form data" }, { status: 400 });
-	}
+		let formData: FormData;
+		try {
+			formData = await request.formData();
+		} catch {
+			return NextResponse.json({ error: "Invalid form data" }, { status: 400 });
+		}
 
-	const file = formData.get("file");
-	if (!file || !(file instanceof File)) {
-		return NextResponse.json({ error: "No file provided" }, { status: 400 });
-	}
+		const file = formData.get("file");
+		if (!file || !(file instanceof File)) {
+			return NextResponse.json({ error: "No file provided" }, { status: 400 });
+		}
 
-	const dir = (formData.get("dir") as string) ?? "";
-	const targetDir = safeWikiPath(wikiDir, dir);
-	if (!targetDir)
-		return NextResponse.json({ error: "Invalid directory" }, { status: 400 });
+		const dir = (formData.get("dir") as string) ?? "";
+		const targetDir = safeWikiPath(wikiDir, dir);
+		if (!targetDir)
+			return NextResponse.json({ error: "Invalid directory" }, { status: 400 });
 
-	const fileExt = file.name.split(".").pop()?.toLowerCase() ?? "";
-	if (!ALLOWED_MIME_TYPES.has(file.type) || !ALLOWED_EXTENSIONS.has(fileExt)) {
-		return NextResponse.json(
-			{ error: `File type not allowed: ${file.name}` },
-			{ status: 400 },
-		);
-	}
+		const fileExt = file.name.split(".").pop()?.toLowerCase() ?? "";
+		if (
+			!ALLOWED_MIME_TYPES.has(file.type) ||
+			!ALLOWED_EXTENSIONS.has(fileExt)
+		) {
+			return NextResponse.json(
+				{ error: `File type not allowed: ${file.name}` },
+				{ status: 400 },
+			);
+		}
 
-	if (file.size > MAX_SIZE_BYTES) {
-		return NextResponse.json(
-			{ error: "File exceeds 20MB limit" },
-			{ status: 400 },
-		);
-	}
+		if (file.size > MAX_SIZE_BYTES) {
+			return NextResponse.json(
+				{ error: "File exceeds 20MB limit" },
+				{ status: 400 },
+			);
+		}
 
-	const ext = getExtension(file.name, file.type);
-	const baseName = sanitizeFilename(file.name.replace(/\.[^.]+$/, ""));
-	const savedFilename = `${baseName}.${ext}`;
-	const filePath = path.join(targetDir, savedFilename);
+		const ext = getExtension(file.name, file.type);
+		const baseName = sanitizeFilename(file.name.replace(/\.[^.]+$/, ""));
+		const savedFilename = `${baseName}.${ext}`;
+		const filePath = path.join(targetDir, savedFilename);
 
-	try {
-		await mkdir(targetDir, { recursive: true });
-		const buffer = Buffer.from(await file.arrayBuffer());
-		await writeFile(filePath, buffer);
-	} catch {
-		return NextResponse.json({ error: "Failed to save file" }, { status: 500 });
-	}
+		try {
+			await mkdir(targetDir, { recursive: true });
+			const buffer = Buffer.from(await file.arrayBuffer());
+			await writeFile(filePath, buffer);
+		} catch {
+			return NextResponse.json(
+				{ error: "Failed to save file" },
+				{ status: 500 },
+			);
+		}
 
-	const relPath = dir ? `${dir}/${savedFilename}` : savedFilename;
-	return NextResponse.json({
-		filename: savedFilename,
-		path: relPath,
-		originalName: file.name,
+		const relPath = dir ? `${dir}/${savedFilename}` : savedFilename;
+		return NextResponse.json({
+			filename: savedFilename,
+			path: relPath,
+			originalName: file.name,
+		});
 	});
 }

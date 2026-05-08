@@ -44,46 +44,48 @@ function cachePluginPath(wikiDir: string, installPath: string): void {
 }
 
 export async function POST() {
-	try {
-		const workspaceId = await applyWorkspaceContext();
-		await initWikiDir(workspaceId);
+	return applyWorkspaceContext(async (workspaceId) => {
+		try {
+			await initWikiDir(workspaceId);
 
-		const wikiDir = getWikiDir(workspaceId);
-		const workspaceDir = getWorkspaceDir(workspaceId);
-		const doUpdate = shouldUpdatePlugin(wikiDir);
-		const plugin = ensureWikiPluginInstalledDetailed(workspaceDir, {
-			update: doUpdate,
-		});
-		if (doUpdate) {
-			markPluginUpdated(wikiDir);
-			// Main daemon will re-preheat SDK naturally on next job consumption
+			const wikiDir = getWikiDir(workspaceId);
+			const workspaceDir = getWorkspaceDir(workspaceId);
+			const doUpdate = shouldUpdatePlugin(wikiDir);
+			const plugin = ensureWikiPluginInstalledDetailed(workspaceDir, {
+				update: doUpdate,
+			});
+			if (doUpdate) {
+				markPluginUpdated(wikiDir);
+				// Main daemon will re-preheat SDK naturally on next job consumption
+			}
+			cachePluginPath(wikiDir, plugin.installPath);
+			const bootstrap = ensureWikiBootstrappedFromPlugin(
+				wikiDir,
+				plugin.installPath,
+				`Workspace ${workspaceId}`,
+				{ workspaceDir },
+			);
+			reconcileWikiWithPlugin(wikiDir, plugin.installPath);
+
+			return NextResponse.json({
+				ok: true,
+				workspaceId,
+				pluginStatus: plugin.status,
+				pluginVersion: plugin.version,
+				pluginUpdated: plugin.updated,
+				bootstrapStatus: bootstrap.status,
+				hasLockFile: Boolean(bootstrap.lockFile),
+				hasCoverageReport: Boolean(bootstrap.coverageReport),
+				reconciled: true,
+			});
+		} catch (err) {
+			return NextResponse.json(
+				{
+					error:
+						err instanceof Error ? err.message : "Failed to initialize wiki",
+				},
+				{ status: 500 },
+			);
 		}
-		cachePluginPath(wikiDir, plugin.installPath);
-		const bootstrap = ensureWikiBootstrappedFromPlugin(
-			wikiDir,
-			plugin.installPath,
-			`Workspace ${workspaceId}`,
-			{ workspaceDir },
-		);
-		reconcileWikiWithPlugin(wikiDir, plugin.installPath);
-
-		return NextResponse.json({
-			ok: true,
-			workspaceId,
-			pluginStatus: plugin.status,
-			pluginVersion: plugin.version,
-			pluginUpdated: plugin.updated,
-			bootstrapStatus: bootstrap.status,
-			hasLockFile: Boolean(bootstrap.lockFile),
-			hasCoverageReport: Boolean(bootstrap.coverageReport),
-			reconciled: true,
-		});
-	} catch (err) {
-		return NextResponse.json(
-			{
-				error: err instanceof Error ? err.message : "Failed to initialize wiki",
-			},
-			{ status: 500 },
-		);
-	}
+	});
 }

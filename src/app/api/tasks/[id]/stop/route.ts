@@ -48,96 +48,95 @@ export async function POST(
 	_request: Request,
 	{ params }: { params: Promise<{ id: string }> },
 ) {
-	const workspaceId = await applyWorkspaceContext();
-	const { id: taskId } = await params;
-	const now = new Date().toISOString();
+	return applyWorkspaceContext(async (workspaceId) => {
+		const { id: taskId } = await params;
+		const now = new Date().toISOString();
 
-	// 1. Find running entry for this task
-	const runsPath = path.join(DATA_DIR, "active-runs.json");
-	const runsData = readJSON<{ runs: RunEntry[] }>(runsPath) ?? { runs: [] };
-	const runEntry = runsData.runs.find(
-		(r) => r.taskId === taskId && r.status === "running",
-	);
-
-	if (!runEntry) {
-		return NextResponse.json(
-			{ error: "Task is not currently running" },
-			{ status: 404 },
+		// 1. Find running entry for this task
+		const runsPath = path.join(DATA_DIR, "active-runs.json");
+		const runsData = readJSON<{ runs: RunEntry[] }>(runsPath) ?? { runs: [] };
+		const runEntry = runsData.runs.find(
+			(r) => r.taskId === taskId && r.status === "running",
 		);
-	}
 
-	// 2. Kill the process
-	const killed = await killProcess(runEntry.pid);
-
-	// 3. Update run entry
-	runEntry.status = "stopped";
-	runEntry.completedAt = now;
-	runEntry.error = "Stopped by user";
-	writeJSON(runsPath, runsData);
-
-	// 4. Reset task to not-started
-	const tasksPath = path.join(DATA_DIR, "tasks.json");
-	const tasksData = readJSON<{ tasks: TaskEntry[] }>(tasksPath);
-	if (tasksData) {
-		const task = tasksData.tasks.find((t) => t.id === taskId);
-		if (task && task.kanban === "in-progress") {
-			task.kanban = "not-started";
-			task.updatedAt = now;
-			writeJSON(tasksPath, tasksData);
+		if (!runEntry) {
+			return NextResponse.json(
+				{ error: "Task is not currently running" },
+				{ status: 404 },
+			);
 		}
-	}
 
-	// 4.5 Cancel linked conversation if any
-	try {
-		const tasksData2 = readJSON<{
-			tasks: Array<{ id: string; conversationId?: string | null }>;
-		}>(tasksPath);
-		const task = tasksData2?.tasks.find((t) => t.id === taskId);
-		const conversationId = task?.conversationId;
-		if (conversationId) {
-			const {
-				setConversationsWorkspace,
-				getConversation,
-				updateConversationRun,
-				updateConversation,
-			} = await import("@/lib/conversations");
-			const { publishAndEmit } = await import("@/lib/conversation-event-bus");
-			setConversationsWorkspace("default"); // TODO: use real workspace
-			const conv = await getConversation(conversationId);
-			if (conv && !["completed", "failed", "cancelled"].includes(conv.status)) {
-				const previousRunId = conv.currentRunId;
-				if (previousRunId) {
-					await updateConversationRun(previousRunId, {
-						status: "stopped",
-						completedAt: now,
-					});
-				}
-				await updateConversation(conversationId, {
-					status: "cancelled",
-					cancelledAt: now,
-					currentRunId: null,
-				});
-				await publishAndEmit({
-					type: "conversation.cancelled",
-					conversationId,
-					payload: {
-						runId: previousRunId,
-						reason: "Stopped by user",
-					},
-				});
+		// 2. Kill the process
+		const killed = await killProcess(runEntry.pid);
+
+		// 3. Update run entry
+		runEntry.status = "stopped";
+		runEntry.completedAt = now;
+		runEntry.error = "Stopped by user";
+		writeJSON(runsPath, runsData);
+
+		// 4. Reset task to not-started
+		const tasksPath = path.join(DATA_DIR, "tasks.json");
+		const tasksData = readJSON<{ tasks: TaskEntry[] }>(tasksPath);
+		if (tasksData) {
+			const task = tasksData.tasks.find((t) => t.id === taskId);
+			if (task && task.kanban === "in-progress") {
+				task.kanban = "not-started";
+				task.updatedAt = now;
+				writeJSON(tasksPath, tasksData);
 			}
 		}
-	} catch (err) {
-		console.warn(
-			`[stop] Failed to cancel conversation for task ${taskId}:`,
-			err,
-		);
-		// Non-fatal — task PID is already killed
-	}
 
-	return NextResponse.json({
-		taskId,
-		killed,
-		status: "stopped",
+		// 4.5 Cancel linked conversation if any
+		try {
+			const tasksData2 = readJSON<{
+				tasks: Array<{ id: string; conversationId?: string | null }>;
+			}>(tasksPath);
+			const task = tasksData2?.tasks.find((t) => t.id === taskId);
+			const conversationId = task?.conversationId;
+			if (conversationId) {
+				const { getConversation, updateConversationRun, updateConversation } =
+					await import("@/lib/conversations");
+				const { publishAndEmit } = await import("@/lib/conversation-event-bus");
+				const conv = await getConversation(conversationId);
+				if (
+					conv &&
+					!["completed", "failed", "cancelled"].includes(conv.status)
+				) {
+					const previousRunId = conv.currentRunId;
+					if (previousRunId) {
+						await updateConversationRun(previousRunId, {
+							status: "stopped",
+							completedAt: now,
+						});
+					}
+					await updateConversation(conversationId, {
+						status: "cancelled",
+						cancelledAt: now,
+						currentRunId: null,
+					});
+					await publishAndEmit({
+						type: "conversation.cancelled",
+						conversationId,
+						payload: {
+							runId: previousRunId,
+							reason: "Stopped by user",
+						},
+					});
+				}
+			}
+		} catch (err) {
+			console.warn(
+				`[stop] Failed to cancel conversation for task ${taskId}:`,
+				err,
+			);
+			// Non-fatal — task PID is already killed
+		}
+
+		return NextResponse.json({
+			taskId,
+			killed,
+			status: "stopped",
+		});
 	});
 }

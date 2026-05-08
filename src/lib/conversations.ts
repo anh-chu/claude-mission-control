@@ -26,21 +26,12 @@ import type {
 	ConversationTurn,
 } from "./types";
 import { generateId } from "./utils";
+import { getWorkspaceId, setFallbackWorkspaceId } from "./workspace-store";
 
 // ─── Workspace-scoped file path helpers ──────────────────────────────────────
 
-let _currentWorkspaceId = "default";
-
-/**
- * Set the workspace whose data the conversation helpers operate on.
- * Mirrors the pattern used by `data.ts` (setCurrentWorkspace).
- */
-export function setConversationsWorkspace(id: string): void {
-	_currentWorkspaceId = id;
-}
-
 function workspaceDir(): string {
-	return getWorkspaceDir(_currentWorkspaceId);
+	return getWorkspaceDir(getWorkspaceId());
 }
 
 function conversationsIndexPath(): string {
@@ -53,6 +44,16 @@ function conversationsRoot(): string {
 
 function conversationDir(conversationId: string): string {
 	return path.join(conversationsRoot(), conversationId);
+}
+
+/**
+ * Set the active workspace for conversation data access.
+ *
+ * @deprecated For test use only. Production route handlers must use
+ * applyWorkspaceContext() which sets workspace via AsyncLocalStorage.
+ */
+export function setConversationsWorkspace(id: string): void {
+	setFallbackWorkspaceId(id);
 }
 
 export function turnsFilePath(conversationId: string): string {
