@@ -25,7 +25,7 @@ import { type ReactNode, useState } from "react";
 import { BreadcrumbNav } from "@/components/breadcrumb-nav";
 import { HomeActivity } from "@/components/home-activity";
 import { HomeInbox } from "@/components/home-inbox";
-import { HomeLogs } from "@/components/home-logs";
+
 import { ProjectCardLarge } from "@/components/project-card-large";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -446,22 +446,11 @@ export default function CommandCenterPage() {
 				>
 					Activity
 				</Link>
-				<Link
-					href="/?tab=logs"
-					className={cn(
-						"px-3 py-1.5 text-sm font-medium rounded-md transition-colors",
-						tab === "logs"
-							? "bg-accent text-accent-foreground"
-							: "text-muted-foreground hover:bg-accent/50",
-					)}
-				>
-					Logs
-				</Link>
 			</div>
 
 			{tab === "overview" && (
 				<div className="flex flex-col gap-8">
-					<Link href="/autopilot">
+					<Link href="/ops?tab=autopilot">
 						<Card
 							className={cn(
 								"cursor-pointer transition-all hover:shadow-e-3 hover:border-primary/30",
@@ -885,7 +874,6 @@ export default function CommandCenterPage() {
 
 			{tab === "inbox" && <HomeInbox />}
 			{tab === "activity" && <HomeActivity />}
-			{tab === "logs" && <HomeLogs />}
 		</div>
 	);
 }

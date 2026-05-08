@@ -16,7 +16,7 @@ const nextConfig: NextConfig = {
 		// Merged into Agents tabs
 		{
 			source: "/autopilot",
-			destination: "/crew?tab=autopilot",
+			destination: "/ops?tab=autopilot",
 			permanent: false,
 		},
 		{ source: "/skills", destination: "/crew?tab=skills", permanent: false },

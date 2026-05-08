@@ -11,7 +11,6 @@ import {
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useState } from "react";
-import { AutopilotPage } from "@/components/autopilot-page";
 import { BreadcrumbNav } from "@/components/breadcrumb-nav";
 import { AgentContextMenuContent } from "@/components/context-menus/agent-context-menu";
 import { CreateTaskDialog } from "@/components/create-task-dialog";
@@ -291,17 +290,7 @@ export default function CrewPage() {
 				>
 					Crew
 				</Link>
-				<Link
-					href="/crew?tab=autopilot"
-					className={cn(
-						"px-3 py-1.5 text-sm font-medium rounded-md transition-colors",
-						tab === "autopilot"
-							? "bg-accent text-accent-foreground"
-							: "text-muted-foreground hover:bg-accent/50",
-					)}
-				>
-					Autopilot
-				</Link>
+
 				<Link
 					href="/crew?tab=skills"
 					className={cn(
@@ -421,7 +410,6 @@ export default function CrewPage() {
 				</>
 			)}
 
-			{tab === "autopilot" && <AutopilotPage />}
 			{tab === "skills" && <CrewSkills />}
 		</div>
 	);
