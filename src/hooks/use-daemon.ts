@@ -56,7 +56,13 @@ interface DaemonConfig {
 	concurrency: { maxParallelAgents: number };
 	schedule: Record<
 		string,
-		{ enabled: boolean; cron: string; command: string; startAt?: string | null }
+		{
+			enabled: boolean;
+			cron: string;
+			command: string;
+			startAt?: string | null;
+			agentId?: string;
+		}
 	>;
 	execution: {
 		maxTurns: number;

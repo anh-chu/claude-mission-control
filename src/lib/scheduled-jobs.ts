@@ -535,7 +535,12 @@ export function scheduleAutopilotPoller(): void {
 			const config = rawConfig as {
 				schedule?: Record<
 					string,
-					{ enabled?: boolean; cron?: string; command?: string }
+					{
+						enabled?: boolean;
+						cron?: string;
+						command?: string;
+						agentId?: string;
+					}
 				>;
 			};
 			if (!config.schedule) return;
@@ -594,7 +599,11 @@ export function scheduleAutopilotPoller(): void {
 								);
 								if (alreadyQueued) return;
 
-								const task = buildScheduledTask(command, promptResult.content);
+								const task = buildScheduledTask(
+									command,
+									promptResult.content,
+									entry.agentId,
+								);
 								taskId = task.id;
 								data.tasks.push(task);
 							});

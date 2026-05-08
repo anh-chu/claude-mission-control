@@ -45,6 +45,7 @@ import {
 	TooltipTrigger,
 } from "@/components/ui/tooltip";
 import { useDaemon } from "@/hooks/use-daemon";
+import { useAgents } from "@/hooks/use-data";
 import { apiFetch } from "@/lib/api-client";
 import { useActiveRunsContext as useActiveRuns } from "@/providers/active-runs-provider";
 
@@ -213,6 +214,7 @@ export function AutopilotPage() {
 	const { status, config, isRunning, isLoading, error, updateConfig } =
 		useDaemon();
 	const { runs } = useActiveRuns();
+	const { agents } = useAgents();
 	const [expandedSessionId, setExpandedSessionId] = useState<string | null>(
 		null,
 	);
@@ -331,6 +333,7 @@ export function AutopilotPage() {
 	const [editCommand, setEditCommand] = useState("");
 	const [editStartAt, setEditStartAt] = useState("");
 	const [editRepeat, setEditRepeat] = useState<RepeatInterval>("daily");
+	const [editAgentId, setEditAgentId] = useState("");
 
 	// Ad-hoc run state
 	const [runningCommands, setRunningCommands] = useState<Set<string>>(
@@ -345,6 +348,7 @@ export function AutopilotPage() {
 		setEditCron(entry.cron);
 		setEditCommand(entry.command);
 		setEditStartAt(toDatetimeLocal(entry.startAt));
+		setEditAgentId(entry.agentId ?? agents[0]?.id ?? "");
 		setEditingSchedule(name);
 	}
 
@@ -354,6 +358,7 @@ export function AutopilotPage() {
 		setEditCommand("");
 		setEditStartAt("");
 		setEditRepeat("daily");
+		setEditAgentId("");
 	}
 
 	async function saveScheduleEntry(name: string) {
@@ -368,6 +373,7 @@ export function AutopilotPage() {
 					cron: finalCron || editCron,
 					command: editCommand,
 					startAt: startAtISO,
+					agentId: editAgentId || undefined,
 				},
 			},
 		});
@@ -384,6 +390,7 @@ export function AutopilotPage() {
 					cron: "0 9 * * *",
 					command: "daily-plan",
 					startAt: null,
+					agentId: agents[0]?.id,
 				},
 			},
 		});
@@ -776,6 +783,27 @@ export function AutopilotPage() {
 												</div>
 											</div>
 
+											<div className="space-y-1.5">
+												<p className="text-xs text-muted-foreground">
+													Assigned Agent
+												</p>
+												<Select
+													value={editAgentId}
+													onValueChange={setEditAgentId}
+												>
+													<SelectTrigger className="h-8">
+														<SelectValue placeholder="Select agent" />
+													</SelectTrigger>
+													<SelectContent>
+														{agents.map((agent) => (
+															<SelectItem key={agent.id} value={agent.id}>
+																{agent.name}
+															</SelectItem>
+														))}
+													</SelectContent>
+												</Select>
+											</div>
+
 											{editRepeat !== "custom" ? (
 												<div className="space-y-1.5">
 													<p className="text-xs text-muted-foreground">
@@ -865,6 +893,16 @@ export function AutopilotPage() {
 															cron: schedule.cron,
 															startAt: schedule.startAt,
 														})}
+														{schedule.agentId && (
+															<>
+																{" · "}
+																<span className="text-xs">
+																	Agent:{" "}
+																	{agents.find((a) => a.id === schedule.agentId)
+																		?.name ?? schedule.agentId}
+																</span>
+															</>
+														)}
 													</p>
 												</div>
 											</div>

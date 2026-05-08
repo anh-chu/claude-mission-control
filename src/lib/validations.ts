@@ -425,6 +425,7 @@ const scheduleEntrySchema = z.object({
 			"Command must be lowercase alphanumeric with hyphens",
 		),
 	startAt: z.string().max(30).nullable().optional().default(null),
+	agentId: z.string().min(1).max(100).optional(),
 });
 
 export const daemonConfigUpdateSchema = z

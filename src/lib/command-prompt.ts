@@ -41,11 +41,12 @@ export interface CommandPromptResult {
 /**
  * Build a Task object for a scheduled command.
  * Returns a task payload ready to insert into tasks.json.
- * Throws if no active agents exist in the workspace.
+ * Throws if no active agents exist in the workspace and no agentId is provided.
  */
 export function buildScheduledTask(
 	command: string,
 	description: string,
+	agentId?: string,
 ): {
 	id: string;
 	title: string;
@@ -72,7 +73,8 @@ export function buildScheduledTask(
 	isScheduled: true;
 } {
 	const now = new Date().toISOString();
-	const assignedTo = getFirstActiveAgentId();
+	const assignedTo =
+		agentId && agentId.trim() ? agentId.trim() : getFirstActiveAgentId();
 	return {
 		id: generateId("task"),
 		title: `Command: /${command}`,
