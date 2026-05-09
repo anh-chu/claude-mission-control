@@ -773,195 +773,237 @@ export default function BrainPage() {
 	}
 
 	return (
-		<div className="flex h-[calc(100vh-8rem)] gap-4 min-h-0">
-			{/* Tree panel */}
-			<Card className="flex flex-col w-72 shrink-0 overflow-hidden">
-				<div className="flex items-center justify-between px-3 py-2 border-b bg-muted shrink-0">
-					<BreadcrumbNav items={[{ label: "Brain" }]} />
-					<div className="flex items-center gap-1">
-						<Button
-							size="sm"
-							variant="ghost"
-							className="h-7 w-7 p-0"
-							title="New root folder"
-							onClick={() => {
-								setNewFolderParent("");
-								setNewFolderName("");
-								setFolderError(null);
-							}}
-						>
-							<FolderPlus className="h-3.5 w-3.5" />
-						</Button>
-						<Button
-							size="sm"
-							variant="ghost"
-							className="h-7 w-7 p-0"
-							title="Upload to root"
-							onClick={() => triggerUpload("")}
-							disabled={uploading}
-						>
-							{uploading ? (
-								<Loader2 className="h-3.5 w-3.5 animate-spin" />
-							) : (
-								<Upload className="h-3.5 w-3.5" />
+		<div className="flex flex-col h-[calc(100vh-8rem)] gap-4 min-h-0">
+			<BreadcrumbNav items={[{ label: "Brain" }]} />
+			<div className="flex flex-1 gap-4 min-h-0">
+				{/* Tree panel */}
+				<Card className="flex flex-col w-72 shrink-0 overflow-hidden">
+					<div className="flex items-center justify-end px-3 py-2 border-b bg-muted shrink-0">
+						<div className="flex items-center gap-1">
+							<Button
+								size="sm"
+								variant="ghost"
+								className="h-7 w-7 p-0"
+								title="New root folder"
+								onClick={() => {
+									setNewFolderParent("");
+									setNewFolderName("");
+									setFolderError(null);
+								}}
+							>
+								<FolderPlus className="h-3.5 w-3.5" />
+							</Button>
+							<Button
+								size="sm"
+								variant="ghost"
+								className="h-7 w-7 p-0"
+								title="Upload to root"
+								onClick={() => triggerUpload("")}
+								disabled={uploading}
+							>
+								{uploading ? (
+									<Loader2 className="h-3.5 w-3.5 animate-spin" />
+								) : (
+									<Upload className="h-3.5 w-3.5" />
+								)}
+							</Button>
+						</div>
+					</div>
+
+					{uploadError && (
+						<div className="flex items-center gap-1.5 px-3 py-1.5 text-xs text-destructive bg-destructive-soft shrink-0">
+							<AlertCircle className="h-3.5 w-3.5 shrink-0" />
+							{uploadError}
+						</div>
+					)}
+
+					{newFolderParent === "" && (
+						<div className="flex items-center gap-1.5 px-2 py-1 border-b shrink-0">
+							<Folder className="h-4 w-4 shrink-0 text-warning" />
+							<input
+								className="flex-1 bg-transparent text-sm outline-none border-b border-border min-w-0"
+								placeholder="Folder name"
+								value={newFolderName}
+								onChange={(e) => setNewFolderName(e.target.value)}
+								onKeyDown={(e) => {
+									if (e.key === "Enter") handleCreateFolder();
+									if (e.key === "Escape") {
+										setNewFolderParent(null);
+										setNewFolderName("");
+									}
+								}}
+							/>
+							{folderError && (
+								<span className="text-xs text-destructive">{folderError}</span>
 							)}
-						</Button>
-					</div>
-				</div>
-
-				{uploadError && (
-					<div className="flex items-center gap-1.5 px-3 py-1.5 text-xs text-destructive bg-destructive-soft shrink-0">
-						<AlertCircle className="h-3.5 w-3.5 shrink-0" />
-						{uploadError}
-					</div>
-				)}
-
-				{newFolderParent === "" && (
-					<div className="flex items-center gap-1.5 px-2 py-1 border-b shrink-0">
-						<Folder className="h-4 w-4 shrink-0 text-warning" />
-						<input
-							className="flex-1 bg-transparent text-sm outline-none border-b border-border min-w-0"
-							placeholder="Folder name"
-							value={newFolderName}
-							onChange={(e) => setNewFolderName(e.target.value)}
-							onKeyDown={(e) => {
-								if (e.key === "Enter") handleCreateFolder();
-								if (e.key === "Escape") {
+							<Button
+								size="sm"
+								variant="ghost"
+								className="h-6 w-6 p-0"
+								onClick={handleCreateFolder}
+							>
+								<Check className="h-3 w-3" />
+							</Button>
+							<Button
+								size="sm"
+								variant="ghost"
+								className="h-6 w-6 p-0"
+								onClick={() => {
 									setNewFolderParent(null);
 									setNewFolderName("");
-								}
-							}}
-						/>
-						{folderError && (
-							<span className="text-xs text-destructive">{folderError}</span>
+								}}
+							>
+								<X className="h-3 w-3" />
+							</Button>
+						</div>
+					)}
+
+					<div
+						className={cn(
+							"flex-1 overflow-auto py-1",
+							dragOverPath === "" &&
+								"ring-2 ring-inset ring-primary bg-primary-soft",
 						)}
-						<Button
-							size="sm"
-							variant="ghost"
-							className="h-6 w-6 p-0"
-							onClick={handleCreateFolder}
-						>
-							<Check className="h-3 w-3" />
-						</Button>
-						<Button
-							size="sm"
-							variant="ghost"
-							className="h-6 w-6 p-0"
-							onClick={() => {
-								setNewFolderParent(null);
-								setNewFolderName("");
-							}}
-						>
-							<X className="h-3 w-3" />
-						</Button>
+						onDragOver={(e) => handleDragOver(e, "", "root")}
+						onDragLeave={(e) => {
+							if (!e.currentTarget.contains(e.relatedTarget as Node))
+								setDragOverPath(null);
+						}}
+						onDrop={(e) => handleDropOnFolder(e, "")}
+					>
+						{rootLoading ? (
+							<div className="flex justify-center py-6">
+								<Loader2 className="h-5 w-5 animate-spin text-muted-foreground" />
+							</div>
+						) : roots.length === 0 ? (
+							<div className="flex flex-col items-center gap-3 px-4 py-8 text-center">
+								<div className="rounded-full bg-muted p-3">
+									<FileText className="h-6 w-6 text-muted-foreground" />
+								</div>
+								<div className="space-y-1">
+									<p className="text-sm font-medium">No files yet</p>
+									<p className="text-xs text-muted-foreground">
+										Get started by initializing or uploading files
+									</p>
+								</div>
+								<div className="flex flex-col gap-2 w-full max-w-[180px]">
+									<Button
+										size="sm"
+										variant="default"
+										className="w-full gap-1.5"
+										onClick={handleInitWiki}
+										disabled={initingWiki}
+									>
+										{initingWiki ? (
+											<Loader2 className="h-3.5 w-3.5 animate-spin" />
+										) : (
+											<RefreshCw className="h-3.5 w-3.5" />
+										)}
+										Initialize Wiki Plugin
+									</Button>
+									<Button
+										size="sm"
+										variant="outline"
+										className="w-full gap-1.5"
+										onClick={() => triggerUpload("")}
+										disabled={uploading}
+									>
+										{uploading ? (
+											<Loader2 className="h-3.5 w-3.5 animate-spin" />
+										) : (
+											<Upload className="h-3.5 w-3.5" />
+										)}
+										Upload Files
+									</Button>
+								</div>
+							</div>
+						) : (
+							renderNodes(roots)
+						)}
 					</div>
-				)}
 
-				<div
-					className={cn(
-						"flex-1 overflow-auto py-1",
-						dragOverPath === "" &&
-							"ring-2 ring-inset ring-primary bg-primary-soft",
-					)}
-					onDragOver={(e) => handleDragOver(e, "", "root")}
-					onDragLeave={(e) => {
-						if (!e.currentTarget.contains(e.relatedTarget as Node))
-							setDragOverPath(null);
-					}}
-					onDrop={(e) => handleDropOnFolder(e, "")}
-				>
-					{rootLoading ? (
-						<div className="flex justify-center py-6">
-							<Loader2 className="h-5 w-5 animate-spin text-muted-foreground" />
-						</div>
-					) : roots.length === 0 ? (
-						<div className="flex flex-col items-center gap-3 px-4 py-8 text-center">
-							<div className="rounded-full bg-muted p-3">
-								<FileText className="h-6 w-6 text-muted-foreground" />
-							</div>
-							<div className="space-y-1">
-								<p className="text-sm font-medium">No files yet</p>
-								<p className="text-xs text-muted-foreground">
-									Get started by initializing or uploading files
-								</p>
-							</div>
-							<div className="flex flex-col gap-2 w-full max-w-[180px]">
-								<Button
-									size="sm"
-									variant="default"
-									className="w-full gap-1.5"
-									onClick={handleInitWiki}
-									disabled={initingWiki}
-								>
-									{initingWiki ? (
-										<Loader2 className="h-3.5 w-3.5 animate-spin" />
-									) : (
-										<RefreshCw className="h-3.5 w-3.5" />
-									)}
-									Initialize Wiki Plugin
-								</Button>
-								<Button
-									size="sm"
-									variant="outline"
-									className="w-full gap-1.5"
-									onClick={() => triggerUpload("")}
-									disabled={uploading}
-								>
-									{uploading ? (
-										<Loader2 className="h-3.5 w-3.5 animate-spin" />
-									) : (
-										<Upload className="h-3.5 w-3.5" />
-									)}
-									Upload Files
-								</Button>
-							</div>
-						</div>
-					) : (
-						renderNodes(roots)
-					)}
-				</div>
+					{/* Footer: plugin status + action */}
+					<div className="flex items-center justify-between gap-2 px-3 py-2 border-t bg-muted shrink-0">
+						{pluginVersion ? (
+							<span className="text-[11px] text-muted-foreground truncate">
+								v{pluginVersion}
+								{pluginJustUpdated ? " · just updated" : ""}
+							</span>
+						) : (
+							<span />
+						)}
+						{wikiInitialized && (
+							<Button
+								size="sm"
+								variant="outline"
+								onClick={handleInitWiki}
+								disabled={initingWiki}
+							>
+								{initingWiki ? (
+									<Loader2 className="h-3 w-3 animate-spin" />
+								) : null}
+								Check for Updates
+							</Button>
+						)}
+					</div>
+				</Card>
 
-				{/* Footer: plugin status + action */}
-				<div className="flex items-center justify-between gap-2 px-3 py-2 border-t bg-muted shrink-0">
-					{pluginVersion ? (
-						<span className="text-[11px] text-muted-foreground truncate">
-							v{pluginVersion}
-							{pluginJustUpdated ? " · just updated" : ""}
-						</span>
-					) : (
-						<span />
-					)}
-					{wikiInitialized && (
-						<Button
-							size="sm"
-							variant="outline"
-							onClick={handleInitWiki}
-							disabled={initingWiki}
-						>
-							{initingWiki ? (
-								<Loader2 className="h-3 w-3 animate-spin" />
-							) : null}
-							Check for Updates
-						</Button>
-					)}
-				</div>
-			</Card>
-
-			{/* Right panel */}
-			{openFile ? (
-				openFileViewerKind === "app" ? (
-					appFullscreen ? (
-						<WebsiteViewer
-							path={openFile.path}
-							title={openFile.name}
-							fullscreen
-							onExit={() => setAppFullscreen(false)}
-						/>
+				{/* Right panel */}
+				{openFile ? (
+					openFileViewerKind === "app" ? (
+						appFullscreen ? (
+							<WebsiteViewer
+								path={openFile.path}
+								title={openFile.name}
+								fullscreen
+								onExit={() => setAppFullscreen(false)}
+							/>
+						) : (
+							<Card className="flex-1 flex flex-col overflow-hidden min-w-0">
+								<div className="flex items-center justify-between px-4 py-2 border-b bg-muted shrink-0">
+									<div className="flex items-center gap-2 min-w-0">
+										<Globe className="h-4 w-4 shrink-0 text-accent" />
+										<span
+											className="text-sm font-normal truncate"
+											title={openFile.path}
+										>
+											{openFile.path}
+										</span>
+									</div>
+									<div className="flex items-center gap-1 shrink-0">
+										<Button
+											size="sm"
+											variant="ghost"
+											className="h-7 gap-1.5 text-xs"
+											onClick={() => setAppFullscreen(true)}
+										>
+											<Maximize2 className="h-3.5 w-3.5" />
+											Open as app
+										</Button>
+										<Button
+											size="sm"
+											variant="ghost"
+											className="h-7 w-7 p-0"
+											onClick={() => setOpenFile(null)}
+										>
+											<X className="h-3.5 w-3.5" />
+										</Button>
+									</div>
+								</div>
+								<WebsiteViewer path={openFile.path} title={openFile.name} />
+							</Card>
+						)
 					) : (
 						<Card className="flex-1 flex flex-col overflow-hidden min-w-0">
 							<div className="flex items-center justify-between px-4 py-2 border-b bg-muted shrink-0">
 								<div className="flex items-center gap-2 min-w-0">
-									<Globe className="h-4 w-4 shrink-0 text-accent" />
+									{isImage(openFile.name) ? (
+										<ImageIcon className="h-4 w-4 shrink-0 text-sunshine-700" />
+									) : isText(openFile.name) ? (
+										<FileText className="h-4 w-4 shrink-0 text-accent" />
+									) : (
+										<File className="h-4 w-4 shrink-0 text-muted-foreground" />
+									)}
 									<span
 										className="text-sm font-normal truncate"
 										title={openFile.path}
@@ -970,359 +1012,332 @@ export default function BrainPage() {
 									</span>
 								</div>
 								<div className="flex items-center gap-1 shrink-0">
-									<Button
-										size="sm"
-										variant="ghost"
-										className="h-7 gap-1.5 text-xs"
-										onClick={() => setAppFullscreen(true)}
-									>
-										<Maximize2 className="h-3.5 w-3.5" />
-										Open as app
-									</Button>
-									<Button
-										size="sm"
-										variant="ghost"
-										className="h-7 w-7 p-0"
-										onClick={() => setOpenFile(null)}
-									>
-										<X className="h-3.5 w-3.5" />
-									</Button>
-								</div>
-							</div>
-							<WebsiteViewer path={openFile.path} title={openFile.name} />
-						</Card>
-					)
-				) : (
-					<Card className="flex-1 flex flex-col overflow-hidden min-w-0">
-						<div className="flex items-center justify-between px-4 py-2 border-b bg-muted shrink-0">
-							<div className="flex items-center gap-2 min-w-0">
-								{isImage(openFile.name) ? (
-									<ImageIcon className="h-4 w-4 shrink-0 text-sunshine-700" />
-								) : isText(openFile.name) ? (
-									<FileText className="h-4 w-4 shrink-0 text-accent" />
-								) : (
-									<File className="h-4 w-4 shrink-0 text-muted-foreground" />
-								)}
-								<span
-									className="text-sm font-normal truncate"
-									title={openFile.path}
-								>
-									{openFile.path}
-								</span>
-							</div>
-							<div className="flex items-center gap-1 shrink-0">
-								{isText(openFile.name) && !editing && fileContent !== null && (
+									{isText(openFile.name) &&
+										!editing &&
+										fileContent !== null && (
+											<Button
+												size="sm"
+												variant="ghost"
+												className="h-7 w-7 p-0"
+												onClick={() => {
+													setEditing(true);
+													setEditContent(fileContent);
+													setSaveError(null);
+													void useEditorStore
+														.getState()
+														.loadPage(openFile.path);
+												}}
+											>
+												<Pencil className="h-3.5 w-3.5" />
+											</Button>
+										)}
 									<Button
 										size="sm"
 										variant="ghost"
 										className="h-7 w-7 p-0"
 										onClick={() => {
-											setEditing(true);
-											setEditContent(fileContent);
-											setSaveError(null);
-											void useEditorStore.getState().loadPage(openFile.path);
+											setOpenFile(null);
+											setFileContent(null);
+											setEditing(false);
 										}}
 									>
-										<Pencil className="h-3.5 w-3.5" />
+										<X className="h-3.5 w-3.5" />
 									</Button>
-								)}
-								<Button
-									size="sm"
-									variant="ghost"
-									className="h-7 w-7 p-0"
-									onClick={() => {
-										setOpenFile(null);
-										setFileContent(null);
-										setEditing(false);
-									}}
-								>
-									<X className="h-3.5 w-3.5" />
-								</Button>
+								</div>
 							</div>
-						</div>
 
-						{editing ? (
-							<div className="flex-1 flex flex-col overflow-hidden min-h-0">
-								<KBEditor />
-							</div>
-						) : (
-							<div className="flex-1 overflow-auto p-4 min-h-0">
-								{fileLoading ? (
-									<div className="flex justify-center py-8">
-										<Loader2 className="h-5 w-5 animate-spin text-muted-foreground" />
-									</div>
-								) : openFileViewerKind === "csv" ? (
-									<CsvViewer path={openFile.path} title={openFile.name} />
-								) : openFileViewerKind === "pdf" ? (
-									<PdfViewer path={openFile.path} title={openFile.name} />
-								) : openFileViewerKind === "mermaid" ? (
-									<MermaidViewer path={openFile.path} title={openFile.name} />
-								) : openFileViewerKind === "notebook" ? (
-									<NotebookViewer path={openFile.path} title={openFile.name} />
-								) : openFileViewerKind === "image" ? (
-									<ImageViewer path={openFile.path} title={openFile.name} />
-								) : openFileViewerKind === "media" ? (
-									<MediaViewer
-										path={openFile.path}
-										title={openFile.name}
-										type={
-											["mp4", "webm", "mov", "m4v"].includes(ext(openFile.name))
-												? "video"
-												: "audio"
-										}
-									/>
-								) : openFileViewerKind === "docx" ? (
-									<DocxViewer path={openFile.path} title={openFile.name} />
-								) : openFileViewerKind === "xlsx" ? (
-									<XlsxViewer path={openFile.path} title={openFile.name} />
-								) : openFileViewerKind === "pptx" ? (
-									<PptxViewer path={openFile.path} title={openFile.name} />
-								) : openFileViewerKind === "source" ? (
-									<SourceViewer path={openFile.path} title={openFile.name} />
-								) : openFileViewerKind === "fallback" ? (
-									<FileFallbackViewer
-										path={openFile.path}
-										title={openFile.name}
-									/>
-								) : fileContent !== null ? (
-									["md", "markdown"].includes(ext(openFile.name)) ? (
-										(() => {
-											const { data, body } = parseFrontmatter(fileContent);
-											return (
-												<>
-													<FrontmatterHeader
-														data={data as Record<string, never>}
-													/>
-													<ReactMarkdown
-														remarkPlugins={[remarkGfm, remarkWikilinks]}
-														components={{
-															h1: ({ children }) => (
-																<h1 className="text-2xl font-normal mt-6 mb-3 pb-1 border-b">
-																	{children}
-																</h1>
-															),
-															h2: ({ children }) => (
-																<h2 className="text-xl font-normal mt-5 mb-2 pb-1 border-b">
-																	{children}
-																</h2>
-															),
-															h3: ({ children }) => (
-																<h3 className="text-lg font-normal mt-4 mb-2">
-																	{children}
-																</h3>
-															),
-															h4: ({ children }) => (
-																<h4 className="text-base font-normal mt-3 mb-1">
-																	{children}
-																</h4>
-															),
-															p: ({ children }) => (
-																<p className="text-sm leading-relaxed mb-3">
-																	{children}
-																</p>
-															),
-															ul: ({ children }) => (
-																<ul className="list-disc pl-5 mb-3 space-y-1 text-sm">
-																	{children}
-																</ul>
-															),
-															ol: ({ children }) => (
-																<ol className="list-decimal pl-5 mb-3 space-y-1 text-sm">
-																	{children}
-																</ol>
-															),
-															li: ({ children }) => (
-																<li className="leading-relaxed">{children}</li>
-															),
-															blockquote: ({ children }) => (
-																<blockquote className="border-l-4 border-muted-foreground/30 pl-4 italic text-muted-foreground my-3 text-sm">
-																	{children}
-																</blockquote>
-															),
-															code: ({ className, children, ...props }) => {
-																const isBlock =
-																	className?.includes("language-");
-																return isBlock ? (
-																	<code
-																		className={`block bg-muted rounded-sm px-3 py-2 text-xs font-mono overflow-x-auto my-3 ${className ?? ""}`}
-																		{...props}
-																	>
+							{editing ? (
+								<div className="flex-1 flex flex-col overflow-hidden min-h-0">
+									<KBEditor />
+								</div>
+							) : (
+								<div className="flex-1 overflow-auto p-4 min-h-0">
+									{fileLoading ? (
+										<div className="flex justify-center py-8">
+											<Loader2 className="h-5 w-5 animate-spin text-muted-foreground" />
+										</div>
+									) : openFileViewerKind === "csv" ? (
+										<CsvViewer path={openFile.path} title={openFile.name} />
+									) : openFileViewerKind === "pdf" ? (
+										<PdfViewer path={openFile.path} title={openFile.name} />
+									) : openFileViewerKind === "mermaid" ? (
+										<MermaidViewer path={openFile.path} title={openFile.name} />
+									) : openFileViewerKind === "notebook" ? (
+										<NotebookViewer
+											path={openFile.path}
+											title={openFile.name}
+										/>
+									) : openFileViewerKind === "image" ? (
+										<ImageViewer path={openFile.path} title={openFile.name} />
+									) : openFileViewerKind === "media" ? (
+										<MediaViewer
+											path={openFile.path}
+											title={openFile.name}
+											type={
+												["mp4", "webm", "mov", "m4v"].includes(
+													ext(openFile.name),
+												)
+													? "video"
+													: "audio"
+											}
+										/>
+									) : openFileViewerKind === "docx" ? (
+										<DocxViewer path={openFile.path} title={openFile.name} />
+									) : openFileViewerKind === "xlsx" ? (
+										<XlsxViewer path={openFile.path} title={openFile.name} />
+									) : openFileViewerKind === "pptx" ? (
+										<PptxViewer path={openFile.path} title={openFile.name} />
+									) : openFileViewerKind === "source" ? (
+										<SourceViewer path={openFile.path} title={openFile.name} />
+									) : openFileViewerKind === "fallback" ? (
+										<FileFallbackViewer
+											path={openFile.path}
+											title={openFile.name}
+										/>
+									) : fileContent !== null ? (
+										["md", "markdown"].includes(ext(openFile.name)) ? (
+											(() => {
+												const { data, body } = parseFrontmatter(fileContent);
+												return (
+													<>
+														<FrontmatterHeader
+															data={data as Record<string, never>}
+														/>
+														<ReactMarkdown
+															remarkPlugins={[remarkGfm, remarkWikilinks]}
+															components={{
+																h1: ({ children }) => (
+																	<h1 className="text-2xl font-normal mt-6 mb-3 pb-1 border-b">
 																		{children}
-																	</code>
-																) : (
-																	<code
-																		className="bg-muted rounded-sm px-1 py-0.5 text-xs font-mono"
-																		{...props}
-																	>
+																	</h1>
+																),
+																h2: ({ children }) => (
+																	<h2 className="text-xl font-normal mt-5 mb-2 pb-1 border-b">
 																		{children}
-																	</code>
-																);
-															},
-															pre: ({ children }) => (
-																<pre className="my-3 overflow-x-auto">
-																	{children}
-																</pre>
-															),
-															a: ({ href, children, ...rest }) => {
-																const props = rest as Record<string, unknown>;
-																if (props["data-wiki-link"] === "true") {
-																	const slug =
-																		(props["data-slug"] as string) ?? "";
-																	const anchor = props["data-anchor"] as
-																		| string
-																		| undefined;
-																	const broken =
-																		slug &&
-																		!useWikiSlugsStore.getState().has(slug);
+																	</h2>
+																),
+																h3: ({ children }) => (
+																	<h3 className="text-lg font-normal mt-4 mb-2">
+																		{children}
+																	</h3>
+																),
+																h4: ({ children }) => (
+																	<h4 className="text-base font-normal mt-3 mb-1">
+																		{children}
+																	</h4>
+																),
+																p: ({ children }) => (
+																	<p className="text-sm leading-relaxed mb-3">
+																		{children}
+																	</p>
+																),
+																ul: ({ children }) => (
+																	<ul className="list-disc pl-5 mb-3 space-y-1 text-sm">
+																		{children}
+																	</ul>
+																),
+																ol: ({ children }) => (
+																	<ol className="list-decimal pl-5 mb-3 space-y-1 text-sm">
+																		{children}
+																	</ol>
+																),
+																li: ({ children }) => (
+																	<li className="leading-relaxed">
+																		{children}
+																	</li>
+																),
+																blockquote: ({ children }) => (
+																	<blockquote className="border-l-4 border-muted-foreground/30 pl-4 italic text-muted-foreground my-3 text-sm">
+																		{children}
+																	</blockquote>
+																),
+																code: ({ className, children, ...props }) => {
+																	const isBlock =
+																		className?.includes("language-");
+																	return isBlock ? (
+																		<code
+																			className={`block bg-muted rounded-sm px-3 py-2 text-xs font-mono overflow-x-auto my-3 ${className ?? ""}`}
+																			{...props}
+																		>
+																			{children}
+																		</code>
+																	) : (
+																		<code
+																			className="bg-muted rounded-sm px-1 py-0.5 text-xs font-mono"
+																			{...props}
+																		>
+																			{children}
+																		</code>
+																	);
+																},
+																pre: ({ children }) => (
+																	<pre className="my-3 overflow-x-auto">
+																		{children}
+																	</pre>
+																),
+																a: ({ href, children, ...rest }) => {
+																	const props = rest as Record<string, unknown>;
+																	if (props["data-wiki-link"] === "true") {
+																		const slug =
+																			(props["data-slug"] as string) ?? "";
+																		const anchor = props["data-anchor"] as
+																			| string
+																			| undefined;
+																		const broken =
+																			slug &&
+																			!useWikiSlugsStore.getState().has(slug);
+																		return (
+																			<a
+																				href={href}
+																				className="wiki-link"
+																				data-wiki-link="true"
+																				data-slug={slug}
+																				data-anchor={anchor}
+																				data-broken={
+																					broken ? "true" : undefined
+																				}
+																				onClick={(e) => {
+																					e.preventDefault();
+																					if (!slug) return;
+																					const dir = useWikiSlugsStore
+																						.getState()
+																						.getDir(slug);
+																					if (!dir) return;
+																					const targetPath =
+																						dir === "root"
+																							? `${slug}.md`
+																							: `${dir}/${slug}.md`;
+																					void openViewer({
+																						path: targetPath,
+																						name: `${slug}.md`,
+																						type: "file",
+																					} as TreeNode);
+																					if (anchor) {
+																						setTimeout(() => {
+																							document
+																								.getElementById(anchor)
+																								?.scrollIntoView({
+																									behavior: "smooth",
+																								});
+																						}, 200);
+																					}
+																				}}
+																			>
+																				{children}
+																			</a>
+																		);
+																	}
 																	return (
 																		<a
 																			href={href}
-																			className="wiki-link"
-																			data-wiki-link="true"
-																			data-slug={slug}
-																			data-anchor={anchor}
-																			data-broken={broken ? "true" : undefined}
-																			onClick={(e) => {
-																				e.preventDefault();
-																				if (!slug) return;
-																				const dir = useWikiSlugsStore
-																					.getState()
-																					.getDir(slug);
-																				if (!dir) return;
-																				const targetPath =
-																					dir === "root"
-																						? `${slug}.md`
-																						: `${dir}/${slug}.md`;
-																				void openViewer({
-																					path: targetPath,
-																					name: `${slug}.md`,
-																					type: "file",
-																				} as TreeNode);
-																				if (anchor) {
-																					setTimeout(() => {
-																						document
-																							.getElementById(anchor)
-																							?.scrollIntoView({
-																								behavior: "smooth",
-																							});
-																					}, 200);
-																				}
-																			}}
+																			className="text-primary underline hover:no-underline"
+																			target="_blank"
+																			rel="noreferrer"
 																		>
 																			{children}
 																		</a>
 																	);
-																}
-																return (
-																	<a
-																		href={href}
-																		className="text-primary underline hover:no-underline"
-																		target="_blank"
-																		rel="noreferrer"
-																	>
+																},
+																strong: ({ children }) => (
+																	<strong className="font-normal">
 																		{children}
-																	</a>
-																);
-															},
-															strong: ({ children }) => (
-																<strong className="font-normal">
-																	{children}
-																</strong>
-															),
-															em: ({ children }) => (
-																<em className="italic">{children}</em>
-															),
-															hr: () => <hr className="my-4 border-border" />,
-															table: ({ children }) => (
-																<div className="overflow-x-auto my-3">
-																	<table className="w-full text-sm border-collapse">
+																	</strong>
+																),
+																em: ({ children }) => (
+																	<em className="italic">{children}</em>
+																),
+																hr: () => <hr className="my-4 border-border" />,
+																table: ({ children }) => (
+																	<div className="overflow-x-auto my-3">
+																		<table className="w-full text-sm border-collapse">
+																			{children}
+																		</table>
+																	</div>
+																),
+																th: ({ children }) => (
+																	<th className="border border-border px-3 py-1.5 bg-muted font-normal text-left">
 																		{children}
-																	</table>
-																</div>
-															),
-															th: ({ children }) => (
-																<th className="border border-border px-3 py-1.5 bg-muted font-normal text-left">
-																	{children}
-																</th>
-															),
-															td: ({ children }) => (
-																<td className="border border-border px-3 py-1.5">
-																	{children}
-																</td>
-															),
-														}}
-													>
-														{body}
-													</ReactMarkdown>
-												</>
-											);
-										})()
+																	</th>
+																),
+																td: ({ children }) => (
+																	<td className="border border-border px-3 py-1.5">
+																		{children}
+																	</td>
+																),
+															}}
+														>
+															{body}
+														</ReactMarkdown>
+													</>
+												);
+											})()
+										) : (
+											<pre className="text-xs font-mono whitespace-pre-wrap break-words leading-relaxed">
+												{fileContent}
+											</pre>
+										)
+									) : isText(openFile.name) ? (
+										<p className="text-sm text-muted-foreground">
+											Could not load file.
+										</p>
 									) : (
-										<pre className="text-xs font-mono whitespace-pre-wrap break-words leading-relaxed">
-											{fileContent}
-										</pre>
-									)
-								) : isText(openFile.name) ? (
-									<p className="text-sm text-muted-foreground">
-										Could not load file.
-									</p>
-								) : (
-									<p className="text-sm text-muted-foreground">
-										Preview not available for this file type.
-									</p>
-								)}
-							</div>
-						)}
+										<p className="text-sm text-muted-foreground">
+											Preview not available for this file type.
+										</p>
+									)}
+								</div>
+							)}
 
-						{editing && (
-							<div className="border-t px-4 py-2 flex items-center justify-end gap-2 bg-muted shrink-0">
-								{saveError && (
-									<span className="text-xs text-destructive mr-auto">
-										{saveError}
-									</span>
-								)}
-								<Button
-									size="sm"
-									variant="ghost"
-									onClick={() => {
-										setEditing(false);
-										setSaveError(null);
-									}}
-								>
-									Cancel
-								</Button>
-								<Button
-									size="sm"
-									className="gap-1"
-									onClick={handleSave}
-									disabled={saving}
-								>
-									{saving && <Loader2 className="h-3 w-3 animate-spin" />}Save
-								</Button>
-							</div>
-						)}
+							{editing && (
+								<div className="border-t px-4 py-2 flex items-center justify-end gap-2 bg-muted shrink-0">
+									{saveError && (
+										<span className="text-xs text-destructive mr-auto">
+											{saveError}
+										</span>
+									)}
+									<Button
+										size="sm"
+										variant="ghost"
+										onClick={() => {
+											setEditing(false);
+											setSaveError(null);
+										}}
+									>
+										Cancel
+									</Button>
+									<Button
+										size="sm"
+										className="gap-1"
+										onClick={handleSave}
+										disabled={saving}
+									>
+										{saving && <Loader2 className="h-3 w-3 animate-spin" />}Save
+									</Button>
+								</div>
+							)}
+						</Card>
+					)
+				) : (
+					<Card className="flex-1 flex flex-col items-center justify-center overflow-hidden min-w-0">
+						<div className="flex flex-col items-center gap-2 text-center px-4">
+							<FileText className="h-8 w-8 text-muted-foreground" />
+							<p className="text-sm text-muted-foreground">
+								Select a file to view or edit
+							</p>
+						</div>
 					</Card>
-				)
-			) : (
-				<Card className="flex-1 flex flex-col items-center justify-center overflow-hidden min-w-0">
-					<div className="flex flex-col items-center gap-2 text-center px-4">
-						<FileText className="h-8 w-8 text-muted-foreground" />
-						<p className="text-sm text-muted-foreground">
-							Select a file to view or edit
-						</p>
-					</div>
-				</Card>
-			)}
-			<input
-				ref={fileInputRef}
-				type="file"
-				multiple
-				className="hidden"
-				accept=".pdf,.txt,.md,.doc,.docx,.jpg,.jpeg,.png,.gif,.webp,.svg"
-				onChange={(e) => {
-					if (e.target.files) doUpload(e.target.files, uploadDirRef.current);
-				}}
-			/>
+				)}
+				<input
+					ref={fileInputRef}
+					type="file"
+					multiple
+					className="hidden"
+					accept=".pdf,.txt,.md,.doc,.docx,.jpg,.jpeg,.png,.gif,.webp,.svg"
+					onChange={(e) => {
+						if (e.target.files) doUpload(e.target.files, uploadDirRef.current);
+					}}
+				/>
+			</div>
 
 			<ConfirmDialog
 				open={!!deletingPath}
