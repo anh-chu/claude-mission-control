@@ -158,7 +158,6 @@ export interface Task {
 	urgency: Urgency;
 	kanban: KanbanStatus;
 	projectId: string | null;
-	milestoneId: string | null;
 	initiativeId?: string | null;
 	assignedTo: AgentRole | null;
 	collaborators: string[];
@@ -242,7 +241,6 @@ export type EventType =
 	| "decision_requested"
 	| "decision_answered"
 	| "brain_dump_triaged"
-	| "milestone_completed"
 	| "agent_checkin";
 
 export interface ActivityEvent {

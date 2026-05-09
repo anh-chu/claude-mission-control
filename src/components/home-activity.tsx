@@ -77,10 +77,6 @@ const EVENT_META: EventMetaMap = {
 		label: "Quick Capture Processed",
 		color: "bg-sunshine-700/10 text-sunshine-700 border-sunshine-700/20",
 	},
-	milestone_completed: {
-		label: "Milestone Completed",
-		color: "bg-success-soft text-success border-success/20",
-	},
 	agent_checkin: {
 		label: "Agent Check-in",
 		color: "bg-sunshine-500/10 text-sunshine-700 border-sunshine-500/20",

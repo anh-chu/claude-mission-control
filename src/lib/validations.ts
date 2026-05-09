@@ -34,7 +34,6 @@ const eventTypeEnum = z.enum([
 	"decision_requested",
 	"decision_answered",
 	"brain_dump_triaged",
-	"milestone_completed",
 	"agent_checkin",
 ]);
 
@@ -115,7 +114,6 @@ export const taskCreateSchema = z.object({
 	urgency: urgencyEnum.optional().default("not-urgent"),
 	kanban: kanbanEnum.optional().default("not-started"),
 	projectId: z.string().nullable().optional().default(null),
-	milestoneId: z.string().nullable().optional().default(null),
 	assignedTo: agentRoleEnum.nullable().optional().default(null),
 	collaborators: z.array(z.string().max(50)).max(20).optional().default([]),
 	subtasks: z
@@ -167,7 +165,6 @@ export const taskUpdateSchema = z.object({
 	urgency: urgencyEnum.optional(),
 	kanban: kanbanEnum.optional(),
 	projectId: z.string().nullable().optional(),
-	milestoneId: z.string().nullable().optional(),
 	assignedTo: agentRoleEnum.nullable().optional(),
 	collaborators: z.array(z.string().max(50)).max(20).optional(),
 	subtasks: z.array(subtaskSchema).max(LIMITS.MAX_SUBTASKS).optional(),

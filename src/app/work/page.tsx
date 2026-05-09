@@ -1,7 +1,7 @@
 "use client";
 
 import type { DragEndEvent } from "@dnd-kit/core";
-import { Columns3, GitFork, Grid2x2, Plus } from "lucide-react";
+import { Plus } from "lucide-react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useState } from "react";
 import {
@@ -12,13 +12,14 @@ import {
 	useSelection,
 	useTaskHandlers,
 } from "@/components/board-view";
-import { BreadcrumbNav } from "@/components/breadcrumb-nav";
+import {
+	BreadcrumbNav,
+	type BreadcrumbPeer,
+} from "@/components/breadcrumb-nav";
 import { FilterBar } from "@/components/filter-bar";
 import { CardSkeleton, GridSkeleton, Skeleton } from "@/components/skeletons";
 import { Button } from "@/components/ui/button";
-
 import { Tip } from "@/components/ui/tip";
-import { WorkMapView } from "@/components/work-map-view";
 import {
 	useAgents,
 	useDecisions,
@@ -31,7 +32,7 @@ import { getQuadrant, valuesFromQuadrant } from "@/lib/types";
 import { cn } from "@/lib/utils";
 import { useActiveRunsContext as useActiveRuns } from "@/providers/active-runs-provider";
 
-type ViewMode = "matrix" | "board" | "map";
+type ViewMode = "matrix" | "board";
 
 const quadrants: ColumnConfig[] = [
 	{
@@ -158,6 +159,13 @@ function TasksSkeleton({ viewMode }: { viewMode: ViewMode }) {
 	);
 }
 
+const workPeers: BreadcrumbPeer[] = [
+	{ label: "Tasks", href: "/work" },
+	{ label: "Projects", href: "/work/projects" },
+	{ label: "Initiatives", href: "/work/initiatives" },
+	{ label: "Map", href: "/work/map" },
+];
+
 export default function TasksPage() {
 	const {
 		tasks,
@@ -281,7 +289,7 @@ export default function TasksPage() {
 
 	return (
 		<div className="space-y-4">
-			<BreadcrumbNav items={[{ label: "Work" }]} />
+			<BreadcrumbNav items={[{ label: "Tasks" }]} peers={workPeers} />
 
 			{tasksError && (
 				<div className="rounded-sm border border-destructive/20 bg-destructive/5 p-3 text-sm text-destructive flex items-center justify-between">
@@ -297,55 +305,42 @@ export default function TasksPage() {
 			)}
 
 			<div className="flex items-center justify-between flex-wrap gap-2">
-				<h1 className="text-xl font-normal">Tasks</h1>
+				<h1 className="text-xl font-normal">Work</h1>
 				<div className="flex items-center gap-2">
-					{/* View toggle */}
-					<div className="flex items-center rounded-sm border bg-muted p-0.5">
-						<Tip content="Priority Matrix">
-							<button
-								type="button"
-								onClick={() => setViewMode("matrix")}
-								className={cn(
-									"flex items-center justify-center rounded-sm px-2 py-1 transition-colors",
-									viewMode === "matrix"
-										? "bg-background shadow-e-1 text-foreground"
-										: "text-muted-foreground hover:text-foreground",
-								)}
-								aria-label="Priority Matrix view"
-							>
-								<Grid2x2 className="h-3.5 w-3.5" />
-							</button>
-						</Tip>
-						<Tip content="Status Board">
-							<button
-								type="button"
-								onClick={() => setViewMode("board")}
-								className={cn(
-									"flex items-center justify-center rounded-sm px-2 py-1 transition-colors",
-									viewMode === "board"
-										? "bg-background shadow-e-1 text-foreground"
-										: "text-muted-foreground hover:text-foreground",
-								)}
-								aria-label="Status Board view"
-							>
-								<Columns3 className="h-3.5 w-3.5" />
-							</button>
-						</Tip>
-						<Tip content="Project Map">
-							<button
-								type="button"
-								onClick={() => setViewMode("map")}
-								className={cn(
-									"flex items-center justify-center rounded-sm px-2 py-1 transition-colors",
-									viewMode === "map"
-										? "bg-background shadow-e-1 text-foreground"
-										: "text-muted-foreground hover:text-foreground",
-								)}
-								aria-label="Project Map view"
-							>
-								<GitFork className="h-3.5 w-3.5" />
-							</button>
-						</Tip>
+					{/* Matrix | Board toggle */}
+					<div className="inline-flex items-center rounded-sm border bg-muted p-0.5">
+						<button
+							type="button"
+							onClick={() => {
+								setViewMode("matrix");
+								router.replace("/work?view=matrix", { scroll: false });
+							}}
+							className={cn(
+								"px-2.5 py-1 text-xs uppercase tracking-wider rounded-sm transition-colors",
+								viewMode === "matrix"
+									? "bg-background shadow-e-1 text-foreground"
+									: "text-muted-foreground hover:text-foreground",
+							)}
+							aria-label="Matrix view"
+						>
+							Matrix
+						</button>
+						<button
+							type="button"
+							onClick={() => {
+								setViewMode("board");
+								router.replace("/work?view=board", { scroll: false });
+							}}
+							className={cn(
+								"px-2.5 py-1 text-xs uppercase tracking-wider rounded-sm transition-colors",
+								viewMode === "board"
+									? "bg-background shadow-e-1 text-foreground"
+									: "text-muted-foreground hover:text-foreground",
+							)}
+							aria-label="Board view"
+						>
+							Board
+						</button>
 					</div>
 
 					<FilterBar
@@ -401,8 +396,6 @@ export default function TasksPage() {
 				<TasksSkeleton viewMode={viewMode} />
 			) : (
 				<>
-					{viewMode === "map" && <WorkMapView />}
-
 					{viewMode === "matrix" ? (
 						<BoardDndWrapper
 							activeTask={activeTask}

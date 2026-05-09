@@ -48,7 +48,6 @@ export interface TaskFormData {
 	urgency: Urgency;
 	kanban: KanbanStatus;
 	projectId: string | null;
-	milestoneId: string | null;
 	initiativeId: string | null;
 	assignedTo: AgentRole | null;
 	collaborators: string[];
@@ -121,7 +120,6 @@ export function TaskForm({
 		urgency: initial?.urgency ?? "not-urgent",
 		kanban: initial?.kanban ?? "not-started",
 		projectId: initial?.projectId ?? null,
-		milestoneId: initial?.milestoneId ?? null,
 		initiativeId: initial?.initiativeId ?? null,
 		assignedTo: initial?.assignedTo ?? null,
 		collaborators: initial?.collaborators ?? [],

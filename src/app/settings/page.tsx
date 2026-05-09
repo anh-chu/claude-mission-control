@@ -5,6 +5,7 @@ import Link from "next/link";
 import { useTheme } from "next-themes";
 import { useEffect, useState } from "react";
 import { BreadcrumbNav } from "@/components/breadcrumb-nav";
+import { HomeLogs } from "@/components/home-logs";
 
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -247,6 +248,21 @@ export default function SettingsPage() {
 								{daemonSaved ? "Saved" : daemonSaving ? "Saving..." : "Save"}
 							</Button>
 						</div>
+					</CardContent>
+				</Card>
+
+				<h2 className="text-xs font-semibold uppercase tracking-wider text-muted-foreground mt-6 mb-1">
+					Diagnostics
+				</h2>
+				<Card>
+					<CardHeader>
+						<CardTitle>System Logs</CardTitle>
+						<CardDescription>
+							System output, active runs, and per-run consoles.
+						</CardDescription>
+					</CardHeader>
+					<CardContent>
+						<HomeLogs />
 					</CardContent>
 				</Card>
 			</div>

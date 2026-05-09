@@ -1,10 +1,20 @@
-import { BreadcrumbNav } from "@/components/breadcrumb-nav";
+import {
+	BreadcrumbNav,
+	type BreadcrumbPeer,
+} from "@/components/breadcrumb-nav";
 import { CardSkeleton, GridSkeleton, Skeleton } from "@/components/skeletons";
+
+const workPeers: BreadcrumbPeer[] = [
+	{ label: "Tasks", href: "/work" },
+	{ label: "Projects", href: "/work/projects" },
+	{ label: "Initiatives", href: "/work/initiatives" },
+	{ label: "Map", href: "/work/map" },
+];
 
 export default function PriorityMatrixLoading() {
 	return (
 		<div className="space-y-6">
-			<BreadcrumbNav items={[{ label: "Work" }]} />
+			<BreadcrumbNav items={[{ label: "Tasks" }]} peers={workPeers} />
 			<GridSkeleton
 				className="grid grid-cols-1 sm:grid-cols-2 gap-3"
 				count={4}

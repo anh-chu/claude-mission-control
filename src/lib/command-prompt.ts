@@ -19,7 +19,7 @@ function getFirstActiveAgentId(): string {
 		/* agents.json missing or unreadable */
 	}
 	throw new Error(
-		"No active agents found. Create an agent in the Crew page before running scheduled commands.",
+		"No active agents found. Create an agent in the Agents page before running scheduled commands.",
 	);
 }
 
@@ -55,7 +55,6 @@ export function buildScheduledTask(
 	urgency: "urgent";
 	kanban: "not-started";
 	projectId: null;
-	milestoneId: null;
 	assignedTo: string;
 	collaborators: [];
 	subtasks: [];
@@ -83,7 +82,6 @@ export function buildScheduledTask(
 		urgency: "urgent",
 		kanban: "not-started",
 		projectId: null,
-		milestoneId: null,
 		assignedTo,
 		collaborators: [],
 		subtasks: [],

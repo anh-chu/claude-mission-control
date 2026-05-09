@@ -23,7 +23,7 @@ export default function NewAgentPage() {
 			createdAt: new Date().toISOString(),
 			updatedAt: new Date().toISOString(),
 		});
-		router.push("/crew");
+		router.push("/agents");
 	};
 
 	return (

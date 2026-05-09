@@ -11,12 +11,17 @@ import {
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useState } from "react";
-import { BreadcrumbNav } from "@/components/breadcrumb-nav";
+import { AgentSkills } from "@/components/agent-skills";
+import { AutopilotPage } from "@/components/autopilot-page";
+import {
+	BreadcrumbNav,
+	type BreadcrumbPeer,
+} from "@/components/breadcrumb-nav";
 import { AgentContextMenuContent } from "@/components/context-menus/agent-context-menu";
 import { CreateTaskDialog } from "@/components/create-task-dialog";
-import { CrewSkills } from "@/components/crew-skills";
 import { EmptyState } from "@/components/empty-state";
 import { ErrorState } from "@/components/error-state";
+import { RunsFeed } from "@/components/runs-feed";
 import { CardSkeleton, GridSkeleton, Skeleton } from "@/components/skeletons";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -51,7 +56,7 @@ function AgentCard({
 	return (
 		<ContextMenu>
 			<ContextMenuTrigger asChild>
-				<Link href={`/crew/${agent.id}`}>
+				<Link href={`/agents/${agent.id}`}>
 					<div
 						className={cn(
 							"group cursor-pointer rounded-sm border border-transparent bg-card p-5 shadow-e-2 transition-all hover:shadow-e-4 hover:border-primary/30 hover:-translate-y-0.5",
@@ -148,7 +153,7 @@ function AgentCard({
 			</ContextMenuTrigger>
 			<AgentContextMenuContent
 				agent={agent}
-				href={`/crew/${agent.id}`}
+				href={`/agents/${agent.id}`}
 				onEdit={onEdit}
 				onNewTask={onNewTask}
 				onToggleStatus={onToggleStatus}
@@ -157,7 +162,14 @@ function AgentCard({
 	);
 }
 
-export default function CrewPage() {
+const agentPeers: BreadcrumbPeer[] = [
+	{ label: "Agents", href: "/agents" },
+	{ label: "Extensions", href: "/agents?tab=skills" },
+	{ label: "Autopilot", href: "/agents?tab=autopilot" },
+	{ label: "Runs", href: "/agents?tab=runs" },
+];
+
+export default function AgentsPage() {
 	const { agents, loading, error: agentsError, refetch } = useAgents();
 	const { tasks, create: createTask } = useTasks();
 	const { config, updateConfig } = useDaemon();
@@ -168,7 +180,17 @@ export default function CrewPage() {
 	);
 
 	const searchParams = useSearchParams();
-	const tab = searchParams.get("tab") ?? "crew";
+	const rawTab = searchParams.get("tab");
+	const VALID_TABS = ["agents", "skills", "autopilot", "runs"];
+	const tab = rawTab && VALID_TABS.includes(rawTab) ? rawTab : "agents";
+
+	const tabLabels: Record<string, string> = {
+		agents: "Agents",
+		skills: "Extensions",
+		autopilot: "Autopilot",
+		runs: "Runs",
+	};
+	const activeLabel = tabLabels[tab] ?? "Agents";
 
 	async function toggleGlobalPermissions(on: boolean) {
 		await updateConfig({
@@ -179,7 +201,7 @@ export default function CrewPage() {
 	}
 
 	function handleEditAgent(agentId: string) {
-		router.push(`/crew/${agentId}/edit`);
+		router.push(`/agents/${agentId}/edit`);
 	}
 
 	function handleNewTask(agentId: string) {
@@ -213,7 +235,7 @@ export default function CrewPage() {
 	if (loading) {
 		return (
 			<div className="space-y-6">
-				<BreadcrumbNav items={[{ label: "Crew" }]} />
+				<BreadcrumbNav items={[{ label: "Agents" }]} />
 				<GridSkeleton
 					className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3"
 					count={3}
@@ -248,7 +270,7 @@ export default function CrewPage() {
 	if (agentsError) {
 		return (
 			<div className="space-y-6">
-				<BreadcrumbNav items={[{ label: "Crew" }]} />
+				<BreadcrumbNav items={[{ label: "Agents" }]} />
 				<ErrorState message={agentsError} onRetry={refetch} />
 			</div>
 		);
@@ -256,7 +278,7 @@ export default function CrewPage() {
 
 	return (
 		<div className="space-y-6">
-			<BreadcrumbNav items={[{ label: "Crew" }]} />
+			<BreadcrumbNav items={[{ label: activeLabel }]} peers={agentPeers} />
 
 			<div className="flex items-center justify-between">
 				<div>
@@ -265,11 +287,11 @@ export default function CrewPage() {
 						{agents.length} agent{agents.length !== 1 ? "s" : ""} registered
 					</p>
 				</div>
-				{tab === "crew" && (
+				{tab === "agents" && (
 					<Tip content="Create a custom AI agent">
 						<Button
 							size="sm"
-							onClick={() => router.push("/crew/new")}
+							onClick={() => router.push("/agents/new")}
 							className="gap-1.5"
 						>
 							<Plus className="h-3.5 w-3.5" /> New Agent
@@ -278,33 +300,7 @@ export default function CrewPage() {
 				)}
 			</div>
 
-			<div className="flex items-center gap-0.5 -mt-2">
-				<Link
-					href="/crew?tab=crew"
-					className={cn(
-						"px-3 py-1.5 text-sm font-medium rounded-md transition-colors",
-						tab === "crew"
-							? "bg-accent text-accent-foreground"
-							: "text-muted-foreground hover:bg-accent/50",
-					)}
-				>
-					Crew
-				</Link>
-
-				<Link
-					href="/crew?tab=skills"
-					className={cn(
-						"px-3 py-1.5 text-sm font-medium rounded-md transition-colors",
-						tab === "skills"
-							? "bg-accent text-accent-foreground"
-							: "text-muted-foreground hover:bg-accent/50",
-					)}
-				>
-					Skills
-				</Link>
-			</div>
-
-			{tab === "crew" && (
+			{tab === "agents" && (
 				<>
 					{/* Global permission default */}
 					<div className="flex items-center justify-between rounded-sm border px-4 py-3 gap-4">
@@ -367,7 +363,7 @@ export default function CrewPage() {
 									: `No ${filter} agents.`
 							}
 							actionLabel="Create an agent"
-							onAction={() => router.push("/crew/new")}
+							onAction={() => router.push("/agents/new")}
 						/>
 					) : (
 						<div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
@@ -410,7 +406,11 @@ export default function CrewPage() {
 				</>
 			)}
 
-			{tab === "skills" && <CrewSkills />}
+			{tab === "skills" && <AgentSkills />}
+
+			{tab === "autopilot" && <AutopilotPage />}
+
+			{tab === "runs" && <RunsFeed />}
 		</div>
 	);
 }

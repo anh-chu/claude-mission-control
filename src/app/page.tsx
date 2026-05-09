@@ -21,7 +21,10 @@ import dynamic from "next/dynamic";
 import Link from "next/link";
 import { useSearchParams } from "next/navigation";
 import { type ReactNode, useState } from "react";
-import { BreadcrumbNav } from "@/components/breadcrumb-nav";
+import {
+	BreadcrumbNav,
+	type BreadcrumbPeer,
+} from "@/components/breadcrumb-nav";
 import { HomeActivity } from "@/components/home-activity";
 import { HomeInbox } from "@/components/home-inbox";
 
@@ -172,7 +175,7 @@ export default function CommandCenterPage() {
 		};
 	});
 
-	// Crew exceptions: agents that need attention (not idle or on-track)
+	// Agent exceptions: agents that need attention (not idle or on-track)
 	const exceptionAgents = agentWorkload.filter(
 		(a) => a.status !== "idle" && a.status !== "on-track",
 	);
@@ -388,9 +391,17 @@ export default function CommandCenterPage() {
 		);
 	}
 
+	const homePeers: BreadcrumbPeer[] = [
+		{ label: "Overview", href: "/?tab=overview" },
+		{ label: "Inbox", href: "/?tab=inbox" },
+		{ label: "Activity", href: "/?tab=activity" },
+	];
+	const homeActiveLabel =
+		tab === "inbox" ? "Inbox" : tab === "activity" ? "Activity" : "Overview";
+
 	return (
 		<div className="flex flex-col gap-8">
-			<BreadcrumbNav items={[]} />
+			<BreadcrumbNav items={[{ label: homeActiveLabel }]} peers={homePeers} />
 
 			{error && (
 				<div className="rounded-sm border border-destructive/20 bg-destructive/5 p-3 text-sm text-destructive flex items-center justify-between">
@@ -405,45 +416,9 @@ export default function CommandCenterPage() {
 				</div>
 			)}
 
-			<div className="flex items-center gap-0.5 -mt-4 mb-0">
-				<Link
-					href="/?tab=overview"
-					className={cn(
-						"px-3 py-1.5 text-sm font-medium rounded-md transition-colors",
-						tab === "overview"
-							? "bg-accent text-accent-foreground"
-							: "text-muted-foreground hover:bg-accent/50",
-					)}
-				>
-					Overview
-				</Link>
-				<Link
-					href="/?tab=inbox"
-					className={cn(
-						"px-3 py-1.5 text-sm font-medium rounded-md transition-colors",
-						tab === "inbox"
-							? "bg-accent text-accent-foreground"
-							: "text-muted-foreground hover:bg-accent/50",
-					)}
-				>
-					Inbox
-				</Link>
-				<Link
-					href="/?tab=activity"
-					className={cn(
-						"px-3 py-1.5 text-sm font-medium rounded-md transition-colors",
-						tab === "activity"
-							? "bg-accent text-accent-foreground"
-							: "text-muted-foreground hover:bg-accent/50",
-					)}
-				>
-					Activity
-				</Link>
-			</div>
-
 			{tab === "overview" && (
 				<div className="flex flex-col gap-8">
-					<Link href="/ops?tab=autopilot">
+					<Link href="/agents?tab=autopilot">
 						<Card
 							className={cn(
 								"cursor-pointer transition-all hover:shadow-e-3 hover:border-primary/30",
@@ -687,9 +662,9 @@ export default function CommandCenterPage() {
 								<CardHeader className="pb-2">
 									<CardTitle className="text-sm flex items-center gap-2">
 										<User className="h-4 w-4 text-primary" />
-										Crew Status
+										Agents Status
 										<Link
-											href="/crew"
+											href="/agents"
 											className="ml-auto text-xs text-muted-foreground hover:text-foreground font-normal"
 										>
 											View all →
@@ -703,10 +678,10 @@ export default function CommandCenterPage() {
 												All agents nominal
 											</p>
 											<Link
-												href="/crew"
+												href="/agents"
 												className="text-xs text-muted-foreground hover:text-foreground"
 											>
-												/crew →
+												/agents →
 											</Link>
 										</div>
 									) : (
@@ -728,7 +703,7 @@ export default function CommandCenterPage() {
 												return (
 													<Link
 														key={agent.id}
-														href={`/crew/${agent.id}`}
+														href={`/agents/${agent.id}`}
 														className="block"
 													>
 														<div className="group hover:bg-accent/30 rounded-sm px-2 py-1.5 -mx-2 transition-colors">

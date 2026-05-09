@@ -1,7 +1,7 @@
 import { BreadcrumbNav } from "@/components/breadcrumb-nav";
 import { CardSkeleton, GridSkeleton, Skeleton } from "@/components/skeletons";
 
-export default function CrewLoading() {
+export default function AgentsLoading() {
 	return (
 		<div className="space-y-6">
 			<BreadcrumbNav items={[{ label: "Agents" }]} />

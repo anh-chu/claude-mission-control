@@ -69,13 +69,13 @@ export function KeyboardShortcuts({ onCreateTask }: KeyboardShortcutsProps) {
 						router.push("/work");
 						return;
 					case "c":
-						router.push("/crew");
+						router.push("/agents");
 						return;
 					case "s":
 						router.push("/skills");
 						return;
 					case "l":
-						router.push("/ops?tab=autopilot");
+						router.push("/agents?tab=autopilot");
 						return;
 				}
 				return;

@@ -141,7 +141,7 @@ export default function AgentPage() {
 		return (
 			<div className="space-y-6">
 				<BreadcrumbNav
-					items={[{ label: "Agents", href: "/crew" }, { label: id }]}
+					items={[{ label: "Agents", href: "/agents" }, { label: id }]}
 				/>
 				<GridSkeleton
 					className="grid gap-3 sm:grid-cols-2"
@@ -173,7 +173,7 @@ export default function AgentPage() {
 		return (
 			<div className="space-y-6">
 				<BreadcrumbNav
-					items={[{ label: "Agents", href: "/crew" }, { label: id }]}
+					items={[{ label: "Agents", href: "/agents" }, { label: id }]}
 				/>
 				<ErrorState message={agentsError} onRetry={refetch} />
 			</div>
@@ -184,7 +184,7 @@ export default function AgentPage() {
 		return (
 			<div className="space-y-6">
 				<BreadcrumbNav
-					items={[{ label: "Agents", href: "/crew" }, { label: "Not Found" }]}
+					items={[{ label: "Agents", href: "/agents" }, { label: "Not Found" }]}
 				/>
 				<p className="text-muted-foreground">
 					Agent &ldquo;{id}&rdquo; not found.
@@ -266,7 +266,7 @@ export default function AgentPage() {
 	return (
 		<div className="space-y-6">
 			<BreadcrumbNav
-				items={[{ label: "Agents", href: "/crew" }, { label: agent.name }]}
+				items={[{ label: "Agents", href: "/agents" }, { label: agent.name }]}
 			/>
 
 			{/* Agent Profile Header */}
@@ -287,7 +287,7 @@ export default function AgentPage() {
 							variant="outline"
 							size="sm"
 							className="h-6 text-xs px-2 ml-1"
-							onClick={() => router.push(`/crew/${agent.id}/edit`)}
+							onClick={() => router.push(`/agents/${agent.id}/edit`)}
 						>
 							Edit
 						</Button>

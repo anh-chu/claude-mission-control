@@ -193,12 +193,12 @@ export function AgentForm({
 
 	const breadcrumbItems =
 		mode === "create"
-			? [{ label: "Agents", href: "/crew" }, { label: "New Agent" }]
+			? [{ label: "Agents", href: "/agents" }, { label: "New Agent" }]
 			: [
-					{ label: "Agents", href: "/crew" },
+					{ label: "Agents", href: "/agents" },
 					{
 						label: initialData?.name ?? "",
-						href: `/crew/${initialData?.id}`,
+						href: `/agents/${initialData?.id}`,
 					},
 					{ label: "Edit" },
 				];

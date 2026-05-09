@@ -16,6 +16,7 @@ import {
 	useReactFlow,
 	useStore,
 } from "@xyflow/react";
+import { useRouter } from "next/navigation";
 import {
 	type FormEvent,
 	type MouseEvent,
@@ -326,7 +327,7 @@ function ProjectNode({ data }: { data: ProjectNodeData }) {
 			<ContextMenuTrigger asChild>
 				<div
 					className={cn(
-						"relative w-[280px] rounded-xl border bg-card p-4 shadow-e-2 transition-all hover:shadow-e-3",
+						"relative w-[280px] rounded-xl border bg-card p-4 shadow-e-2 transition-all hover:shadow-e-3 cursor-pointer",
 						isRunning && "ring-2 ring-accent/50 border-accent/30",
 					)}
 					onMouseEnter={() => setIsHovered(true)}
@@ -483,7 +484,7 @@ function InitiativeNode({ data }: { data: InitiativeNodeData }) {
 		<ContextMenu>
 			<ContextMenuTrigger asChild>
 				<div
-					className="relative w-[280px] rounded-xl border bg-card p-4 shadow-e-2 transition-all hover:shadow-e-3"
+					className="relative w-[280px] rounded-xl border bg-card p-4 shadow-e-2 transition-all hover:shadow-e-3 cursor-pointer"
 					onMouseEnter={() => setIsHovered(true)}
 					onMouseLeave={() => setIsHovered(false)}
 				>
@@ -576,7 +577,7 @@ const kanbanStatusColors: Record<string, string> = {
 function TaskNode({ data }: { data: TaskNodeData }) {
 	const { task, projectColor } = data;
 	return (
-		<div className="relative w-[280px] rounded-xl border bg-card p-5 shadow-e-2 transition-all hover:shadow-e-3">
+		<div className="relative w-[280px] rounded-xl border bg-card p-5 shadow-e-2 transition-all hover:shadow-e-3 cursor-pointer">
 			<RoutingHandles />
 			<div className="flex items-center gap-2">
 				<span
@@ -975,6 +976,7 @@ function StatsSummaryBar({
 // ─── Canvas ───────────────────────────────────────────────────────────────────
 
 function ProjectInitiativeCanvasInner() {
+	const router = useRouter();
 	const {
 		projects,
 		loading: projectsLoading,
@@ -1655,12 +1657,29 @@ function ProjectInitiativeCanvasInner() {
 	);
 
 	const handleNodeClick = useCallback(
-		(_event: React.MouseEvent, node: Node) => {
+		(event: React.MouseEvent, node: Node) => {
+			// Collapse bubble — expand instead of navigating
 			if (node.type === "collapseBubble") {
 				(node.data as CollapseBubbleNodeData).onExpand();
+				return;
+			}
+
+			// Guard: do not navigate if the click was inside a button, menuitem, or data-no-nav element
+			const target = event.target as HTMLElement;
+			if (target.closest("button, [role='menuitem'], [data-no-nav]")) {
+				return;
+			}
+
+			// Navigate based on node type and id prefix
+			if (node.id.startsWith("project:")) {
+				router.push(`/projects/${node.id.slice("project:".length)}`);
+			} else if (node.id.startsWith("initiative:")) {
+				router.push(`/initiatives/${node.id.slice("initiative:".length)}`);
+			} else if (node.id.startsWith("task:")) {
+				router.push(`/tasks/${node.id.slice("task:".length)}`);
 			}
 		},
-		[],
+		[router],
 	);
 
 	async function handleCreateTask(data: TaskFormData) {

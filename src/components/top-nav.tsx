@@ -7,7 +7,6 @@ import {
 	Grid2x2,
 	Home,
 	Plus,
-	Terminal,
 	Users,
 } from "lucide-react";
 import Link from "next/link";
@@ -64,12 +63,11 @@ const navItems: NavItem[] = [
 		match: ["/brain", "/documents"],
 	},
 	{
-		href: "/crew",
-		label: "Crew",
+		href: "/agents",
+		label: "Agents",
 		icon: Users,
-		match: ["/crew", "/skills", "/autopilot"],
+		match: ["/agents", "/skills"],
 	},
-	{ href: "/ops", label: "Ops", icon: Terminal, match: ["/ops"] },
 ];
 
 function isItemActive(item: NavItem, pathname: string): boolean {
@@ -224,12 +222,13 @@ export function TopNav() {
 	return (
 		<nav aria-label="Primary" className="flex items-center gap-0.5">
 			<WorkspaceSwitcherCompact />
-			{navItems.map(({ href, label, icon: Icon }) => {
-				const active = isItemActive({ href, label, icon: Icon }, pathname);
+			{navItems.map((item) => {
+				const active = isItemActive(item, pathname);
+				const Icon = item.icon;
 				return (
 					<Link
-						key={href}
-						href={href}
+						key={item.href}
+						href={item.href}
 						className={cn(
 							"group flex items-center gap-0 rounded-md px-2 py-1.5 text-sm font-medium transition-all duration-200",
 							"hover:bg-accent/60 hover:text-accent-foreground",
@@ -247,7 +246,7 @@ export function TopNav() {
 									: "max-w-0 opacity-0 ml-0 transition-all duration-200 group-hover:max-w-[80px] group-hover:ml-1.5 group-hover:opacity-100 group-hover:transition-all group-hover:duration-200 group-hover:delay-200",
 							)}
 						>
-							{label}
+							{item.label}
 						</span>
 					</Link>
 				);

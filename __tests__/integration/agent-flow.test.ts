@@ -44,7 +44,6 @@ describe("agent communication flow", () => {
 			urgency: "urgent",
 			kanban: "not-started",
 			projectId: null,
-			milestoneId: null,
 			assignedTo: "developer",
 			collaborators: ["researcher"],
 			subtasks: [
@@ -391,7 +390,6 @@ describe("blocked task dependency flow", () => {
 			urgency: "urgent",
 			kanban: "not-started",
 			projectId: null,
-			milestoneId: null,
 			assignedTo: "developer",
 			collaborators: [],
 			subtasks: [],
@@ -416,7 +414,6 @@ describe("blocked task dependency flow", () => {
 			urgency: "urgent",
 			kanban: "not-started",
 			projectId: null,
-			milestoneId: null,
 			assignedTo: "developer",
 			collaborators: [],
 			subtasks: [],

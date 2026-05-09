@@ -301,7 +301,7 @@ function PluginCard({ plugin }: { plugin: PluginInfo }) {
 	);
 }
 
-export function CrewSkills() {
+export function AgentSkills() {
 	const { currentId: workspaceId } = useWorkspace();
 	const {
 		skills,

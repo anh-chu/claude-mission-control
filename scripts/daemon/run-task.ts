@@ -1783,7 +1783,7 @@ This is session ${continuationIndex + 1}. Previous session(s) ran out of turns o
 						type: "report",
 						taskId,
 						subject: `Tool permission blocked: ${task.title}`,
-						body: `Agent "${task.assignedTo}" was denied permission for tool "${toolName}". Add it to the agent's Allowed Tools at /crew/${task.assignedTo} to prevent this in future runs.`,
+						body: `Agent "${task.assignedTo}" was denied permission for tool "${toolName}". Add it to the agent's Allowed Tools at /agents/${task.assignedTo} to prevent this in future runs.`,
 						status: "unread",
 						createdAt: new Date().toISOString(),
 						readAt: null,

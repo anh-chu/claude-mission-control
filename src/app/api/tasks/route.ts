@@ -334,7 +334,6 @@ export async function POST(request: Request) {
 				urgency: body.urgency,
 				kanban: body.kanban,
 				projectId: body.projectId,
-				milestoneId: body.milestoneId,
 				initiativeId: body.initiativeId,
 				assignedTo: body.assignedTo,
 				collaborators: body.collaborators,

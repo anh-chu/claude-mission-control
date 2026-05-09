@@ -25,8 +25,8 @@ export default function EditAgentPage() {
 			<div className="space-y-6 max-w-2xl">
 				<BreadcrumbNav
 					items={[
-						{ label: "Agents", href: "/crew" },
-						{ label: id, href: `/crew/${id}` },
+						{ label: "Agents", href: "/agents" },
+						{ label: id, href: `/agents/${id}` },
 						{ label: "Edit" },
 					]}
 				/>
@@ -40,13 +40,13 @@ export default function EditAgentPage() {
 			<div className="space-y-6 max-w-2xl">
 				<BreadcrumbNav
 					items={[
-						{ label: "Agents", href: "/crew" },
-						{ label: id, href: `/crew/${id}` },
+						{ label: "Agents", href: "/agents" },
+						{ label: id, href: `/agents/${id}` },
 						{ label: "Edit" },
 					]}
 				/>
 				<p className="text-sm text-muted-foreground">Agent not found.</p>
-				<Button variant="ghost" onClick={() => router.push("/crew")}>
+				<Button variant="ghost" onClick={() => router.push("/agents")}>
 					<ArrowLeft className="h-4 w-4 mr-2" />
 					Back to Agents
 				</Button>
@@ -67,12 +67,12 @@ export default function EditAgentPage() {
 			skipPermissions: payload.skipPermissions,
 			updatedAt: new Date().toISOString(),
 		});
-		router.push(`/crew/${id}`);
+		router.push(`/agents/${id}`);
 	};
 
 	const handleDelete = async () => {
 		await deleteAgent(agent.id);
-		router.push("/crew");
+		router.push("/agents");
 	};
 
 	const handleStatusToggle = async () => {
@@ -88,7 +88,7 @@ export default function EditAgentPage() {
 			onSave={handleSave}
 			onDelete={handleDelete}
 			onStatusToggle={handleStatusToggle}
-			onCancel={() => router.push(`/crew/${id}`)}
+			onCancel={() => router.push(`/agents/${id}`)}
 		/>
 	);
 }
