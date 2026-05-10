@@ -105,6 +105,22 @@ export function ChatSidebar({ open, onToggle, isMobile }: ChatSidebarProps) {
 		}
 	}, [activeAgents, selectedAgentId]);
 
+	const handleSelectConversation = async (id: string) => {
+		if (id === currentId) return;
+		const outgoing = conversations.find((c) => c.id === currentId);
+		if (outgoing && outgoing.turnCount === 0) {
+			try {
+				await apiFetch(`/api/conversations/${outgoing.id}`, {
+					method: "DELETE",
+				});
+				setConversations((prev) => prev.filter((c) => c.id !== outgoing.id));
+			} catch {
+				// best-effort, don't block the switch
+			}
+		}
+		setCurrentId(id);
+	};
+
 	const handleNewConversation = async () => {
 		const current = conversations.find((c) => c.id === currentId);
 		if (current && current.turnCount === 0) return;
@@ -198,7 +214,7 @@ export function ChatSidebar({ open, onToggle, isMobile }: ChatSidebarProps) {
 							>
 								<ConversationList
 									currentId={currentId}
-									onSelect={setCurrentId}
+									onSelect={handleSelectConversation}
 									source="chat"
 									onConversationsChange={setConversations}
 									onConversationDeleted={(id) => {
