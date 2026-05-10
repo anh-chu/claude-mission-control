@@ -43,11 +43,11 @@ type EventMetaMap = Record<string, EventMeta>;
 const EVENT_META: EventMetaMap = {
 	task_created: {
 		label: "Task Created",
-		color: "bg-warning-soft text-warning border-warning/20",
+		color: "bg-primary-soft text-primary border-primary/20",
 	},
 	task_updated: {
 		label: "Task Updated",
-		color: "bg-warning-soft text-warning border-warning/20",
+		color: "bg-primary-soft text-primary border-primary/20",
 	},
 	task_completed: {
 		label: "Task Completed",
@@ -55,7 +55,7 @@ const EVENT_META: EventMetaMap = {
 	},
 	task_delegated: {
 		label: "Task Delegated",
-		color: "bg-warning-soft text-warning border-warning/20",
+		color: "bg-primary-soft text-primary border-primary/20",
 	},
 	task_failed: {
 		label: "Task Failed",
@@ -63,11 +63,11 @@ const EVENT_META: EventMetaMap = {
 	},
 	message_sent: {
 		label: "Message Sent",
-		color: "bg-warning-soft text-warning border-warning/20",
+		color: "bg-primary-soft text-primary border-primary/20",
 	},
 	decision_requested: {
 		label: "Decision Requested",
-		color: "bg-warning-soft text-warning border-warning/20",
+		color: "bg-primary-soft text-primary border-primary/20",
 	},
 	decision_answered: {
 		label: "Decision Answered",
@@ -75,11 +75,11 @@ const EVENT_META: EventMetaMap = {
 	},
 	brain_dump_triaged: {
 		label: "Quick Capture Processed",
-		color: "bg-warning-soft text-warning border-warning/20",
+		color: "bg-primary-soft text-primary border-primary/20",
 	},
 	agent_checkin: {
 		label: "Agent Check-in",
-		color: "bg-warning-soft text-warning border-warning/20",
+		color: "bg-primary-soft text-primary border-primary/20",
 	},
 } as const;
 

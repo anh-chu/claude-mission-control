@@ -111,10 +111,10 @@ function gridPosition(
 }
 
 const statusColors: Record<string, string> = {
-	active: "border-success/20 bg-success/10 text-success dark:text-success",
-	paused: "border-warning/20 bg-warning/10 text-warning dark:text-warning",
-	completed: "border-info/20 bg-info/10 text-info dark:text-info",
-	archived: "border-muted-foreground/20 bg-muted/40 text-muted-foreground",
+	active: "border-success/20 bg-success-soft text-success dark:text-success",
+	paused: "border-primary/20 bg-primary-soft text-primary dark:text-primary",
+	completed: "border-primary/20 bg-primary-soft text-primary dark:text-primary",
+	archived: "border-muted/20 bg-muted text-muted-foreground",
 };
 
 const edgeColor = "var(--muted-foreground)";

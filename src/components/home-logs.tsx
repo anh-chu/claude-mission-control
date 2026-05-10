@@ -50,13 +50,13 @@ function formatRelativeTime(isoString: string): string {
 function getStatusBadgeClass(status: string): string {
 	switch (status) {
 		case "running":
-			return "bg-warning text-[#0c0a09]";
+			return "bg-primary text-primary-foreground";
 		case "completed":
 			return "bg-success text-primary-foreground";
 		case "failed":
 			return "bg-destructive text-primary-foreground";
 		case "timeout":
-			return "bg-warning text-[#0c0a09]";
+			return "bg-warning text-primary-foreground";
 		default:
 			return "";
 	}

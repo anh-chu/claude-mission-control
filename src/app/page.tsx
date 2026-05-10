@@ -422,7 +422,7 @@ export default function CommandCenterPage() {
 						<Card
 							className={cn(
 								"cursor-pointer transition-all hover:shadow-e-3 hover:border-primary/30",
-								daemonRunning && "border-warning/20 bg-warning-soft",
+								daemonRunning && "border-primary/20 bg-primary-soft",
 							)}
 						>
 							<CardContent className="p-4">
@@ -431,14 +431,14 @@ export default function CommandCenterPage() {
 										<div
 											className={cn(
 												"h-9 w-9 rounded-sm flex items-center justify-center",
-												daemonRunning ? "bg-warning-soft" : "bg-muted",
+												daemonRunning ? "bg-primary-soft" : "bg-muted",
 											)}
 										>
 											<Rocket
 												className={cn(
 													"h-4 w-4",
 													daemonRunning
-														? "text-warning"
+														? "text-primary"
 														: "text-muted-foreground",
 												)}
 											/>
@@ -449,7 +449,7 @@ export default function CommandCenterPage() {
 													className={cn(
 														"h-2 w-2 rounded-full shrink-0",
 														daemonRunning
-															? "bg-warning animate-pulse"
+															? "bg-primary animate-pulse"
 															: "bg-muted-foreground",
 													)}
 												/>
@@ -466,7 +466,7 @@ export default function CommandCenterPage() {
 										{daemonRunning ? (
 											<Badge
 												variant="outline"
-												className="bg-warning-soft text-warning border-warning/20 text-xs"
+												className="bg-primary-soft text-primary border-primary/20 text-xs"
 											>
 												Active
 											</Badge>
@@ -488,17 +488,17 @@ export default function CommandCenterPage() {
 						<HomeContentSkeleton />
 					) : (
 						<>
-							<Card className="border-warning/20">
+							<Card className="border-primary/20">
 								<CardContent className="p-4">
 									<div className="flex items-center gap-2 mb-3">
-										<AlertTriangle className="h-4 w-4 text-warning" />
-										<h3 className="text-sm font-normal text-warning">
+										<AlertTriangle className="h-4 w-4 text-primary" />
+										<h3 className="text-sm font-normal text-primary">
 											Attention Required
 										</h3>
 										{totalAttentionCount > 0 && (
 											<Badge
 												variant="secondary"
-												className="text-xs tabular-nums border-warning/30 text-warning ml-auto"
+												className="text-xs tabular-nums border-primary/30 text-primary ml-auto"
 											>
 												{totalAttentionCount}
 											</Badge>
@@ -692,8 +692,8 @@ export default function CommandCenterPage() {
 													agent.status === "overloaded"
 														? "bg-destructive"
 														: agent.status === "awaiting-decision"
-															? "bg-warning"
-															: "bg-warning";
+															? "bg-primary"
+															: "bg-primary";
 												const statusLabel =
 													agent.status === "overloaded"
 														? "Overloaded"
@@ -724,9 +724,9 @@ export default function CommandCenterPage() {
 																	className={cn(
 																		"text-[10px] px-1.5 py-0 rounded-sm",
 																		agent.status === "dependencies" &&
-																			"text-warning dark:text-warning bg-warning-soft",
+																			"text-primary dark:text-primary bg-primary-soft",
 																		agent.status === "awaiting-decision" &&
-																			"text-warning dark:text-warning bg-warning-soft",
+																			"text-primary dark:text-primary bg-primary-soft",
 																		agent.status === "overloaded" &&
 																			"text-destructive dark:text-destructive bg-destructive-soft",
 																	)}
@@ -750,7 +750,7 @@ export default function CommandCenterPage() {
 																</p>
 															)}
 															{agent.awaitingDecisionCount > 0 && (
-																<p className="text-[11px] text-warning ml-6 mt-0.5">
+																<p className="text-[11px] text-primary ml-6 mt-0.5">
 																	{agent.awaitingDecisionCount} awaiting
 																	decision
 																</p>

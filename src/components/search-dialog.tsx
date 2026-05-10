@@ -189,11 +189,11 @@ export function SearchDialog() {
 									className={cn(
 										"rounded-sm px-1.5 py-0.5 text-[10px] font-normal",
 										project.status === "active"
-											? "bg-warning-soft text-warning"
+											? "bg-primary-soft text-primary"
 											: project.status === "paused"
-												? "bg-warning-soft text-warning"
+												? "bg-muted text-muted-foreground"
 												: project.status === "completed"
-													? "bg-warning-soft text-warning"
+													? "bg-success-soft text-success"
 													: "bg-muted text-muted-foreground",
 									)}
 								>
