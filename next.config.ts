@@ -67,6 +67,11 @@ const nextConfig: NextConfig = {
 	],
 	allowedDevOrigins: ["localhost", "devvm", "127.0.0.1"],
 	devIndicators: false,
+	// Reduce pages kept in memory during webpack dev (no-op with turbopack)
+	onDemandEntries: {
+		maxInactiveAge: 20 * 1000,
+		pagesBufferLength: 2,
+	},
 	// The Claude Agent SDK uses runtime path resolution and child processes.
 	// Bundling it via webpack/turbopack breaks model and slash-command discovery,
 	// so keep it as an external dependency at runtime.

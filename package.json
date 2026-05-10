@@ -9,6 +9,7 @@
 	},
 	"scripts": {
 		"dev": "NODE_OPTIONS='--max-old-space-size=1024 --max-semi-space-size=64' next dev",
+		"dev:light": "NODE_OPTIONS='--max-old-space-size=512 --max-semi-space-size=32' next dev --no-turbopack",
 		"build": "next build",
 		"build:scripts": "tsx scripts/build-scripts.ts",
 		"build:cli": "tsx scripts/build-cli.ts && node --check bin/cli.js",
