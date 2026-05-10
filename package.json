@@ -10,6 +10,7 @@
 	"scripts": {
 		"dev": "NODE_OPTIONS='--max-old-space-size=1024 --max-semi-space-size=64' next dev",
 		"dev:light": "NODE_OPTIONS='--max-old-space-size=2048 --max-semi-space-size=64' next dev --webpack",
+		"dev:nosrcmap": "env -u NODE_OPTIONS NODE_OPTIONS='--max-old-space-size=1024 --max-semi-space-size=64' next dev",
 		"build": "next build",
 		"build:scripts": "tsx scripts/build-scripts.ts",
 		"build:cli": "tsx scripts/build-cli.ts && node --check bin/cli.js",
