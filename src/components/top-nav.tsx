@@ -7,6 +7,7 @@ import {
 	Grid2x2,
 	Home,
 	Plus,
+	Settings2,
 	Users,
 } from "lucide-react";
 import Link from "next/link";
@@ -68,6 +69,12 @@ const navItems: NavItem[] = [
 		icon: Users,
 		match: ["/agents", "/skills"],
 	},
+	{
+		href: "/settings",
+		label: "Settings",
+		icon: Settings2,
+		match: ["/settings"],
+	},
 ];
 
 function isItemActive(item: NavItem, pathname: string): boolean {
@@ -119,15 +126,17 @@ function WorkspaceSwitcherCompact() {
 					<button
 						className={cn(
 							"flex items-center gap-1.5 rounded-md px-2 py-1.5 text-sm font-medium transition-all duration-200",
-							"text-muted-foreground hover:bg-accent/60 hover:text-accent-foreground",
+							"text-muted-foreground hover:bg-accent/60 hover:text-foreground",
 						)}
 					>
 						<span
 							className="h-3 w-3 rounded-full shrink-0 ring-1 ring-border"
 							style={{ backgroundColor: display.color }}
 						/>
-						<span className="truncate max-w-[100px]">{display.name}</span>
-						<ChevronDown className="h-3 w-3 shrink-0 opacity-60" />
+						<span className="hidden sm:inline truncate max-w-[100px]">
+							{display.name}
+						</span>
+						<ChevronDown className="hidden sm:inline h-3 w-3 shrink-0 opacity-60" />
 					</button>
 				</DropdownMenuTrigger>
 				<DropdownMenuContent align="start" className="w-52">
@@ -220,7 +229,7 @@ export function TopNav() {
 	const pathname = usePathname();
 
 	return (
-		<nav aria-label="Primary" className="flex items-center gap-0.5">
+		<nav aria-label="Primary" className="flex shrink-0 items-center gap-0.5">
 			<WorkspaceSwitcherCompact />
 			{navItems.map((item) => {
 				const active = isItemActive(item, pathname);

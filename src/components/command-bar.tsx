@@ -1,7 +1,6 @@
 "use client";
 
-import { Bot, Lightbulb, Search, Settings2, X, Zap } from "lucide-react";
-import Link from "next/link";
+import { Bot, Lightbulb, Search, X, Zap } from "lucide-react";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { TopNav } from "@/components/top-nav";
 import { Button } from "@/components/ui/button";
@@ -125,7 +124,7 @@ export function CommandBar({
 
 			<div
 				className={cn(
-					"relative flex flex-1 items-center gap-2 rounded-sm border bg-card px-3 transition-all",
+					"relative flex flex-1 min-w-0 items-center gap-2 rounded-sm border bg-card px-3 transition-all",
 					focused ? "border-primary ring-1 ring-primary/30" : "border-border",
 				)}
 			>
@@ -269,16 +268,6 @@ export function CommandBar({
 					</div>
 				)}
 			</div>
-			<Link
-				href="/settings"
-				className={cn(
-					"shrink-0 flex items-center rounded-md px-2 py-1.5 text-sm font-medium transition-all duration-200",
-					"text-muted-foreground hover:bg-accent/60 hover:text-accent-foreground",
-				)}
-				aria-label="Settings"
-			>
-				<Settings2 className="h-4 w-4 shrink-0" />
-			</Link>
 		</header>
 	);
 }
