@@ -312,7 +312,7 @@ export default function CommandCenterPage() {
 				<div className="flex flex-col items-center justify-center py-12 md:py-20">
 					<div className="text-center max-w-lg mx-auto space-y-6">
 						<div className="h-16 w-16 rounded-sm bg-muted flex items-center justify-center mx-auto">
-							<Rocket className="h-8 w-8 text-primary" />
+							<Rocket className="h-8 w-8 text-foreground" />
 						</div>
 						<div>
 							<h1 className="text-section font-normal">Welcome to Mandio</h1>
@@ -329,7 +329,7 @@ export default function CommandCenterPage() {
 							>
 								<CardContent className="p-4 flex items-start gap-3">
 									<div className="h-9 w-9 rounded-sm bg-muted flex items-center justify-center shrink-0">
-										<FolderOpen className="h-4 w-4 text-primary" />
+										<FolderOpen className="h-4 w-4 text-foreground" />
 									</div>
 									<div>
 										<p className="text-sm font-normal">Create a project</p>
@@ -346,7 +346,7 @@ export default function CommandCenterPage() {
 							>
 								<CardContent className="p-4 flex items-start gap-3">
 									<div className="h-9 w-9 rounded-sm bg-muted flex items-center justify-center shrink-0">
-										<Zap className="h-4 w-4 text-primary" />
+										<Zap className="h-4 w-4 text-foreground" />
 									</div>
 									<div>
 										<p className="text-sm font-normal">Add your first task</p>
@@ -360,7 +360,7 @@ export default function CommandCenterPage() {
 							<Card className="sm:col-span-2 bg-muted">
 								<CardContent className="p-4 flex items-start gap-3">
 									<div className="h-9 w-9 rounded-sm bg-muted flex items-center justify-center shrink-0">
-										<Users className="h-4 w-4 text-primary" />
+										<Users className="h-4 w-4 text-foreground" />
 									</div>
 									<div>
 										<p className="text-sm font-normal">Deploy AI agents</p>
@@ -438,7 +438,7 @@ export default function CommandCenterPage() {
 												className={cn(
 													"h-4 w-4",
 													daemonRunning
-														? "text-primary"
+														? "text-foreground"
 														: "text-muted-foreground",
 												)}
 											/>
@@ -449,7 +449,7 @@ export default function CommandCenterPage() {
 													className={cn(
 														"h-2 w-2 rounded-full shrink-0",
 														daemonRunning
-															? "bg-primary animate-pulse"
+															? "bg-foreground animate-pulse"
 															: "bg-muted-foreground",
 													)}
 												/>
@@ -491,14 +491,14 @@ export default function CommandCenterPage() {
 							<Card className="border-primary/20">
 								<CardContent className="p-4">
 									<div className="flex items-center gap-2 mb-3">
-										<AlertTriangle className="h-4 w-4 text-primary" />
-										<h3 className="text-sm font-normal text-primary">
+										<AlertTriangle className="h-4 w-4 text-foreground" />
+										<h3 className="text-sm font-normal text-foreground">
 											Attention Required
 										</h3>
 										{totalAttentionCount > 0 && (
 											<Badge
 												variant="secondary"
-												className="text-xs tabular-nums border-primary/30 text-primary ml-auto"
+												className="text-xs tabular-nums border-primary/30 text-foreground ml-auto"
 											>
 												{totalAttentionCount}
 											</Badge>
@@ -661,7 +661,7 @@ export default function CommandCenterPage() {
 							<Card>
 								<CardHeader className="pb-2">
 									<CardTitle className="text-sm flex items-center gap-2">
-										<User className="h-4 w-4 text-primary" />
+										<User className="h-4 w-4 text-foreground" />
 										Agents Status
 										<Link
 											href="/agents"
@@ -750,7 +750,7 @@ export default function CommandCenterPage() {
 																</p>
 															)}
 															{agent.awaitingDecisionCount > 0 && (
-																<p className="text-[11px] text-primary ml-6 mt-0.5">
+																<p className="text-[11px] text-muted-foreground ml-6 mt-0.5">
 																	{agent.awaitingDecisionCount} awaiting
 																	decision
 																</p>
@@ -767,7 +767,7 @@ export default function CommandCenterPage() {
 							<section aria-label="Projects">
 								<div className="flex items-center justify-between mb-3">
 									<h2 className="text-lg font-normal flex items-center gap-2">
-										<Sparkles className="h-4 w-4 text-primary" />
+										<Sparkles className="h-4 w-4 text-foreground" />
 										Projects
 									</h2>
 									<div className="flex items-center gap-2">
