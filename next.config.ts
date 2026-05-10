@@ -72,7 +72,22 @@ const nextConfig: NextConfig = {
 	// so keep it as an external dependency at runtime.
 	serverExternalPackages: ["@anthropic-ai/claude-agent-sdk"],
 	experimental: {
-		optimizePackageImports: ["lucide-react"],
+		optimizePackageImports: [
+			"lucide-react",
+			"@radix-ui/react-collapsible",
+			"@radix-ui/react-context-menu",
+			"@radix-ui/react-dialog",
+			"@radix-ui/react-dropdown-menu",
+			"@radix-ui/react-label",
+			"@radix-ui/react-popover",
+			"@radix-ui/react-scroll-area",
+			"@radix-ui/react-select",
+			"@radix-ui/react-separator",
+			"@radix-ui/react-slot",
+			"@radix-ui/react-switch",
+			"@radix-ui/react-tabs",
+			"@radix-ui/react-tooltip",
+		],
 	},
 };
 
