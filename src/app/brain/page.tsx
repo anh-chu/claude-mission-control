@@ -174,6 +174,27 @@ async function fetchDir(dir: string): Promise<TreeNode[]> {
 	}));
 }
 
+function updateNodes(
+	nodes: TreeNode[],
+	targetPath: string,
+	updater: (n: TreeNode) => TreeNode,
+): TreeNode[] {
+	return nodes.map((n) => {
+		if (n.path === targetPath) return updater(n);
+		if (n.children)
+			return { ...n, children: updateNodes(n.children, targetPath, updater) };
+		return n;
+	});
+}
+
+function removeNode(nodes: TreeNode[], targetPath: string): TreeNode[] {
+	return nodes
+		.filter((n) => n.path !== targetPath)
+		.map((n) =>
+			n.children ? { ...n, children: removeNode(n.children, targetPath) } : n,
+		);
+}
+
 export default function BrainPage() {
 	// Subscribe to slug store loadedAt so the markdown viewer re-renders
 	// broken-state styling once the index arrives.
@@ -222,32 +243,12 @@ export default function BrainPage() {
 	const [wikiInitialized, setWikiInitialized] = useState(false);
 	const [pluginVersion, setPluginVersion] = useState<string | null>(null);
 	const [pluginJustUpdated, setPluginJustUpdated] = useState(false);
+	const [latestVersion, setLatestVersion] = useState<string | null>(null);
+	const [checkingLatest, setCheckingLatest] = useState(false);
 
 	// Drag state
 	const dragNodeRef = useRef<TreeNode | null>(null);
 	const [dragOverPath, setDragOverPath] = useState<string | null>(null);
-
-	// --- Tree helpers ---
-	function updateNodes(
-		nodes: TreeNode[],
-		targetPath: string,
-		updater: (n: TreeNode) => TreeNode,
-	): TreeNode[] {
-		return nodes.map((n) => {
-			if (n.path === targetPath) return updater(n);
-			if (n.children)
-				return { ...n, children: updateNodes(n.children, targetPath, updater) };
-			return n;
-		});
-	}
-
-	function removeNode(nodes: TreeNode[], targetPath: string): TreeNode[] {
-		return nodes
-			.filter((n) => n.path !== targetPath)
-			.map((n) =>
-				n.children ? { ...n, children: removeNode(n.children, targetPath) } : n,
-			);
-	}
 
 	useEffect(() => {
 		if (rootLoaded || rootLoadingRef.current) return;
@@ -274,6 +275,20 @@ export default function BrainPage() {
 						if (status.installed) {
 							setWikiInitialized(true);
 							if (status.version) setPluginVersion(status.version);
+							// Fire-and-forget update check (uses 4hr cache, non-blocking)
+							fetch("/api/wiki/latest-version")
+								.then(
+									(r) =>
+										r.json() as Promise<{
+											latestVersion: string | null;
+											hasUpdate: boolean;
+										}>,
+								)
+								.then((upd) => {
+									if (upd.hasUpdate && upd.latestVersion)
+										setLatestVersion(upd.latestVersion);
+								})
+								.catch(() => {});
 						}
 					})
 					.catch(() => {
@@ -287,7 +302,7 @@ export default function BrainPage() {
 			});
 	}, [rootLoaded]); // eslint-disable-line react-hooks/exhaustive-deps
 
-	async function reloadDir(dir: string) {
+	const reloadDir = useCallback(async (dir: string) => {
 		const fresh = await fetchDir(dir);
 		if (dir === "") {
 			setRoots(fresh);
@@ -300,7 +315,7 @@ export default function BrainPage() {
 				})),
 			);
 		}
-	}
+	}, []);
 
 	async function toggleFolder(node: TreeNode) {
 		if (node.type !== "dir") return;
@@ -392,53 +407,80 @@ export default function BrainPage() {
 		setSaving(false);
 	}
 
-	const handleInitWiki = useCallback(async () => {
-		setInitingWiki(true);
+	const handleInitWiki = useCallback(
+		async (force = false) => {
+			setInitingWiki(true);
+			try {
+				const url = force ? "/api/wiki/init?force=true" : "/api/wiki/init";
+				const res = await fetch(url, { method: "POST" });
+				if (!res.ok) {
+					const e: { error?: string } = await res.json();
+					throw new Error(e.error ?? "Failed to initialize wiki");
+				}
+
+				const data: {
+					pluginStatus?: "installed" | "already-installed";
+					pluginUpdated?: boolean;
+					bootstrapStatus?: "bootstrapped" | "already-initialized";
+					pluginVersion?: string | null;
+				} = await res.json();
+				if (data.pluginVersion) setPluginVersion(data.pluginVersion);
+				setPluginJustUpdated(data.pluginUpdated ?? false);
+				setLatestVersion(null); // clear update badge after install
+
+				const parts: string[] = [];
+				if (data.pluginStatus === "installed") {
+					parts.push("Plugin installed");
+				} else if (data.pluginUpdated) {
+					parts.push("Plugin updated");
+				} else {
+					parts.push("Plugin up to date");
+				}
+				if (data.bootstrapStatus === "bootstrapped") {
+					parts.push("wiki bootstrapped");
+				}
+				if (data.pluginVersion) parts.push(`v${data.pluginVersion}`);
+				showSuccess(parts.join(" / "));
+				if (
+					data.bootstrapStatus === "bootstrapped" ||
+					data.bootstrapStatus === "already-initialized"
+				) {
+					setWikiInitialized(true);
+				}
+				await reloadDir("");
+			} catch (err) {
+				showError(
+					err instanceof Error ? err.message : "Failed to initialize wiki",
+				);
+			} finally {
+				setInitingWiki(false);
+			}
+		},
+		[reloadDir],
+	);
+
+	const handleCheckUpdates = useCallback(async () => {
+		setCheckingLatest(true);
 		try {
-			const res = await fetch("/api/wiki/init", { method: "POST" });
-			if (!res.ok) {
-				const e: { error?: string } = await res.json();
-				throw new Error(e.error ?? "Failed to initialize wiki");
+			const res = await fetch("/api/wiki/latest-version?force=true");
+			if (res.ok) {
+				const data = (await res.json()) as {
+					latestVersion: string | null;
+					hasUpdate: boolean;
+				};
+				if (data.hasUpdate && data.latestVersion) {
+					setLatestVersion(data.latestVersion);
+				} else {
+					setLatestVersion(null);
+					showSuccess("Plugin is up to date");
+				}
 			}
-
-			const data: {
-				pluginStatus?: "installed" | "already-installed";
-				pluginUpdated?: boolean;
-				bootstrapStatus?: "bootstrapped" | "already-initialized";
-				pluginVersion?: string | null;
-			} = await res.json();
-			if (data.pluginVersion) setPluginVersion(data.pluginVersion);
-			setPluginJustUpdated(data.pluginUpdated ?? false);
-
-			const parts: string[] = [];
-			if (data.pluginStatus === "installed") {
-				parts.push("Plugin installed");
-			} else if (data.pluginUpdated) {
-				parts.push("Plugin updated");
-			} else {
-				parts.push("Plugin up to date");
-			}
-			if (data.bootstrapStatus === "bootstrapped") {
-				parts.push("wiki bootstrapped");
-			}
-			if (data.pluginVersion) parts.push(`v${data.pluginVersion}`);
-			showSuccess(parts.join(" / "));
-			if (
-				data.bootstrapStatus === "bootstrapped" ||
-				data.bootstrapStatus === "already-initialized"
-			) {
-				setWikiInitialized(true);
-			}
-			await reloadDir("");
-		} catch (err) {
-			showError(
-				err instanceof Error ? err.message : "Failed to initialize wiki",
-			);
+		} catch {
+			// ignore
 		} finally {
-			setInitingWiki(false);
+			setCheckingLatest(false);
 		}
-		// biome-ignore lint/correctness/useExhaustiveDependencies: reloadDir is stable within session
-	}, [reloadDir]);
+	}, []);
 
 	const doUpload = useCallback(
 		async (files: FileList | File[], dir: string) => {
@@ -468,9 +510,7 @@ export default function BrainPage() {
 				setUploading(false);
 				if (fileInputRef.current) fileInputRef.current.value = "";
 			}
-			// eslint-disable-next-line react-hooks/exhaustive-deps
 		},
-		// biome-ignore lint/correctness/useExhaustiveDependencies: reloadDir is stable within session
 		[reloadDir],
 	);
 
@@ -891,7 +931,7 @@ export default function BrainPage() {
 										size="sm"
 										variant="default"
 										className="w-full gap-1.5"
-										onClick={handleInitWiki}
+										onClick={() => handleInitWiki(true)}
 										disabled={initingWiki}
 									>
 										{initingWiki ? (
@@ -926,25 +966,47 @@ export default function BrainPage() {
 					<div className="flex items-center justify-between gap-2 px-3 py-2 border-t bg-muted shrink-0">
 						{pluginVersion ? (
 							<span className="text-[11px] text-muted-foreground truncate">
-								v{pluginVersion}
-								{pluginJustUpdated ? " · just updated" : ""}
+								{latestVersion ? (
+									<>
+										v{pluginVersion}{" "}
+										<span className="text-warning">→ v{latestVersion}</span>
+									</>
+								) : (
+									<>
+										v{pluginVersion}
+										{pluginJustUpdated ? " · just updated" : ""}
+									</>
+								)}
 							</span>
 						) : (
 							<span />
 						)}
-						{wikiInitialized && (
-							<Button
-								size="sm"
-								variant="outline"
-								onClick={handleInitWiki}
-								disabled={initingWiki}
-							>
-								{initingWiki ? (
-									<Loader2 className="h-3 w-3 animate-spin" />
-								) : null}
-								Check for Updates
-							</Button>
-						)}
+						{wikiInitialized &&
+							(latestVersion ? (
+								<Button
+									size="sm"
+									variant="default"
+									onClick={() => handleInitWiki(true)}
+									disabled={initingWiki}
+								>
+									{initingWiki ? (
+										<Loader2 className="h-3 w-3 animate-spin" />
+									) : null}
+									Install Update
+								</Button>
+							) : (
+								<Button
+									size="sm"
+									variant="outline"
+									onClick={handleCheckUpdates}
+									disabled={checkingLatest || initingWiki}
+								>
+									{checkingLatest ? (
+										<Loader2 className="h-3 w-3 animate-spin" />
+									) : null}
+									Check for Updates
+								</Button>
+							))}
 					</div>
 				</Card>
 
