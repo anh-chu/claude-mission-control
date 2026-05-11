@@ -208,7 +208,7 @@ export function HomeInbox() {
 						{unprocessed.map((entry) => (
 							<Card
 								key={entry.id}
-								className={`bg-card ${processing.isProcessing(entry.id) ? "animate-pulse border-primary/30 bg-primary-soft" : ""}`}
+								className={`bg-card ${processing.isProcessing(entry.id) ? "animate-pulse border-primary/30" : ""}`}
 							>
 								<CardContent className="p-3 flex items-start justify-between gap-3">
 									{editingEntryId === entry.id ? (

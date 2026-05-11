@@ -83,7 +83,7 @@ export function MediaPopover({
 
 	return (
 		<div
-			className="absolute z-50 w-[360px] bg-popover border border-border rounded-lg shadow-xl overflow-hidden"
+			className="absolute z-50 w-[360px] bg-popover border border-border rounded-xl shadow-e-4 overflow-hidden"
 			style={{ top: anchor.top, left: anchor.left }}
 			onMouseDown={(e) => e.stopPropagation()}
 		>
@@ -142,7 +142,7 @@ export function MediaPopover({
 						type="button"
 						onClick={() => fileInputRef.current?.click()}
 						disabled={uploading}
-						className="w-full border-2 border-dashed border-border rounded-md py-6 flex flex-col items-center justify-center text-muted-foreground hover:bg-accent/30 transition-colors"
+						className="w-full border-2 border-dashed border-border rounded-sm py-6 flex flex-col items-center justify-center text-muted-foreground hover:bg-accent/30 transition-colors"
 					>
 						<Upload className="w-5 h-5 mb-1.5" />
 						<span className="text-[12px] font-medium">
@@ -183,13 +183,13 @@ export function MediaPopover({
 								onCancel();
 							}
 						}}
-						className="w-full bg-background border border-border rounded-md px-2.5 py-1.5 text-[12px] focus:outline-none focus:ring-2 focus:ring-primary/30"
+						className="w-full bg-background border border-border rounded-sm px-2.5 py-1.5 text-[12px] focus:outline-none focus:ring-2 focus:ring-primary/30"
 					/>
 					<button
 						type="button"
 						onClick={handleUrl}
 						disabled={!url.trim()}
-						className="w-full py-1.5 text-[12px] rounded-md bg-primary text-primary-foreground disabled:opacity-50 hover:bg-primary/90"
+						className="w-full py-1.5 text-[12px] rounded-sm bg-primary text-primary-foreground disabled:opacity-50 hover:bg-primary/90"
 					>
 						Insert
 					</button>

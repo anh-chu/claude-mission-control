@@ -119,7 +119,7 @@ export function EditorBubbleMenu({ editor }: Props) {
 			<BubbleMenu
 				editor={editor}
 				options={{ placement: "top", offset: 8 }}
-				className="flex items-center gap-0.5 px-1 py-1 bg-popover border border-border rounded-md shadow-lg"
+				className="flex items-center gap-0.5 px-1 py-1 bg-popover border border-border rounded-sm shadow-lg"
 			>
 				<button
 					type="button"
@@ -219,7 +219,7 @@ export function EditorBubbleMenu({ editor }: Props) {
 					{popover?.type === "align" && (
 						<div
 							data-bubble-popover="true"
-							className="absolute top-full left-0 mt-1 z-50 bg-popover border border-border rounded-md shadow-lg p-1 flex gap-0.5"
+							className="absolute top-full left-0 mt-1 z-50 bg-popover border border-border rounded-sm shadow-lg p-1 flex gap-0.5"
 						>
 							<button
 								type="button"

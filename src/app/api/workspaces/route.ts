@@ -16,7 +16,7 @@ const CreateWorkspaceSchema = z.object({
 	color: z
 		.string()
 		.regex(/^#[0-9a-fA-F]{6}$/)
-		.default("#fa520f"),
+		.default("#E2F1EA"),
 });
 
 export async function GET() {

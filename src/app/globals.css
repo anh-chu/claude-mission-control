@@ -113,8 +113,8 @@
 	--muted-foreground: #a8a29e;
 	--accent: #ffffff;
 	--accent-foreground: #0c0a09;
-	--accent-soft: #292524;
-	--primary-soft: #292524;
+	--accent-soft: #3d3d3d;
+	--primary-soft: #453c35;
 	--success-soft: #14532d;
 	--quadrant-do-soft: #14532d;
 	--quadrant-schedule-soft: #7c2d12;
@@ -123,7 +123,7 @@
 	--destructive: #dc2626;
 	--destructive-foreground: #ffffff;
 	--destructive-soft: #7f1d1d;
-	--warning-soft: #713f12;
+	--warning-soft: #3d2b1a;
 	--warning-ink: #fbbf24;
 	--border: #292524;
 	--input: #292524;

@@ -4,7 +4,7 @@ import * as React from "react";
 import { cn } from "@/lib/utils";
 
 const buttonVariants = cva(
-	"inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-sm text-sm font-semibold uppercase transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:pointer-events-none disabled:opacity-50 [&_svg]:pointer-events-none [&_svg]:size-4 [&_svg]:shrink-0",
+	"inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-full text-sm font-medium normal-case transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:pointer-events-none disabled:opacity-50 [&_svg]:pointer-events-none [&_svg]:size-4 [&_svg]:shrink-0",
 	{
 		variants: {
 			variant: {
@@ -16,15 +16,14 @@ const buttonVariants = cva(
 					"border border-input bg-transparent hover:bg-accent hover:text-accent-foreground",
 				secondary:
 					"bg-secondary text-secondary-foreground shadow-e-1 hover:bg-secondary/80",
-				ghost:
-					"bg-transparent hover:bg-black/5 dark:hover:bg-white/10 text-foreground",
+				ghost: "bg-transparent hover:bg-accent/10 text-foreground",
 				link: "text-foreground underline underline-offset-4 hover:text-accent",
 			},
 			size: {
-				default: "h-10 p-3 rounded-sm",
-				sm: "h-8 rounded-sm px-3 text-xs",
-				lg: "h-10 rounded-sm px-8",
-				icon: "h-9 w-9 rounded-sm",
+				default: "h-10 p-3 rounded-full",
+				sm: "h-8 rounded-full px-3 text-xs",
+				lg: "h-10 rounded-full px-8",
+				icon: "h-9 w-9 rounded-full",
 			},
 		},
 		defaultVariants: {

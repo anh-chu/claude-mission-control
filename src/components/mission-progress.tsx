@@ -64,8 +64,8 @@ export function ProjectRunProgress({
 	const statusColor = {
 		running: "bg-accent",
 		completed: "bg-accent",
-		stopped: "bg-warning",
-		stalled: "bg-sunshine-700",
+		stopped: "bg-muted-foreground",
+		stalled: "bg-warning",
 	}[status];
 
 	const statusLabel = {

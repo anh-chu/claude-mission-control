@@ -62,7 +62,7 @@ export function WebsiteViewer({
 
 			<iframe
 				src={iframeSrc}
-				className="flex-1 w-full border-0 bg-white"
+				className="flex-1 w-full border-0 bg-card"
 				title={title}
 				sandbox="allow-scripts allow-same-origin allow-forms allow-popups allow-top-navigation-by-user-activation"
 			/>

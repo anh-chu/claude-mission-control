@@ -27,6 +27,7 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { ContextMenu, ContextMenuTrigger } from "@/components/ui/context-menu";
 import { Tip } from "@/components/ui/tip";
+import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
 import { useDaemon } from "@/hooks/use-daemon";
 import { useAgents, useTasks } from "@/hooks/use-data";
 import { getAgentIcon } from "@/lib/agent-icons";
@@ -82,7 +83,7 @@ function AgentCard({
 									className={cn(
 										"h-3 w-3",
 										agent.status === "active"
-											? "text-sunshine-700"
+											? "text-warning"
 											: "text-muted-foreground",
 									)}
 								/>
@@ -339,19 +340,15 @@ export default function AgentsPage() {
 					</div>
 
 					{/* Filter tabs */}
-					<div className="flex gap-1">
-						{(["all", "active", "inactive"] as const).map((f) => (
-							<Button
-								key={f}
-								variant={filter === f ? "default" : "ghost"}
-								size="sm"
-								className="text-xs capitalize"
-								onClick={() => setFilter(f)}
-							>
-								{f}
-							</Button>
-						))}
-					</div>
+					<ToggleGroup
+						type="single"
+						value={filter}
+						onValueChange={(v) => v && setFilter(v as typeof filter)}
+					>
+						<ToggleGroupItem value="all">All</ToggleGroupItem>
+						<ToggleGroupItem value="active">Active</ToggleGroupItem>
+						<ToggleGroupItem value="inactive">Inactive</ToggleGroupItem>
+					</ToggleGroup>
 
 					{filteredAgents.length === 0 ? (
 						<EmptyState

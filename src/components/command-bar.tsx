@@ -113,12 +113,12 @@ export function CommandBar({
 				aria-hidden
 				className="pointer-events-none absolute inset-x-0 top-0 flex h-0.5"
 			>
-				<div className="flex-1 bg-[#ffd900]" />
-				<div className="flex-1 bg-[#ffe295]" />
-				<div className="flex-1 bg-[#ffa110]" />
-				<div className="flex-1 bg-[#ff8105]" />
-				<div className="flex-1 bg-[#fb6424]" />
-				<div className="flex-1 bg-[#fa520f]" />
+				<div className="flex-1 bg-neutral-200" />
+				<div className="flex-1 bg-neutral-300" />
+				<div className="flex-1 bg-neutral-400" />
+				<div className="flex-1 bg-neutral-500" />
+				<div className="flex-1 bg-neutral-600" />
+				<div className="flex-1 bg-neutral-700" />
 			</div>
 			<TopNav />
 

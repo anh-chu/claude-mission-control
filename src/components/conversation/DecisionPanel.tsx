@@ -36,7 +36,7 @@ export function DecisionPanel({ conversation }: DecisionPanelProps) {
 
 	if (isLoading) {
 		return (
-			<div className="flex items-center gap-2 p-4 text-sm text-muted-foreground border rounded-md m-4 bg-muted/20">
+			<div className="flex items-center gap-2 p-4 text-sm text-muted-foreground border rounded-md m-4 bg-muted">
 				<Loader2 className="h-4 w-4 animate-spin" />
 				Loading decision...
 			</div>
@@ -73,7 +73,7 @@ export function DecisionPanel({ conversation }: DecisionPanelProps) {
 	};
 
 	return (
-		<div className="m-4 p-4 border rounded-md bg-amber-500/10 border-amber-500/20">
+		<div className="m-4 p-4 border rounded-md bg-warning-soft border-warning">
 			<div className="flex items-center gap-2 mb-3">
 				<HelpCircle className="h-5 w-5 text-amber-600" />
 				<h3 className="text-sm font-medium text-amber-800 dark:text-amber-400">

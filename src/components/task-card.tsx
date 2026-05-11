@@ -141,7 +141,7 @@ export function TaskCard({
 						!isBlocked && hasAwaitingDecision && "opacity-75 border-warning/30",
 						isOverdue && "border-destructive/30",
 						isRunning &&
-							"ring-2 ring-sunshine-700/50 border-sunshine-700/30 shadow-sunshine-700/10 shadow-e-2",
+							"ring-2 ring-primary/50 border-primary/30 shadow-primary/10 shadow-e-2",
 						className,
 					)}
 					onClick={() => {
@@ -152,7 +152,7 @@ export function TaskCard({
 					<CardHeader
 						className={cn(
 							"p-3 pb-1",
-							isRunning && "bg-sunshine-700/5 rounded-t-sm",
+							isRunning && "border-b border-primary/20",
 						)}
 					>
 						<div className="flex items-start justify-between gap-2">
@@ -210,19 +210,19 @@ export function TaskCard({
 						{subtaskCount > 0 && (
 							<div className="flex items-center gap-2">
 								<ListChecks
-									className={`h-3 w-3 shrink-0 ${isRunning && subtaskDone < subtaskCount ? "text-sunshine-700" : "text-muted-foreground"}`}
+									className={`h-3 w-3 shrink-0 ${isRunning && subtaskDone < subtaskCount ? "text-primary" : "text-muted-foreground"}`}
 								/>
 								<div className="relative flex-1 h-1.5 bg-muted rounded-full overflow-hidden">
 									<div
-										className={`h-full rounded-full transition-all duration-700 ${isRunning && subtaskDone < subtaskCount ? "bg-sunshine-700" : "bg-primary/60"}`}
+										className={`h-full rounded-full transition-all duration-700 ${isRunning && subtaskDone < subtaskCount ? "bg-primary" : "bg-primary/60"}`}
 										style={{ width: `${subtaskPercent}%` }}
 									/>
 									{isRunning && subtaskDone < subtaskCount && (
-										<div className="absolute inset-0 animate-shimmer rounded-full bg-gradient-to-r from-transparent via-sunshine-700/20 to-transparent" />
+										<div className="absolute inset-0 animate-shimmer rounded-full bg-gradient-to-r from-transparent via-primary/20 to-transparent" />
 									)}
 								</div>
 								<span
-									className={`text-xs tabular-nums ${isRunning && subtaskDone < subtaskCount ? "text-sunshine-700 font-normal" : "text-muted-foreground"}`}
+									className={`text-xs tabular-nums ${isRunning && subtaskDone < subtaskCount ? "text-primary font-normal" : "text-muted-foreground"}`}
 								>
 									{subtaskDone}/{subtaskCount}
 								</span>
@@ -326,7 +326,7 @@ export function TaskCard({
 											: isDueToday
 												? "text-warning border-warning/50"
 												: isDueSoon
-													? "text-sunshine-700 border-sunshine-700/50"
+													? "text-warning border-warning/50"
 													: "text-muted-foreground",
 									)}
 								>

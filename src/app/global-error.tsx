@@ -42,7 +42,7 @@ export default function GlobalError({
 					margin: 0,
 					fontFamily: "system-ui, -apple-system, sans-serif",
 					backgroundColor: "#1f1f1f",
-					color: "#fffaeb",
+					color: "var(--background)",
 				}}
 			>
 				<div
@@ -73,7 +73,7 @@ export default function GlobalError({
 							height="24"
 							viewBox="0 0 24 24"
 							fill="none"
-							stroke="#fa520f"
+							stroke="var(--foreground)"
 							strokeWidth="2"
 							strokeLinecap="round"
 							strokeLinejoin="round"

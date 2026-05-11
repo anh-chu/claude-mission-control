@@ -181,7 +181,7 @@ export default function SettingsPage() {
 							{daemonLoading ? (
 								<Badge variant="secondary">Checking...</Badge>
 							) : isRunning ? (
-								<Badge className="bg-sunshine-700/15 text-sunshine-700 border-sunshine-700/30">
+								<Badge className="bg-warning-soft text-warning border-warning/30">
 									Running
 								</Badge>
 							) : (

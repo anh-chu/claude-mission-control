@@ -102,7 +102,7 @@ export function DecisionDialog({
 			<DialogContent className="max-w-lg">
 				<DialogHeader>
 					<DialogTitle className="flex items-center gap-2">
-						<HelpCircle className="h-5 w-5 text-sunshine-700" />
+						<HelpCircle className="h-5 w-5 text-warning" />
 						Decision Required
 					</DialogTitle>
 					<DialogDescription>
@@ -113,8 +113,8 @@ export function DecisionDialog({
 				<div className="space-y-4">
 					{/* Question */}
 					<div className="flex items-start gap-3">
-						<div className="h-8 w-8 rounded-sm bg-sunshine-700/20 flex items-center justify-center shrink-0">
-							<RequestorIcon className="h-4 w-4 text-sunshine-700" />
+						<div className="h-8 w-8 rounded-sm bg-warning-soft flex items-center justify-center shrink-0">
+							<RequestorIcon className="h-4 w-4 text-warning" />
 						</div>
 						<div className="flex-1">
 							<p className="text-sm font-normal">{decision.question}</p>

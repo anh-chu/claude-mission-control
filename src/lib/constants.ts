@@ -1,13 +1,11 @@
 /** Shared color swatch palette used across project, initiative, and map dialogs. */
 export const COLOR_SWATCHES = [
-	"#fa520f",
-	"#fb6424",
-	"#ff8105",
-	"#ffa110",
-	"#ffb83e",
-	"#ffd06a",
-	"#ffd900",
-	"#1f1f1f",
+	"#E2F1EA", // mint
+	"#FDE8E1", // peach
+	"#EAE6F3", // lavender
+	"#E1EDF8", // sky
+	"#F8E6E9", // rose
+	"#1f1f1f", // ink
 ] as const;
 
 export type ColorSwatch = (typeof COLOR_SWATCHES)[number];

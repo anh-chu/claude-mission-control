@@ -475,7 +475,7 @@ export const initiativeCreateSchema = z.object({
 	description: z.string().max(LIMITS.DESCRIPTION).optional().default(""),
 	status: initiativeStatusEnum.optional().default("active"),
 	projectId: z.string().nullable().optional().default(null),
-	color: z.string().max(20).optional().default("#fa520f"),
+	color: z.string().max(20).optional().default("#E2F1EA"),
 	teamMembers: z.array(z.string().max(50)).max(20).optional().default([]),
 	tags: z
 		.array(z.string().max(LIMITS.TAG))

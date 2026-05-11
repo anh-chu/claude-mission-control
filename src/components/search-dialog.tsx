@@ -20,7 +20,7 @@ const QUADRANT_LABELS: Record<string, { label: string; className: string }> = {
 	do: { label: "DO", className: "bg-destructive-soft text-destructive" },
 	schedule: {
 		label: "SCHEDULE",
-		className: "bg-sunshine-700/20 text-sunshine-700",
+		className: "bg-muted text-foreground",
 	},
 	delegate: {
 		label: "DELEGATE",
@@ -38,7 +38,7 @@ const KANBAN_LABELS: Record<string, { label: string; className: string }> = {
 		label: "Active",
 		className: "bg-accent-soft text-accent",
 	},
-	done: { label: "Done", className: "bg-success-soft text-success" },
+	done: { label: "Done", className: "bg-muted text-success" },
 };
 
 function getQuadrantKey(task: Task): string {
@@ -189,11 +189,11 @@ export function SearchDialog() {
 									className={cn(
 										"rounded-sm px-1.5 py-0.5 text-[10px] font-normal",
 										project.status === "active"
-											? "bg-sunshine-700/20 text-sunshine-700"
+											? "bg-muted text-foreground"
 											: project.status === "paused"
-												? "bg-accent-soft text-accent"
+												? "bg-muted text-muted-foreground"
 												: project.status === "completed"
-													? "bg-sunshine-700/20 text-sunshine-700"
+													? "bg-muted text-success"
 													: "bg-muted text-muted-foreground",
 									)}
 								>

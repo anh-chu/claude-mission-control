@@ -460,7 +460,7 @@ export function AutopilotPage() {
 					<h1 className="text-xl font-normal">Automation</h1>
 					<Badge
 						variant={isRunning ? "default" : "secondary"}
-						className={isRunning ? "bg-sunshine-700" : ""}
+						className={isRunning ? "bg-primary" : ""}
 					>
 						{isRunning ? "Running" : "Stopped"}
 					</Badge>
@@ -606,7 +606,7 @@ export function AutopilotPage() {
 				<Card>
 					<CardHeader>
 						<CardTitle className="flex items-center gap-2">
-							<Zap className="h-5 w-5 text-sunshine-700" />
+							<Zap className="h-5 w-5 text-primary" />
 							Active Sessions
 						</CardTitle>
 					</CardHeader>
@@ -630,7 +630,7 @@ export function AutopilotPage() {
 											}
 										>
 											<div className="flex items-center gap-3">
-												<div className="h-2 w-2 rounded-full bg-sunshine-700 animate-pulse" />
+												<div className="h-2 w-2 rounded-full bg-primary animate-pulse" />
 												<div>
 													<p className="font-normal">
 														{session.command === "task"
@@ -1094,8 +1094,8 @@ export function AutopilotPage() {
 						</div>
 					)}
 					{config.execution.allowedTools.length > 0 && (
-						<div className="mt-4 flex items-center gap-2 rounded-sm border border-sunshine-500/30 bg-sunshine-500/10 p-3 text-sm">
-							<Zap className="h-4 w-4 text-sunshine-700 shrink-0" />
+						<div className="mt-4 flex items-center gap-2 rounded-sm border border-primary/30 bg-muted p-3 text-sm">
+							<Zap className="h-4 w-4 text-primary shrink-0" />
 							<span>
 								<strong>Allowed tools:</strong>{" "}
 								{config.execution.allowedTools.map((tool) => (

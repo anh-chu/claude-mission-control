@@ -248,7 +248,7 @@ export function MermaidViewer({ path, title }: MermaidViewerProps) {
 							</div>
 							<p className="text-red-500 font-medium">Diagram syntax error</p>
 						</div>
-						<pre className="text-muted-foreground text-xs max-w-lg text-left bg-muted/50 rounded-md p-3 overflow-auto whitespace-pre-wrap">
+						<pre className="text-muted-foreground text-xs max-w-lg text-left bg-muted rounded-md p-3 overflow-auto whitespace-pre-wrap">
 							{error}
 						</pre>
 						<Button

@@ -250,6 +250,16 @@ components:
     backgroundColor: transparent
     textColor: "{colors.body}"
     typography: "{typography.body-sm}"
+  segmented-control:
+    backgroundColor: "{colors.surface-dark-elevated}"
+    textColor: "{colors.on-dark-soft}"
+    typography: "{typography.nav-link}"
+    rounded: "{rounded.lg}"
+    padding: 4px
+  segmented-control-item-active:
+    backgroundColor: "{colors.surface-card}"
+    textColor: "{colors.ink}"
+    rounded: "{rounded.md}"
 ---
 
 ## Overview
@@ -449,6 +459,12 @@ The system uses **hairline + soft drop**. Cards float above the off-white canvas
 
 **`footer-link`** — Background transparent, text `{colors.body}`, type `{typography.body-sm}`.
 
+### Navigation & Controls
+
+**`segmented-control`** (Tabs / Toggle Group) — Container background `{colors.surface-dark-elevated}` (or `{colors.surface-strong}` on light canvas), rounded `{rounded.lg}` (12px), with 4px padding. Inactive text is muted `{colors.on-dark-soft}` and normal case.
+
+**`segmented-control-item-active`** — The active trigger is a high-contrast pill inside the container. Background `{colors.surface-card}` (white), text `{colors.ink}`, typography `{typography.nav-link}` (15px / 500), rounded `{rounded.md}` (8px). No uppercase, no extended tracking.
+
 ## Do's and Don'ts
 
 ### Do
@@ -465,6 +481,7 @@ The system uses **hairline + soft drop**. Cards float above the off-white canvas
 - Don't use sharp `{rounded.none}` (0px) on CTAs. Pill geometry is the brand button.
 - Don't drop body Inter to weight 300 to match Waldenburg — body stays at 400/500 for legibility.
 - Don't extract a CTA color from a third-party widget (cookie consent, OneTrust). The brand's CTA color is what appears on actual product CTAs.
+- Don't force uppercase on tab triggers or segmented controls. Tabs should remain normal case with `md` or `lg` rounding. Reserve uppercase pill styling strictly for small badges.
 
 ## Responsive Behavior
 

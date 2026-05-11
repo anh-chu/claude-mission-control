@@ -111,10 +111,10 @@ function gridPosition(
 }
 
 const statusColors: Record<string, string> = {
-	active: "border-success/20 bg-success/10 text-success dark:text-success",
-	paused: "border-warning/20 bg-warning/10 text-warning dark:text-warning",
-	completed: "border-info/20 bg-info/10 text-info dark:text-info",
-	archived: "border-muted-foreground/20 bg-muted/40 text-muted-foreground",
+	active: "border-success/20 bg-muted text-success dark:text-success",
+	paused: "border-primary/20 bg-muted text-foreground dark:text-foreground",
+	completed: "border-primary/20 bg-muted text-foreground dark:text-foreground",
+	archived: "border-muted/20 bg-muted text-muted-foreground",
 };
 
 const edgeColor = "var(--muted-foreground)";
@@ -201,8 +201,8 @@ const colorSwatches = [
 // ─── Collapse Bubble Node ────────────────────────────────────────────────────
 
 const typeBubbleConfig = {
-	initiatives: { icon: Layers, color: "bg-mistral-orange" },
-	tasks: { icon: CheckSquare, color: "bg-sunshine-700" },
+	initiatives: { icon: Layers, color: "bg-primary" },
+	tasks: { icon: CheckSquare, color: "bg-primary" },
 } as const;
 
 type CollapseBubbleNodeData = {
@@ -240,7 +240,7 @@ function CollapseBubbleNode({ data }: { data: CollapseBubbleNodeData }) {
 					<div
 						key={key}
 						className={cn(
-							"flex items-center gap-1 rounded-full border-2 border-card px-2 py-1 text-white shadow-md",
+							"flex items-center gap-1 rounded-full border-2 border-card px-2 py-1 text-primary-foreground shadow-md",
 							cfg.color,
 						)}
 					>
@@ -873,7 +873,7 @@ function OffScreenIndicators() {
 							key={dir}
 							type="button"
 							className={cn(
-								"pointer-events-auto absolute flex items-center gap-1.5 rounded-full border border-border/60 bg-card/90 px-3 py-1.5 shadow-lg backdrop-blur-sm transition-opacity animate-pulse cursor-default",
+								"pointer-events-auto absolute flex items-center gap-1.5 rounded-full border border-border bg-card px-3 py-1.5 shadow-e-3 transition-opacity animate-pulse cursor-default",
 								style,
 							)}
 						>
@@ -919,7 +919,7 @@ function StatusFilterToolbar({
 	onToggle: (key: StatusFilterKey) => void;
 }) {
 	return (
-		<div className="absolute top-3 left-3 z-20 flex flex-wrap gap-1.5 rounded-lg border border-border/60 bg-card/90 px-2.5 py-2 shadow-md backdrop-blur-sm">
+		<div className="absolute top-3 left-3 z-20 flex flex-wrap gap-1.5 rounded-lg border border-border bg-card px-2.5 py-2 shadow-e-3">
 			{STATUS_FILTER_OPTIONS.map(({ key, label }) => {
 				const active = statusFilter.has(key);
 				return (
@@ -954,7 +954,7 @@ function StatsSummaryBar({
 	taskCount: number;
 }) {
 	return (
-		<div className="absolute bottom-12 left-1/2 z-20 -translate-x-1/2 flex items-center gap-3 rounded-full border border-border/60 bg-card/90 px-4 py-1.5 shadow-md backdrop-blur-sm text-[10px] text-muted-foreground">
+		<div className="absolute bottom-12 left-1/2 z-20 -translate-x-1/2 flex items-center gap-3 rounded-full border border-border bg-card px-4 py-1.5 shadow-e-3 text-[10px] text-muted-foreground">
 			<span>
 				<span className="font-semibold text-foreground">{projectCount}</span>{" "}
 				project{projectCount !== 1 ? "s" : ""}
@@ -2003,7 +2003,7 @@ function ProjectInitiativeCanvasInner() {
 	) {
 		return (
 			<div className="flex h-full flex-col items-center justify-center gap-2 text-muted-foreground">
-				<div className="mb-3 rounded-full bg-muted/50 p-4">
+				<div className="mb-3 rounded-full bg-muted p-4">
 					<FolderKanban className="h-8 w-8 text-muted-foreground" />
 				</div>
 				<p className="text-base font-medium text-foreground">

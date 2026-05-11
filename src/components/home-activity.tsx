@@ -43,19 +43,19 @@ type EventMetaMap = Record<string, EventMeta>;
 const EVENT_META: EventMetaMap = {
 	task_created: {
 		label: "Task Created",
-		color: "bg-sunshine-500/10 text-sunshine-700 border-sunshine-500/20",
+		color: "bg-muted text-foreground border-primary/20",
 	},
 	task_updated: {
 		label: "Task Updated",
-		color: "bg-sunshine-700/10 text-sunshine-700 border-sunshine-700/20",
+		color: "bg-muted text-foreground border-primary/20",
 	},
 	task_completed: {
 		label: "Task Completed",
-		color: "bg-success-soft text-success border-success/20",
+		color: "bg-muted text-success border-success/20",
 	},
 	task_delegated: {
 		label: "Task Delegated",
-		color: "bg-warning-soft text-warning border-warning/20",
+		color: "bg-muted text-foreground border-primary/20",
 	},
 	task_failed: {
 		label: "Task Failed",
@@ -63,23 +63,23 @@ const EVENT_META: EventMetaMap = {
 	},
 	message_sent: {
 		label: "Message Sent",
-		color: "bg-sunshine-700/10 text-sunshine-700 border-sunshine-700/20",
+		color: "bg-muted text-foreground border-primary/20",
 	},
 	decision_requested: {
 		label: "Decision Requested",
-		color: "bg-sunshine-700/10 text-sunshine-700 border-sunshine-700/20",
+		color: "bg-muted text-foreground border-primary/20",
 	},
 	decision_answered: {
 		label: "Decision Answered",
-		color: "bg-success-soft text-success border-success/20",
+		color: "bg-muted text-success border-success/20",
 	},
 	brain_dump_triaged: {
 		label: "Quick Capture Processed",
-		color: "bg-sunshine-700/10 text-sunshine-700 border-sunshine-700/20",
+		color: "bg-muted text-foreground border-primary/20",
 	},
 	agent_checkin: {
 		label: "Agent Check-in",
-		color: "bg-sunshine-500/10 text-sunshine-700 border-sunshine-500/20",
+		color: "bg-muted text-foreground border-primary/20",
 	},
 } as const;
 

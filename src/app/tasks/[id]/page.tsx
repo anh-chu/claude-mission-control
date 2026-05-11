@@ -444,7 +444,7 @@ export default function TaskDetailPage() {
 									{hasAwaitingDecision && (
 										<Badge
 											variant="secondary"
-											className="text-xs gap-1 border-sunshine-700/30 text-sunshine-700"
+											className="text-xs gap-1 border-warning/30 text-warning"
 										>
 											<Clock className="h-3 w-3" />
 											Awaiting Decision
@@ -465,7 +465,7 @@ export default function TaskDetailPage() {
 												<Button
 													variant="ghost"
 													size="icon"
-													className="text-primary hover:bg-primary/10"
+													className="text-primary hover:bg-primary-soft"
 													aria-label="Deploy to agent"
 												>
 													<Rocket className="h-4 w-4" />
@@ -685,7 +685,7 @@ export default function TaskDetailPage() {
 																			href={att.url}
 																			target="_blank"
 																			rel="noopener noreferrer"
-																			className="flex items-center gap-1 bg-muted rounded-sm px-2 py-0.5 text-xs text-accent hover:text-sunshine-700"
+																			className="flex items-center gap-1 bg-muted rounded-sm px-2 py-0.5 text-xs text-accent hover:text-primary"
 																		>
 																			📎 {att.filename}
 																		</a>
@@ -729,7 +729,7 @@ export default function TaskDetailPage() {
 										className={cn(
 											"shrink-0 self-end",
 											mentionedAgentIds.length > 0 &&
-												"text-accent hover:text-sunshine-700",
+												"text-accent hover:text-primary",
 										)}
 										onClick={handleAddComment}
 										disabled={!commentText.trim() && stagedFiles.length === 0}

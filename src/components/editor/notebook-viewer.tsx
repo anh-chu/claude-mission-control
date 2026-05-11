@@ -127,7 +127,7 @@ function CellOutput({ output }: { output: NotebookOutput }) {
 			<img
 				src={src}
 				alt="output"
-				className="max-w-full rounded-md bg-white p-2"
+				className="max-w-full rounded-md bg-card p-2"
 			/>
 		);
 	}
@@ -137,7 +137,7 @@ function CellOutput({ output }: { output: NotebookOutput }) {
 			<img
 				src={src}
 				alt="output"
-				className="max-w-full rounded-md bg-white p-2"
+				className="max-w-full rounded-md bg-card p-2"
 			/>
 		);
 	}
@@ -145,7 +145,7 @@ function CellOutput({ output }: { output: NotebookOutput }) {
 		const svg = joinSource(data["image/svg+xml"]);
 		return (
 			<div
-				className="max-w-full rounded-md bg-white p-2 overflow-auto"
+				className="max-w-full rounded-md bg-card p-2 overflow-auto"
 				dangerouslySetInnerHTML={{ __html: svg }}
 			/>
 		);
@@ -347,7 +347,7 @@ export function NotebookViewer({ path }: NotebookViewerProps) {
 					<div className="max-w-[1100px] mx-auto py-8 px-6">
 						{!hasAnyOutputs && codeCellCount > 0 && (
 							<div className="mb-6 rounded-md border border-[#E8DDC5] bg-[#FFF9E9] px-4 py-3 text-[13px] text-[#7A6B5D]">
-								<span className="font-semibold text-[#2A221B]">
+								<span className="font-semibold text-[#0c0a09]">
 									This notebook hasn&apos;t been run yet.
 								</span>{" "}
 								Code and markdown cells display below; outputs appear once the

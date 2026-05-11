@@ -100,17 +100,17 @@ function ResizableImageComponent(props: NodeViewProps) {
 							onPointerDown={(e) => beginResize(e, "left")}
 							className="absolute left-0 top-0 bottom-0 w-2 cursor-ew-resize opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center"
 						>
-							<div className="w-1 h-8 bg-white border border-black/40 rounded-full shadow" />
+							<div className="w-1 h-8 bg-card border border-border rounded-full shadow" />
 						</div>
 						<div
 							aria-label="Resize from right"
 							onPointerDown={(e) => beginResize(e, "right")}
 							className="absolute right-0 top-0 bottom-0 w-2 cursor-ew-resize opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center"
 						>
-							<div className="w-1 h-8 bg-white border border-black/40 rounded-full shadow" />
+							<div className="w-1 h-8 bg-card border border-border rounded-full shadow" />
 						</div>
 						{liveWidth != null && (
-							<div className="absolute top-1 right-1 text-[10px] px-1.5 py-0.5 rounded bg-black/70 text-white font-mono">
+							<div className="absolute top-1 right-1 text-[10px] px-1.5 py-0.5 rounded bg-primary/80 text-primary-foreground font-mono">
 								{Math.round(liveWidth)}px
 							</div>
 						)}
