@@ -6,8 +6,18 @@ import { fileURLToPath } from "node:url";
 // ESM shim: package.json sets "type": "module", so __dirname is not defined
 // natively. Re-create it so the install-dir resolution below keeps working
 // under tsx, Next.js, and the esbuild-bundled daemon alike.
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = path.dirname(__filename);
+//
+// Guard: during Next.js instrumentation hook loading, import.meta.url may not
+// be a file URL, so fileURLToPath would throw. Fall back to process.cwd().
+let __filename: string;
+let __dirname: string;
+try {
+	__filename = fileURLToPath(import.meta.url);
+	__dirname = path.dirname(__filename);
+} catch {
+	__filename = "";
+	__dirname = process.cwd();
+}
 
 /**
  * Assert that an ID is safe (no path traversal, valid characters).
