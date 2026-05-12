@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import { requireSession } from "@/lib/auth-guards";
 import { getProjects, mutateProjects, mutateTasks } from "@/lib/data";
 import {
 	CACHE_HEADERS,
@@ -14,6 +15,8 @@ import {
 } from "@/lib/validations";
 
 export async function GET(request: Request) {
+	const unauthorized = await requireSession();
+	if (unauthorized) return unauthorized;
 	const { searchParams } = new URL(request.url);
 	const id = searchParams.get("id");
 	const status = searchParams.get("status");
@@ -52,6 +55,8 @@ export async function GET(request: Request) {
 }
 
 export async function POST(request: Request) {
+	const unauthorized = await requireSession();
+	if (unauthorized) return unauthorized;
 	const validation = await validateBody(request, projectCreateSchema);
 	if (!validation.success) return validation.error;
 	const body = validation.data;
@@ -77,6 +82,8 @@ export async function POST(request: Request) {
 }
 
 export async function PUT(request: Request) {
+	const unauthorized = await requireSession();
+	if (unauthorized) return unauthorized;
 	const validation = await validateBody(request, projectUpdateSchema);
 	if (!validation.success) return validation.error;
 	const body = validation.data;
@@ -95,6 +102,8 @@ export async function PUT(request: Request) {
 }
 
 export async function DELETE(request: Request) {
+	const unauthorized = await requireSession();
+	if (unauthorized) return unauthorized;
 	const { searchParams } = new URL(request.url);
 	const id = searchParams.get("id");
 	const hard = searchParams.get("hard") === "true";

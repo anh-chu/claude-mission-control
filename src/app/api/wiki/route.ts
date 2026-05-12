@@ -1,6 +1,7 @@
 import { readdir, rmdir, stat, unlink } from "node:fs/promises";
 import path from "node:path";
 import { NextResponse } from "next/server";
+import { requireSession } from "@/lib/auth-guards";
 import { getWikiDir } from "@/lib/paths";
 import { isAppFolder } from "@/lib/wiki-helpers";
 import { applyWorkspaceContext } from "@/lib/workspace-context";
@@ -14,6 +15,9 @@ function safeWikiPath(wikiDir: string, rel: string): string | null {
 }
 
 export async function GET(request: Request) {
+	const unauthorized = await requireSession();
+	if (unauthorized) return unauthorized;
+
 	return applyWorkspaceContext(async (workspaceId) => {
 		const wikiDir = getWikiDir(workspaceId);
 		const { searchParams } = new URL(request.url);
@@ -71,6 +75,9 @@ export async function GET(request: Request) {
 }
 
 export async function DELETE(request: Request) {
+	const unauthorized = await requireSession();
+	if (unauthorized) return unauthorized;
+
 	return applyWorkspaceContext(async (workspaceId) => {
 		const wikiDir = getWikiDir(workspaceId);
 

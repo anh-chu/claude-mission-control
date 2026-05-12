@@ -1,6 +1,7 @@
 import { mkdir, readFile, writeFile } from "node:fs/promises";
 import path from "node:path";
 import { NextResponse } from "next/server";
+import { requireSession } from "@/lib/auth-guards";
 import { getWikiDir } from "@/lib/paths";
 import { applyWorkspaceContext } from "@/lib/workspace-context";
 
@@ -36,6 +37,9 @@ function isTextFile(filename: string): boolean {
 }
 
 export async function GET(request: Request) {
+	const unauthorized = await requireSession();
+	if (unauthorized) return unauthorized;
+
 	return applyWorkspaceContext(async (workspaceId) => {
 		const wikiDir = getWikiDir(workspaceId);
 		const { searchParams } = new URL(request.url);
@@ -69,6 +73,9 @@ export async function GET(request: Request) {
 }
 
 export async function PUT(request: Request) {
+	const unauthorized = await requireSession();
+	if (unauthorized) return unauthorized;
+
 	return applyWorkspaceContext(async (workspaceId) => {
 		const wikiDir = getWikiDir(workspaceId);
 

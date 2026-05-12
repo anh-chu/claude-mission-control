@@ -2,6 +2,7 @@ import { randomUUID } from "node:crypto";
 import { mkdir, writeFile } from "node:fs/promises";
 import path from "node:path";
 import { NextResponse } from "next/server";
+import { requireSession } from "@/lib/auth-guards";
 import { getUploadsDir } from "@/lib/paths";
 import { applyWorkspaceContext } from "@/lib/workspace-context";
 
@@ -36,6 +37,9 @@ function getExtension(filename: string, mimeType: string): string {
 }
 
 export async function POST(request: Request) {
+	const unauthorized = await requireSession();
+	if (unauthorized) return unauthorized;
+
 	return applyWorkspaceContext(async (workspaceId) => {
 		const uploadsDir = getUploadsDir(workspaceId);
 

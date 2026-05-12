@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import { requireSession } from "@/lib/auth-guards";
 import {
 	getTasksArchive,
 	mutateActivityLog,
@@ -10,6 +11,8 @@ import { generateId } from "@/lib/utils";
 
 // GET — Read archived tasks (with optional filters)
 export async function GET(request: Request) {
+	const unauthorized = await requireSession();
+	if (unauthorized) return unauthorized;
 	const { searchParams } = new URL(request.url);
 	const id = searchParams.get("id");
 	const assignedTo = searchParams.get("assignedTo");
@@ -65,6 +68,8 @@ export async function GET(request: Request) {
 
 // POST — Archive all completed tasks (move from tasks.json to tasks-archive.json)
 export async function POST() {
+	const unauthorized = await requireSession();
+	if (unauthorized) return unauthorized;
 	const result = await mutateTasks(async (tasksData) => {
 		// Don't archive auto-created scheduled command tasks — just remove them
 		const done = tasksData.tasks.filter(

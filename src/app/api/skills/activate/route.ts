@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import { requireSession } from "@/lib/auth-guards";
 import {
 	activateSkill,
 	deactivateSkill,
@@ -12,6 +13,8 @@ import { applyWorkspaceContext } from "@/lib/workspace-context";
 export const dynamic = "force-dynamic";
 
 export async function POST(request: Request) {
+	const unauthorized = await requireSession();
+	if (unauthorized) return unauthorized;
 	return applyWorkspaceContext(async (workspaceId) => {
 		const validation = await validateBody(request, skillActivateSchema);
 		if (!validation.success) return validation.error;
@@ -59,6 +62,8 @@ export async function POST(request: Request) {
 }
 
 export async function GET(_request: Request) {
+	const unauthorized = await requireSession();
+	if (unauthorized) return unauthorized;
 	return applyWorkspaceContext(async (workspaceId) => {
 		if (!workspaceId) {
 			return NextResponse.json(

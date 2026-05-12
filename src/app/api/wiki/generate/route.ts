@@ -2,6 +2,7 @@ import { spawn } from "node:child_process";
 import { mkdirSync, renameSync, writeFileSync } from "node:fs";
 import path from "node:path";
 import { NextResponse } from "next/server";
+import { requireSession } from "@/lib/auth-guards";
 import {
 	DOC_MAINTAINER_AGENT_ID,
 	getWorkspaceDataDir,
@@ -34,6 +35,9 @@ function writeJobFile(wikiDir: string, job: WikiJobFile): string {
 // ─── POST: Trigger wiki generation ───────────────────────────────────────────
 
 export async function POST(request: Request) {
+	const unauthorized = await requireSession();
+	if (unauthorized) return unauthorized;
+
 	return applyWorkspaceContext(async (workspaceId) => {
 		try {
 			let body: {

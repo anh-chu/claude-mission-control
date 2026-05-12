@@ -1,5 +1,6 @@
 import { type SlashCommand, startup } from "@anthropic-ai/claude-agent-sdk";
 import { NextResponse } from "next/server";
+import { requireSession } from "@/lib/auth-guards";
 import { resolveClaudeExecutable } from "@/lib/claude-sdk";
 
 let cachedCommands: SlashCommand[] | null = null;
@@ -40,6 +41,8 @@ async function getCommands(): Promise<SlashCommand[]> {
 }
 
 export async function GET() {
+	const unauthorized = await requireSession();
+	if (unauthorized) return unauthorized;
 	try {
 		const commands = await getCommands();
 		return NextResponse.json(

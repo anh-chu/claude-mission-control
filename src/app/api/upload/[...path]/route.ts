@@ -1,6 +1,7 @@
 import { mkdir, stat, writeFile } from "node:fs/promises";
 import path from "node:path";
 import { NextResponse } from "next/server";
+import { requireSession } from "@/lib/auth-guards";
 import { getUploadsDir } from "@/lib/paths";
 import { applyWorkspaceContext } from "@/lib/workspace-context";
 
@@ -44,6 +45,9 @@ export async function POST(
 	request: Request,
 	{ params }: { params: Promise<{ path: string[] }> },
 ) {
+	const unauthorized = await requireSession();
+	if (unauthorized) return unauthorized;
+
 	const { path: segments } = await params;
 	return applyWorkspaceContext(async (workspaceId) => {
 		const uploadsRoot = getUploadsDir(workspaceId);

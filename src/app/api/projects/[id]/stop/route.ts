@@ -1,5 +1,6 @@
 import path from "node:path";
 import { NextResponse } from "next/server";
+import { requireSession } from "@/lib/auth-guards";
 import { readJSON, writeJSON } from "@/lib/json-io";
 import { DATA_DIR } from "@/lib/paths";
 import { applyWorkspaceContext } from "@/lib/workspace-context";
@@ -58,6 +59,8 @@ export async function POST(
 	_request: Request,
 	{ params }: { params: Promise<{ id: string }> },
 ) {
+	const unauthorized = await requireSession();
+	if (unauthorized) return unauthorized;
 	const { id: projectId } = await params;
 	return applyWorkspaceContext(async () => {
 		const now = new Date().toISOString();

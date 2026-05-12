@@ -1,4 +1,5 @@
 import { type NextRequest, NextResponse } from "next/server";
+import { requireSession } from "@/lib/auth-guards";
 import { getActiveRuns, mutateActiveRuns } from "@/lib/data";
 import { isProcessAlive } from "@/lib/process-utils";
 import { applyWorkspaceContext } from "@/lib/workspace-context";
@@ -6,6 +7,8 @@ import { applyWorkspaceContext } from "@/lib/workspace-context";
 // ─── GET: Read active runs with PID liveness check ──────────────────────────
 
 export async function GET(request: NextRequest) {
+	const unauthorized = await requireSession();
+	if (unauthorized) return unauthorized;
 	return applyWorkspaceContext(async (_workspaceId) => {
 		let data = await getActiveRuns();
 

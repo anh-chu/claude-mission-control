@@ -13,6 +13,14 @@ vi.mock("@/lib/workspace-context", () => ({
 		),
 }));
 
+// Mock auth so requireSession() inside route handlers returns a valid session
+vi.mock("@/lib/auth", () => ({
+	auth: vi.fn().mockResolvedValue({
+		user: { email: "test@example.com" },
+		expires: "2099-01-01T00:00:00.000Z",
+	}),
+}));
+
 import { POST } from "@/app/api/tasks/[id]/stop/route";
 import {
 	createConversation,

@@ -1,5 +1,6 @@
 import { spawn } from "node:child_process";
 import { NextResponse } from "next/server";
+import { requireSession } from "@/lib/auth-guards";
 import { buildScheduledTask, loadCommandPrompt } from "@/lib/command-prompt";
 import {
 	getActiveRuns,
@@ -18,6 +19,8 @@ const STATUS_FILE = DAEMON_STATUS_FILE;
 // ─── GET: Read daemon status + config ────────────────────────────────────────
 
 export async function GET() {
+	const unauthorized = await requireSession();
+	if (unauthorized) return unauthorized;
 	return applyWorkspaceContext(async (_workspaceId) => {
 		const savedStatus = readJSON(STATUS_FILE) ?? {
 			status: "stopped",
@@ -77,6 +80,8 @@ export async function GET() {
 // ─── POST: Toggle polling on/off or run a command ad-hoc ─────────────────────
 
 export async function POST(request: Request) {
+	const unauthorized = await requireSession();
+	if (unauthorized) return unauthorized;
 	return applyWorkspaceContext(async (workspaceId) => {
 		try {
 			const body = await request.json();
@@ -198,6 +203,8 @@ export async function POST(request: Request) {
 // ─── PUT: Update daemon config ───────────────────────────────────────────────
 
 export async function PUT(request: Request) {
+	const unauthorized = await requireSession();
+	if (unauthorized) return unauthorized;
 	return applyWorkspaceContext(async (_workspaceId) => {
 		// Validate request body against Zod schema
 		const validation = await validateBody(request, daemonConfigUpdateSchema);

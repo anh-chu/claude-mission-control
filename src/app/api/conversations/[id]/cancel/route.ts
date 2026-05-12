@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import { requireSession } from "@/lib/auth-guards";
 import { publishAndEmit } from "@/lib/conversation-event-bus";
 import {
 	getConversation,
@@ -35,6 +36,9 @@ export async function POST(
 	request: Request,
 	{ params }: { params: Promise<{ id: string }> },
 ) {
+	const unauthorized = await requireSession();
+	if (unauthorized) return unauthorized;
+
 	return applyWorkspaceContext(async () => {
 		const { id } = await params;
 

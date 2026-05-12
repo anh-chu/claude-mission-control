@@ -1,6 +1,7 @@
 import { existsSync, readFileSync, writeFileSync } from "node:fs";
 import path from "node:path";
 import { NextResponse } from "next/server";
+import { requireSession } from "@/lib/auth-guards";
 import { initWikiDir } from "@/lib/data";
 import { getWikiDir, getWorkspaceDir } from "@/lib/paths";
 import {
@@ -44,6 +45,9 @@ function cachePluginPath(wikiDir: string, installPath: string): void {
 }
 
 export async function POST(request: Request) {
+	const unauthorized = await requireSession();
+	if (unauthorized) return unauthorized;
+
 	const url = new URL(request.url);
 	const forceUpdate = url.searchParams.get("force") === "true";
 	return applyWorkspaceContext(async (workspaceId) => {

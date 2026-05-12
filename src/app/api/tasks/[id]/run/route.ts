@@ -1,6 +1,7 @@
 import { spawn } from "node:child_process";
 import path from "node:path";
 import { NextResponse } from "next/server";
+import { requireSession } from "@/lib/auth-guards";
 import { readJSON } from "@/lib/json-io";
 import { DATA_DIR } from "@/lib/paths";
 import { resolveScriptEntrypoint } from "@/lib/script-entrypoints";
@@ -32,6 +33,8 @@ export async function POST(
 	_request: Request,
 	{ params }: { params: Promise<{ id: string }> },
 ) {
+	const unauthorized = await requireSession();
+	if (unauthorized) return unauthorized;
 	return applyWorkspaceContext(async (workspaceId) => {
 		const { id: taskId } = await params;
 

@@ -1,6 +1,7 @@
 import { readFileSync, unwatchFile, watchFile } from "node:fs";
 import path from "node:path";
 import type { NextRequest } from "next/server";
+import { requireSession } from "@/lib/auth-guards";
 import { isAllowedLogPath, scrubLogLines } from "@/lib/log-reader";
 import { DATA_DIR } from "@/lib/paths";
 
@@ -10,6 +11,8 @@ const FILE_MAP: Record<string, string> = {
 };
 
 export async function GET(request: NextRequest) {
+	const unauthorized = await requireSession();
+	if (unauthorized) return unauthorized;
 	const fileKey = request.nextUrl.searchParams.get("file") ?? "daemon";
 	const logPath = FILE_MAP[fileKey];
 

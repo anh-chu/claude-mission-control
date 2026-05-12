@@ -1,3 +1,4 @@
+import { requireSession } from "@/lib/auth-guards";
 import { subscribe } from "@/lib/conversation-event-bus";
 import { getConversation, readConversationEvents } from "@/lib/conversations";
 import type { ConversationEvent } from "@/lib/types";
@@ -27,6 +28,9 @@ export async function GET(
 	request: Request,
 	{ params }: { params: Promise<{ id: string }> },
 ) {
+	const unauthorized = await requireSession();
+	if (unauthorized) return unauthorized;
+
 	return applyWorkspaceContext(async () => {
 		const { id } = await params;
 

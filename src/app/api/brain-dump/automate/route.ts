@@ -1,5 +1,6 @@
 import { spawn } from "node:child_process";
 import { NextResponse } from "next/server";
+import { requireSession } from "@/lib/auth-guards";
 import { getBrainDump } from "@/lib/data";
 import { resolveScriptEntrypoint } from "@/lib/script-entrypoints";
 import { applyWorkspaceContext } from "@/lib/workspace-context";
@@ -15,6 +16,8 @@ interface BrainDumpEntry {
 // ─── POST: Trigger brain dump auto-processing ────────────────────────────────
 
 export async function POST(request: Request) {
+	const unauthorized = await requireSession();
+	if (unauthorized) return unauthorized;
 	return applyWorkspaceContext(async (workspaceId) => {
 		let body: { entryIds?: string[]; all?: boolean };
 		try {

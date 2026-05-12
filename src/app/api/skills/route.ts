@@ -2,6 +2,7 @@ import { existsSync } from "node:fs";
 import { rm } from "node:fs/promises";
 import path from "node:path";
 import { NextResponse } from "next/server";
+import { requireSession } from "@/lib/auth-guards";
 import { getAgents, getWorkspaces } from "@/lib/data";
 import {
 	getGlobalSkillDir,
@@ -32,6 +33,8 @@ import { applyWorkspaceContext } from "@/lib/workspace-context";
 export const dynamic = "force-dynamic";
 
 export async function GET(request: Request) {
+	const unauthorized = await requireSession();
+	if (unauthorized) return unauthorized;
 	return applyWorkspaceContext(async (workspaceId) => {
 		const { searchParams } = new URL(request.url);
 		const id = searchParams.get("id");
@@ -84,6 +87,8 @@ export async function GET(request: Request) {
 }
 
 export async function POST(request: Request) {
+	const unauthorized = await requireSession();
+	if (unauthorized) return unauthorized;
 	return applyWorkspaceContext(async (workspaceId) => {
 		const validation = await validateBody(request, skillCreateSchema);
 		if (!validation.success) return validation.error;
@@ -144,6 +149,8 @@ export async function POST(request: Request) {
 }
 
 export async function PUT(request: Request) {
+	const unauthorized = await requireSession();
+	if (unauthorized) return unauthorized;
 	return applyWorkspaceContext(async (workspaceId) => {
 		const validation = await validateBody(request, skillUpdateSchema);
 		if (!validation.success) return validation.error;
@@ -206,6 +213,8 @@ export async function PUT(request: Request) {
 }
 
 export async function DELETE(request: Request) {
+	const unauthorized = await requireSession();
+	if (unauthorized) return unauthorized;
 	return applyWorkspaceContext(async (workspaceId) => {
 		const { searchParams } = new URL(request.url);
 		const id = searchParams.get("id");

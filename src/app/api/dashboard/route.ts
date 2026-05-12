@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import { requireSession } from "@/lib/auth-guards";
 import {
 	getBrainDump,
 	getDecisions,
@@ -10,6 +11,8 @@ import {
 export const dynamic = "force-dynamic";
 
 export async function GET() {
+	const unauthorized = await requireSession();
+	if (unauthorized) return unauthorized;
 	// Read all data files in parallel (reads are safe, no locking needed)
 	const [tasksData, projectsData, brainDumpData, inboxData, decisionsData] =
 		await Promise.all([

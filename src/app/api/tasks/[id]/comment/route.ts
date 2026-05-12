@@ -2,6 +2,7 @@ import { spawn } from "node:child_process";
 import { existsSync, readFileSync, unlinkSync, writeFileSync } from "node:fs";
 import path from "node:path";
 import { NextResponse } from "next/server";
+import { requireSession } from "@/lib/auth-guards";
 import { getWorkspaceDataDir } from "@/lib/data";
 import { readJSON } from "@/lib/json-io";
 import { getUploadsDir } from "@/lib/paths";
@@ -39,6 +40,8 @@ export async function POST(
 	request: Request,
 	{ params }: { params: Promise<{ id: string }> },
 ) {
+	const unauthorized = await requireSession();
+	if (unauthorized) return unauthorized;
 	const { id: taskId } = await params;
 	return applyWorkspaceContext(async (workspaceId) => {
 		const wsDir = getWorkspaceDataDir(workspaceId);
@@ -212,6 +215,8 @@ export async function DELETE(
 	request: Request,
 	{ params }: { params: Promise<{ id: string }> },
 ) {
+	const unauthorized = await requireSession();
+	if (unauthorized) return unauthorized;
 	const { id: taskId } = await params;
 	return applyWorkspaceContext(async (workspaceId) => {
 		const wsDir = getWorkspaceDataDir(workspaceId);

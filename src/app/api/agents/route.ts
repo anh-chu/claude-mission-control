@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import { requireSession } from "@/lib/auth-guards";
 import {
 	ensureDocMaintainerAgentForWorkspace,
 	getAgents,
@@ -24,6 +25,8 @@ import { applyWorkspaceContext } from "@/lib/workspace-context";
 export const dynamic = "force-dynamic";
 
 export async function GET(request: Request) {
+	const unauthorized = await requireSession();
+	if (unauthorized) return unauthorized;
 	return applyWorkspaceContext(async (workspaceId) => {
 		const { searchParams } = new URL(request.url);
 		const id = searchParams.get("id");
@@ -54,6 +57,8 @@ export async function GET(request: Request) {
 }
 
 export async function POST(request: Request) {
+	const unauthorized = await requireSession();
+	if (unauthorized) return unauthorized;
 	return applyWorkspaceContext(async (workspaceId) => {
 		const validation = await validateBody(request, agentCreateSchema);
 		if (!validation.success) return validation.error;
@@ -101,6 +106,8 @@ export async function POST(request: Request) {
 }
 
 export async function PUT(request: Request) {
+	const unauthorized = await requireSession();
+	if (unauthorized) return unauthorized;
 	return applyWorkspaceContext(async (workspaceId) => {
 		const validation = await validateBody(request, agentUpdateSchema);
 		if (!validation.success) return validation.error;
@@ -136,6 +143,8 @@ export async function PUT(request: Request) {
 }
 
 export async function DELETE(request: Request) {
+	const unauthorized = await requireSession();
+	if (unauthorized) return unauthorized;
 	const { searchParams } = new URL(request.url);
 	const id = searchParams.get("id");
 	const hard = searchParams.get("hard") === "true";

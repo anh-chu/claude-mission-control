@@ -1,6 +1,7 @@
 import { readdir } from "node:fs/promises";
 import path from "node:path";
 import { NextResponse } from "next/server";
+import { requireSession } from "@/lib/auth-guards";
 import { getWikiDir } from "@/lib/paths";
 import { applyWorkspaceContext } from "@/lib/workspace-context";
 
@@ -28,6 +29,9 @@ async function readMarkdownSlugsFromDir(dirPath: string): Promise<string[]> {
 }
 
 export async function GET() {
+	const unauthorized = await requireSession();
+	if (unauthorized) return unauthorized;
+
 	return applyWorkspaceContext(async (workspaceId) => {
 		const wikiDir = getWikiDir(workspaceId);
 

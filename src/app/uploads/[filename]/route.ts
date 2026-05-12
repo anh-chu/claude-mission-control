@@ -1,6 +1,7 @@
 import { existsSync, readFileSync } from "node:fs";
 import path from "node:path";
 import { NextResponse } from "next/server";
+import { requireSession } from "@/lib/auth-guards";
 import { getUploadsDir } from "@/lib/paths";
 import { applyWorkspaceContext } from "@/lib/workspace-context";
 
@@ -20,6 +21,9 @@ export async function GET(
 	_request: Request,
 	{ params }: { params: Promise<{ filename: string }> },
 ) {
+	const unauthorized = await requireSession();
+	if (unauthorized) return unauthorized;
+
 	return applyWorkspaceContext(async (workspaceId) => {
 		const uploadsDir = getUploadsDir(workspaceId);
 		const { filename } = await params;
@@ -42,7 +46,7 @@ export async function GET(
 		return new Response(buffer, {
 			headers: {
 				"Content-Type": contentType,
-				"Cache-Control": "public, max-age=31536000, immutable",
+				"Cache-Control": "private, max-age=300",
 			},
 		});
 	});

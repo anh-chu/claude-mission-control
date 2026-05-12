@@ -40,6 +40,14 @@ vi.mock("node:child_process", () => ({
 	spawn: vi.fn(() => ({ unref: vi.fn() })),
 }));
 
+// Mock auth so requireSession() inside route handlers returns a valid session
+vi.mock("@/lib/auth", () => ({
+	auth: vi.fn().mockResolvedValue({
+		user: { email: "test@example.com" },
+		expires: "2099-01-01T00:00:00.000Z",
+	}),
+}));
+
 import { POST as cancelPost } from "@/app/api/conversations/[id]/cancel/route";
 // Route handlers (imported after mock is active)
 import { POST as continuePost } from "@/app/api/conversations/[id]/continue/route";

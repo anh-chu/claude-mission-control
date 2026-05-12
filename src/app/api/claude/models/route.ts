@@ -1,5 +1,6 @@
 import { type ModelInfo, startup } from "@anthropic-ai/claude-agent-sdk";
 import { NextResponse } from "next/server";
+import { requireSession } from "@/lib/auth-guards";
 import { resolveClaudeExecutable } from "@/lib/claude-sdk";
 
 let cachedModels: ModelInfo[] | null = null;
@@ -40,6 +41,8 @@ async function getModels(): Promise<ModelInfo[]> {
 }
 
 export async function GET() {
+	const unauthorized = await requireSession();
+	if (unauthorized) return unauthorized;
 	try {
 		const models = await getModels();
 		return NextResponse.json(

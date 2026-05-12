@@ -1,8 +1,11 @@
 import { NextResponse } from "next/server";
+import { requireSession } from "@/lib/auth-guards";
 import { mutateTasks } from "@/lib/data";
 
 // PUT — Bulk update tasks
 export async function PUT(request: Request) {
+	const unauthorized = await requireSession();
+	if (unauthorized) return unauthorized;
 	const body = await request.json();
 	const updates: { id: string; [key: string]: unknown }[] = body.updates;
 	if (!Array.isArray(updates) || updates.length === 0) {
@@ -39,6 +42,8 @@ export async function PUT(request: Request) {
 
 // DELETE — Bulk soft-delete tasks
 export async function DELETE(request: Request) {
+	const unauthorized = await requireSession();
+	if (unauthorized) return unauthorized;
 	const body = await request.json();
 	const ids: string[] = body.ids;
 	if (!Array.isArray(ids) || ids.length === 0) {

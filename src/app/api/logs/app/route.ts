@@ -1,9 +1,12 @@
 import path from "node:path";
 import { type NextRequest, NextResponse } from "next/server";
+import { requireSession } from "@/lib/auth-guards";
 import { isAllowedLogPath, tailFile } from "@/lib/log-reader";
 import { DATA_DIR } from "@/lib/paths";
 
 export async function GET(request: NextRequest) {
+	const unauthorized = await requireSession();
+	if (unauthorized) return unauthorized;
 	const logPath = path.join(DATA_DIR, "logs", "app.jsonl");
 
 	if (!isAllowedLogPath(logPath)) {

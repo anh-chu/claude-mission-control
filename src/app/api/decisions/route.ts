@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import { requireSession } from "@/lib/auth-guards";
 import {
 	getDecisions,
 	mutateActivityLog,
@@ -19,6 +20,8 @@ import {
 } from "@/lib/validations";
 
 export async function GET(request: Request) {
+	const unauthorized = await requireSession();
+	if (unauthorized) return unauthorized;
 	const { searchParams } = new URL(request.url);
 	const status = searchParams.get("status");
 	const data = await getDecisions();
@@ -48,6 +51,8 @@ export async function GET(request: Request) {
 }
 
 export async function POST(request: Request) {
+	const unauthorized = await requireSession();
+	if (unauthorized) return unauthorized;
 	const validation = await validateBody(request, decisionCreateSchema);
 	if (!validation.success) return validation.error;
 	const body = validation.data;
@@ -87,6 +92,8 @@ export async function POST(request: Request) {
 }
 
 export async function PUT(request: Request) {
+	const unauthorized = await requireSession();
+	if (unauthorized) return unauthorized;
 	const validation = await validateBody(request, decisionUpdateSchema);
 	if (!validation.success) return validation.error;
 	const body = validation.data;
@@ -167,6 +174,8 @@ export async function PUT(request: Request) {
 }
 
 export async function DELETE(request: Request) {
+	const unauthorized = await requireSession();
+	if (unauthorized) return unauthorized;
 	const { searchParams } = new URL(request.url);
 	const id = searchParams.get("id");
 	if (!id) {

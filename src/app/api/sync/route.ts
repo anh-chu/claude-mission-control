@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import { requireSession } from "@/lib/auth-guards";
 import { syncAllAgentCommands } from "@/lib/sync-commands";
 import { applyWorkspaceContext } from "@/lib/workspace-context";
 
@@ -9,6 +10,8 @@ export const dynamic = "force-dynamic";
  * from the agent registry and skills library JSON data.
  */
 export async function POST() {
+	const unauthorized = await requireSession();
+	if (unauthorized) return unauthorized;
 	return applyWorkspaceContext(async (workspaceId) => {
 		try {
 			await syncAllAgentCommands(workspaceId);

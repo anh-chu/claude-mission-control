@@ -2,6 +2,7 @@ import { spawn } from "node:child_process";
 import { existsSync, readFileSync, writeFileSync } from "node:fs";
 import path from "node:path";
 import { NextResponse } from "next/server";
+import { requireSession } from "@/lib/auth-guards";
 import { readJSON } from "@/lib/json-io";
 import { DATA_DIR } from "@/lib/paths";
 import { isProcessAlive } from "@/lib/process-utils";
@@ -332,6 +333,8 @@ function postMissionInboxReport(mission: MissionEntry): void {
 // ─── GET: Return missions data (with reconciliation) ─────────────────────────
 
 export async function GET() {
+	const unauthorized = await requireSession();
+	if (unauthorized) return unauthorized;
 	try {
 		const missionsPath = path.join(DATA_DIR, "missions.json");
 		if (!existsSync(missionsPath)) {

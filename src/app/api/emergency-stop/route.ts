@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import { requireSession } from "@/lib/auth-guards";
 import {
 	mutateActiveRuns,
 	mutateActivityLog,
@@ -6,6 +7,8 @@ import {
 } from "@/lib/data";
 
 export async function POST() {
+	const unauthorized = await requireSession();
+	if (unauthorized) return unauthorized;
 	const results = {
 		pollingDisabled: false,
 		tasksStopped: 0,

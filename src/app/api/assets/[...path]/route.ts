@@ -1,6 +1,7 @@
 import { mkdir, readFile, writeFile } from "node:fs/promises";
 import path from "node:path";
 import { NextResponse } from "next/server";
+import { requireSession } from "@/lib/auth-guards";
 import { getUploadsDir, getWikiDir } from "@/lib/paths";
 import { applyWorkspaceContext } from "@/lib/workspace-context";
 
@@ -82,6 +83,9 @@ export async function GET(
 	_request: Request,
 	{ params }: { params: Promise<{ path: string[] }> },
 ) {
+	const unauthorized = await requireSession();
+	if (unauthorized) return unauthorized;
+
 	const { path: segments } = await params;
 	if (!segments || segments.length === 0)
 		return NextResponse.json({ error: "Invalid path" }, { status: 400 });
@@ -114,6 +118,9 @@ export async function PUT(
 	request: Request,
 	{ params }: { params: Promise<{ path: string[] }> },
 ) {
+	const unauthorized = await requireSession();
+	if (unauthorized) return unauthorized;
+
 	const { path: segments } = await params;
 	if (!segments || segments.length === 0)
 		return NextResponse.json({ error: "Invalid path" }, { status: 400 });

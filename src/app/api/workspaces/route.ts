@@ -2,6 +2,7 @@ import { rm, writeFile } from "node:fs/promises";
 import path from "node:path";
 import { type NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
+import { requireSession } from "@/lib/auth-guards";
 import {
 	ensureWorkspaceDir,
 	getWorkspaces,
@@ -20,11 +21,15 @@ const CreateWorkspaceSchema = z.object({
 });
 
 export async function GET() {
+	const unauthorized = await requireSession();
+	if (unauthorized) return unauthorized;
 	const data = await getWorkspaces();
 	return NextResponse.json(data.workspaces);
 }
 
 export async function POST(request: NextRequest) {
+	const unauthorized = await requireSession();
+	if (unauthorized) return unauthorized;
 	const body = await request.json();
 	const parsed = CreateWorkspaceSchema.safeParse(body);
 	if (!parsed.success) {
@@ -59,6 +64,8 @@ export async function POST(request: NextRequest) {
 }
 
 export async function PUT(request: NextRequest) {
+	const unauthorized = await requireSession();
+	if (unauthorized) return unauthorized;
 	const body = (await request.json()) as {
 		id?: string;
 		name?: string;
@@ -84,6 +91,8 @@ export async function PUT(request: NextRequest) {
 }
 
 export async function DELETE(request: NextRequest) {
+	const unauthorized = await requireSession();
+	if (unauthorized) return unauthorized;
 	const { searchParams } = new URL(request.url);
 	const id = searchParams.get("id");
 	const confirm = searchParams.get("confirm");

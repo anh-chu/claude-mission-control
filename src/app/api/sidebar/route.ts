@@ -1,10 +1,13 @@
 import { NextResponse } from "next/server";
+import { requireSession } from "@/lib/auth-guards";
 import { getAgents, getDecisions, getInbox, getTasks } from "@/lib/data";
 import { applyWorkspaceContext } from "@/lib/workspace-context";
 
 export const dynamic = "force-dynamic";
 
 export async function GET() {
+	const unauthorized = await requireSession();
+	if (unauthorized) return unauthorized;
 	return applyWorkspaceContext(async (_workspaceId) => {
 		const [tasksData, inboxData, decisionsData, agentsData] = await Promise.all(
 			[getTasks(), getInbox(), getDecisions(), getAgents()],

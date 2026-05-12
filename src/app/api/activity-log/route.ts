@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import { requireSession } from "@/lib/auth-guards";
 import { getActivityLog, mutateActivityLog } from "@/lib/data";
 import {
 	CACHE_HEADERS,
@@ -10,6 +11,8 @@ import { generateId } from "@/lib/utils";
 import { activityEventCreateSchema, validateBody } from "@/lib/validations";
 
 export async function GET(request: Request) {
+	const unauthorized = await requireSession();
+	if (unauthorized) return unauthorized;
 	const { searchParams } = new URL(request.url);
 	const actor = searchParams.get("actor");
 	const pagination = parsePaginationParams(searchParams);
@@ -42,6 +45,8 @@ export async function GET(request: Request) {
 }
 
 export async function POST(request: Request) {
+	const unauthorized = await requireSession();
+	if (unauthorized) return unauthorized;
 	const validation = await validateBody(request, activityEventCreateSchema);
 	if (!validation.success) return validation.error;
 	const body = validation.data;
@@ -64,6 +69,8 @@ export async function POST(request: Request) {
 }
 
 export async function DELETE(request: Request) {
+	const unauthorized = await requireSession();
+	if (unauthorized) return unauthorized;
 	const { searchParams } = new URL(request.url);
 	const id = searchParams.get("id");
 	if (!id) {

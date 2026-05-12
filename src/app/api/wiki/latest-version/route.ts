@@ -1,6 +1,7 @@
 import { existsSync, readFileSync, writeFileSync } from "node:fs";
 import path from "node:path";
 import { NextResponse } from "next/server";
+import { requireSession } from "@/lib/auth-guards";
 import { getWikiDir, getWorkspaceDir } from "@/lib/paths";
 import {
 	compareVersions,
@@ -43,6 +44,8 @@ function writeCache(wikiDir: string, latestVersion: string): void {
 }
 
 export async function GET(request: Request) {
+	const unauthorized = await requireSession();
+	if (unauthorized) return unauthorized;
 	const url = new URL(request.url);
 	const force = url.searchParams.get("force") === "true";
 

@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import { requireSession } from "@/lib/auth-guards";
 import {
 	createConversation,
 	getConversationsFile,
@@ -11,6 +12,9 @@ import { applyWorkspaceContext } from "@/lib/workspace-context";
 // ─── GET /api/conversations ──────────────────────────────────────────────────
 
 export async function GET(request: Request) {
+	const unauthorized = await requireSession();
+	if (unauthorized) return unauthorized;
+
 	return applyWorkspaceContext(async (_workspaceId) => {
 		const { searchParams } = new URL(request.url);
 
@@ -57,6 +61,9 @@ export async function GET(request: Request) {
 // ─── POST /api/conversations ─────────────────────────────────────────────────
 
 export async function POST(request: Request) {
+	const unauthorized = await requireSession();
+	if (unauthorized) return unauthorized;
+
 	return applyWorkspaceContext(async (_workspaceId) => {
 		let body: unknown;
 		try {
