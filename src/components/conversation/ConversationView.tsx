@@ -17,7 +17,7 @@ export function ConversationView({
 	conversationId,
 	embed,
 }: ConversationViewProps) {
-	const { conversation, turns, connected, refresh } =
+	const { conversation, turns, connected, refresh, addOptimisticTurn } =
 		useConversationStream(conversationId);
 	const viewportRef = useRef<HTMLDivElement>(null);
 
@@ -101,6 +101,7 @@ export function ConversationView({
 						canCompose ? "Type a message..." : "Waiting for agent..."
 					}
 					onSent={refresh}
+					onOptimisticTurn={addOptimisticTurn}
 				/>
 			</div>
 		</div>

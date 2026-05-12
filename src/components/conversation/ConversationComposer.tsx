@@ -12,6 +12,7 @@ interface ConversationComposerProps {
 	disabled?: boolean;
 	placeholder?: string;
 	onSent?: () => void;
+	onOptimisticTurn?: (content: string) => void;
 }
 
 export function ConversationComposer({
@@ -19,6 +20,7 @@ export function ConversationComposer({
 	disabled,
 	placeholder = "Type a message...",
 	onSent,
+	onOptimisticTurn,
 }: ConversationComposerProps) {
 	const [text, setText] = useState("");
 	const [isSending, setIsSending] = useState(false);
@@ -39,8 +41,12 @@ export function ConversationComposer({
 
 	const handleSend = async () => {
 		if (!text.trim() || disabled || isSending) return;
+		const trimmed = text.trim();
 		setIsSending(true);
 		setError(null);
+
+		// Show message optimistically before the POST completes
+		onOptimisticTurn?.(trimmed);
 
 		try {
 			const res = await apiFetch(
@@ -49,7 +55,7 @@ export function ConversationComposer({
 					method: "POST",
 					headers: { "Content-Type": "application/json" },
 					body: JSON.stringify({
-						userMessage: text.trim(),
+						userMessage: trimmed,
 						requestId: generateId("req"),
 					}),
 				},

@@ -1,7 +1,7 @@
 "use client";
 
 import { Bot, ChevronDown, ChevronRight } from "lucide-react";
-import { useState } from "react";
+import { memo, useState } from "react";
 import { MarkdownContent } from "@/components/markdown-content";
 import type { ConversationTurn } from "@/lib/types";
 import { ToolCallCard } from "./ToolCallCard";
@@ -9,6 +9,27 @@ import { ToolCallCard } from "./ToolCallCard";
 interface TurnBlockProps {
 	turn: ConversationTurn;
 	compact?: boolean;
+}
+
+function turnBlockComparator(
+	prev: TurnBlockProps,
+	next: TurnBlockProps,
+): boolean {
+	const p = prev.turn;
+	const n = next.turn;
+	return (
+		p === n ||
+		(p.id === n.id &&
+			p.role === n.role &&
+			p.ts === n.ts &&
+			p.content === n.content &&
+			p.pending === n.pending &&
+			p.error === n.error &&
+			p.tokens === n.tokens &&
+			p.parts === n.parts &&
+			p.toolCalls === n.toolCalls &&
+			prev.compact === next.compact)
+	);
 }
 
 function ThinkingBlock({ text }: { text: string }) {
@@ -37,7 +58,7 @@ function ThinkingBlock({ text }: { text: string }) {
 	);
 }
 
-export function TurnBlock({ turn, compact }: TurnBlockProps) {
+function TurnBlockInner({ turn, compact }: TurnBlockProps) {
 	const isUser = turn.role === "user";
 
 	const timestamp = new Date(turn.ts).toLocaleTimeString([], {
@@ -126,3 +147,5 @@ export function TurnBlock({ turn, compact }: TurnBlockProps) {
 		</div>
 	);
 }
+
+export const TurnBlock = memo(TurnBlockInner, turnBlockComparator);

@@ -10,6 +10,7 @@ import {
 	getConversationRun,
 	getCurrentSeq,
 	hasRecentRequestId,
+	invalidateConversationsCache,
 	listConversations,
 	listRunsForConversation,
 	mutateConversationsFile,
@@ -35,6 +36,93 @@ beforeAll(async () => {
 
 afterAll(async () => {
 	await restoreDataFiles(backups);
+});
+
+// ─── Conversations.json mtime cache ───────────────────────────────────────────
+
+describe("conversations.json mtime cache", () => {
+	it("two rapid getConversation() calls return the same data (second is cached)", async () => {
+		const conv = await createConversation({
+			title: `vitest-${Date.now()}-cache-ref`,
+			agentId: null,
+			model: null,
+			mode: "foreground",
+			executionSource: "chat",
+		});
+
+		// Warm the cache with the first read
+		const first = await getConversation(conv.id);
+		// Second read returns same object reference (cache hit)
+		const second = await getConversation(conv.id);
+
+		expect(first).toBe(second);
+		expect(first?.id).toBe(conv.id);
+	});
+
+	it("after updateConversation(), the next getConversation() returns updated data (cache invalidated)", async () => {
+		const conv = await createConversation({
+			title: `vitest-${Date.now()}-cache-update`,
+			agentId: null,
+			model: null,
+			mode: "foreground",
+			executionSource: "chat",
+		});
+
+		// Warm the cache
+		const before = await getConversation(conv.id);
+		expect(before?.title).toBe(conv.title);
+
+		// updateConversation invalidates the cache internally
+		await updateConversation(conv.id, { title: "updated-cache-title" });
+
+		const after = await getConversation(conv.id);
+		expect(after?.title).toBe("updated-cache-title");
+		// Different object because cache was invalidated and re-read from disk
+		expect(after).not.toBe(before);
+	});
+
+	it("after createConversation(), listConversations() includes the new one", async () => {
+		const before = await listConversations();
+		const beforeIds = new Set(before.map((c) => c.id));
+
+		const conv = await createConversation({
+			title: `vitest-${Date.now()}-cache-list`,
+			agentId: null,
+			model: null,
+			mode: "foreground",
+			executionSource: "chat",
+		});
+
+		const after = await listConversations();
+		expect(after.find((c) => c.id === conv.id)).toBeDefined();
+		expect(after.length).toBe(before.length + 1);
+		expect(beforeIds.has(conv.id)).toBe(false);
+	});
+
+	it("invalidateConversationsCache forces a fresh read from disk", async () => {
+		const conv = await createConversation({
+			title: `vitest-${Date.now()}-cache-inval`,
+			agentId: null,
+			model: null,
+			mode: "foreground",
+			executionSource: "chat",
+		});
+
+		// Warm the cache
+		const first = await getConversation(conv.id);
+
+		// Without invalidation, a second read returns the same cached object
+		const cached = await getConversation(conv.id);
+		expect(cached).toBe(first);
+
+		// Invalidate the cache so the next read goes to disk
+		invalidateConversationsCache();
+
+		const fresh = await getConversation(conv.id);
+		// Same data but different object (re-read from disk)
+		expect(fresh).toEqual(first);
+		expect(fresh).not.toBe(first);
+	});
 });
 
 // ─── Create Conversation ─────────────────────────────────────────────────────

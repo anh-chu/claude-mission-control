@@ -28,6 +28,21 @@ import type {
 import { generateId } from "./utils";
 import { getWorkspaceId, setFallbackWorkspaceId } from "./workspace-store";
 
+// ─── mtime-based cache for conversations.json ────────────────────────────────
+//
+// Within a single request the file won't change between reads unless *we* write
+// it.  After a write the cache is invalidated so the next read goes to disk.
+// Cross-process writes (e.g. the daemon) will have a different mtime, so the
+// cache correctly misses.
+
+interface ConversationsCache {
+	data: ConversationsFile;
+	mtimeMs: number;
+}
+
+/** Keyed by absolute file path to avoid cross-workspace cache collisions. */
+const _conversationsCache = new Map<string, ConversationsCache>();
+
 // ─── Workspace-scoped file path helpers ──────────────────────────────────────
 
 function workspaceDir(): string {
@@ -96,16 +111,35 @@ export async function ensureConversationDir(
 // ─── Index (conversations.json) read/write ───────────────────────────────────
 
 export async function getConversationsFile(): Promise<ConversationsFile> {
+	// mtime-based cache: avoid re-reading the file on every call within a request.
+	// Keyed by absolute path so different workspaces never share a cache entry.
+	const filePath = conversationsIndexPath();
+	const stat = await import("node:fs/promises").then((fs) =>
+		fs.stat(filePath).catch(() => null),
+	);
+	const mtimeMs = stat?.mtimeMs ?? 0;
+
+	const cached = _conversationsCache.get(filePath);
+	if (cached && cached.mtimeMs === mtimeMs) {
+		return cached.data;
+	}
+
 	try {
-		const raw = await readFile(conversationsIndexPath(), "utf-8");
+		const raw = await readFile(filePath, "utf-8");
 		const parsed = JSON.parse(raw) as Partial<ConversationsFile>;
-		return {
+		const data = {
 			conversations: parsed.conversations ?? [],
 			runs: parsed.runs ?? {},
 		};
+		_conversationsCache.set(filePath, { data, mtimeMs });
+		return data;
 	} catch {
 		return { conversations: [], runs: {} };
 	}
+}
+
+export function invalidateConversationsCache(): void {
+	_conversationsCache.delete(conversationsIndexPath());
 }
 
 async function writeConversationsFile(data: ConversationsFile): Promise<void> {
@@ -115,6 +149,8 @@ async function writeConversationsFile(data: ConversationsFile): Promise<void> {
 		JSON.stringify(data, null, 2),
 		"utf-8",
 	);
+	// Invalidate cache so the next read goes to disk and picks up the new mtime
+	invalidateConversationsCache();
 }
 
 /**

@@ -1,3 +1,4 @@
+import { writeFile } from "node:fs/promises";
 import { afterAll, afterEach, beforeAll, describe, expect, it } from "vitest";
 import {
 	_clearWatchers,
@@ -9,6 +10,7 @@ import {
 } from "@/lib/conversation-event-bus";
 import {
 	createConversation,
+	eventsFilePath,
 	publishConversationEvent,
 	setConversationsWorkspace,
 } from "@/lib/conversations";
@@ -281,6 +283,125 @@ describe("cross-process simulation", () => {
 			type: "conversation.started";
 		};
 		expect(started.payload.runId).toBe("daemon-run-001");
+
+		unsub();
+	});
+});
+
+// ─── Offset-based event reads ─────────────────────────────────────────────
+
+describe("offset-based event reads", () => {
+	it("after subscribing and publishing events, the subscriber receives them (existing behavior)", async () => {
+		const conv = await createConversation({
+			title: `vitest-${Date.now()}-offset-basic`,
+			agentId: null,
+			model: null,
+			mode: "foreground",
+			executionSource: "chat",
+		});
+
+		const received: ConversationEvent[] = [];
+		const unsub = subscribe(conv.id, (e) => received.push(e));
+
+		await new Promise((r) => setTimeout(r, 100));
+
+		await publishConversationEvent({
+			conversationId: conv.id,
+			type: "turn.started",
+			payload: { turnId: "t1", turn: 1, role: "user" },
+		});
+
+		await new Promise((r) => setTimeout(r, 500));
+
+		expect(received.length).toBeGreaterThanOrEqual(1);
+		expect(received[0].conversationId).toBe(conv.id);
+		expect(received[0].type).toBe("turn.started");
+
+		unsub();
+	});
+
+	it("publish multiple events, subscribe after the first one — subscriber skips already-existing events", async () => {
+		const conv = await createConversation({
+			title: `vitest-${Date.now()}-offset-skip`,
+			agentId: null,
+			model: null,
+			mode: "foreground",
+			executionSource: "chat",
+		});
+
+		// Publish event 1 before subscribing
+		await publishConversationEvent({
+			conversationId: conv.id,
+			type: "turn.started",
+			payload: { turnId: "t1", turn: 1, role: "user" },
+		});
+
+		// Subscribe now — the file watcher seeds its offset from the current
+		// file size, so event 1 should NOT be delivered
+		const received: ConversationEvent[] = [];
+		const unsub = subscribe(conv.id, (e) => received.push(e));
+
+		await new Promise((r) => setTimeout(r, 100));
+
+		// Publish event 2 — this should be delivered
+		await publishConversationEvent({
+			conversationId: conv.id,
+			type: "turn.completed",
+			payload: { turnId: "t1" },
+		});
+
+		await new Promise((r) => setTimeout(r, 500));
+
+		// Subscriber should only get event 2, not event 1
+		expect(received.length).toBeGreaterThanOrEqual(1);
+		expect(received[0].type).toBe("turn.completed");
+		// No turn.started events should be in the received list
+		expect(received.filter((e) => e.type === "turn.started")).toHaveLength(0);
+
+		unsub();
+	});
+
+	it("if events.jsonl is truncated (size < offset), the watcher resets and re-reads from the start", async () => {
+		const conv = await createConversation({
+			title: `vitest-${Date.now()}-offset-truncate`,
+			agentId: null,
+			model: null,
+			mode: "foreground",
+			executionSource: "chat",
+		});
+
+		// Publish an event so the file has some content
+		await publishConversationEvent({
+			conversationId: conv.id,
+			type: "turn.started",
+			payload: { turnId: "t1", turn: 1, role: "user" },
+		});
+
+		const received: ConversationEvent[] = [];
+		const unsub = subscribe(conv.id, (e) => received.push(e));
+
+		await new Promise((r) => setTimeout(r, 100));
+
+		// Truncate the events.jsonl file to simulate rotation/truncation
+		const evPath = eventsFilePath(conv.id);
+		await writeFile(evPath, "", "utf-8");
+
+		// Allow watcher to detect the truncation
+		await new Promise((r) => setTimeout(r, 200));
+
+		// Publish a new event after truncation
+		await publishConversationEvent({
+			conversationId: conv.id,
+			type: "turn.completed",
+			payload: { turnId: "t1" },
+		});
+
+		await new Promise((r) => setTimeout(r, 500));
+
+		// The watcher should have reset its offset and re-read from 0,
+		// delivering the newly published event
+		expect(received.length).toBeGreaterThanOrEqual(1);
+		expect(received.some((e) => e.type === "turn.completed")).toBe(true);
 
 		unsub();
 	});

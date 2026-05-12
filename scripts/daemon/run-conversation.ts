@@ -14,7 +14,7 @@
  *   7. On decision detected, pauses for user input
  */
 
-import { existsSync, readFileSync } from "node:fs";
+import { existsSync, readFileSync, watch } from "node:fs";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 import { createLogger } from "../../src/lib/logger";
@@ -113,17 +113,50 @@ function startStreamTail(
 		}
 	};
 
-	const interval = setInterval(() => {
-		if (stopped) return;
-		doRead();
-	}, 250);
+	// Use fs.watch to react to file changes instead of polling.
+	// Watch the parent directory (not the file) so it works even before the
+	// stream file is created by Claude CLI.  Filter by basename to only react
+	// to writes to our specific stream file.
+	let debounceTimer: ReturnType<typeof setTimeout> | null = null;
+	const DEBOUNCE_MS = 50;
+
+	let watcher: import("node:fs").FSWatcher | null = null;
+	let fallbackInterval: ReturnType<typeof setInterval> | null = null;
+
+	const dirPath = path.dirname(file);
+	const baseName = path.basename(file);
+	try {
+		watcher = watch(dirPath, (_event, filename) => {
+			if (stopped) return;
+			if (filename?.toString() !== baseName) return;
+			if (debounceTimer) clearTimeout(debounceTimer);
+			debounceTimer = setTimeout(() => {
+				if (!stopped) doRead();
+			}, DEBOUNCE_MS);
+		});
+	} catch {
+		// Fallback to polling if fs.watch fails (e.g., unsupported platform)
+		fallbackInterval = setInterval(() => {
+			if (stopped) return;
+			doRead();
+		}, 100);
+		watcher = null;
+	}
 
 	return {
 		stop: async () => {
 			if (stopped) return;
 			stopped = true;
-			clearInterval(interval);
-			await doRead();
+			if (debounceTimer) clearTimeout(debounceTimer);
+			if (watcher) {
+				watcher.close();
+				watcher = null;
+			}
+			if (fallbackInterval) {
+				clearInterval(fallbackInterval);
+				fallbackInterval = null;
+			}
+			await doRead(); // drain remaining
 		},
 	};
 }

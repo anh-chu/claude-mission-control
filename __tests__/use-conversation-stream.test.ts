@@ -645,6 +645,87 @@ describe("conversationReducer — decision events", () => {
 	});
 });
 
+describe("conversationReducer — optimistic turns", () => {
+	it("__optimistic_turn adds a user turn with pending: true and an opt- prefixed ID", () => {
+		const result = conversationReducer(initialReducerState, {
+			type: "__optimistic_turn",
+			payload: { content: "Hello", ts: TS },
+		});
+
+		expect(result.turns).toHaveLength(1);
+		expect(result.turns[0].role).toBe("user");
+		expect(result.turns[0].pending).toBe(true);
+		expect(result.turns[0].id).toMatch(/^opt-/);
+		expect(result.turns[0].turn).toBe(1);
+		expect(result.turns[0].content).toBe("Hello");
+		expect(result.turns[0].parts).toHaveLength(1);
+		expect(result.turns[0].parts?.[0].type).toBe("text");
+		expect(result.turns[0].parts?.[0].content).toBe("Hello");
+	});
+
+	it("optimistic turn has correct content from the payload", () => {
+		const result = conversationReducer(initialReducerState, {
+			type: "__optimistic_turn",
+			payload: { content: "My message", ts: TS },
+		});
+
+		expect(result.turns[0].content).toBe("My message");
+		expect(result.turns[0].ts).toBe(TS);
+	});
+
+	it("when a real turn.started event arrives, optimistic turns with opt- IDs are removed before the real turn is added", () => {
+		const withOpt = conversationReducer(initialReducerState, {
+			type: "__optimistic_turn",
+			payload: { content: "Hello", ts: TS },
+		});
+
+		expect(withOpt.turns).toHaveLength(1);
+		expect(withOpt.turns[0].id).toMatch(/^opt-/);
+
+		const result = conversationReducer(withOpt, {
+			conversationId: CONV_ID,
+			ts: TS2,
+			seq: 1,
+			type: "turn.started",
+			payload: { turnId: "turn_1", turn: 1, role: "user" },
+		});
+
+		// Optimistic turn is replaced by the real one
+		expect(result.turns).toHaveLength(1);
+		expect(result.turns[0].id).toBe("turn_1");
+		expect(result.turns[0].role).toBe("user");
+		expect(result.turns[0].pending).toBe(true);
+		expect(result.turns.filter((t) => t.id.startsWith("opt-"))).toHaveLength(0);
+	});
+
+	it("optimistic turn gets correct turn number based on existing turns", () => {
+		// First add a real turn
+		const s1 = conversationReducer(initialReducerState, {
+			conversationId: CONV_ID,
+			ts: TS,
+			seq: 1,
+			type: "turn.started",
+			payload: { turnId: "turn_1", turn: 1, role: "user" },
+		});
+		const s2 = conversationReducer(s1, {
+			conversationId: CONV_ID,
+			ts: TS2,
+			seq: 2,
+			type: "turn.completed",
+			payload: { turnId: "turn_1" },
+		});
+
+		const result = conversationReducer(s2, {
+			type: "__optimistic_turn",
+			payload: { content: "Next message", ts: TS2 },
+		});
+
+		expect(result.turns).toHaveLength(2);
+		expect(result.turns[1].turn).toBe(2);
+		expect(result.turns[1].id).toMatch(/^opt-/);
+	});
+});
+
 describe("conversationReducer — edge cases", () => {
 	it("unknown event type returns state unchanged", () => {
 		const state = stateWithConversation();

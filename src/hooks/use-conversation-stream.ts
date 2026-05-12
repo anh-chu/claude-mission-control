@@ -48,7 +48,8 @@ type InternalAction =
 				runs: ConversationRun[];
 			};
 	  }
-	| { type: "__set_error"; payload: string | null };
+	| { type: "__set_error"; payload: string | null }
+	| { type: "__optimistic_turn"; payload: { content: string; ts: string } };
 
 type ReducerAction = ConversationEvent | InternalAction;
 
@@ -69,6 +70,27 @@ export function conversationReducer(
 		};
 	}
 
+	if (action.type === "__optimistic_turn") {
+		const { content, ts } = action.payload;
+		const tempId = `opt-${Date.now()}`;
+		const nextTurn =
+			state.turns.length > 0
+				? Math.max(...state.turns.map((t) => t.turn)) + 1
+				: 1;
+
+		const newTurn: ConversationTurn = {
+			id: tempId,
+			turn: nextTurn,
+			role: "user",
+			ts,
+			content,
+			parts: [{ type: "text", content }],
+			pending: true,
+		};
+
+		return { ...state, turns: [...state.turns, newTurn] };
+	}
+
 	if (action.type === "__set_error") {
 		return { ...state, error: action.payload };
 	}
@@ -80,7 +102,11 @@ export function conversationReducer(
 		// ─── Turn Events ──────────────────────────────────────────────────────────────────────────
 		case "turn.started": {
 			const { turnId, turn, role, runId } = event.payload;
-			if (state.turns.some((t) => t.id === turnId)) return state;
+
+			// Remove any optimistic user turn so the real one takes its place.
+			// Optimistic turns use placeholder IDs like "opt-<timestamp>".
+			const filteredTurns = state.turns.filter((t) => !t.id.startsWith("opt-"));
+			if (filteredTurns.some((t) => t.id === turnId)) return state;
 
 			const newTurn: ConversationTurn = {
 				id: turnId,
@@ -114,7 +140,7 @@ export function conversationReducer(
 
 			return {
 				...state,
-				turns: [...state.turns, newTurn],
+				turns: [...filteredTurns, newTurn],
 				pendingToolCalls,
 			};
 		}
@@ -428,7 +454,10 @@ const CONVERSATION_EVENT_TYPES = [
 
 export function useConversationStream(
 	conversationId: string | null,
-): ConversationStreamState & { refresh: () => Promise<void> } {
+): ConversationStreamState & {
+	refresh: () => Promise<void>;
+	addOptimisticTurn: (content: string) => void;
+} {
 	const [state, dispatch] = useReducer(
 		conversationReducer,
 		initialReducerState,
@@ -481,6 +510,14 @@ export function useConversationStream(
 				payload: err instanceof Error ? err.message : String(err),
 			});
 		}
+	}, []);
+
+	// Add an optimistic user turn that appears immediately without waiting for SSE
+	const addOptimisticTurn = useCallback((content: string) => {
+		dispatch({
+			type: "__optimistic_turn",
+			payload: { content, ts: new Date().toISOString() },
+		});
 	}, []);
 
 	// Process SSE message (parsed JSON)
@@ -609,5 +646,6 @@ export function useConversationStream(
 		error: state.error,
 		connected,
 		refresh,
+		addOptimisticTurn,
 	};
 }

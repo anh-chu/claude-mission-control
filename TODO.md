@@ -30,6 +30,56 @@ Deferred follow-ups from the conversation unification effort. None block normal 
 
 ---
 
+## Critical Hardening (from deep review 2026-05-11)
+
+### 6. SSE can miss events during initial connect
+
+**Severity:** High
+
+**Problem:** The hook does REST refresh first, then opens SSE without `lastEventId` when `lastSeqRef` is `0`. The server only replays when `lastEventId !== null`, and the watcher seeds its offset to EOF. Any event written between the REST fetch and SSE subscription is skipped forever.
+
+**Files:** `src/hooks/use-conversation-stream.ts:591-593`, `src/app/api/conversations/[id]/events/route.ts:94-102`
+
+**Fix:** Always connect with an explicit cursor. Use `?lastEventId=0` on first connect and replay from seq 0, with client dedup (already exists via `seenSeqsRef`).
+
+---
+
+### 7. File watcher can drop events while a read is in progress
+
+**Severity:** High
+
+**Problem:** `consumeNewEvents` returns immediately if already reading, but does not mark a pending reread. If `fs.watch` fires during `readFile`, the new append is missed until a later append triggers another read.
+
+**Files:** `src/lib/conversation-event-bus.ts:82-84`
+
+**Fix:** Add a pending flag and rerun after the current read completes, or read via `open/stat/read` from offset in a loop until file size stops changing.
+
+---
+
+### 8. conversations.json writes are not atomic
+
+**Severity:** High
+
+**Problem:** Writes use direct `writeFile`. A crash mid-write corrupts the file. Also, `getConversationsFile` catches ALL errors (including JSON parse errors) and returns an empty store, silently hiding corruption.
+
+**Files:** `src/lib/conversations.ts:98-117, 125-132`
+
+**Fix:** Atomic temp-write + `rename`. Only return empty on `ENOENT`; log/throw parse and permission errors.
+
+---
+
+### 9. PATCH accepts arbitrary Partial<Conversation>
+
+**Severity:** Medium (security)
+
+**Problem:** `PATCH /api/conversations/[id]` casts the request body directly to `Partial<Conversation>` and merges it. A client can mutate server-owned fields like `id`, timestamps, counters, `runCount`, `deletedAt`.
+
+**Files:** `src/app/api/conversations/[id]/route.ts:66`
+
+**Fix:** Whitelist patchable fields (`title`, `status`, `summary`, `agentId`, `model`). Reject or ignore unknown fields.
+
+---
+
 ## Tests
 
 ### Prune low-value tests (remaining candidates)

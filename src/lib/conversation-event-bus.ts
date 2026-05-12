@@ -14,7 +14,7 @@
 
 import { EventEmitter } from "node:events";
 import { existsSync, type FSWatcher, statSync, watch } from "node:fs";
-import { readFile } from "node:fs/promises";
+
 import path from "node:path";
 import { eventsFilePath, publishConversationEvent } from "./conversations";
 import type { ConversationEvent } from "./types";
@@ -68,6 +68,8 @@ interface WatcherEntry {
 	watcher: FSWatcher;
 	refCount: number;
 	offset: number;
+	/** Buffer for incomplete lines (partial writes) */
+	buffer: string;
 }
 
 const watchers = new Map<string, WatcherEntry>();
@@ -87,35 +89,53 @@ async function consumeNewEvents(conversationId: string): Promise<void> {
 		if (!entry) return;
 
 		const filePath = eventsFilePath(conversationId);
-		let content: string;
+
+		// Stat the file to get its size without reading the whole thing
+		let stat: import("node:fs").Stats;
 		try {
-			content = await readFile(filePath, "utf-8");
+			stat = await import("node:fs/promises").then((fs) => fs.stat(filePath));
 		} catch {
 			// File does not exist (yet) or was removed
 			entry.offset = 0;
 			return;
 		}
 
-		const size = content.length;
+		const size = stat.size;
 
 		if (size < entry.offset) {
 			// File was truncated or rotated — reset and re-read everything
 			entry.offset = 0;
+			entry.buffer = "";
 		}
 		if (size <= entry.offset) return;
 
-		const newChunk = content.slice(entry.offset);
-		entry.offset = size;
+		// Read only the new bytes from the last known offset
+		const fsP = await import("node:fs/promises");
+		const fh = await fsP.open(filePath, "r");
+		try {
+			const len = size - entry.offset;
+			const buf = Buffer.alloc(len);
+			const { bytesRead } = await fh.read(buf, 0, len, entry.offset);
+			entry.offset += bytesRead;
 
-		for (const line of newChunk.split("\n")) {
-			const trimmed = line.trim();
-			if (!trimmed) continue;
-			try {
-				const event = JSON.parse(trimmed) as ConversationEvent;
-				emitLocal(event);
-			} catch {
-				// skip corrupt line
+			// Buffer incomplete lines: only parse complete newline-terminated lines,
+			// keep the tail (after the last newline) for the next read.
+			entry.buffer += buf.toString("utf-8", 0, bytesRead);
+			const lines = entry.buffer.split("\n");
+			entry.buffer = lines.pop() ?? "";
+
+			for (const line of lines) {
+				const trimmed = line.trim();
+				if (!trimmed) continue;
+				try {
+					const event = JSON.parse(trimmed) as ConversationEvent;
+					emitLocal(event);
+				} catch {
+					// skip corrupt line
+				}
 			}
+		} finally {
+			await fh.close();
 		}
 	} finally {
 		reading.delete(conversationId);
@@ -158,7 +178,7 @@ function startFileWatcher(conversationId: string): void {
 		}
 	});
 
-	watchers.set(conversationId, { watcher, refCount: 1, offset });
+	watchers.set(conversationId, { watcher, refCount: 1, offset, buffer: "" });
 }
 
 function stopFileWatcher(conversationId: string): void {

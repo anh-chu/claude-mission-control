@@ -10,7 +10,7 @@ import {
 	Terminal,
 	Wrench,
 } from "lucide-react";
-import { useState } from "react";
+import { memo, useState } from "react";
 import { Badge } from "@/components/ui/badge";
 import {
 	Collapsible,
@@ -24,7 +24,7 @@ interface ToolCallCardProps {
 	onRetry?: () => void;
 }
 
-export function ToolCallCard({ toolCall }: ToolCallCardProps) {
+function ToolCallCardImpl({ toolCall }: ToolCallCardProps) {
 	const [open, setOpen] = useState(false);
 	const args = toolCall.args || {};
 	const status = toolCall.status;
@@ -264,3 +264,5 @@ export function ToolCallCard({ toolCall }: ToolCallCardProps) {
 		</Collapsible>
 	);
 }
+
+export const ToolCallCard = memo(ToolCallCardImpl);
