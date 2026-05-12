@@ -2,7 +2,8 @@ import type { Metadata } from "next";
 import { Inter } from "next/font/google";
 import "./globals.css";
 import { Toaster } from "sonner";
-import { LayoutShell } from "@/components/layout-shell";
+import { AuthProvider } from "@/components/auth-provider";
+import { ConditionalShell } from "@/components/conditional-shell";
 import { ThemeProvider } from "@/components/theme-provider";
 
 const inter = Inter({
@@ -24,16 +25,18 @@ export default function RootLayout({
 	return (
 		<html lang="en" suppressHydrationWarning>
 			<body className={`${inter.variable} font-sans antialiased`}>
-				<ThemeProvider>
-					<LayoutShell>{children}</LayoutShell>
-					<Toaster
-						theme="system"
-						position="bottom-right"
-						toastOptions={{
-							className: "border-border bg-card text-card-foreground",
-						}}
-					/>
-				</ThemeProvider>
+				<AuthProvider>
+					<ThemeProvider>
+						<ConditionalShell>{children}</ConditionalShell>
+						<Toaster
+							theme="system"
+							position="bottom-right"
+							toastOptions={{
+								className: "border-border bg-card text-card-foreground",
+							}}
+						/>
+					</ThemeProvider>
+				</AuthProvider>
 			</body>
 		</html>
 	);

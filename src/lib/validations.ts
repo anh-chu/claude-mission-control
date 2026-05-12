@@ -34,6 +34,7 @@ const eventTypeEnum = z.enum([
 	"decision_requested",
 	"decision_answered",
 	"brain_dump_triaged",
+	"milestone_completed",
 	"agent_checkin",
 ]);
 

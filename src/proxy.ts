@@ -1,33 +1,12 @@
-import type { NextRequest } from "next/server";
 import { NextResponse } from "next/server";
+import { auth } from "@/lib/auth";
 
-/**
- * Constant-time string comparison using XOR.
- * Prevents timing side-channel attacks on token comparison.
- */
-function timingSafeEqual(a: string, b: string): boolean {
-	if (a.length !== b.length) return false;
-	let result = 0;
-	for (let i = 0; i < a.length; i++) {
-		result |= a.charCodeAt(i) ^ b.charCodeAt(i);
-	}
-	return result === 0;
-}
-
-/**
- * API Authentication Middleware
- *
- * When MANDIO_API_TOKEN is set in .env.local, all /api/* requests require
- * a matching Authorization: Bearer <token> header.
- *
- * When MANDIO_API_TOKEN is NOT set, all requests pass through (backwards
- * compatible for local-only development with zero configuration).
- */
-export function proxy(request: NextRequest) {
+export const proxy = auth((req) => {
 	const startedAt = Date.now();
-	const pathname = request.nextUrl.pathname;
+	const pathname = req.nextUrl.pathname;
 
-	const finalize = (response: NextResponse) => {
+	// ── Request logging ──
+	function finalize(response: NextResponse) {
 		if (!pathname.startsWith("/_next/")) {
 			console.log(
 				JSON.stringify({
@@ -35,27 +14,25 @@ export function proxy(request: NextRequest) {
 					level: "INFO",
 					module: "http",
 					process: "app",
-					method: request.method,
+					method: req.method,
 					path: pathname,
 					durationMs: Date.now() - startedAt,
 				}),
 			);
 		}
 		return response;
-	};
+	}
 
-	// ── Workspace header injection ────────────────────────────────────────────
-	const workspaceId = request.cookies.get("workspace_id")?.value ?? "default";
-	const requestHeaders = new Headers(request.headers);
+	// ── Workspace header injection (preserved from legacy proxy) ──
+	const workspaceId = req.cookies.get("workspace_id")?.value ?? "default";
+	const requestHeaders = new Headers(req.headers);
 	requestHeaders.set("x-workspace-id", workspaceId);
 
-	// ── CSRF Protection: validate Origin on state-changing requests ──
-	const method = request.method.toUpperCase();
+	// ── CSRF Protection (preserved from legacy proxy) ──
+	const method = req.method.toUpperCase();
 	if (["POST", "PUT", "DELETE", "PATCH"].includes(method)) {
-		const origin = request.headers.get("origin");
-		const host = request.headers.get("host");
-		// Allow requests with no origin (server-to-server, CLI tools like curl)
-		// But reject requests where origin doesn't match host (cross-site)
+		const origin = req.headers.get("origin");
+		const host = req.headers.get("host");
 		if (origin && host) {
 			try {
 				const originHost = new URL(origin).host;
@@ -78,49 +55,14 @@ export function proxy(request: NextRequest) {
 		}
 	}
 
-	const token = process.env.MANDIO_API_TOKEN;
-
-	// Exempt server-status endpoint from auth (needed for health checks)
-	if (pathname === "/api/server-status")
-		return finalize(
-			NextResponse.next({ request: { headers: requestHeaders } }),
-		);
-
-	// No token configured = open access (default local dev experience)
-	if (!token)
-		return finalize(
-			NextResponse.next({ request: { headers: requestHeaders } }),
-		);
-
-	const authHeader = request.headers.get("authorization");
-	if (!authHeader) {
-		return finalize(
-			NextResponse.json(
-				{ error: "Missing Authorization header" },
-				{ status: 401 },
-			),
-		);
-	}
-
-	const parts = authHeader.split(" ");
-	if (parts.length !== 2 || parts[0] !== "Bearer") {
-		return finalize(
-			NextResponse.json(
-				{ error: "Invalid Authorization format. Expected: Bearer <token>" },
-				{ status: 401 },
-			),
-		);
-	}
-
-	if (!timingSafeEqual(parts[1], token)) {
-		return finalize(
-			NextResponse.json({ error: "Invalid API token" }, { status: 401 }),
-		);
-	}
+	// Auth.js session is already verified by the auth wrapper.
+	// Session data available at req.auth if needed.
 
 	return finalize(NextResponse.next({ request: { headers: requestHeaders } }));
-}
+});
 
 export const config = {
-	matcher: "/api/:path*",
+	matcher: [
+		"/((?!_next/static|_next/image|favicon.ico|.*\\.(?:svg|png|jpg|jpeg|gif|webp)$).*)",
+	],
 };

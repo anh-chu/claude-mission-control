@@ -6,7 +6,16 @@
  * project/mission level.
  */
 import path from "node:path";
-import { afterAll, beforeAll, describe, expect, it } from "vitest";
+import { afterAll, beforeAll, describe, expect, it, vi } from "vitest";
+
+vi.mock("@/lib/workspace-context", () => ({
+	applyWorkspaceContext: vi
+		.fn()
+		.mockImplementation((fn: (id: string) => Promise<unknown>) =>
+			fn("default"),
+		),
+}));
+
 import { POST } from "@/app/api/projects/[id]/stop/route";
 import {
 	createConversation,

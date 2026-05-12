@@ -2,7 +2,8 @@
  * Authenticated API client for Mandio.
  *
  * Wraps fetch() with:
- * - Automatic Bearer token injection (NEXT_PUBLIC_MANDIO_API_TOKEN)
+ * - Cookie-based session auth via credentials: 'include'
+ * - 401 redirect to /login
  * - Retry with exponential backoff for network errors and 5xx responses
  * - Configurable retry behavior per request
  */
@@ -25,16 +26,13 @@ export interface ApiFetchInit extends RequestInit {
  * - GET requests retry up to 2 times by default (safe to retry reads).
  * - POST/PUT/DELETE default to 0 retries (mutations need explicit opt-in).
  * - Retries only on network errors and 5xx responses (never on 4xx).
+ * - 401 responses redirect to /login.
  */
 export async function apiFetch(
 	url: string,
 	init?: ApiFetchInit,
 ): Promise<Response> {
-	const token = process.env.NEXT_PUBLIC_MANDIO_API_TOKEN;
 	const headers = new Headers(init?.headers);
-	if (token) {
-		headers.set("Authorization", `Bearer ${token}`);
-	}
 
 	const method = (init?.method ?? "GET").toUpperCase();
 	const isMutation = method !== "GET" && method !== "HEAD";
@@ -45,7 +43,17 @@ export async function apiFetch(
 
 	for (let attempt = 0; attempt <= maxRetries; attempt++) {
 		try {
-			const res = await fetch(url, { ...init, headers });
+			const res = await fetch(url, {
+				...init,
+				headers,
+				credentials: "include",
+			});
+
+			// Redirect to login on unauthorized
+			if (res.status === 401 && typeof window !== "undefined") {
+				window.location.href = "/login";
+				return res;
+			}
 
 			// Only retry on 5xx (server error), never on 4xx (client error)
 			if (res.status >= 500 && attempt < maxRetries) {
