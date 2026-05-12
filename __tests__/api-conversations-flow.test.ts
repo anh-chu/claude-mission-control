@@ -515,7 +515,7 @@ describe("POST /api/conversations/[id]/cancel", () => {
 	it("calls process.kill for active run with PID", async () => {
 		const killSpy = vi
 			.spyOn(process, "kill")
-			.mockImplementation(() => true as true);
+			.mockImplementation(() => true as const);
 
 		try {
 			const conv = await createConversation({

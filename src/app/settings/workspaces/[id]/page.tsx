@@ -194,8 +194,8 @@ export default function WorkspaceSettingsPage() {
 							/>
 						</div>
 						<CardDescription>
-							Configure this workspace's name and appearance. Switches with the
-							workspace selector.
+							Configure this workspace&apos;s name and appearance. Switches with
+							the workspace selector.
 						</CardDescription>
 					</CardHeader>
 					<CardContent className="space-y-5">

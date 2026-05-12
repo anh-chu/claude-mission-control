@@ -6,7 +6,7 @@ import { applyWorkspaceContext } from "@/lib/workspace-context";
 // ─── GET: Read active runs with PID liveness check ──────────────────────────
 
 export async function GET(request: NextRequest) {
-	return applyWorkspaceContext(async (workspaceId) => {
+	return applyWorkspaceContext(async (_workspaceId) => {
 		let data = await getActiveRuns();
 
 		// PID liveness check: find dead "running" processes

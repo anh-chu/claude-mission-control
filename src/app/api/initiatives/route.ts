@@ -14,7 +14,7 @@ import {
 import { applyWorkspaceContext } from "@/lib/workspace-context";
 
 export async function GET(request: Request) {
-	return applyWorkspaceContext(async (workspaceId) => {
+	return applyWorkspaceContext(async (_workspaceId) => {
 		const { searchParams } = new URL(request.url);
 		const id = searchParams.get("id");
 		const projectId = searchParams.get("projectId");
@@ -53,7 +53,7 @@ export async function GET(request: Request) {
 }
 
 export async function POST(request: Request) {
-	return applyWorkspaceContext(async (workspaceId) => {
+	return applyWorkspaceContext(async (_workspaceId) => {
 		const validation = await validateBody(request, initiativeCreateSchema);
 		if (!validation.success) return validation.error;
 		const body = validation.data;
@@ -86,7 +86,7 @@ export async function POST(request: Request) {
 }
 
 export async function PUT(request: Request) {
-	return applyWorkspaceContext(async (workspaceId) => {
+	return applyWorkspaceContext(async (_workspaceId) => {
 		const validation = await validateBody(request, initiativeUpdateSchema);
 		if (!validation.success) return validation.error;
 		const body = validation.data;
@@ -113,7 +113,7 @@ export async function PUT(request: Request) {
 }
 
 export async function DELETE(request: Request) {
-	return applyWorkspaceContext(async (workspaceId) => {
+	return applyWorkspaceContext(async (_workspaceId) => {
 		const { searchParams } = new URL(request.url);
 		const id = searchParams.get("id");
 

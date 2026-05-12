@@ -23,7 +23,7 @@ interface LayoutShellProps {
 export function LayoutShell({ children }: LayoutShellProps) {
 	const [chatOpen, setChatOpen] = useState(false);
 	const [isMobile, setIsMobile] = useState(false);
-	const pathname = usePathname();
+	const _pathname = usePathname();
 	const router = useRouter();
 	const { tasks } = useSidebar();
 	const { online } = useConnection();

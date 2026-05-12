@@ -190,7 +190,7 @@ describe("daemon stream tail", () => {
 		);
 
 		// Provide a watchFn that calls the listener on file change by polling
-		let listener:
+		let _listener:
 			| ((event: string, filename: string | null) => void)
 			| undefined;
 		const watchFn = vi
@@ -200,7 +200,7 @@ describe("daemon stream tail", () => {
 					_file: string,
 					cb: (event: string, filename: string | null) => void,
 				) => {
-					listener = cb;
+					_listener = cb;
 					return { close: vi.fn() } as unknown as FSWatcher;
 				},
 			);

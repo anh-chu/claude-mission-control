@@ -163,7 +163,7 @@ function scheduleToHuman(schedule: {
 	const timeStr = `${hh.toString().padStart(2, "0")}:${mm.toString().padStart(2, "0")}`;
 	const repeat = detectRepeat(cron);
 
-	let text = "";
+	let text: string;
 	switch (repeat) {
 		case "once":
 			text = `Once at ${timeStr}`;

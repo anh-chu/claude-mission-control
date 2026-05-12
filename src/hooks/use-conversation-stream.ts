@@ -577,7 +577,6 @@ export function useConversationStream(
 			retryDelayRef.current = 1000; // Reset backoff
 		};
 
-		// eslint-disable-next-line @typescript-eslint/no-unused-vars
 		es.onerror = (_event) => {
 			setConnected(false);
 			es.close();

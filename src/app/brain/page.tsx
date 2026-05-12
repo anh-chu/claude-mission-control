@@ -305,7 +305,7 @@ export default function BrainPage() {
 				rootLoadingRef.current = false;
 				setRootLoading(false);
 			});
-	}, [rootLoaded]); // eslint-disable-line react-hooks/exhaustive-deps
+	}, [rootLoaded]);
 
 	const reloadDir = useCallback(async (dir: string) => {
 		const fresh = await fetchDir(dir);
@@ -407,7 +407,7 @@ export default function BrainPage() {
 
 	useEffect(() => {
 		setAppFullscreen(false);
-	}, []); // eslint-disable-line react-hooks/exhaustive-deps
+	}, []);
 
 	async function openViewer(node: TreeNode) {
 		setOpenFile({

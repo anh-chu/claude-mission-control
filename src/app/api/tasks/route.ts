@@ -211,7 +211,7 @@ async function handleUnblocking(completedTask: Task) {
 // ─── API Routes ──────────────────────────────────────────────────────────────
 
 export async function GET(request: Request) {
-	return applyWorkspaceContext(async (workspaceId) => {
+	return applyWorkspaceContext(async (_workspaceId) => {
 		const { searchParams } = new URL(request.url);
 		const id = searchParams.get("id");
 		const assignedTo = searchParams.get("assignedTo");
@@ -319,7 +319,7 @@ export async function GET(request: Request) {
 }
 
 export async function POST(request: Request) {
-	return applyWorkspaceContext(async (workspaceId) => {
+	return applyWorkspaceContext(async (_workspaceId) => {
 		const validation = await validateBody(request, taskCreateSchema);
 		if (!validation.success) return validation.error;
 		const body = validation.data;
@@ -381,7 +381,7 @@ export async function POST(request: Request) {
 }
 
 export async function PUT(request: Request) {
-	return applyWorkspaceContext(async (workspaceId) => {
+	return applyWorkspaceContext(async (_workspaceId) => {
 		const validation = await validateBody(request, taskUpdateSchema);
 		if (!validation.success) return validation.error;
 		const body = validation.data;

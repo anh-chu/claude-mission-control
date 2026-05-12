@@ -10,7 +10,7 @@ import {
 import { ConfirmDialog } from "@/components/confirm-dialog";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent } from "@/components/ui/card";
 import {
 	Dialog,
 	DialogContent,
@@ -31,7 +31,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { Textarea } from "@/components/ui/textarea";
 import { useInitiatives, useProjects, useTasks } from "@/hooks/use-data";
 import { COLOR_SWATCHES } from "@/lib/constants";
-import { showError, showSuccess } from "@/lib/toast";
+import { showError } from "@/lib/toast";
 import type { Initiative, InitiativeStatus } from "@/lib/types";
 
 function CreateInitiativeDialog({

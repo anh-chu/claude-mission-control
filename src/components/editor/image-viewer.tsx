@@ -44,7 +44,6 @@ export function ImageViewer({ path, title }: ImageViewerProps) {
 				</Button>
 			</ViewerToolbar>
 			<div className="flex-1 overflow-auto flex items-center justify-center bg-[#1a1a1a] p-8">
-				{/* eslint-disable-next-line @next/next/no-img-element */}
 				<img
 					src={src}
 					alt={title}

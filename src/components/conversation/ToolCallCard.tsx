@@ -204,7 +204,9 @@ function ToolCallCardImpl({ toolCall }: ToolCallCardProps) {
 			try {
 				const parsed = JSON.parse(toolCall.result);
 				taskStatus = parsed.status || taskStatus;
-			} catch {}
+			} catch {
+				/* ignore parse errors */
+			}
 		}
 		return (
 			<div className="py-1 px-2">

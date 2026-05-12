@@ -158,7 +158,6 @@ export function KBEditor() {
 	// when EditorContent renders in the same pass.
 	const [folderTab, setFolderTab] = useState<"page" | "files">("page");
 	useEffect(() => {
-		// eslint-disable-next-line react-hooks/set-state-in-effect
 		setFolderTab("page");
 	}, []);
 

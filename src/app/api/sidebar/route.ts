@@ -5,7 +5,7 @@ import { applyWorkspaceContext } from "@/lib/workspace-context";
 export const dynamic = "force-dynamic";
 
 export async function GET() {
-	return applyWorkspaceContext(async (workspaceId) => {
+	return applyWorkspaceContext(async (_workspaceId) => {
 		const [tasksData, inboxData, decisionsData, agentsData] = await Promise.all(
 			[getTasks(), getInbox(), getDecisions(), getAgents()],
 		);

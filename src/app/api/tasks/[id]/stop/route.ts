@@ -48,7 +48,7 @@ export async function POST(
 	_request: Request,
 	{ params }: { params: Promise<{ id: string }> },
 ) {
-	return applyWorkspaceContext(async (workspaceId) => {
+	return applyWorkspaceContext(async (_workspaceId) => {
 		const { id: taskId } = await params;
 		const now = new Date().toISOString();
 

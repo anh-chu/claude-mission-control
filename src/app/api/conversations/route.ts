@@ -11,7 +11,7 @@ import { applyWorkspaceContext } from "@/lib/workspace-context";
 // ─── GET /api/conversations ──────────────────────────────────────────────────
 
 export async function GET(request: Request) {
-	return applyWorkspaceContext(async (workspaceId) => {
+	return applyWorkspaceContext(async (_workspaceId) => {
 		const { searchParams } = new URL(request.url);
 
 		const taskIdParam = searchParams.get("taskId");
@@ -57,7 +57,7 @@ export async function GET(request: Request) {
 // ─── POST /api/conversations ─────────────────────────────────────────────────
 
 export async function POST(request: Request) {
-	return applyWorkspaceContext(async (workspaceId) => {
+	return applyWorkspaceContext(async (_workspaceId) => {
 		let body: unknown;
 		try {
 			body = await request.json();

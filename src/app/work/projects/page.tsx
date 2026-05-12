@@ -47,14 +47,21 @@ const workPeers: BreadcrumbPeer[] = [
 ];
 
 export default function WorkProjectsPage() {
-	const router = useRouter();
-	const { projects, create, remove, update, loading, refetch } = useProjects();
+	const _router = useRouter();
+	const {
+		projects,
+		create,
+		remove,
+		update,
+		loading,
+		refetch: _refetch,
+	} = useProjects();
 	const { agents } = useAgents();
 	const { tasks } = useTasks();
 	const {
-		runningTaskIds,
-		isTaskRunning,
-		runTask,
+		runningTaskIds: _runningTaskIds,
+		isTaskRunning: _isTaskRunning,
+		runTask: _runTask,
 		isProjectRunning,
 		isProjectRunActive,
 		runProject,

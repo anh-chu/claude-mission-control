@@ -198,7 +198,6 @@ export function FolderIndex({ folderPath, entries }: FolderIndexProps) {
 									title={title}
 								>
 									<div className="aspect-square w-full overflow-hidden rounded-md border border-border bg-muted">
-										{/* eslint-disable-next-line @next/next/no-img-element */}
 										<img
 											src={`/api/assets/${child.path}`}
 											alt={title}

@@ -9,13 +9,10 @@ import { fileURLToPath } from "node:url";
 //
 // Guard: during Next.js instrumentation hook loading, import.meta.url may not
 // be a file URL, so fileURLToPath would throw. Fall back to process.cwd().
-let __filename: string;
 let __dirname: string;
 try {
-	__filename = fileURLToPath(import.meta.url);
-	__dirname = path.dirname(__filename);
+	__dirname = path.dirname(fileURLToPath(import.meta.url));
 } catch {
-	__filename = "";
 	__dirname = process.cwd();
 }
 

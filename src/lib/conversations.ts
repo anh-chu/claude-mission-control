@@ -400,7 +400,7 @@ export async function listRunsForConversation(
  */
 async function _nextSeqLocked(conversationId: string): Promise<number> {
 	const seqPath = seqFilePath(conversationId);
-	let current = 0;
+	let current: number;
 	try {
 		const raw = await readFile(seqPath, "utf-8");
 		current = parseInt(raw.trim(), 10);

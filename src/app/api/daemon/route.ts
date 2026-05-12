@@ -18,7 +18,7 @@ const STATUS_FILE = DAEMON_STATUS_FILE;
 // ─── GET: Read daemon status + config ────────────────────────────────────────
 
 export async function GET() {
-	return applyWorkspaceContext(async (workspaceId) => {
+	return applyWorkspaceContext(async (_workspaceId) => {
 		const savedStatus = readJSON(STATUS_FILE) ?? {
 			status: "stopped",
 			pid: null,
@@ -198,7 +198,7 @@ export async function POST(request: Request) {
 // ─── PUT: Update daemon config ───────────────────────────────────────────────
 
 export async function PUT(request: Request) {
-	return applyWorkspaceContext(async (workspaceId) => {
+	return applyWorkspaceContext(async (_workspaceId) => {
 		// Validate request body against Zod schema
 		const validation = await validateBody(request, daemonConfigUpdateSchema);
 		if (!validation.success) return validation.error;

@@ -97,8 +97,8 @@ export function ProjectDialog({
 				<DialogHeader>
 					<DialogTitle>Create Project</DialogTitle>
 					<DialogDescription>
-						A project is a business, product, or initiative you're building.
-						Group related tasks, assign agents, and track progress.
+						A project is a business, product, or initiative you&apos;re
+						building. Group related tasks, assign agents, and track progress.
 					</DialogDescription>
 				</DialogHeader>
 				<form onSubmit={handleSubmit} className="space-y-4">

@@ -83,7 +83,6 @@ function ResizableImageComponent(props: NodeViewProps) {
 				className={`relative group inline-block max-w-full ${selected ? "ring-2 ring-primary rounded-md" : ""}`}
 				contentEditable={false}
 			>
-				{/* eslint-disable-next-line @next/next/no-img-element */}
 				<img
 					ref={imgRef}
 					src={attrs.src}
