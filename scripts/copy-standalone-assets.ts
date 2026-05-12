@@ -4,9 +4,14 @@
  * so we copy them manually after build.
  */
 import { cpSync, existsSync, rmSync } from "node:fs";
-import { join, resolve } from "node:path";
+import { basename, join, resolve } from "node:path";
 
-const standaloneDir = resolve(".next/standalone");
+const standaloneBase = resolve(".next/standalone");
+// Next.js standalone output may be nested under the project directory name
+const nestedDir = join(standaloneBase, basename(resolve(".")));
+const standaloneDir = existsSync(join(nestedDir, "server.js"))
+	? nestedDir
+	: standaloneBase;
 const publicDir = resolve("public");
 const staticDir = resolve(".next/static");
 const distDir = resolve("dist");

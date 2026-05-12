@@ -12,6 +12,7 @@
 
 import { type ChildProcess, spawn } from "node:child_process";
 import * as fs from "node:fs";
+import { existsSync } from "node:fs";
 import * as http from "node:http";
 import * as path from "node:path";
 import { fileURLToPath } from "node:url";
@@ -80,8 +81,23 @@ function isProcessAlive(pid: number): boolean {
 
 // --- Server Functions ---
 
+function findServerScript(): string {
+	// Next.js standalone output may be nested under the project directory name
+	const directPath = path.join(rootDir, ".next", "standalone", "server.js");
+	const nestedPath = path.join(
+		rootDir,
+		".next",
+		"standalone",
+		path.basename(rootDir),
+		"server.js",
+	);
+	if (existsSync(directPath)) return directPath;
+	if (existsSync(nestedPath)) return nestedPath;
+	return directPath; // fall back to original path for error message
+}
+
 function startServerProcess(port: number): ChildProcess {
-	const serverScript = path.join(rootDir, ".next", "standalone", "server.js");
+	const serverScript = findServerScript();
 	const proc = spawn(process.execPath, [serverScript], {
 		stdio: "inherit",
 		shell: false,
@@ -220,7 +236,7 @@ async function start(options: CliOptions = {}) {
 	// Start server in foreground or daemon mode
 	if (options.daemon) {
 		console.log(`Starting in daemon mode on port ${port}...`);
-		const serverScript = path.join(rootDir, ".next", "standalone", "server.js");
+		const serverScript = findServerScript();
 		const serverPid = forkDaemon(process.execPath, [serverScript], {
 			...process.env,
 			PORT: String(port),
