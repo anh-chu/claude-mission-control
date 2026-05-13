@@ -15,7 +15,13 @@
 
 import { existsSync, mkdirSync, readFileSync, writeFileSync } from "node:fs";
 import path from "node:path";
+import {
+	mutateActivityLog,
+	mutateInbox,
+	mutateTasks,
+} from "../../src/lib/data";
 import { createLogger } from "../../src/lib/logger";
+import { setFallbackWorkspaceId } from "../../src/lib/workspace-store";
 import { readActiveRuns, writeActiveRuns } from "./active-runs";
 import { logger } from "./logger";
 import { AgentRunner, parseClaudeOutput } from "./runner";
@@ -238,29 +244,30 @@ function buildCommentPrompt(
 // extractResponse replaced by extractSummary (imported from ./spawn-utils)
 // Note: extractResponse used 3000-char limit; extractSummary uses 2000 — minor behavioral difference accepted.
 
-function appendAgentComment(
+async function appendAgentComment(
 	taskId: string,
 	agentId: string,
 	response: string,
-): void {
+): Promise<void> {
 	try {
-		const tasksData = readTasks();
-		const task = tasksData.tasks.find((t) => t.id === taskId);
-		if (!task) return;
+		await mutateTasks(async (data) => {
+			const task = data.tasks.find((t) => t.id === taskId) as
+				| Record<string, unknown>
+				| undefined;
+			if (!task) return;
 
-		if (!Array.isArray(task.comments)) {
-			task.comments = [];
-		}
+			if (!Array.isArray(task.comments)) {
+				task.comments = [];
+			}
 
-		task.comments.push({
-			id: `cmt_${Date.now()}_${Math.random().toString(36).slice(2, 8)}`,
-			author: agentId,
-			content: response,
-			createdAt: new Date().toISOString(),
+			(task.comments as Array<Record<string, unknown>>).push({
+				id: `cmt_${Date.now()}_${Math.random().toString(36).slice(2, 8)}`,
+				author: agentId,
+				content: response,
+				createdAt: new Date().toISOString(),
+			});
+			task.updatedAt = new Date().toISOString();
 		});
-		task.updatedAt = new Date().toISOString();
-
-		writeFileSync(TASKS_FILE, JSON.stringify(tasksData, null, 2), "utf-8");
 		logger.info(
 			"run-task-comment",
 			`Appended agent response comment to task ${taskId}`,
@@ -273,34 +280,27 @@ function appendAgentComment(
 	}
 }
 
-function postInboxNotification(
+async function postInboxNotification(
 	taskId: string,
 	agentId: string,
 	taskTitle: string,
 	response: string,
-): void {
+): Promise<void> {
 	try {
-		const inboxRaw = existsSync(INBOX_FILE)
-			? readFileSync(INBOX_FILE, "utf-8")
-			: '{"messages":[]}';
-		const inboxData = JSON.parse(inboxRaw) as {
-			messages: Array<Record<string, unknown>>;
-		};
-
-		inboxData.messages.push({
-			id: `msg_${Date.now()}`,
-			from: agentId,
-			to: "me",
-			type: "update",
-			taskId,
-			subject: `Reply on: ${taskTitle}`,
-			body: response.slice(0, 2000),
-			status: "unread",
-			createdAt: new Date().toISOString(),
-			readAt: null,
+		await mutateInbox(async (data) => {
+			data.messages.push({
+				id: `msg_${Date.now()}`,
+				from: agentId,
+				to: "me",
+				type: "update",
+				taskId,
+				subject: `Reply on: ${taskTitle}`,
+				body: response.slice(0, 2000),
+				status: "unread",
+				createdAt: new Date().toISOString(),
+				readAt: null,
+			});
 		});
-
-		writeFileSync(INBOX_FILE, JSON.stringify(inboxData, null, 2), "utf-8");
 	} catch (err) {
 		logger.error(
 			"run-task-comment",
@@ -309,26 +309,23 @@ function postInboxNotification(
 	}
 }
 
-function logActivity(taskId: string, agentId: string, summary: string): void {
+async function logActivity(
+	taskId: string,
+	agentId: string,
+	summary: string,
+): Promise<void> {
 	try {
-		const logRaw = existsSync(ACTIVITY_LOG_FILE)
-			? readFileSync(ACTIVITY_LOG_FILE, "utf-8")
-			: '{"events":[]}';
-		const logData = JSON.parse(logRaw) as {
-			events: Array<Record<string, unknown>>;
-		};
-
-		logData.events.push({
-			id: `evt_${Date.now()}`,
-			type: "agent_checkin",
-			actor: agentId,
-			taskId,
-			summary,
-			details: "",
-			timestamp: new Date().toISOString(),
+		await mutateActivityLog(async (data) => {
+			data.events.push({
+				id: `evt_${Date.now()}`,
+				type: "agent_checkin",
+				actor: agentId,
+				taskId,
+				summary,
+				details: "",
+				timestamp: new Date().toISOString(),
+			});
 		});
-
-		writeFileSync(ACTIVITY_LOG_FILE, JSON.stringify(logData, null, 2), "utf-8");
 	} catch (err) {
 		logger.error(
 			"run-task-comment",
@@ -385,6 +382,10 @@ function parseArgs(): {
 // ─── Main ───────────────────────────────────────────────────────────────────
 
 async function main() {
+	// Set workspace context for data-layer helpers (mutateTasks, etc.)
+	const wsId = process.env.MANDIO_WORKSPACE_ID ?? "default";
+	setFallbackWorkspaceId(wsId);
+
 	const { taskId, agentId, comment, commentAuthor } = parseArgs();
 
 	logger.info(
@@ -526,28 +527,26 @@ async function main() {
 			const response = extractSummary(result.stdout);
 
 			// Append agent's response as a comment
-			appendAgentComment(taskId, agentId, response);
+			await appendAgentComment(taskId, agentId, response);
 
 			// Check if agent did substantive work on a done task — reopen if needed
 			const didWork = (meta.numTurns ?? 0) > 3;
 			if (didWork) {
 				try {
-					const freshTasks = readTasks();
-					const freshTask = freshTasks.tasks.find((t) => t.id === taskId);
-					if (freshTask && freshTask.kanban === "done") {
-						freshTask.kanban = "in-progress";
-						freshTask.completedAt = null;
-						freshTask.updatedAt = new Date().toISOString();
-						writeFileSync(
-							TASKS_FILE,
-							JSON.stringify(freshTasks, null, 2),
-							"utf-8",
-						);
-						logger.info(
-							"run-task-comment",
-							`Reopened task ${taskId} (agent did substantive work)`,
-						);
-					}
+					await mutateTasks(async (data) => {
+						const freshTask = data.tasks.find((t) => t.id === taskId) as
+							| Record<string, unknown>
+							| undefined;
+						if (freshTask && freshTask.kanban === "done") {
+							freshTask.kanban = "in-progress";
+							freshTask.completedAt = null;
+							freshTask.updatedAt = new Date().toISOString();
+							logger.info(
+								"run-task-comment",
+								`Reopened task ${taskId} (agent did substantive work)`,
+							);
+						}
+					});
 				} catch (err) {
 					logger.error(
 						"run-task-comment",
@@ -557,8 +556,8 @@ async function main() {
 			}
 
 			// Post inbox notification
-			postInboxNotification(taskId, agentId, task.title, response);
-			logActivity(
+			await postInboxNotification(taskId, agentId, task.title, response);
+			await logActivity(
 				taskId,
 				agentId,
 				`@${agentId} responded to comment on "${task.title}"`,
@@ -570,9 +569,9 @@ async function main() {
 		} else {
 			// Agent failed — post error as comment so user knows what happened
 			const errComment = `Failed to respond: ${errorMsg}`;
-			appendAgentComment(taskId, agentId, errComment);
-			postInboxNotification(taskId, agentId, task.title, errComment);
-			logActivity(
+			await appendAgentComment(taskId, agentId, errComment);
+			await postInboxNotification(taskId, agentId, task.title, errComment);
+			await logActivity(
 				taskId,
 				agentId,
 				`@${agentId} failed to respond on "${task.title}": ${errorMsg.slice(0, 100)}`,

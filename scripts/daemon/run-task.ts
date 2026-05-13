@@ -20,7 +20,16 @@ import { execSync, spawn } from "node:child_process";
 import { existsSync, readFileSync, unlinkSync, writeFileSync } from "node:fs";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
+import {
+	mutateActivityLog,
+	mutateInbox,
+	mutateTasks,
+} from "../../src/lib/data";
 import { createLogger } from "../../src/lib/logger";
+import {
+	setFallbackWorkspaceId,
+	workspaceStore,
+} from "../../src/lib/workspace-store";
 
 // ESM shim for __dirname (package.json has "type": "module").
 const __filename = fileURLToPath(import.meta.url);
@@ -57,8 +66,6 @@ import { extractSummary } from "./spawn-utils";
 import type { ProjectRun, ProjectRunsFile } from "./types";
 
 const taskLogger = createLogger("task", { sync: true });
-
-// ─── Paths ──────────────────────────────────────────────────────────────────
 
 import { getWorkspaceDir } from "../../src/lib/paths";
 import { getWorkspaceEnv } from "./workspace-env";
@@ -188,28 +195,48 @@ function writeProjectRuns(data: ProjectRunsFile): void {
  * Post-completion side effects: mark task done, post inbox message, log activity.
  * Each step is wrapped in its own try/catch — if one fails, others still execute.
  */
-function handleTaskCompletion(
+async function handleTaskCompletion(
 	taskId: string,
 	agentId: string,
 	stdout: string,
-): void {
+): Promise<void> {
 	const now = new Date().toISOString();
 	const summary = extractSummary(stdout);
 
-	// 1. Mark task as "done" (idempotent — only if not already done)
+	// 1 + 2. Mark task done + post completion comment (mutex-protected)
 	try {
-		const tasksRaw = readFileSync(TASKS_FILE, "utf-8");
-		const tasksData = JSON.parse(tasksRaw) as {
-			tasks: Array<Record<string, unknown>>;
-		};
-		const task = tasksData.tasks.find((t) => t.id === taskId);
-		if (task && task.kanban !== "done") {
-			task.kanban = "done";
-			task.completedAt = now;
-			task.updatedAt = now;
-			writeFileSync(TASKS_FILE, JSON.stringify(tasksData, null, 2), "utf-8");
-			logger.info("run-task", `Marked task ${taskId} as done`);
-		}
+		await mutateTasks(async (data) => {
+			const task = data.tasks.find((t) => t.id === taskId) as
+				| Record<string, unknown>
+				| undefined;
+			if (!task) return;
+
+			// Mark done (idempotent)
+			if (task.kanban !== "done") {
+				task.kanban = "done";
+				task.completedAt = now;
+				task.updatedAt = now;
+				logger.info("run-task", `Marked task ${taskId} as done`);
+			}
+
+			// Post result as task comment
+			try {
+				if (!Array.isArray(task.comments)) task.comments = [];
+				(task.comments as Array<Record<string, unknown>>).push({
+					id: `comment_${Date.now()}`,
+					author: agentId,
+					content: summary || "_No output captured._",
+					createdAt: now,
+				});
+				task.updatedAt = now;
+				logger.info("run-task", `Posted completion comment for task ${taskId}`);
+			} catch (err) {
+				logger.error(
+					"run-task",
+					`Failed to post completion comment for task ${taskId}: ${err instanceof Error ? err.message : String(err)}`,
+				);
+			}
+		});
 	} catch (err) {
 		logger.error(
 			"run-task",
@@ -217,70 +244,34 @@ function handleTaskCompletion(
 		);
 	}
 
-	// 2. Post result as task comment
+	// 3. Post inbox message (mutex-protected)
 	try {
-		const tasksRaw2 = readFileSync(TASKS_FILE, "utf-8");
-		const tasksData2 = JSON.parse(tasksRaw2) as {
-			tasks: Array<Record<string, unknown>>;
-		};
-		const task2 = tasksData2.tasks.find((t) => t.id === taskId);
-		if (task2) {
-			if (!Array.isArray(task2.comments)) task2.comments = [];
-			(task2.comments as Array<Record<string, unknown>>).push({
-				id: `comment_${Date.now()}`,
-				author: agentId,
-				content: summary || "_No output captured._",
-				createdAt: now,
-			});
-			task2.updatedAt = now;
-			writeFileSync(TASKS_FILE, JSON.stringify(tasksData2, null, 2), "utf-8");
-			logger.info("run-task", `Posted completion comment for task ${taskId}`);
-		}
-	} catch (err) {
-		logger.error(
-			"run-task",
-			`Failed to post completion comment for task ${taskId}: ${err instanceof Error ? err.message : String(err)}`,
-		);
-	}
-
-	// 3. Post inbox message (report from agent to "me")
-	try {
-		const inboxRaw = existsSync(INBOX_FILE)
-			? readFileSync(INBOX_FILE, "utf-8")
-			: '{"messages":[]}';
-		const inboxData = JSON.parse(inboxRaw) as {
-			messages: Array<Record<string, unknown>>;
-		};
-
-		// Fetch task title for the subject line
 		let taskTitle = taskId;
 		try {
-			const tasksRaw = readFileSync(TASKS_FILE, "utf-8");
-			const tasksData = JSON.parse(tasksRaw) as {
-				tasks: Array<Record<string, unknown>>;
-			};
-			const task = tasksData.tasks.find((t) => t.id === taskId);
-			if (task && typeof task.title === "string") {
-				taskTitle = task.title;
-			}
+			await mutateTasks(async (data) => {
+				const task = data.tasks.find((t) => t.id === taskId);
+				if (task && typeof task.title === "string") {
+					taskTitle = task.title;
+				}
+			});
 		} catch {
-			// Use taskId as fallback
+			/* use taskId as fallback */
 		}
 
-		inboxData.messages.push({
-			id: `msg_${Date.now()}`,
-			from: agentId,
-			to: "me",
-			type: "report",
-			taskId,
-			subject: `Completed: ${taskTitle}`,
-			body: summary,
-			status: "unread",
-			createdAt: now,
-			readAt: null,
+		await mutateInbox(async (data) => {
+			data.messages.push({
+				id: `msg_${Date.now()}`,
+				from: agentId,
+				to: "me",
+				type: "report",
+				taskId,
+				subject: `Completed: ${taskTitle}`,
+				body: summary,
+				status: "unread",
+				createdAt: now,
+				readAt: null,
+			});
 		});
-
-		writeFileSync(INBOX_FILE, JSON.stringify(inboxData, null, 2), "utf-8");
 		logger.info("run-task", `Posted completion report for task ${taskId}`);
 	} catch (err) {
 		logger.error(
@@ -289,26 +280,19 @@ function handleTaskCompletion(
 		);
 	}
 
-	// 3. Log activity event
+	// 4. Log activity event (mutex-protected)
 	try {
-		const logRaw = existsSync(ACTIVITY_LOG_FILE)
-			? readFileSync(ACTIVITY_LOG_FILE, "utf-8")
-			: '{"events":[]}';
-		const logData = JSON.parse(logRaw) as {
-			events: Array<Record<string, unknown>>;
-		};
-
-		logData.events.push({
-			id: `evt_${Date.now()}`,
-			type: "task_completed",
-			actor: agentId,
-			taskId,
-			summary: `Completed task: ${taskId}`,
-			details: summary,
-			timestamp: now,
+		await mutateActivityLog(async (data) => {
+			data.events.push({
+				id: `evt_${Date.now()}`,
+				type: "task_completed",
+				actor: agentId,
+				taskId,
+				summary: `Completed task: ${taskId}`,
+				details: summary,
+				timestamp: now,
+			});
 		});
-
-		writeFileSync(ACTIVITY_LOG_FILE, JSON.stringify(logData, null, 2), "utf-8");
 		logger.info("run-task", `Logged task_completed event for task ${taskId}`);
 	} catch (err) {
 		logger.error(
@@ -339,47 +323,40 @@ function handleTaskCompletion(
  * Log a task_failed event to activity-log.json.
  * Called when all continuation attempts are exhausted and the task still failed.
  */
-function handleTaskFailure(
+async function handleTaskFailure(
 	taskId: string,
 	agentId: string,
 	errorMsg: string,
 	continuationIndex: number,
-): void {
+): Promise<void> {
 	const now = new Date().toISOString();
 
-	// 1. Log activity event
+	// Get task title (read-only, no mutex needed)
+	let taskTitle = taskId;
 	try {
-		const logRaw = existsSync(ACTIVITY_LOG_FILE)
-			? readFileSync(ACTIVITY_LOG_FILE, "utf-8")
-			: '{"events":[]}';
-		const logData = JSON.parse(logRaw) as {
-			events: Array<Record<string, unknown>>;
+		const tasksRaw = readFileSync(TASKS_FILE, "utf-8");
+		const tasksData = JSON.parse(tasksRaw) as {
+			tasks: Array<Record<string, unknown>>;
 		};
+		const task = tasksData.tasks.find((t) => t.id === taskId);
+		if (task && typeof task.title === "string") taskTitle = task.title;
+	} catch {
+		/* use taskId */
+	}
 
-		// Get task title
-		let taskTitle = taskId;
-		try {
-			const tasksRaw = readFileSync(TASKS_FILE, "utf-8");
-			const tasksData = JSON.parse(tasksRaw) as {
-				tasks: Array<Record<string, unknown>>;
-			};
-			const task = tasksData.tasks.find((t) => t.id === taskId);
-			if (task && typeof task.title === "string") taskTitle = task.title;
-		} catch {
-			/* use taskId */
-		}
-
-		logData.events.push({
-			id: `evt_${Date.now()}`,
-			type: "task_failed",
-			actor: agentId,
-			taskId,
-			summary: `Task failed: ${taskTitle}`,
-			details: `Agent "${agentId}" failed after ${continuationIndex + 1} session(s). Error: ${errorMsg.slice(0, 300)}`,
-			timestamp: now,
+	// 1. Log activity event (mutex-protected)
+	try {
+		await mutateActivityLog(async (data) => {
+			data.events.push({
+				id: `evt_${Date.now()}`,
+				type: "task_failed",
+				actor: agentId,
+				taskId,
+				summary: `Task failed: ${taskTitle}`,
+				details: `Agent "${agentId}" failed after ${continuationIndex + 1} session(s). Error: ${errorMsg.slice(0, 300)}`,
+				timestamp: now,
+			});
 		});
-
-		writeFileSync(ACTIVITY_LOG_FILE, JSON.stringify(logData, null, 2), "utf-8");
 		logger.info("run-task", `Logged task_failed event for task ${taskId}`);
 	} catch (err) {
 		logger.error(
@@ -388,41 +365,22 @@ function handleTaskFailure(
 		);
 	}
 
-	// 2. Post failure report to inbox
+	// 2. Post failure report to inbox (mutex-protected)
 	try {
-		const inboxRaw = existsSync(INBOX_FILE)
-			? readFileSync(INBOX_FILE, "utf-8")
-			: '{"messages":[]}';
-		const inboxData = JSON.parse(inboxRaw) as {
-			messages: Array<Record<string, unknown>>;
-		};
-
-		let taskTitle = taskId;
-		try {
-			const tasksRaw = readFileSync(TASKS_FILE, "utf-8");
-			const tasksData = JSON.parse(tasksRaw) as {
-				tasks: Array<Record<string, unknown>>;
-			};
-			const task = tasksData.tasks.find((t) => t.id === taskId);
-			if (task && typeof task.title === "string") taskTitle = task.title;
-		} catch {
-			/* use taskId */
-		}
-
-		inboxData.messages.push({
-			id: `msg_${Date.now()}`,
-			from: agentId,
-			to: "me",
-			type: "report",
-			taskId,
-			subject: `Failed: ${taskTitle}`,
-			body: `Task execution failed after ${continuationIndex + 1} session(s).\n\nError: ${errorMsg.slice(0, 500)}`,
-			status: "unread",
-			createdAt: now,
-			readAt: null,
+		await mutateInbox(async (data) => {
+			data.messages.push({
+				id: `msg_${Date.now()}`,
+				from: agentId,
+				to: "me",
+				type: "report",
+				taskId,
+				subject: `Failed: ${taskTitle}`,
+				body: `Task execution failed after ${continuationIndex + 1} session(s).\n\nError: ${errorMsg.slice(0, 500)}`,
+				status: "unread",
+				createdAt: now,
+				readAt: null,
+			});
 		});
-
-		writeFileSync(INBOX_FILE, JSON.stringify(inboxData, null, 2), "utf-8");
 		logger.info("run-task", `Posted failure report for task ${taskId}`);
 	} catch (err) {
 		logger.error(
@@ -436,33 +394,31 @@ function handleTaskFailure(
  * Append progress notes to a task and update subtask completion status.
  * Used between continuation sessions so the next session knows what was done.
  */
-function appendTaskProgress(
+async function appendTaskProgress(
 	taskId: string,
 	sessionIndex: number,
 	summary: string,
-): void {
+): Promise<void> {
 	try {
-		const tasksRaw = readFileSync(TASKS_FILE, "utf-8");
-		const tasksData = JSON.parse(tasksRaw) as {
-			tasks: Array<Record<string, unknown>>;
-		};
-		const task = tasksData.tasks.find((t) => t.id === taskId);
-		if (!task) return;
+		await mutateTasks(async (data) => {
+			const task = data.tasks.find((t) => t.id === taskId) as
+				| Record<string, unknown>
+				| undefined;
+			if (!task) return;
 
-		const timestamp = new Date().toISOString().slice(0, 19).replace("T", " ");
-		const progressNote = `[${timestamp}] Session ${sessionIndex + 1}: ${summary.slice(0, 300)}`;
+			const timestamp = new Date().toISOString().slice(0, 19).replace("T", " ");
+			const progressNote = `[${timestamp}] Session ${sessionIndex + 1}: ${summary.slice(0, 300)}`;
 
-		if (!Array.isArray(task.comments)) task.comments = [];
-		(task.comments as Array<Record<string, unknown>>).push({
-			id: `cmt_${Date.now()}`,
-			type: "note",
-			author: (task.assignedTo as string) || "system",
-			content: progressNote,
-			createdAt: new Date().toISOString(),
+			if (!Array.isArray(task.comments)) task.comments = [];
+			(task.comments as Array<Record<string, unknown>>).push({
+				id: `cmt_${Date.now()}`,
+				type: "note",
+				author: (task.assignedTo as string) || "system",
+				content: progressNote,
+				createdAt: new Date().toISOString(),
+			});
+			task.updatedAt = new Date().toISOString();
 		});
-		task.updatedAt = new Date().toISOString();
-
-		writeFileSync(TASKS_FILE, JSON.stringify(tasksData, null, 2), "utf-8");
 		logger.info(
 			"run-task",
 			`Appended progress note to task ${taskId} (session ${sessionIndex + 1})`,
@@ -1082,6 +1038,10 @@ function parseArgs(): {
 // ─── Main ───────────────────────────────────────────────────────────────────
 
 async function main() {
+	// Set workspace context for data-layer helpers (mutateTasks, etc.)
+	const wsId = process.env.MANDIO_WORKSPACE_ID ?? "default";
+	setFallbackWorkspaceId(wsId);
+
 	const {
 		taskId,
 		source,
@@ -1295,24 +1255,23 @@ async function main() {
 	// 8.5. Mark task as "in-progress" (daemon handles this instead of the agent)
 	if (!isContinuation) {
 		try {
-			const tasksRaw = readFileSync(TASKS_FILE, "utf-8");
-			const tasksData = JSON.parse(tasksRaw) as {
-				tasks: Array<Record<string, unknown>>;
-			};
-			const taskToUpdate = tasksData.tasks.find((t) => t.id === taskId);
-			if (
-				taskToUpdate &&
-				taskToUpdate.kanban !== "in-progress" &&
-				taskToUpdate.kanban !== "done"
-			) {
-				taskToUpdate.kanban = "in-progress";
-				taskToUpdate.updatedAt = new Date().toISOString();
-				if (convCtx) {
-					taskToUpdate.conversationId = convCtx.conversationId;
+			await mutateTasks(async (data) => {
+				const taskToUpdate = data.tasks.find((t) => t.id === taskId) as
+					| Record<string, unknown>
+					| undefined;
+				if (
+					taskToUpdate &&
+					taskToUpdate.kanban !== "in-progress" &&
+					taskToUpdate.kanban !== "done"
+				) {
+					taskToUpdate.kanban = "in-progress";
+					taskToUpdate.updatedAt = new Date().toISOString();
+					if (convCtx) {
+						taskToUpdate.conversationId = convCtx.conversationId;
+					}
+					logger.info("run-task", `Marked task ${taskId} as in-progress`);
 				}
-				writeFileSync(TASKS_FILE, JSON.stringify(tasksData, null, 2), "utf-8");
-				logger.info("run-task", `Marked task ${taskId} as in-progress`);
-			}
+			});
 		} catch (err) {
 			logger.error(
 				"run-task",
@@ -1527,26 +1486,21 @@ This is session ${continuationIndex + 1}. Previous session(s) ran out of turns o
 
 			// Set task kanban to awaiting-decision
 			try {
-				const tasksRaw = readFileSync(TASKS_FILE, "utf-8");
-				const tasksData = JSON.parse(tasksRaw) as {
-					tasks: Array<Record<string, unknown>>;
-				};
-				const taskToUpdate = tasksData.tasks.find((t) => t.id === taskId);
-				if (taskToUpdate) {
-					taskToUpdate.kanban = "awaiting-decision";
-					taskToUpdate.updatedAt = new Date().toISOString();
-					writeFileSync(
-						TASKS_FILE,
-						JSON.stringify(tasksData, null, 2),
-						"utf-8",
-					);
-					if (capturedSessionId) {
-						saveDecisionSession(taskId, capturedSessionId);
-						logger.info(
-							"run-task",
-							`Saved session ${capturedSessionId} for decision resume on task ${taskId}`,
-						);
+				await mutateTasks(async (data) => {
+					const taskToUpdate = data.tasks.find((t) => t.id === taskId) as
+						| Record<string, unknown>
+						| undefined;
+					if (taskToUpdate) {
+						taskToUpdate.kanban = "awaiting-decision";
+						taskToUpdate.updatedAt = new Date().toISOString();
 					}
+				});
+				if (capturedSessionId) {
+					saveDecisionSession(taskId, capturedSessionId);
+					logger.info(
+						"run-task",
+						`Saved session ${capturedSessionId} for decision resume on task ${taskId}`,
+					);
 				}
 			} catch (err) {
 				logger.error(
@@ -1690,7 +1644,7 @@ This is session ${continuationIndex + 1}. Previous session(s) ran out of turns o
 		// ── Continuation path: spawn next session instead of completing/failing ──
 		if (shouldContinue) {
 			const summary = extractSummary(result.stdout);
-			appendTaskProgress(taskId, continuationIndex, summary);
+			await appendTaskProgress(taskId, continuationIndex, summary);
 
 			logger.info(
 				"run-task",
@@ -1717,26 +1671,21 @@ This is session ${continuationIndex + 1}. Previous session(s) ran out of turns o
 			// If the agent self-exited after writing a decision, pause instead of marking done
 			if (checkPendingDecision(taskId)) {
 				try {
-					const tasksRaw = readFileSync(TASKS_FILE, "utf-8");
-					const tasksData = JSON.parse(tasksRaw) as {
-						tasks: Array<Record<string, unknown>>;
-					};
-					const taskToUpdate = tasksData.tasks.find((t) => t.id === taskId);
-					if (taskToUpdate && taskToUpdate.kanban !== "done") {
-						taskToUpdate.kanban = "awaiting-decision";
-						taskToUpdate.updatedAt = new Date().toISOString();
-						writeFileSync(
-							TASKS_FILE,
-							JSON.stringify(tasksData, null, 2),
-							"utf-8",
-						);
-						if (capturedSessionId) {
-							saveDecisionSession(taskId, capturedSessionId);
-							logger.info(
-								"run-task",
-								`Saved session ${capturedSessionId} for decision resume on task ${taskId}`,
-							);
+					await mutateTasks(async (data) => {
+						const taskToUpdate = data.tasks.find((t) => t.id === taskId) as
+							| Record<string, unknown>
+							| undefined;
+						if (taskToUpdate && taskToUpdate.kanban !== "done") {
+							taskToUpdate.kanban = "awaiting-decision";
+							taskToUpdate.updatedAt = new Date().toISOString();
 						}
+					});
+					if (capturedSessionId) {
+						saveDecisionSession(taskId, capturedSessionId);
+						logger.info(
+							"run-task",
+							`Saved session ${capturedSessionId} for decision resume on task ${taskId}`,
+						);
 					}
 				} catch (err) {
 					logger.error(
@@ -1748,14 +1697,19 @@ This is session ${continuationIndex + 1}. Previous session(s) ran out of turns o
 					taskId,
 				});
 			} else {
-				handleTaskCompletion(taskId, task.assignedTo, result.stdout);
+				await handleTaskCompletion(taskId, task.assignedTo, result.stdout);
 				taskLogger.info("run-task", "Task completed", { taskId });
 			}
 		}
 
 		// ── Failure path: all continuations exhausted ──
 		if (finalStatus === "failed" || finalStatus === "timeout") {
-			handleTaskFailure(taskId, task.assignedTo, errorMsg, continuationIndex);
+			await handleTaskFailure(
+				taskId,
+				task.assignedTo,
+				errorMsg,
+				continuationIndex,
+			);
 			taskLogger.error("run-task", "Task failed", { taskId, error: errorMsg });
 		}
 
@@ -1854,7 +1808,7 @@ This is session ${continuationIndex + 1}. Previous session(s) ran out of turns o
 		});
 
 		// Log task_failed event
-		handleTaskFailure(
+		await handleTaskFailure(
 			taskId,
 			task.assignedTo,
 			err instanceof Error ? err.message : String(err),
