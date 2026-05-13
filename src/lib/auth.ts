@@ -4,6 +4,7 @@ import { isPublicPath } from "@/lib/auth-paths";
 
 export const { auth, handlers, signIn, signOut } = NextAuth({
 	providers: [Google],
+	trustHost: true,
 	session: {
 		strategy: "jwt",
 		maxAge: 30 * 24 * 60 * 60, // 30 days

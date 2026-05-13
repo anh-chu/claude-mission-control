@@ -30,7 +30,14 @@ function LoginForm() {
 		}
 	}, [session, router]);
 
-	if (status === "loading" || session) return null;
+	if (session) return null;
+	if (status === "loading") {
+		return (
+			<div className="flex items-center justify-center min-h-screen">
+				<div className="animate-spin rounded-full h-8 w-8 border-b-2 border-foreground" />
+			</div>
+		);
+	}
 
 	return (
 		<div className="flex flex-col items-center justify-center min-h-screen px-6">
