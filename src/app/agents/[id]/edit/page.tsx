@@ -35,6 +35,11 @@ export default function EditAgentPage() {
 		);
 	}
 
+	if (id === "me") {
+		router.replace(`/agents/${id}`);
+		return null;
+	}
+
 	if (!agent) {
 		return (
 			<div className="space-y-6 max-w-2xl">

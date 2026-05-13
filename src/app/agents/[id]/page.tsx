@@ -283,16 +283,23 @@ export default function AgentPage() {
 						>
 							{agent.status}
 						</Badge>
-						<Button
-							variant="outline"
-							size="sm"
-							className="h-6 text-xs px-2 ml-1"
-							onClick={() => router.push(`/agents/${agent.id}/edit`)}
-						>
-							Edit
-						</Button>
+						{agent.id !== "me" && (
+							<Button
+								variant="outline"
+								size="sm"
+								className="h-6 text-xs px-2 ml-1"
+								onClick={() => router.push(`/agents/${agent.id}/edit`)}
+							>
+								Edit
+							</Button>
+						)}
 					</div>
-					{editingDescription ? (
+					{agent.id === "me" ? (
+						<p className="text-sm text-muted-foreground mt-0.5">
+							{agent.description ||
+								"Tasks I do myself \u2014 decisions, approvals, creative direction"}
+						</p>
+					) : editingDescription ? (
 						<div className="flex items-center gap-2 mt-1">
 							<Input
 								value={descriptionText}
@@ -361,113 +368,120 @@ export default function AgentPage() {
 			</div>
 
 			{/* Instructions Section */}
-			<section className="rounded-sm border bg-card p-4 space-y-3">
-				<div className="flex items-center justify-between">
-					<h2 className="text-sm font-normal">Instructions (System Prompt)</h2>
-					{!editingInstructions && (
-						<Button
-							variant="ghost"
-							size="sm"
-							className="text-xs"
-							onClick={() => {
-								setInstructionsText(agent.instructions);
-								setEditingInstructions(true);
-							}}
-						>
-							Edit
-						</Button>
-					)}
-				</div>
-				{editingInstructions ? (
-					<div className="space-y-2">
-						<Textarea
-							value={instructionsText}
-							onChange={(e) => setInstructionsText(e.target.value)}
-							rows={12}
-							className="font-mono text-sm"
-						/>
-						<div className="flex items-center justify-between">
-							<p className="text-xs text-muted-foreground">
-								{instructionsText.length.toLocaleString()} characters
-							</p>
-							<div className="flex gap-2">
-								<Button
-									size="sm"
-									variant="ghost"
-									onClick={() => setEditingInstructions(false)}
-								>
-									Cancel
-								</Button>
-								<Button
-									size="sm"
-									onClick={handleSaveInstructions}
-									disabled={savingProfile}
-									className="gap-1"
-								>
-									<Save className="h-3.5 w-3.5" /> Save
-								</Button>
+			{agent.id !== "me" && (
+				<section className="rounded-sm border bg-card p-4 space-y-3">
+					<div className="flex items-center justify-between">
+						<h2 className="text-sm font-normal">
+							Instructions (System Prompt)
+						</h2>
+						{!editingInstructions && (
+							<Button
+								variant="ghost"
+								size="sm"
+								className="text-xs"
+								onClick={() => {
+									setInstructionsText(agent.instructions);
+									setEditingInstructions(true);
+								}}
+							>
+								Edit
+							</Button>
+						)}
+					</div>
+					{editingInstructions ? (
+						<div className="space-y-2">
+							<Textarea
+								value={instructionsText}
+								onChange={(e) => setInstructionsText(e.target.value)}
+								rows={12}
+								className="font-mono text-sm"
+							/>
+							<div className="flex items-center justify-between">
+								<p className="text-xs text-muted-foreground">
+									{instructionsText.length.toLocaleString()} characters
+								</p>
+								<div className="flex gap-2">
+									<Button
+										size="sm"
+										variant="ghost"
+										onClick={() => setEditingInstructions(false)}
+									>
+										Cancel
+									</Button>
+									<Button
+										size="sm"
+										onClick={handleSaveInstructions}
+										disabled={savingProfile}
+										className="gap-1"
+									>
+										<Save className="h-3.5 w-3.5" /> Save
+									</Button>
+								</div>
 							</div>
 						</div>
-					</div>
-				) : (
-					<pre className="text-xs text-muted-foreground whitespace-pre-wrap font-mono bg-muted rounded-sm p-3 max-h-48 overflow-y-auto">
-						{agent.instructions ||
-							"No instructions set. Click Edit to add a system prompt."}
-					</pre>
-				)}
-			</section>
+					) : (
+						<pre className="text-xs text-muted-foreground whitespace-pre-wrap font-mono bg-muted rounded-sm p-3 max-h-48 overflow-y-auto">
+							{agent.instructions ||
+								"No instructions set. Click Edit to add a system prompt."}
+						</pre>
+					)}
+				</section>
+			)}
 
 			{/* Skills Section */}
-			<section className="rounded-sm border bg-card p-4 space-y-3">
-				<h2 className="text-sm font-normal">Assigned Skills</h2>
-				{linkedSkills.length > 0 ? (
-					<div className="space-y-2">
-						{linkedSkills.map((skill) => (
-							<div
-								key={skill.id}
-								className="flex items-center justify-between rounded-sm border p-2.5"
-							>
-								<div>
-									<p className="text-sm font-normal">{skill.name}</p>
-									<p className="text-xs text-muted-foreground">
-										{skill.description}
-									</p>
-								</div>
-								<Button
-									size="sm"
-									variant="ghost"
-									onClick={() => removeSkill(skill.id)}
+			{agent.id === "me" ? null : (
+				<section className="rounded-sm border bg-card p-4 space-y-3">
+					<h2 className="text-sm font-normal">Assigned Skills</h2>
+					{linkedSkills.length > 0 ? (
+						<div className="space-y-2">
+							{linkedSkills.map((skill) => (
+								<div
+									key={skill.id}
+									className="flex items-center justify-between rounded-sm border p-2.5"
 								>
-									<X className="h-3.5 w-3.5" />
-								</Button>
-							</div>
-						))}
-					</div>
-				) : (
-					<p className="text-xs text-muted-foreground">No skills assigned.</p>
-				)}
-				{/* Available skills to add */}
-				{allSkills.filter((s) => !agent.skillIds.includes(s.id)).length > 0 && (
-					<div className="pt-2 border-t space-y-1">
-						<p className="text-xs text-muted-foreground">Available skills:</p>
-						<div className="flex flex-wrap gap-1.5">
-							{allSkills
-								.filter((s) => !agent.skillIds.includes(s.id))
-								.map((skill) => (
-									<button
-										type="button"
-										key={skill.id}
-										onClick={() => addSkill(skill.id)}
-										className="inline-flex items-center gap-1 rounded-sm border px-2.5 py-0.5 text-xs hover:bg-primary/10 hover:border-primary/30 transition-colors"
+									<div>
+										<p className="text-sm font-normal">{skill.name}</p>
+										<p className="text-xs text-muted-foreground">
+											{skill.description}
+										</p>
+									</div>
+									<Button
+										size="sm"
+										variant="ghost"
+										onClick={() => removeSkill(skill.id)}
 									>
-										<Plus className="h-3 w-3" />
-										{skill.name}
-									</button>
-								))}
+										<X className="h-3.5 w-3.5" />
+									</Button>
+								</div>
+							))}
 						</div>
-					</div>
-				)}
-			</section>
+					) : (
+						<p className="text-xs text-muted-foreground">No skills assigned.</p>
+					)}
+					{/* Available skills to add */}
+					{allSkills.filter((s) => !agent.skillIds.includes(s.id)).length >
+						0 && (
+						<div className="pt-2 border-t space-y-1">
+							<p className="text-xs text-muted-foreground">Available skills:</p>
+							<div className="flex flex-wrap gap-1.5">
+								{allSkills
+									.filter((s) => !agent.skillIds.includes(s.id))
+									.map((skill) => (
+										<button
+											type="button"
+											key={skill.id}
+											onClick={() => addSkill(skill.id)}
+											className="inline-flex items-center gap-1 rounded-sm border px-2.5 py-0.5 text-xs hover:bg-primary/10 hover:border-primary/30 transition-colors"
+										>
+											<Plus className="h-3 w-3" />
+											{skill.name}
+										</button>
+									))}
+							</div>
+						</div>
+					)}
+				</section>
+			)}
 
 			{/* Task Sections */}
 			{inProgress.length > 0 && (

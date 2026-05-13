@@ -31,7 +31,7 @@ export function AgentContextMenuContent({
 				Open in New Tab
 			</ContextMenuItem>
 
-			{onEdit && (
+			{agent.id !== "me" && onEdit && (
 				<>
 					<ContextMenuSeparator />
 					<ContextMenuItem onClick={() => onEdit(agent.id)}>
@@ -40,13 +40,13 @@ export function AgentContextMenuContent({
 				</>
 			)}
 
-			{onNewTask && (
+			{agent.id !== "me" && onNewTask && (
 				<ContextMenuItem onClick={() => onNewTask(agent.id)}>
 					New task for agent
 				</ContextMenuItem>
 			)}
 
-			{onToggleStatus && (
+			{agent.id !== "me" && onToggleStatus && (
 				<>
 					<ContextMenuSeparator />
 					{agent.status === "active" ? (
