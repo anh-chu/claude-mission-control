@@ -2,9 +2,22 @@ import { NextResponse } from "next/server";
 import { auth } from "@/lib/auth";
 import { isPublicPath } from "@/lib/auth-paths";
 
+/** Build the public origin from forwarded headers when behind a reverse proxy. */
+function getPublicOrigin(req: Request): string {
+	const proto =
+		req.headers.get("x-forwarded-proto") ||
+		(new URL(req.url).protocol === "https:" ? "https" : "http");
+	const host =
+		req.headers.get("x-forwarded-host") ||
+		req.headers.get("host") ||
+		new URL(req.url).host;
+	return `${proto}://${host}`;
+}
+
 export const proxy = auth((req) => {
 	const startedAt = Date.now();
 	const pathname = req.nextUrl.pathname;
+	const publicOrigin = getPublicOrigin(req);
 
 	// ── Request logging ──
 	function finalize(response: NextResponse) {
@@ -75,7 +88,7 @@ export const proxy = auth((req) => {
 			);
 		}
 
-		const loginUrl = new URL("/login", req.nextUrl.origin);
+		const loginUrl = new URL("/login", publicOrigin);
 		loginUrl.searchParams.set("callbackUrl", pathname + req.nextUrl.search);
 		return finalize(NextResponse.redirect(loginUrl));
 	}

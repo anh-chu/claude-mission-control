@@ -16,8 +16,14 @@ import { existsSync } from "node:fs";
 import * as http from "node:http";
 import * as path from "node:path";
 import { fileURLToPath } from "node:url";
+import dotenv from "dotenv";
 import treeKill from "tree-kill";
 import { DATA_DIR } from "../src/lib/paths";
+
+// Load runtime env vars from ~/.mandio/env (if present) so the spawned
+// Next.js standalone server inherits them automatically.
+dotenv.config({ path: path.join(DATA_DIR, "env") });
+
 import { bootstrapDataDir } from "./bootstrap";
 import {
 	checkClaudeCLI,

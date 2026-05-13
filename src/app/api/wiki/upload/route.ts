@@ -126,7 +126,10 @@ export async function POST(request: Request) {
 		const ext = getExtension(file.name, file.type);
 		const baseName = sanitizeFilename(file.name.replace(/\.[^.]+$/, ""));
 		const savedFilename = `${baseName}.${ext}`;
-		const filePath = path.join(targetDir, savedFilename);
+		const filePath = path.join(
+			/*turbopackIgnore: true*/ targetDir,
+			savedFilename,
+		);
 
 		try {
 			await mkdir(targetDir, { recursive: true });
