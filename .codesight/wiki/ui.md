@@ -2,46 +2,58 @@
 
 > **Navigation aid.** Component inventory and prop signatures extracted via AST. Read the source files before adding props or modifying component logic.
 
-**102 components** (react)
+**119 components** (react)
 
 ## Client Components
 
+- **EditAgentPage** — `src/app/agents/[id]/edit/page.tsx`
+- **AgentPage** — `src/app/agents/[id]/page.tsx`
+- **NewAgentPage** — `src/app/agents/new/page.tsx`
+- **AgentsPage** — `src/app/agents/page.tsx`
+- **BrainPage** — `src/app/brain/page.tsx`
 - **CommandEditorPage** — `src/app/commands/[id]/page.tsx`
 - **NewCommandPage** — `src/app/commands/new/page.tsx`
-- **EditAgentPage** — `src/app/crew/[id]/edit/page.tsx`
-- **AgentPage** — `src/app/crew/[id]/page.tsx`
-- **NewAgentPage** — `src/app/crew/new/page.tsx`
-- **CrewPage** — `src/app/crew/page.tsx`
-- **BrainPage** — `src/app/documents/page.tsx`
 - **Error** — props: error, reset — `src/app/error.tsx`
 - **GlobalError** — props: error, reset — `src/app/global-error.tsx`
 - **InitiativeDetailPage** — `src/app/initiatives/[id]/page.tsx`
+- **LoginPage** — `src/app/login/page.tsx`
 - **CommandCenterPage** — `src/app/page.tsx`
 - **TasksPage** — `src/app/priority-matrix/page.tsx`
 - **SettingsPage** — `src/app/settings/page.tsx`
+- **WorkspaceSettingsPage** — `src/app/settings/workspaces/[id]/page.tsx`
+- **WorkspacesPage** — `src/app/settings/workspaces/page.tsx`
 - **SkillEditorPage** — `src/app/skills/[id]/page.tsx`
 - **NewSkillPage** — `src/app/skills/new/page.tsx`
 - **TaskDetailPage** — `src/app/tasks/[id]/page.tsx`
+- **WorkInitiativesPage** — `src/app/work/initiatives/page.tsx`
+- **MapPage** — `src/app/work/map/page.tsx`
+- **TasksPage** — `src/app/work/page.tsx`
+- **WorkProjectsPage** — `src/app/work/projects/page.tsx`
 - **AgentForm** — props: mode, initialData, currentStatus, onSave, onDelete, onStatusToggle, onCancel — `src/components/agent-form.tsx`
+- **AgentSkills** — `src/components/agent-skills.tsx`
+- **AuthProvider** — `src/components/auth-provider.tsx`
+- **AutopilotPage** — `src/components/autopilot-page.tsx`
 - **DraggableTaskCard** — props: task, project, onClick, isSelected, onToggleSelect, isRunning, onRun, pendingDecisionTaskIds, onStatusChange, onDuplicate — `src/components/board-view.tsx`
 - **BoardColumn** — props: config, tasks, projects, onTaskClick, minHeight, maxHeight, selected, onToggleSelect, runningTaskIds, onRunTask — `src/components/board-view.tsx`
 - **BoardPanels** — props: showCreateTask, onCloseCreate, onSubmitCreate — `src/components/board-view.tsx`
 - **BoardDndWrapper** — props: activeTask, projects, onDragStart, onDragEnd — `src/components/board-view.tsx`
-- **BreadcrumbNav** — props: items, className — `src/components/breadcrumb-nav.tsx`
-- **AssistantThread** — props: cwd, context, model, persona, workspaceId — `src/components/chat/AssistantThread.tsx`
+- **BreadcrumbNav** — props: items, className, peers — `src/components/breadcrumb-nav.tsx`
 - **ChatSidebar** — props: open, onToggle, isMobile — `src/components/chat/ChatSidebar.tsx`
-- **DaemonRunViewer** — props: runId — `src/components/chat/DaemonRunViewer.tsx`
-- **ReadToolUI** — `src/components/chat/tool-uis.tsx`
 - **CommandBar** — props: onCapture, tasks, onTaskClick, commands — `src/components/command-bar.tsx`
 - **CommandForm** — props: mode, initialData, onDelete, activationProps — `src/components/command-form.tsx`
+- **ConditionalShell** — `src/components/conditional-shell.tsx`
 - **ConfirmDialog** — props: open, onOpenChange, title, description, confirmLabel, onConfirm, variant — `src/components/confirm-dialog.tsx`
 - **AgentContextMenuContent** — props: agent, href, onEdit, onNewTask, onToggleStatus — `src/components/context-menus/agent-context-menu.tsx`
 - **InitiativeContextMenuContent** — props: initiative, onTogglePause, onArchive, onDelete — `src/components/context-menus/initiative-context-menu.tsx`
 - **ProjectContextMenuContent** — props: project, href, onRun, onArchive, onDelete — `src/components/context-menus/project-context-menu.tsx`
 - **TaskContextMenuContent** — props: task, onOpen, onStatusChange, onDuplicate, onRun, onDelete — `src/components/context-menus/task-context-menu.tsx`
+- **ConversationComposer** — props: conversationId, disabled, placeholder, onSent, onOptimisticTurn — `src/components/conversation/ConversationComposer.tsx`
+- **ConversationList** — props: currentId, onSelect, taskId, source, onConversationsChange, onConversationDeleted — `src/components/conversation/ConversationList.tsx`
+- **ConversationView** — props: conversationId, embed — `src/components/conversation/ConversationView.tsx`
+- **DecisionPanel** — props: conversation — `src/components/conversation/DecisionPanel.tsx`
+- **ToolCallCard** — props: toolCall, onRetry — `src/components/conversation/ToolCallCard.tsx`
+- **TurnBlock** — props: turn, compact — `src/components/conversation/TurnBlock.tsx`
 - **CreateTaskDialog** — props: open, onOpenChange, onSubmit, defaultValues — `src/components/create-task-dialog.tsx`
-- **CrewAutopilot** — `src/components/crew-autopilot.tsx`
-- **CrewSkills** — `src/components/crew-skills.tsx`
 - **DecisionDialog** — props: open, onOpenChange, decision, onAnswered — `src/components/decision-dialog.tsx`
 - **EditorBubbleMenu** — props: editor — `src/components/editor/bubble-menu.tsx`
 - **CsvViewer** — props: path — `src/components/editor/csv-viewer.tsx`
@@ -68,6 +80,7 @@
 - **WebsiteViewer** — props: path, title, fullscreen, onExit — `src/components/editor/website-viewer.tsx`
 - **DIRS** — `src/components/editor/wiki-link-create-dialog.tsx`
 - **WikiLinkPicker** — props: editor, onCreateRequest — `src/components/editor/wiki-link-picker.tsx`
+- **FilterBar** — props: search, filters, onClear, className — `src/components/filter-bar.tsx`
 - **HomeActivity** — `src/components/home-activity.tsx`
 - **HomeInbox** — `src/components/home-inbox.tsx`
 - **HomeLogs** — `src/components/home-logs.tsx`
@@ -83,6 +96,7 @@
 - **ProjectDialog** — props: open, onOpenChange, agents, onSubmit — `src/components/project-dialog.tsx`
 - **ProjectInitiativeCanvas** — `src/components/project-initiative-canvas.tsx`
 - **RunButton** — props: isRunning, onClick, size, disabled, title, isProjectRunActive, onStop — `src/components/run-button.tsx`
+- **RunsFeed** — `src/components/runs-feed.tsx`
 - **SearchDialog** — `src/components/search-dialog.tsx`
 - **SkillForm** — props: mode, initialData, onDelete, activationProps — `src/components/skill-form.tsx`
 - **TaskCard** — props: task, project, agents, className, isDragging, onClick, allTasks, pendingDecisionTaskIds, isRunning, onRun — `src/components/task-card.tsx`
@@ -96,7 +110,7 @@
 
 ## Components
 
-- **CrewLoading** — `src/app/crew/loading.tsx`
+- **AgentsLoading** — `src/app/agents/loading.tsx`
 - **InitiativesPage** — `src/app/initiatives/page.tsx`
 - **RootLayout** — `src/app/layout.tsx`
 - **HomeContentSkeleton** — `src/app/loading.tsx`
@@ -105,6 +119,9 @@
 - **PriorityMatrixLoading** — `src/app/priority-matrix/loading.tsx`
 - **ProjectsDetailPage** — `src/app/projects/[id]/page.tsx`
 - **ProjectsPage** — `src/app/projects/page.tsx`
+- **PriorityMatrixLoading** — `src/app/work/loading.tsx`
+- **MapLoading** — `src/app/work/map/loading.tsx`
+- **ConversationStatusBadge** — props: status, className — `src/components/conversation/ConversationStatusBadge.tsx`
 - **EmptyState** — props: Icon, title, description, actionLabel, onAction, className, compact — `src/components/empty-state.tsx`
 - **ErrorState** — props: message, onRetry, className, compact — `src/components/error-state.tsx`
 - **CardSkeleton** — props: className, lines, footer, footerClassName, childrenPosition — `src/components/skeletons.tsx`

@@ -18,8 +18,10 @@
 #       run: bundle audit
 #
 pre-commit:
-  parallel: true
+  parallel: false
   commands:
+    codesight:
+      run: npx codesight --wiki -o .codesight
     stage-codesight:
       run: git add -f .codesight
     check:

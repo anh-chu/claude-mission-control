@@ -5,8 +5,8 @@
 - **`/api/activity-log`** GET | POST | DELETE/:id → Activity-log
 - **`/api/agents`** GET | POST | PUT/:id | DELETE/:id → Agent
 - **`/api/brain-dump`** GET | POST | PUT/:id | DELETE/:id → Brain-dump
-- **`/api/chat/session`** POST | PATCH/:id | DELETE/:id → Session
 - **`/api/commands`** GET | POST | PUT/:id | DELETE/:id → Command
+- **`/api/conversations/[id]`** GET | PATCH/:id | DELETE/:id → [id]
 - **`/api/daemon`** GET | POST | PUT/:id → Daemon
 - **`/api/decisions`** GET | POST | PUT/:id | DELETE/:id → Decision
 - **`/api/inbox`** GET | POST | PUT/:id | DELETE/:id → Inbox
@@ -18,53 +18,56 @@
 
 ## Other Routes
 
-- `GET` `/api/assets/[...path]` → out: { error } [cache, upload]
-- `PUT` `/api/assets/[...path]` → out: { error } [cache, upload]
-- `POST` `/api/brain-dump/automate` → out: { error }
-- `GET` `/api/chat/messages` → out: { error } [auth, ai]
-- `GET` `/api/chat` [auth, queue, ai]
-- `POST` `/api/chat` [auth, queue, ai]
-- `GET` `/api/claude/models` → out: { models } [db, cache, ai]
-- `GET` `/api/claude/slash-commands` → out: { commands } [db, cache, ai]
-- `GET` `/api/commands/activate` → out: { error }
-- `POST` `/api/commands/activate` → out: { error }
-- `GET` `/api/dashboard` → out: { stats } [cache]
-- `POST` `/api/emergency-stop` → out: { ok, results }
-- `GET` `/api/logs/app` → out: { lines, error }
-- `GET` `/api/logs/daemon` → out: { lines, error }
-- `GET` `/api/logs/stream` [cache, queue]
-- `GET` `/api/missions` → out: { missions }
-- `GET` `/api/plugins` → out: { plugins }
-- `POST` `/api/projects/[id]/run` params(id) → out: { error, missionId } [queue]
-- `POST` `/api/projects/[id]/stop` params(id) → out: { error }
-- `GET` `/api/runs`
-- `GET` `/api/runs/stream` [cache, queue]
-- `GET` `/api/server-status` → out: { status }
-- `GET` `/api/sidebar` → out: { tasks, unreadInbox, pendingDecisions, agents } [cache]
-- `GET` `/api/skills/activate` → out: { error }
-- `POST` `/api/skills/activate` → out: { error }
-- `POST` `/api/sync` → out: { ok, message } [ai]
+- `GET` `/api/assets/[...path]` → out: { error } [auth, cache, upload]
+- `PUT` `/api/assets/[...path]` → out: { error } [auth, cache, upload]
+- `POST` `/api/brain-dump/automate` → out: { error } [auth]
+- `GET` `/api/claude/models` → out: { models } [auth, db, cache, ai]
+- `GET` `/api/claude/slash-commands` → out: { commands } [auth, db, cache, ai]
+- `GET` `/api/commands/activate` → out: { error } [auth]
+- `POST` `/api/commands/activate` → out: { error } [auth]
+- `POST` `/api/conversations/[id]/cancel` params(id) → out: { error } [auth]
+- `POST` `/api/conversations/[id]/continue` params(id) → out: { error } [auth, queue]
+- `GET` `/api/conversations/[id]/events` params(id) [auth, cache, queue]
+- `GET` `/api/conversations` → out: { conversations } [auth] ✓
+- `POST` `/api/conversations` → out: { conversations } [auth] ✓
+- `GET` `/api/dashboard` → out: { stats } [auth, cache]
+- `POST` `/api/emergency-stop` → out: { ok, results } [auth]
+- `GET` `/api/logs/app` → out: { lines, error } [auth]
+- `GET` `/api/logs/daemon` → out: { lines, error } [auth]
+- `GET` `/api/logs/stream` [auth, cache, queue]
+- `GET` `/api/missions` → out: { missions } [auth]
+- `GET` `/api/plugins` → out: { plugins } [auth]
+- `POST` `/api/projects/[id]/run` params(id) → out: { error, missionId } [auth, queue]
+- `POST` `/api/projects/[id]/stop` params(id) → out: { error } [auth]
+- `GET` `/api/runs/[id]` params(id) → out: { error } [auth]
+- `GET` `/api/runs` → out: { runs } [auth]
+- `GET` `/api/server-status` → out: { status } ✓
+- `GET` `/api/sidebar` → out: { tasks, unreadInbox, pendingDecisions, agents } [auth, cache]
+- `GET` `/api/skills/activate` → out: { error } [auth]
+- `POST` `/api/skills/activate` → out: { error } [auth]
+- `POST` `/api/sync` → out: { ok, message } [auth, ai]
 - `POST` `/api/tasks/[id]/comment` params(id) → out: { error } [auth, upload]
 - `DELETE` `/api/tasks/[id]/comment` params(id) → out: { error } [auth, upload]
-- `POST` `/api/tasks/[id]/run` params(id) → out: { error }
-- `POST` `/api/tasks/[id]/stop` params(id) → out: { error }
-- `GET` `/api/tasks/archive` → out: { data, tasks, archived, meta, filtered }
-- `POST` `/api/tasks/archive` → out: { data, tasks, archived, meta, filtered }
-- `PUT` `/api/tasks/bulk` → out: { error }
-- `DELETE` `/api/tasks/bulk` → out: { error }
-- `POST` `/api/upload/[...path]` → out: { error } [upload]
-- `POST` `/api/upload` → out: { error } [upload]
-- `GET` `/api/wiki/content` → out: { error }
-- `PUT` `/api/wiki/content` → out: { error }
-- `GET` `/api/wiki/file` → out: { error } [cache]
-- `POST` `/api/wiki/folder` → out: { error }
+- `POST` `/api/tasks/[id]/run` params(id) → out: { error } [auth]
+- `POST` `/api/tasks/[id]/stop` params(id) → out: { error } [auth]
+- `GET` `/api/tasks/archive` → out: { data, tasks, archived, meta, filtered } [auth]
+- `POST` `/api/tasks/archive` → out: { data, tasks, archived, meta, filtered } [auth]
+- `PUT` `/api/tasks/bulk` → out: { error } [auth]
+- `DELETE` `/api/tasks/bulk` → out: { error } [auth]
+- `POST` `/api/upload/[...path]` → out: { error } [auth, upload]
+- `POST` `/api/upload` → out: { error } [auth, upload]
+- `GET` `/api/wiki/content` → out: { error } [auth]
+- `PUT` `/api/wiki/content` → out: { error } [auth]
+- `GET` `/api/wiki/file` → out: { error } [auth, cache]
+- `POST` `/api/wiki/folder` → out: { error } [auth]
 - `POST` `/api/wiki/generate` → out: { error } [auth]
-- `POST` `/api/wiki/init` → out: { error } [cache]
-- `POST` `/api/wiki/move` → out: { error }
-- `POST` `/api/wiki/page` → out: { error }
-- `GET` `/api/wiki` → out: { error }
-- `DELETE` `/api/wiki` → out: { error }
-- `GET` `/api/wiki/slugs` → out: { error } [cache]
-- `GET` `/api/wiki/status` → out: { installed, version }
-- `POST` `/api/wiki/upload` → out: { error }
-- `GET` `/uploads/[filename]` params(filename) → out: { error } [cache, upload]
+- `POST` `/api/wiki/init` → out: { error } [auth, cache]
+- `GET` `/api/wiki/latest-version` → out: { installedVersion, latestVersion, hasUpdate } [auth, cache]
+- `POST` `/api/wiki/move` → out: { error } [auth]
+- `POST` `/api/wiki/page` → out: { error } [auth]
+- `GET` `/api/wiki` → out: { error } [auth]
+- `DELETE` `/api/wiki` → out: { error } [auth]
+- `GET` `/api/wiki/slugs` → out: { error } [auth, cache]
+- `GET` `/api/wiki/status` → out: { installed, version } [auth]
+- `POST` `/api/wiki/upload` → out: { error } [auth]
+- `GET` `/uploads/[filename]` params(filename) → out: { error } [auth, cache, upload]

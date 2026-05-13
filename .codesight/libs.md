@@ -74,6 +74,11 @@
 - `src/lib/api-client.ts` — function apiFetch: (url, init?) => Promise<Response>, interface ApiFetchInit
 - `src/lib/auth-guards.ts` — function requireSession: () => Promise<Response | null>
 - `src/lib/auth-paths.ts` — function isPublicPath: (pathname) => boolean
+- `src/lib/cabinets/tree.ts`
+  - function findRootCabinetNode: (nodes) => TreeNode | null
+  - function findNodeByPath: (nodes, path) => TreeNode | null
+  - function findDeepestCabinetNode: (nodes, targetPath) => TreeNode | null
+  - function findParentCabinetNode: (nodes, cabinetPath, cabinetAncestor) => TreeNode | null
 - `src/lib/claude-sdk.ts` — function resolveClaudeExecutable: () => string | null
 - `src/lib/command-activation.ts`
   - function activateCommand: (workspaceId, commandId) => Promise<void>
@@ -118,6 +123,16 @@
   - function ensureDocMaintainerAgentForWorkspace: (workspaceId) => Promise<void>
   - function getTasks: () => Promise<TasksFile>
   - _...32 more_
+- `src/lib/embeds/detect.ts`
+  - function detectEmbed: (raw) => DetectedEmbed | null
+  - function providerLabel: (p) => string
+  - interface DetectedEmbed
+  - type EmbedProvider
+- `src/lib/google/detect.ts`
+  - function detectGoogle: (rawUrl) => GoogleLink | null
+  - function googleKindLabel: (kind) => string
+  - interface GoogleLink
+  - type GoogleKind
 - `src/lib/json-io.ts` — function readJSON: (file) => T | null, function writeJSON: (file, data) => void
 - `src/lib/log-reader.ts`
   - function isAllowedLogPath: (filePath) => boolean
@@ -127,6 +142,9 @@
   - function createLogger: (processName, opts) => Logger
   - interface Logger
   - type LogLevel
+- `src/lib/markdown/parse-frontmatter.ts` — function parseFrontmatter: (text) => ParsedFrontmatter, interface ParsedFrontmatter
+- `src/lib/markdown/to-html.ts` — function markdownToHtml: (markdown, pagePath?) => Promise<string>
+- `src/lib/markdown/to-markdown.ts` — function htmlToMarkdown: (html) => string
 - `src/lib/paginate.ts`
   - function parsePaginationParams: (searchParams) => PaginationParams
   - function paginateItems: (items, {...}, offset }, total) => PaginatedResult<T>

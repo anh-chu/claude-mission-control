@@ -2,21 +2,124 @@
 
 > **Stack:** next-app | none | react | typescript
 
-> 0 routes | 0 models | 53 components | 57 lib files | 32 env vars | 7 middleware | 2 events | 0% test coverage
-> **Token savings:** this file is ~6,500 tokens. Without it, AI exploration would cost ~47,500 tokens. **Saves ~41,000 tokens per conversation.**
-> **Last scanned:** 2026-05-13 17:36 — re-run after significant changes
+> 102 routes | 0 models | 119 components | 63 lib files | 32 env vars | 7 middleware | 2 events | 15% test coverage
+> **Token savings:** this file is ~9,900 tokens. Without it, AI exploration would cost ~123,600 tokens. **Saves ~113,700 tokens per conversation.**
+> **Last scanned:** 2026-05-13 17:45 — re-run after significant changes
+
+---
+
+# Routes
+
+## CRUD Resources
+
+- **`/api/activity-log`** GET | POST | DELETE/:id → Activity-log
+- **`/api/agents`** GET | POST | PUT/:id | DELETE/:id → Agent
+- **`/api/brain-dump`** GET | POST | PUT/:id | DELETE/:id → Brain-dump
+- **`/api/commands`** GET | POST | PUT/:id | DELETE/:id → Command
+- **`/api/conversations/[id]`** GET | PATCH/:id | DELETE/:id → [id]
+- **`/api/daemon`** GET | POST | PUT/:id → Daemon
+- **`/api/decisions`** GET | POST | PUT/:id | DELETE/:id → Decision
+- **`/api/inbox`** GET | POST | PUT/:id | DELETE/:id → Inbox
+- **`/api/initiatives`** GET | POST | PUT/:id | DELETE/:id → Initiative
+- **`/api/projects`** GET | POST | PUT/:id | DELETE/:id → Project
+- **`/api/skills`** GET | POST | PUT/:id | DELETE/:id → Skill
+- **`/api/tasks`** GET | POST | PUT/:id | DELETE/:id → Task
+- **`/api/workspaces`** GET | POST | PUT/:id | DELETE/:id → Workspace
+
+## Other Routes
+
+- `GET` `/api/assets/[...path]` → out: { error } [auth, cache, upload]
+- `PUT` `/api/assets/[...path]` → out: { error } [auth, cache, upload]
+- `POST` `/api/brain-dump/automate` → out: { error } [auth]
+- `GET` `/api/claude/models` → out: { models } [auth, db, cache, ai]
+- `GET` `/api/claude/slash-commands` → out: { commands } [auth, db, cache, ai]
+- `GET` `/api/commands/activate` → out: { error } [auth]
+- `POST` `/api/commands/activate` → out: { error } [auth]
+- `POST` `/api/conversations/[id]/cancel` params(id) → out: { error } [auth]
+- `POST` `/api/conversations/[id]/continue` params(id) → out: { error } [auth, queue]
+- `GET` `/api/conversations/[id]/events` params(id) [auth, cache, queue]
+- `GET` `/api/conversations` → out: { conversations } [auth] ✓
+- `POST` `/api/conversations` → out: { conversations } [auth] ✓
+- `GET` `/api/dashboard` → out: { stats } [auth, cache]
+- `POST` `/api/emergency-stop` → out: { ok, results } [auth]
+- `GET` `/api/logs/app` → out: { lines, error } [auth]
+- `GET` `/api/logs/daemon` → out: { lines, error } [auth]
+- `GET` `/api/logs/stream` [auth, cache, queue]
+- `GET` `/api/missions` → out: { missions } [auth]
+- `GET` `/api/plugins` → out: { plugins } [auth]
+- `POST` `/api/projects/[id]/run` params(id) → out: { error, missionId } [auth, queue]
+- `POST` `/api/projects/[id]/stop` params(id) → out: { error } [auth]
+- `GET` `/api/runs/[id]` params(id) → out: { error } [auth]
+- `GET` `/api/runs` → out: { runs } [auth]
+- `GET` `/api/server-status` → out: { status } ✓
+- `GET` `/api/sidebar` → out: { tasks, unreadInbox, pendingDecisions, agents } [auth, cache]
+- `GET` `/api/skills/activate` → out: { error } [auth]
+- `POST` `/api/skills/activate` → out: { error } [auth]
+- `POST` `/api/sync` → out: { ok, message } [auth, ai]
+- `POST` `/api/tasks/[id]/comment` params(id) → out: { error } [auth, upload]
+- `DELETE` `/api/tasks/[id]/comment` params(id) → out: { error } [auth, upload]
+- `POST` `/api/tasks/[id]/run` params(id) → out: { error } [auth]
+- `POST` `/api/tasks/[id]/stop` params(id) → out: { error } [auth]
+- `GET` `/api/tasks/archive` → out: { data, tasks, archived, meta, filtered } [auth]
+- `POST` `/api/tasks/archive` → out: { data, tasks, archived, meta, filtered } [auth]
+- `PUT` `/api/tasks/bulk` → out: { error } [auth]
+- `DELETE` `/api/tasks/bulk` → out: { error } [auth]
+- `POST` `/api/upload/[...path]` → out: { error } [auth, upload]
+- `POST` `/api/upload` → out: { error } [auth, upload]
+- `GET` `/api/wiki/content` → out: { error } [auth]
+- `PUT` `/api/wiki/content` → out: { error } [auth]
+- `GET` `/api/wiki/file` → out: { error } [auth, cache]
+- `POST` `/api/wiki/folder` → out: { error } [auth]
+- `POST` `/api/wiki/generate` → out: { error } [auth]
+- `POST` `/api/wiki/init` → out: { error } [auth, cache]
+- `GET` `/api/wiki/latest-version` → out: { installedVersion, latestVersion, hasUpdate } [auth, cache]
+- `POST` `/api/wiki/move` → out: { error } [auth]
+- `POST` `/api/wiki/page` → out: { error } [auth]
+- `GET` `/api/wiki` → out: { error } [auth]
+- `DELETE` `/api/wiki` → out: { error } [auth]
+- `GET` `/api/wiki/slugs` → out: { error } [auth, cache]
+- `GET` `/api/wiki/status` → out: { installed, version } [auth]
+- `POST` `/api/wiki/upload` → out: { error } [auth]
+- `GET` `/uploads/[filename]` params(filename) → out: { error } [auth, cache, upload]
 
 ---
 
 # Components
 
+- **EditAgentPage** [client] — `src/app/agents/[id]/edit/page.tsx`
+- **AgentPage** [client] — `src/app/agents/[id]/page.tsx`
+- **AgentsLoading** — `src/app/agents/loading.tsx`
+- **NewAgentPage** [client] — `src/app/agents/new/page.tsx`
+- **AgentsPage** [client] — `src/app/agents/page.tsx`
+- **BrainPage** [client] — `src/app/brain/page.tsx`
+- **CommandEditorPage** [client] — `src/app/commands/[id]/page.tsx`
+- **NewCommandPage** [client] — `src/app/commands/new/page.tsx`
 - **Error** [client] — props: error, reset — `src/app/error.tsx`
 - **GlobalError** [client] — props: error, reset — `src/app/global-error.tsx`
+- **InitiativeDetailPage** [client] — `src/app/initiatives/[id]/page.tsx`
+- **InitiativesPage** — `src/app/initiatives/page.tsx`
 - **RootLayout** — `src/app/layout.tsx`
 - **HomeContentSkeleton** — `src/app/loading.tsx`
 - **HomeLoading** — `src/app/loading.tsx`
+- **LoginPage** [client] — `src/app/login/page.tsx`
 - **NotFound** — `src/app/not-found.tsx`
 - **CommandCenterPage** [client] — `src/app/page.tsx`
+- **PriorityMatrixLoading** — `src/app/priority-matrix/loading.tsx`
+- **TasksPage** [client] — `src/app/priority-matrix/page.tsx`
+- **ProjectsDetailPage** — `src/app/projects/[id]/page.tsx`
+- **ProjectsPage** — `src/app/projects/page.tsx`
+- **SettingsPage** [client] — `src/app/settings/page.tsx`
+- **WorkspaceSettingsPage** [client] — `src/app/settings/workspaces/[id]/page.tsx`
+- **WorkspacesPage** [client] — `src/app/settings/workspaces/page.tsx`
+- **SkillEditorPage** [client] — `src/app/skills/[id]/page.tsx`
+- **NewSkillPage** [client] — `src/app/skills/new/page.tsx`
+- **TaskDetailPage** [client] — `src/app/tasks/[id]/page.tsx`
+- **WorkInitiativesPage** [client] — `src/app/work/initiatives/page.tsx`
+- **PriorityMatrixLoading** — `src/app/work/loading.tsx`
+- **MapLoading** — `src/app/work/map/loading.tsx`
+- **MapPage** [client] — `src/app/work/map/page.tsx`
+- **TasksPage** [client] — `src/app/work/page.tsx`
+- **WorkProjectsPage** [client] — `src/app/work/projects/page.tsx`
 - **AgentForm** [client] — props: mode, initialData, currentStatus, onSave, onDelete, onStatusToggle, onCancel — `src/components/agent-form.tsx`
 - **AgentSkills** [client] — `src/components/agent-skills.tsx`
 - **AuthProvider** [client] — `src/components/auth-provider.tsx`
@@ -26,12 +129,49 @@
 - **BoardPanels** [client] — props: showCreateTask, onCloseCreate, onSubmitCreate — `src/components/board-view.tsx`
 - **BoardDndWrapper** [client] — props: activeTask, projects, onDragStart, onDragEnd — `src/components/board-view.tsx`
 - **BreadcrumbNav** [client] — props: items, className, peers — `src/components/breadcrumb-nav.tsx`
+- **ChatSidebar** [client] — props: open, onToggle, isMobile — `src/components/chat/ChatSidebar.tsx`
 - **CommandBar** [client] — props: onCapture, tasks, onTaskClick, commands — `src/components/command-bar.tsx`
 - **CommandForm** [client] — props: mode, initialData, onDelete, activationProps — `src/components/command-form.tsx`
 - **ConditionalShell** [client] — `src/components/conditional-shell.tsx`
 - **ConfirmDialog** [client] — props: open, onOpenChange, title, description, confirmLabel, onConfirm, variant — `src/components/confirm-dialog.tsx`
+- **AgentContextMenuContent** [client] — props: agent, href, onEdit, onNewTask, onToggleStatus — `src/components/context-menus/agent-context-menu.tsx`
+- **InitiativeContextMenuContent** [client] — props: initiative, onTogglePause, onArchive, onDelete — `src/components/context-menus/initiative-context-menu.tsx`
+- **ProjectContextMenuContent** [client] — props: project, href, onRun, onArchive, onDelete — `src/components/context-menus/project-context-menu.tsx`
+- **TaskContextMenuContent** [client] — props: task, onOpen, onStatusChange, onDuplicate, onRun, onDelete — `src/components/context-menus/task-context-menu.tsx`
+- **ConversationComposer** [client] — props: conversationId, disabled, placeholder, onSent, onOptimisticTurn — `src/components/conversation/ConversationComposer.tsx`
+- **ConversationList** [client] — props: currentId, onSelect, taskId, source, onConversationsChange, onConversationDeleted — `src/components/conversation/ConversationList.tsx`
+- **ConversationStatusBadge** — props: status, className — `src/components/conversation/ConversationStatusBadge.tsx`
+- **ConversationView** [client] — props: conversationId, embed — `src/components/conversation/ConversationView.tsx`
+- **DecisionPanel** [client] — props: conversation — `src/components/conversation/DecisionPanel.tsx`
+- **ToolCallCard** [client] — props: toolCall, onRetry — `src/components/conversation/ToolCallCard.tsx`
+- **TurnBlock** [client] — props: turn, compact — `src/components/conversation/TurnBlock.tsx`
 - **CreateTaskDialog** [client] — props: open, onOpenChange, onSubmit, defaultValues — `src/components/create-task-dialog.tsx`
 - **DecisionDialog** [client] — props: open, onOpenChange, decision, onAnswered — `src/components/decision-dialog.tsx`
+- **EditorBubbleMenu** [client] — props: editor — `src/components/editor/bubble-menu.tsx`
+- **CsvViewer** [client] — props: path — `src/components/editor/csv-viewer.tsx`
+- **EditorToolbar** [client] — props: editor — `src/components/editor/editor-toolbar.tsx`
+- **KBEditor** [client] — `src/components/editor/editor.tsx`
+- **ResizableImage** [client] — `src/components/editor/extensions/resizable-image.tsx`
+- **FileFallbackViewer** [client] — props: path — `src/components/editor/file-fallback-viewer.tsx`
+- **FolderIndex** [client] — props: folderPath, entries — `src/components/editor/folder-index.tsx`
+- **GoogleDocViewer** [client] — props: path, title, google — `src/components/editor/google-doc-viewer.tsx`
+- **ImageViewer** [client] — props: path, title — `src/components/editor/image-viewer.tsx`
+- **LinkPopover** [client] — props: anchor, initialUrl, onCancel, onApply, onRemove — `src/components/editor/link-popover.tsx`
+- **MediaPopover** [client] — props: kind, pagePath, onCancel, onInsert, anchor — `src/components/editor/media-popover.tsx`
+- **MediaViewer** [client] — props: path, type — `src/components/editor/media-viewer.tsx`
+- **MermaidViewer** [client] — props: path, title — `src/components/editor/mermaid-viewer.tsx`
+- **NotebookViewer** [client] — props: path — `src/components/editor/notebook-viewer.tsx`
+- **DocxViewer** [client] — props: path, title — `src/components/editor/office/docx-viewer.tsx`
+- **OfficeChrome** [client] — props: path, extLabel, external, hideFinder — `src/components/editor/office/office-chrome.tsx`
+- **PptxViewer** [client] — props: path, title — `src/components/editor/office/pptx-viewer.tsx`
+- **XlsxViewer** [client] — props: path, title — `src/components/editor/office/xlsx-viewer.tsx`
+- **PdfViewer** [client] — props: path, title — `src/components/editor/pdf-viewer.tsx`
+- **SlashCommands** [client] — props: editor — `src/components/editor/slash-commands.tsx`
+- **SourceViewer** [client] — props: path — `src/components/editor/source-viewer.tsx`
+- **TableMenu** [client] — props: editor — `src/components/editor/table-menu.tsx`
+- **WebsiteViewer** [client] — props: path, title, fullscreen, onExit — `src/components/editor/website-viewer.tsx`
+- **DIRS** [client] — `src/components/editor/wiki-link-create-dialog.tsx`
+- **WikiLinkPicker** [client] — props: editor, onCreateRequest — `src/components/editor/wiki-link-picker.tsx`
 - **EmptyState** — props: Icon, title, description, actionLabel, onAction, className, compact — `src/components/empty-state.tsx`
 - **ErrorState** — props: message, onRetry, className, compact — `src/components/error-state.tsx`
 - **FilterBar** [client] — props: search, filters, onClear, className — `src/components/filter-bar.tsx`
@@ -39,6 +179,7 @@
 - **HomeInbox** [client] — `src/components/home-inbox.tsx`
 - **HomeLogs** [client] — `src/components/home-logs.tsx`
 - **KeyboardShortcuts** [client] — props: onCreateTask — `src/components/keyboard-shortcuts.tsx`
+- **ViewerToolbar** [client] — props: path, badge, sublabel, _showBreadcrumb, leading, className — `src/components/layout/viewer-toolbar.tsx`
 - **LayoutShell** [client] — `src/components/layout-shell.tsx`
 - **MarkdownContent** [client] — props: content, className — `src/components/markdown-content.tsx`
 - **MentionTextarea** [client] — props: value, onChange, agents, placeholder, className, onSubmit, stagedFiles, onFilesChange — `src/components/mention-textarea.tsx`
@@ -61,6 +202,7 @@
 - **ThemeProvider** [client] — `src/components/theme-provider.tsx`
 - **ThemeToggle** [client] — `src/components/theme-toggle.tsx`
 - **TopNav** [client] — `src/components/top-nav.tsx`
+- **FrontmatterHeader** [client] — props: data — `src/components/wiki/frontmatter-header.tsx`
 - **WorkMapView** [client] — `src/components/work-map-view.tsx`
 - **ActiveRunsProvider** [client] — `src/providers/active-runs-provider.tsx`
 
@@ -142,6 +284,11 @@
 - `src/lib/api-client.ts` — function apiFetch: (url, init?) => Promise<Response>, interface ApiFetchInit
 - `src/lib/auth-guards.ts` — function requireSession: () => Promise<Response | null>
 - `src/lib/auth-paths.ts` — function isPublicPath: (pathname) => boolean
+- `src/lib/cabinets/tree.ts`
+  - function findRootCabinetNode: (nodes) => TreeNode | null
+  - function findNodeByPath: (nodes, path) => TreeNode | null
+  - function findDeepestCabinetNode: (nodes, targetPath) => TreeNode | null
+  - function findParentCabinetNode: (nodes, cabinetPath, cabinetAncestor) => TreeNode | null
 - `src/lib/claude-sdk.ts` — function resolveClaudeExecutable: () => string | null
 - `src/lib/command-activation.ts`
   - function activateCommand: (workspaceId, commandId) => Promise<void>
@@ -186,6 +333,16 @@
   - function ensureDocMaintainerAgentForWorkspace: (workspaceId) => Promise<void>
   - function getTasks: () => Promise<TasksFile>
   - _...32 more_
+- `src/lib/embeds/detect.ts`
+  - function detectEmbed: (raw) => DetectedEmbed | null
+  - function providerLabel: (p) => string
+  - interface DetectedEmbed
+  - type EmbedProvider
+- `src/lib/google/detect.ts`
+  - function detectGoogle: (rawUrl) => GoogleLink | null
+  - function googleKindLabel: (kind) => string
+  - interface GoogleLink
+  - type GoogleKind
 - `src/lib/json-io.ts` — function readJSON: (file) => T | null, function writeJSON: (file, data) => void
 - `src/lib/log-reader.ts`
   - function isAllowedLogPath: (filePath) => boolean
@@ -195,6 +352,9 @@
   - function createLogger: (processName, opts) => Logger
   - interface Logger
   - type LogLevel
+- `src/lib/markdown/parse-frontmatter.ts` — function parseFrontmatter: (text) => ParsedFrontmatter, interface ParsedFrontmatter
+- `src/lib/markdown/to-html.ts` — function markdownToHtml: (markdown, pagePath?) => Promise<string>
+- `src/lib/markdown/to-markdown.ts` — function htmlToMarkdown: (html) => string
 - `src/lib/paginate.ts`
   - function parsePaginationParams: (searchParams) => PaginationParams
   - function paginateItems: (items, {...}, offset }, total) => PaginatedResult<T>
@@ -352,39 +512,39 @@
 
 ## Most Imported Files (change these carefully)
 
-- `src/lib/types.ts` — imported by **32** files
-- `src/lib/paths.ts` — imported by **24** files
-- `src/lib/utils.ts` — imported by **24** files
-- `src/hooks/use-data.ts` — imported by **11** files
+- `src/lib/utils.ts` — imported by **73** files
+- `src/lib/types.ts` — imported by **69** files
+- `src/lib/auth-guards.ts` — imported by **57** files
+- `src/components/ui/button.tsx` — imported by **54** files
+- `src/lib/paths.ts` — imported by **53** files
+- `src/lib/workspace-context.ts` — imported by **40** files
+- `src/components/ui/badge.tsx` — imported by **28** files
+- `src/components/ui/input.tsx` — imported by **23** files
+- `src/hooks/use-data.ts` — imported by **19** files
+- `src/lib/data.ts` — imported by **18** files
+- `src/components/breadcrumb-nav.tsx` — imported by **18** files
+- `src/lib/api-client.ts` — imported by **17** files
+- `src/components/ui/card.tsx` — imported by **14** files
+- `src/lib/toast.ts` — imported by **13** files
+- `src/components/ui/label.tsx` — imported by **13** files
 - `scripts/daemon/logger.ts` — imported by **10** files
-- `src/lib/api-client.ts` — imported by **10** files
-- `__tests__/helpers.ts` — imported by **9** files
-- `src/lib/toast.ts` — imported by **7** files
-- `scripts/daemon/security.ts` — imported by **6** files
-- `src/lib/workspace-store.ts` — imported by **6** files
-- `src/components/task-form.tsx` — imported by **6** files
-- `src/providers/active-runs-provider.tsx` — imported by **6** files
-- `scripts/daemon/config.ts` — imported by **5** files
-- `src/lib/logger.ts` — imported by **5** files
-- `scripts/daemon/runner.ts` — imported by **5** files
-- `src/components/breadcrumb-nav.tsx` — imported by **5** files
-- `src/components/create-task-dialog.tsx` — imported by **5** files
-- `src/components/error-state.tsx` — imported by **5** files
-- `src/lib/agent-icons.ts` — imported by **5** files
-- `src/lib/data.ts` — imported by **4** files
+- `src/components/ui/textarea.tsx` — imported by **10** files
+- `src/providers/active-runs-provider.tsx` — imported by **10** files
+- `src/components/ui/tip.tsx` — imported by **10** files
+- `src/components/layout/viewer-toolbar.tsx` — imported by **10** files
 
 ## Import Map (who imports what)
 
-- `src/lib/types.ts` ← `__tests__/conversation-event-bus.test.ts`, `__tests__/data.test.ts`, `scripts/daemon/run-task.ts`, `src/app/page.tsx`, `src/app/page.tsx` +27 more
-- `src/lib/paths.ts` ← `__tests__/api-projects-stop-conversation.test.ts`, `__tests__/api-tasks-stop-conversation.test.ts`, `__tests__/daemon-multi-workspace.test.ts`, `__tests__/seeding.test.ts`, `bin/cli.ts` +19 more
-- `src/lib/utils.ts` ← `src/app/page.tsx`, `src/components/agent-form.tsx`, `src/components/board-view.tsx`, `src/components/breadcrumb-nav.tsx`, `src/components/command-bar.tsx` +19 more
-- `src/hooks/use-data.ts` ← `src/app/page.tsx`, `src/components/autopilot-page.tsx`, `src/components/command-form.tsx`, `src/components/home-activity.tsx`, `src/components/home-inbox.tsx` +6 more
-- `scripts/daemon/logger.ts` ← `scripts/daemon/config.ts`, `scripts/daemon/conversation-writer.ts`, `scripts/daemon/prompt-builder.ts`, `scripts/daemon/run-brain-dump-triage.ts`, `scripts/daemon/run-conversation.ts` +5 more
-- `src/lib/api-client.ts` ← `src/app/page.tsx`, `src/components/autopilot-page.tsx`, `src/components/decision-dialog.tsx`, `src/components/home-logs.tsx`, `src/components/layout-shell.tsx` +5 more
-- `__tests__/helpers.ts` ← `__tests__/api-conversations-flow.test.ts`, `__tests__/api-projects-stop-conversation.test.ts`, `__tests__/api-tasks-stop-conversation.test.ts`, `__tests__/conversation-event-bus.test.ts`, `__tests__/conversation-writer.test.ts` +4 more
-- `src/lib/toast.ts` ← `src/app/page.tsx`, `src/components/decision-dialog.tsx`, `src/components/home-activity.tsx`, `src/components/layout-shell.tsx`, `src/hooks/use-active-runs.ts` +2 more
-- `scripts/daemon/security.ts` ← `__tests__/security.test.ts`, `__tests__/security.test.ts`, `scripts/daemon/prompt-builder.ts`, `scripts/daemon/run-task-comment.ts`, `scripts/daemon/runner.ts` +1 more
-- `src/lib/workspace-store.ts` ← `scripts/daemon/run-task-comment.ts`, `scripts/daemon/run-task.ts`, `src/lib/conversations.ts`, `src/lib/data.ts`, `src/lib/scheduled-jobs.ts` +1 more
+- `src/lib/utils.ts` ← `src/app/agents/[id]/page.tsx`, `src/app/agents/page.tsx`, `src/app/api/activity-log/route.ts`, `src/app/api/brain-dump/route.ts`, `src/app/api/commands/route.ts` +68 more
+- `src/lib/types.ts` ← `__tests__/conversation-event-bus.test.ts`, `__tests__/data.test.ts`, `scripts/daemon/run-task.ts`, `src/app/agents/[id]/page.tsx`, `src/app/agents/page.tsx` +64 more
+- `src/lib/auth-guards.ts` ← `__tests__/auth-oauth-security.test.ts`, `src/app/api/activity-log/route.ts`, `src/app/api/agents/route.ts`, `src/app/api/assets/[...path]/route.ts`, `src/app/api/brain-dump/automate/route.ts` +52 more
+- `src/components/ui/button.tsx` ← `src/app/agents/[id]/edit/page.tsx`, `src/app/agents/[id]/page.tsx`, `src/app/agents/page.tsx`, `src/app/brain/page.tsx`, `src/app/error.tsx` +49 more
+- `src/lib/paths.ts` ← `__tests__/api-projects-stop-conversation.test.ts`, `__tests__/api-tasks-stop-conversation.test.ts`, `__tests__/daemon-multi-workspace.test.ts`, `__tests__/seeding.test.ts`, `bin/cli.ts` +48 more
+- `src/lib/workspace-context.ts` ← `src/app/api/agents/route.ts`, `src/app/api/assets/[...path]/route.ts`, `src/app/api/brain-dump/automate/route.ts`, `src/app/api/commands/activate/route.ts`, `src/app/api/commands/route.ts` +35 more
+- `src/components/ui/badge.tsx` ← `src/app/agents/[id]/page.tsx`, `src/app/agents/page.tsx`, `src/app/initiatives/[id]/page.tsx`, `src/app/page.tsx`, `src/app/settings/page.tsx` +23 more
+- `src/components/ui/input.tsx` ← `src/app/agents/[id]/page.tsx`, `src/app/initiatives/[id]/page.tsx`, `src/app/settings/page.tsx`, `src/app/settings/workspaces/[id]/page.tsx`, `src/app/settings/workspaces/page.tsx` +18 more
+- `src/hooks/use-data.ts` ← `src/app/agents/[id]/edit/page.tsx`, `src/app/agents/new/page.tsx`, `src/app/agents/page.tsx`, `src/app/commands/[id]/page.tsx`, `src/app/page.tsx` +14 more
+- `src/lib/data.ts` ← `__tests__/seeding.test.ts`, `src/app/api/activity-log/route.ts`, `src/app/api/brain-dump/automate/route.ts`, `src/app/api/brain-dump/route.ts`, `src/app/api/commands/route.ts` +13 more
 
 ---
 
@@ -397,8 +557,26 @@
 
 # Test Coverage
 
-> **0%** of routes and models are covered by tests
+> **15%** of routes and models are covered by tests
 > 20 test files found
+
+## Covered Routes
+
+- GET:/api/agents
+- POST:/api/agents
+- PUT:/api/agents
+- DELETE:/api/agents
+- GET:/api/conversations
+- POST:/api/conversations
+- GET:/api/projects
+- POST:/api/projects
+- PUT:/api/projects
+- DELETE:/api/projects
+- GET:/api/server-status
+- GET:/api/tasks
+- POST:/api/tasks
+- PUT:/api/tasks
+- DELETE:/api/tasks
 
 ---
 
