@@ -40,8 +40,15 @@ const FALLBACK_DATA_DIR =
 		? path.join(os.tmpdir(), "mandio-vitest")
 		: path.join(os.homedir(), ".mandio");
 
+function expandHome(p: string): string {
+	if (p === "~" || p.startsWith("~/") || p.startsWith("~\\")) {
+		return path.join(os.homedir(), p.slice(1));
+	}
+	return p;
+}
+
 export const DATA_DIR: string = process.env.MANDIO_DATA_DIR
-	? path.resolve(process.env.MANDIO_DATA_DIR)
+	? path.resolve(expandHome(process.env.MANDIO_DATA_DIR))
 	: FALLBACK_DATA_DIR;
 
 /**

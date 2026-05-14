@@ -3,10 +3,9 @@
  * Imported dynamically from instrumentation.ts to avoid Edge bundling.
  */
 import { existsSync, readdirSync, unlinkSync } from "node:fs";
-import os from "node:os";
 import path from "node:path";
 import { ensureWorkspaceDir } from "@/lib/data";
-import { DAEMON_PID_FILE } from "@/lib/paths";
+import { DAEMON_PID_FILE, DATA_DIR } from "@/lib/paths";
 import {
 	runStartupRecovery,
 	scheduleAutopilotPoller,
@@ -14,14 +13,6 @@ import {
 	scheduleUploadsCleanup,
 } from "@/lib/scheduled-jobs";
 
-const FALLBACK_DATA_DIR =
-	process.env.NODE_ENV === "test" || process.env.VITEST
-		? path.join(os.tmpdir(), "mandio-vitest")
-		: path.join(os.homedir(), ".mandio");
-
-const DATA_DIR = process.env.MANDIO_DATA_DIR
-	? path.resolve(process.env.MANDIO_DATA_DIR)
-	: FALLBACK_DATA_DIR;
 // ─── Seed/ensure all workspaces ────────────────────────────────────────────
 
 void (async () => {
