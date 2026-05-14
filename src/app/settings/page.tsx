@@ -1,6 +1,16 @@
 "use client";
 
-import { Globe, Monitor, Moon, Rocket, Square, Sun } from "lucide-react";
+import {
+	Check,
+	Copy,
+	Globe,
+	Monitor,
+	Moon,
+	Rocket,
+	Square,
+	Sun,
+	Webhook,
+} from "lucide-react";
 import Link from "next/link";
 import { useTheme } from "next-themes";
 import { useEffect, useState } from "react";
@@ -64,12 +74,22 @@ export default function SettingsPage() {
 	const [daemonSaving, setDaemonSaving] = useState(false);
 	const [daemonSaved, setDaemonSaved] = useState(false);
 
+	const [webhookEnabled, setWebhookEnabled] = useState<boolean | null>(null);
+	const [webhookUrlCopied, setWebhookUrlCopied] = useState(false);
+
 	const { theme, setTheme } = useTheme();
 
 	useEffect(() => {
 		setPollingEnabled(config.polling.enabled);
 		setMaxParallelAgents(config.concurrency.maxParallelAgents);
 	}, [config]);
+
+	useEffect(() => {
+		fetch("/api/webhooks")
+			.then((r) => r.json())
+			.then((d: { enabled: boolean }) => setWebhookEnabled(d.enabled))
+			.catch(() => setWebhookEnabled(false));
+	}, []);
 
 	const handleDaemonSave = async () => {
 		setDaemonSaving(true);
@@ -246,6 +266,145 @@ export default function SettingsPage() {
 								{daemonSaved ? "Saved" : daemonSaving ? "Saving..." : "Save"}
 							</Button>
 						</div>
+					</CardContent>
+				</Card>
+
+				<Card>
+					<CardHeader>
+						<div className="flex items-center justify-between gap-2">
+							<div className="flex items-center gap-2">
+								<Webhook className="h-4 w-4" />
+								<CardTitle>Webhooks</CardTitle>
+							</div>
+							<ScopeBadge scope="global" />
+						</div>
+						<CardDescription>
+							Trigger background agent runs from external services via
+							authenticated HTTP POST.
+						</CardDescription>
+					</CardHeader>
+					<CardContent className="space-y-4">
+						<div className="flex items-center gap-2">
+							{webhookEnabled === null ? (
+								<Badge variant="secondary">Checking...</Badge>
+							) : webhookEnabled ? (
+								<Badge className="bg-warning-soft text-warning border-warning/30">
+									Enabled
+								</Badge>
+							) : (
+								<Badge variant="secondary">Disabled</Badge>
+							)}
+						</div>
+
+						{webhookEnabled ? (
+							<div className="space-y-3">
+								<div className="space-y-1.5">
+									<Label>Endpoint URL</Label>
+									<div className="flex items-center gap-2">
+										<Input
+											readOnly
+											value={
+												typeof window !== "undefined"
+													? window.location.origin + "/api/webhooks"
+													: "/api/webhooks"
+											}
+											className="font-mono text-xs"
+										/>
+										<Button
+											size="icon"
+											variant="outline"
+											className="shrink-0"
+											onClick={() => {
+												void navigator.clipboard
+													.writeText(
+														typeof window !== "undefined"
+															? window.location.origin + "/api/webhooks"
+															: "/api/webhooks",
+													)
+													.then(() => {
+														setWebhookUrlCopied(true);
+														setTimeout(() => setWebhookUrlCopied(false), 2000);
+													});
+											}}
+										>
+											{webhookUrlCopied ? (
+												<Check className="h-4 w-4" />
+											) : (
+												<Copy className="h-4 w-4" />
+											)}
+										</Button>
+									</div>
+								</div>
+
+								<div className="space-y-1.5">
+									<Label>Payload shape</Label>
+									<pre className="rounded-md border bg-muted p-3 text-xs font-mono leading-relaxed overflow-x-auto">
+										{`POST /api/webhooks
+X-Mandio-Signature: sha256=<hmac-sha256-hex>
+Content-Type: application/json
+
+{
+  // Required
+  "title":     string,          // max 200 chars
+  "prompt":    string,          // max 20 000 chars
+
+  // Optional
+  "agentId":   string,          // agent role (e.g. "developer")
+  "model":     string,
+  "source":    string,          // lowercase slug, max 50
+  "eventType": string,
+  "context":   any,             // max 8 192 bytes (JSON)
+  "workspaceId": string,
+  "requestId": string           // idempotency key, max 120 chars
+}`}
+									</pre>
+								</div>
+							</div>
+						) : webhookEnabled === false ? (
+							<div className="space-y-3">
+								<div className="space-y-1.5">
+									<Label>Generate a secret</Label>
+									<div className="flex items-center gap-2">
+										<code className="flex-1 rounded border bg-muted px-3 py-2 text-xs font-mono select-all">
+											node -e
+											&quot;console.log(require(&apos;crypto&apos;).randomBytes(32).toString(&apos;hex&apos;))&quot;
+										</code>
+										<Button
+											size="icon"
+											variant="outline"
+											className="shrink-0"
+											onClick={() => {
+												void navigator.clipboard
+													.writeText(
+														"node -e \"console.log(require('crypto').randomBytes(32).toString('hex'))\"",
+													)
+													.then(() => {
+														setWebhookUrlCopied(true);
+														setTimeout(() => setWebhookUrlCopied(false), 2000);
+													});
+											}}
+										>
+											{webhookUrlCopied ? (
+												<Check className="h-4 w-4" />
+											) : (
+												<Copy className="h-4 w-4" />
+											)}
+										</Button>
+									</div>
+								</div>
+								<ol className="list-decimal space-y-1 pl-4 text-xs text-muted-foreground">
+									<li>Run the command above and copy the output.</li>
+									<li>
+										Add{" "}
+										<code className="font-mono text-[11px]">
+											MANDIO_WEBHOOK_SECRET=&lt;your-secret&gt;
+										</code>{" "}
+										to <code className="font-mono text-[11px]">.env</code>.
+									</li>
+									<li>Restart the server for the change to take effect.</li>
+								</ol>
+							</div>
+						) : null}
 					</CardContent>
 				</Card>
 

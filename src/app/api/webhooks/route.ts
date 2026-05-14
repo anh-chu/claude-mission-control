@@ -97,6 +97,12 @@ function buildWebhookPrompt(input: WebhookTriggerInput): string {
 	return lines.join("\n");
 }
 
+export async function GET() {
+	const secret = process.env.MANDIO_WEBHOOK_SECRET;
+	const enabled = Boolean(secret && secret.trim() !== "");
+	return NextResponse.json({ enabled });
+}
+
 export async function POST(request: Request) {
 	// 1. Guard: webhooks are disabled unless secret is configured
 	const secret = process.env.MANDIO_WEBHOOK_SECRET;
