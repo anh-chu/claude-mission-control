@@ -17,8 +17,8 @@ export function ActivityRail({ active, onSelect }: ActivityRailProps) {
 				type="button"
 				onClick={() => onSelect("chat")}
 				className={cn(
-					"p-2 rounded-sm hover:bg-accent text-muted-foreground hover:text-foreground transition-colors",
-					active === "chat" && "bg-accent text-foreground",
+					"p-2 rounded-sm hover:bg-primary/10 text-muted-foreground hover:text-foreground transition-colors",
+					active === "chat" && "bg-primary text-primary-foreground",
 				)}
 				title="Chat"
 				aria-label="Toggle chat panel"
@@ -30,8 +30,8 @@ export function ActivityRail({ active, onSelect }: ActivityRailProps) {
 				type="button"
 				onClick={() => onSelect("terminal")}
 				className={cn(
-					"p-2 rounded-sm hover:bg-accent text-muted-foreground hover:text-foreground transition-colors",
-					active === "terminal" && "bg-accent text-foreground",
+					"p-2 rounded-sm hover:bg-primary/10 text-muted-foreground hover:text-foreground transition-colors",
+					active === "terminal" && "bg-primary text-primary-foreground",
 				)}
 				title="Terminal"
 				aria-label="Toggle terminal panel"
