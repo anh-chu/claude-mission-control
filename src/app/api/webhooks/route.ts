@@ -150,10 +150,11 @@ export async function POST(request: Request) {
 
 		const run = async () => {
 			// 8. Idempotency: if requestId already processed, return the existing conversation
-			if (input.requestId) {
+			const requestId = input.requestId;
+			if (requestId) {
 				const all = await getConversationsFile();
 				const existing = all.conversations.find(
-					(c) => !c.deletedAt && c.recentRequestIds.includes(input.requestId!),
+					(c) => !c.deletedAt && c.recentRequestIds.includes(requestId),
 				);
 				if (existing) {
 					return NextResponse.json(
@@ -228,8 +229,8 @@ export async function POST(request: Request) {
 			}
 
 			// 15. Record requestId for idempotency (only if spawn succeeded)
-			if (input.requestId && !spawnFailed) {
-				await recordRequestId(conversation.id, input.requestId);
+			if (requestId && !spawnFailed) {
+				await recordRequestId(conversation.id, requestId);
 			}
 
 			// 16. Return 202

@@ -9,7 +9,7 @@ import { verifyHmacSignature } from "@/lib/webhooks/signature";
 const SECRET = "test-webhook-secret-abc123";
 
 function makeSignature(body: string, secret = SECRET): string {
-	return "sha256=" + createHmac("sha256", secret).update(body).digest("hex");
+	return `sha256=${createHmac("sha256", secret).update(body).digest("hex")}`;
 }
 
 describe("verifyHmacSignature", () => {
