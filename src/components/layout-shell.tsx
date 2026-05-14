@@ -100,7 +100,7 @@ export function LayoutShell({ children }: LayoutShellProps) {
 
 	return (
 		<TooltipProvider delayDuration={300}>
-			<div className="min-h-screen bg-background flex flex-col">
+			<div className="h-screen bg-background flex flex-col overflow-hidden">
 				<a href="#main-content" className="skip-to-content">
 					Skip to content
 				</a>
