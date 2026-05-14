@@ -219,12 +219,13 @@
   - function parseAgentMentions: (text) => string[]
 - `src/lib/validations.ts`
   - function validateBody: (request, schema) => Promise<ValidationResult<T>>
+  - type WebhookTriggerInput
   - const safeId
   - const DEFAULT_LIMIT
   - const LIMITS
   - const commentSchema
-  - const taskCreateSchema
-  - _...21 more_
+  - _...23 more_
+- `src/lib/webhooks/signature.ts` — function verifyHmacSignature: (rawBody, header, secret) => boolean
 - `src/lib/wiki-helpers.ts` — function isAppFolder: (wikiDir, relPath) => Promise<boolean>
 - `src/lib/wiki-plugin.ts`
   - function compareVersions: (a, b) => number

@@ -2,14 +2,14 @@
 
 > **Navigation aid.** Library inventory extracted via AST. Read the source files listed here before modifying exported functions.
 
-**70 library files** across 6 modules
+**71 library files** across 6 modules
 
-## Lib (43 files)
+## Lib (44 files)
 
 - `src/lib/types.ts` — getQuadrant, valuesFromQuadrant, AgentDefinition, AgentsFile, SkillDefinition, LegacySkillDefinition, …
 - `src/lib/data.ts` — ensureSkillsMigrated, getWorkspaceDataDir, ensureWorkspaceDir, initWikiDir, ensureDocMaintainerAgentForWorkspace, getTasks, …
 - `src/lib/conversations.ts` — setConversationsWorkspace, turnsFilePath, eventsFilePath, seqFilePath, ensureConversationDir, getConversationsFile, …
-- `src/lib/validations.ts` — validateBody, safeId, DEFAULT_LIMIT, LIMITS, commentSchema, taskCreateSchema, …
+- `src/lib/validations.ts` — validateBody, WebhookTriggerInput, safeId, DEFAULT_LIMIT, LIMITS, commentSchema, …
 - `src/lib/paths.ts` — assertSafeId, getWorkspaceDir, getUploadsDir, getWikiPathFile, getWikiDir, getDefaultWikiDir, …
 - `src/lib/command-activation.ts` — activateCommand, deactivateCommand, listActivatedCommands, listActivatedCommandsSync, isCommandActivated, activateAllCommands, …
 - `src/lib/skill-activation.ts` — activateSkill, deactivateSkill, listActivatedSkills, isSkillActivated, listActivatedSkillsSync, activateAllSkills, …
@@ -31,7 +31,7 @@
 - `src/lib/utils.ts` — cn, generateId, parseAgentMentions
 - `src/lib/workspace-store.ts` — getWorkspaceId, setFallbackWorkspaceId, workspaceStore
 - `src/lib/api-client.ts` — apiFetch, ApiFetchInit
-- _…and 18 more files_
+- _…and 19 more files_
 
 ## Scripts (12 files)
 

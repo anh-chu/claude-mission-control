@@ -56,6 +56,7 @@
 - `DELETE` `/api/tasks/bulk` → out: { error } [auth]
 - `POST` `/api/upload/[...path]` → out: { error } [auth, upload]
 - `POST` `/api/upload` → out: { error } [auth, upload]
+- `POST` `/api/webhooks` → out: { error } [auth, queue, payment]
 - `GET` `/api/wiki/content` → out: { error } [auth]
 - `PUT` `/api/wiki/content` → out: { error } [auth]
 - `GET` `/api/wiki/file` → out: { error } [auth, cache]

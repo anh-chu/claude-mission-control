@@ -25,6 +25,7 @@
 - `MANDIO_ENABLE_TERMINAL` **required** — src/server.ts
 - `MANDIO_GLOBAL_MAX_PARALLEL_AGENTS` **required** — src/lib/scheduled-jobs.ts
 - `MANDIO_INSTALL_DIR` **required** — src/lib/paths.ts
+- `MANDIO_WEBHOOK_SECRET` **required** — __tests__/api-webhooks.test.ts
 - `MANDIO_WORKSPACE_ID` **required** — scripts/daemon/config.ts
 - `MY_API_KEY` **required** — __tests__/terminal-session-manager.test.ts
 - `NEXT_RUNTIME` **required** — src/instrumentation.ts

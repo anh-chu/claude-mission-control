@@ -9,6 +9,7 @@ Structural map compiled from source code via AST. No LLM — deterministic, 200m
 ## Articles
 
 - [Overview](./overview.md)
+- [Payments](./payments.md)
 - [Route](./route.md)
 - [Ws-bridge](./ws-bridge.md)
 - [Ui](./ui.md)
@@ -16,10 +17,10 @@ Structural map compiled from source code via AST. No LLM — deterministic, 200m
 
 ## Quick Stats
 
-- Routes: **105**
+- Routes: **106**
 - Models: **0**
 - Components: **122**
-- Env vars: **34** required, **6** with defaults
+- Env vars: **35** required, **6** with defaults
 
 ## How to Use
 
@@ -45,4 +46,4 @@ These exist in your codebase but are **not** reflected in wiki articles:
 When in doubt, search the source. The wiki is a starting point, not a complete inventory.
 
 ---
-_Last compiled: 2026-05-14 · 6 articles · [codesight](https://github.com/Houseofmvps/codesight)_
+_Last compiled: 2026-05-14 · 7 articles · [codesight](https://github.com/Houseofmvps/codesight)_

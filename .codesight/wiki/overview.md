@@ -6,27 +6,28 @@
 
 ## Scale
 
-105 API routes · 122 UI components · 70 library files · 9 middleware layers · 40 environment variables
+106 API routes · 122 UI components · 71 library files · 9 middleware layers · 41 environment variables
 
 ## Subsystems
 
+- **[Payments](./payments.md)** — 1 routes — touches: auth, queue, payment
 - **[Route](./route.md)** — 102 routes — touches: auth, cache, upload, db, ai
 - **[Ws-bridge](./ws-bridge.md)** — 3 routes
 
 **UI:** 122 components (react) — see [ui.md](./ui.md)
 
-**Libraries:** 70 files — see [libraries.md](./libraries.md)
+**Libraries:** 71 files — see [libraries.md](./libraries.md)
 
 ## High-Impact Files
 
 Changes to these files have the widest blast radius across the codebase:
 
 - `src/lib/utils.ts` — imported by **74** files
-- `src/lib/types.ts` — imported by **70** files
+- `src/lib/types.ts` — imported by **71** files
 - `src/lib/auth-guards.ts` — imported by **57** files
 - `src/lib/paths.ts` — imported by **55** files
 - `src/components/ui/button.tsx` — imported by **54** files
-- `src/lib/workspace-context.ts` — imported by **40** files
+- `src/lib/workspace-context.ts` — imported by **41** files
 
 ## Required Environment Variables
 
@@ -42,7 +43,7 @@ Changes to these files have the widest blast radius across the codebase:
 - `HOSTNAME` — `src/server.ts`
 - `LOCALAPPDATA` — `scripts/daemon/runner.ts`
 - `MANDIO_ALLOW_AGENT_IN_TESTS` — `scripts/daemon/runner.ts`
-- _...22 more_
+- _...23 more_
 
 ---
 _Back to [index.md](./index.md) · Generated 2026-05-14_

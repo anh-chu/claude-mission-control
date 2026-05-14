@@ -72,6 +72,9 @@ export const LIMITS = {
 	MAX_TASKS: 50,
 	MAX_OPTIONS: 20,
 	MAX_MINUTES: 99999,
+	WEBHOOK_PROMPT: 20000,
+	WEBHOOK_CONTEXT: 8192,
+	EVENT_TYPE: 200,
 } as const;
 
 // ─── Sub-schemas ───────────────────────────────────────────────────────────────
@@ -500,6 +503,66 @@ export const initiativeUpdateSchema = z.object({
 	completedAt: z.string().nullable().optional(),
 	deletedAt: z.string().nullable().optional(),
 });
+
+// ─── Webhook schemas ─────────────────────────────────────────────────────────
+
+/**
+ * Bounded JSON value for webhook context.
+ *
+ * Accepts any JSON-serializable value and validates that the serialized
+ * byte size does not exceed the configured limit. This prevents storage
+ * and render abuse from oversized payloads. A depth limit is not enforced
+ * here — the size cap indirectly bounds deeply nested structures.
+ *
+ * The raw context is never stored as a top-level field — it is serialized
+ * into the user turn as a fenced JSON block for the agent to read.
+ */
+const boundedJsonSchema: z.ZodType<unknown> = z.any().refine(
+	(val) => {
+		try {
+			const s = JSON.stringify(val);
+			return Buffer.byteLength(s, "utf8") <= LIMITS.WEBHOOK_CONTEXT;
+		} catch {
+			return false;
+		}
+	},
+	{
+		message: `Context must be JSON-serializable and under ${LIMITS.WEBHOOK_CONTEXT} bytes`,
+	},
+);
+
+export const webhookTriggerSchema = z.object({
+	source: z
+		.string()
+		.min(1)
+		.max(50)
+		.regex(
+			/^[a-z][a-z0-9]*(?:[-_][a-z0-9]+)*$/,
+			"Source must be a lowercase slug (e.g. 'slack', 'github', 'gmail-pubsub')",
+		)
+		.optional(),
+	eventType: z.string().min(1).max(LIMITS.EVENT_TYPE).optional(),
+	title: z
+		.string()
+		.min(1, "Title is required")
+		.max(LIMITS.TITLE, `Title must be under ${LIMITS.TITLE} characters`),
+	prompt: z
+		.string()
+		.min(1, "Prompt is required")
+		.max(
+			LIMITS.WEBHOOK_PROMPT,
+			`Prompt must be under ${LIMITS.WEBHOOK_PROMPT} characters`,
+		)
+		.transform((s) => s.trim())
+		.refine((s) => s.length > 0, "Prompt must not be blank"),
+	context: boundedJsonSchema.optional(),
+	agentId: agentRoleEnum.nullable().optional(),
+	model: z.string().min(1).max(100).nullable().optional(),
+	workspaceId: safeId.optional(),
+	requestId: z.string().min(1).max(120).optional(),
+});
+
+export type WebhookTriggerInput = z.infer<typeof webhookTriggerSchema>;
 
 // ─── Validation helper ─────────────────────────────────────────────────────────
 

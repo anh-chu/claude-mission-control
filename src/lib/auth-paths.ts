@@ -5,6 +5,8 @@ export function isPublicPath(pathname: string): boolean {
 	return (
 		pathname === "/login" ||
 		pathname.startsWith("/api/auth/") ||
-		pathname === "/api/server-status"
+		pathname === "/api/server-status" ||
+		pathname === "/api/webhooks" ||
+		pathname.startsWith("/api/webhooks/")
 	);
 }
