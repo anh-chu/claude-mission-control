@@ -1,10 +1,12 @@
 "use client";
 
+import { X } from "lucide-react";
 import { useTerminalWS } from "@/hooks/use-terminal-ws";
 import "@xterm/xterm/css/xterm.css";
 
 interface TerminalDrawerProps {
 	enabled: boolean;
+	onClose?: () => void;
 }
 
 const STATUS_LABELS: Record<string, string> = {
@@ -15,7 +17,7 @@ const STATUS_LABELS: Record<string, string> = {
 	error: "error",
 };
 
-export function TerminalDrawer({ enabled }: TerminalDrawerProps) {
+export function TerminalDrawer({ enabled, onClose }: TerminalDrawerProps) {
 	const { containerRef, status, errorMessage, reconnect } =
 		useTerminalWS(enabled);
 
@@ -42,6 +44,16 @@ export function TerminalDrawer({ enabled }: TerminalDrawerProps) {
 							className="rounded-sm bg-white/10 px-2 py-0.5 text-[11px] text-white/70 hover:bg-white/20 transition-colors"
 						>
 							Reconnect
+						</button>
+					)}
+					{onClose && (
+						<button
+							type="button"
+							onClick={onClose}
+							className="rounded-sm p-0.5 text-white/40 hover:text-white/80 hover:bg-white/10 transition-colors"
+							aria-label="Close terminal panel"
+						>
+							<X className="h-3.5 w-3.5" />
 						</button>
 					)}
 				</div>

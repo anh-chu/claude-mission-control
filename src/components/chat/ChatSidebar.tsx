@@ -1,6 +1,6 @@
 "use client";
 
-import { ChevronDown, MessageSquare, Plus } from "lucide-react";
+import { ChevronDown, MessageSquare, Plus, X } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 import { ConversationList } from "@/components/conversation/ConversationList";
 import { ConversationView } from "@/components/conversation/ConversationView";
@@ -29,7 +29,11 @@ const AGENT_STORAGE_KEY = "mandio.chat.agent";
 const MODEL_STORAGE_KEY = "mandio.chat.model";
 const CONVERSATION_ID_KEY = "cmc:lastConversationId";
 
-export function ChatSidebar() {
+interface ChatSidebarProps {
+	onClose?: () => void;
+}
+
+export function ChatSidebar({ onClose }: ChatSidebarProps = {}) {
 	const { agents } = useAgents();
 	const activeAgents = agents.filter(
 		(a) => a.status === "active" && a.id !== "me",
@@ -156,6 +160,16 @@ export function ChatSidebar() {
 			{/* Header */}
 			<div className="flex items-center justify-between px-3 py-2 border-b bg-muted shrink-0">
 				<span className="text-sm font-medium">Chat</span>
+				{onClose && (
+					<button
+						type="button"
+						onClick={onClose}
+						className="p-1 rounded-sm text-muted-foreground hover:text-foreground hover:bg-accent/50 transition-colors"
+						aria-label="Close chat panel"
+					>
+						<X className="h-3.5 w-3.5" />
+					</button>
+				)}
 			</div>
 
 			{/* Controls: agent + model selectors */}

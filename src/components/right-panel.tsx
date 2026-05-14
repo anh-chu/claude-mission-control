@@ -22,11 +22,19 @@ interface RightPanelProps {
 	onClose: () => void;
 }
 
-function PanelContent({ activePanel }: { activePanel: ActivePanel }) {
+function PanelContent({
+	activePanel,
+	onClose,
+}: {
+	activePanel: ActivePanel;
+	onClose?: () => void;
+}) {
 	return (
 		<>
-			{activePanel === "chat" && <ChatSidebar />}
-			{activePanel === "terminal" && <TerminalDrawer enabled />}
+			{activePanel === "chat" && <ChatSidebar onClose={onClose} />}
+			{activePanel === "terminal" && (
+				<TerminalDrawer enabled onClose={onClose} />
+			)}
 		</>
 	);
 }
@@ -114,7 +122,7 @@ export function RightPanel({
 					<SheetTitle className="sr-only">
 						{activePanel === "chat" ? "Chat" : "Terminal"}
 					</SheetTitle>
-					<PanelContent activePanel={activePanel} />
+					<PanelContent activePanel={activePanel} onClose={onClose} />
 				</SheetContent>
 			</Sheet>
 		);
@@ -134,7 +142,7 @@ export function RightPanel({
 				aria-hidden
 			/>
 
-			<PanelContent activePanel={activePanel} />
+			<PanelContent activePanel={activePanel} onClose={onClose} />
 		</div>
 	);
 }
