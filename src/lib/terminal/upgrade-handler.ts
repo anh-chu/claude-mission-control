@@ -12,6 +12,16 @@ import { isEmailAllowed } from "@/lib/auth-email-allowlist";
 import { terminalSessions } from "./session-manager";
 import { attachWebSocketToSession } from "./ws-bridge";
 
+/** Parse a single cookie value from a raw Cookie header string. */
+function parseCookie(
+	cookieHeader: string | undefined,
+	name: string,
+): string | undefined {
+	if (!cookieHeader) return undefined;
+	const match = cookieHeader.match(new RegExp(`(?:^|;\\s*)${name}=([^;]+)`));
+	return match ? decodeURIComponent(match[1]) : undefined;
+}
+
 const TERMINAL_WS_PATH = "/api/terminal/ws";
 
 function rejectSocket(
@@ -102,9 +112,13 @@ export function attachTerminalUpgrade(
 				Math.min(200, Number(url.searchParams.get("rows")) || 24),
 			);
 
+			// Resolve workspace ID from cookie so the terminal opens in the right dir
+			const workspaceId =
+				parseCookie(_req.headers.cookie, "workspace_id") ?? "default";
+
 			let session: ReturnType<typeof terminalSessions.create> | undefined;
 			try {
-				session = terminalSessions.create(email, { cols, rows });
+				session = terminalSessions.create(email, { cols, rows, workspaceId });
 			} catch (err) {
 				console.error("[terminal] Failed to spawn PTY:", err);
 				ws.send(

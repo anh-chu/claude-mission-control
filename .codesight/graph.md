@@ -5,7 +5,7 @@
 - `src/lib/utils.ts` — imported by **74** files
 - `src/lib/types.ts` — imported by **70** files
 - `src/lib/auth-guards.ts` — imported by **57** files
-- `src/lib/paths.ts` — imported by **54** files
+- `src/lib/paths.ts` — imported by **55** files
 - `src/components/ui/button.tsx` — imported by **54** files
 - `src/lib/workspace-context.ts` — imported by **40** files
 - `src/components/ui/badge.tsx` — imported by **28** files
@@ -28,7 +28,7 @@
 - `src/lib/utils.ts` ← `src/app/agents/[id]/page.tsx`, `src/app/agents/page.tsx`, `src/app/api/activity-log/route.ts`, `src/app/api/brain-dump/route.ts`, `src/app/api/commands/route.ts` +69 more
 - `src/lib/types.ts` ← `__tests__/conversation-event-bus.test.ts`, `__tests__/data.test.ts`, `scripts/daemon/run-task.ts`, `scripts/daemon/workspace-settings.ts`, `src/app/agents/[id]/page.tsx` +65 more
 - `src/lib/auth-guards.ts` ← `__tests__/auth-oauth-security.test.ts`, `src/app/api/activity-log/route.ts`, `src/app/api/agents/route.ts`, `src/app/api/assets/[...path]/route.ts`, `src/app/api/brain-dump/automate/route.ts` +52 more
-- `src/lib/paths.ts` ← `__tests__/api-projects-stop-conversation.test.ts`, `__tests__/api-tasks-stop-conversation.test.ts`, `__tests__/daemon-multi-workspace.test.ts`, `__tests__/seeding.test.ts`, `bin/cli.ts` +49 more
+- `src/lib/paths.ts` ← `__tests__/api-projects-stop-conversation.test.ts`, `__tests__/api-tasks-stop-conversation.test.ts`, `__tests__/daemon-multi-workspace.test.ts`, `__tests__/seeding.test.ts`, `bin/cli.ts` +50 more
 - `src/components/ui/button.tsx` ← `src/app/agents/[id]/edit/page.tsx`, `src/app/agents/[id]/page.tsx`, `src/app/agents/page.tsx`, `src/app/brain/page.tsx`, `src/app/error.tsx` +49 more
 - `src/lib/workspace-context.ts` ← `src/app/api/agents/route.ts`, `src/app/api/assets/[...path]/route.ts`, `src/app/api/brain-dump/automate/route.ts`, `src/app/api/commands/activate/route.ts`, `src/app/api/commands/route.ts` +35 more
 - `src/components/ui/badge.tsx` ← `src/app/agents/[id]/page.tsx`, `src/app/agents/page.tsx`, `src/app/initiatives/[id]/page.tsx`, `src/app/page.tsx`, `src/app/settings/page.tsx` +23 more

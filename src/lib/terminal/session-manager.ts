@@ -8,6 +8,7 @@ import { existsSync } from "node:fs";
 import { nanoid } from "nanoid";
 import type { IPty } from "node-pty";
 import ptyModule from "node-pty";
+import { assertSafeId, getWorkspaceDir } from "@/lib/paths";
 
 // ── Constants ──────────────────────────────────────────────────────────────
 
@@ -62,7 +63,7 @@ export class TerminalSessionManager {
 
 	create(
 		ownerEmail: string,
-		opts: { cols: number; rows: number },
+		opts: { cols: number; rows: number; workspaceId?: string },
 	): TerminalSession {
 		// Enforce per-user cap: kill oldest session if at limit
 		const userSessions = [...this.sessions.values()]
@@ -75,13 +76,24 @@ export class TerminalSessionManager {
 
 		const shell = detectShell();
 
+		// Resolve working directory: workspace dir if provided, else HOME
+		let cwd = process.env.HOME ?? "/";
+		if (opts.workspaceId) {
+			try {
+				assertSafeId(opts.workspaceId);
+				cwd = getWorkspaceDir(opts.workspaceId);
+			} catch {
+				// Invalid workspace ID — fall back to HOME
+			}
+		}
+
 		let ptyProcess: IPty;
 		try {
 			ptyProcess = ptyModule.spawn(shell.command, shell.args, {
 				name: "xterm-256color",
 				cols: opts.cols,
 				rows: opts.rows,
-				cwd: process.env.HOME ?? "/",
+				cwd,
 				env: buildEnv(),
 			});
 		} catch (err) {
@@ -91,7 +103,7 @@ export class TerminalSessionManager {
 					name: "xterm-256color",
 					cols: opts.cols,
 					rows: opts.rows,
-					cwd: process.env.HOME ?? "/",
+					cwd,
 					env: buildEnv(),
 				});
 			} else {
