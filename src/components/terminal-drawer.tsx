@@ -25,13 +25,6 @@ export function TerminalDrawer({ enabled, onClose }: TerminalDrawerProps) {
 		<div className="flex h-full flex-col bg-[#0c0a09]">
 			{/* Title bar */}
 			<div className="flex shrink-0 items-center justify-between border-b border-white/10 px-3 py-1.5">
-				<div className="flex items-center gap-2">
-					{/* Traffic-light dots */}
-					<span className="h-3 w-3 rounded-full bg-[#ff5f57]" aria-hidden />
-					<span className="h-3 w-3 rounded-full bg-[#febc2e]" aria-hidden />
-					<span className="h-3 w-3 rounded-full bg-[#28c840]" aria-hidden />
-				</div>
-
 				<span className="text-[11px] font-medium text-white/40 select-none">
 					Terminal &mdash; {STATUS_LABELS[status] ?? status}
 				</span>
