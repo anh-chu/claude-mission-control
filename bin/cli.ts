@@ -111,7 +111,12 @@ function startServerProcess(port: number): ChildProcess {
 	const proc = spawn(process.execPath, [serverScript], {
 		stdio: "inherit",
 		shell: false,
-		env: { ...process.env, PORT: String(port), MANDIO_INSTALL_DIR: rootDir },
+		env: {
+			...process.env,
+			NODE_ENV: "production",
+			PORT: String(port),
+			MANDIO_INSTALL_DIR: rootDir,
+		},
 		cwd: rootDir,
 	});
 	return proc;
@@ -249,6 +254,7 @@ async function start(options: CliOptions = {}) {
 		const serverScript = findServerScript();
 		const serverPid = forkDaemon(process.execPath, [serverScript], {
 			...process.env,
+			NODE_ENV: "production",
 			PORT: String(port),
 			MANDIO_INSTALL_DIR: rootDir,
 		});
