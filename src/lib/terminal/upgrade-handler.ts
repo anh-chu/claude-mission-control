@@ -58,11 +58,20 @@ export function attachTerminalUpgrade(
 				"[terminal] upgrade request — cookie present:",
 				!!req.headers.cookie,
 			);
+			// In production the site is served over HTTPS (e.g. via cloudflared),
+			// so NextAuth sets the session cookie with the __Secure- prefix
+			// (__Secure-authjs.session-token). The WebSocket upgrade reaches our
+			// server over plain HTTP (localhost), so getToken() doesn't infer
+			// secureCookie automatically — we must set it explicitly.
+			const isSecure =
+				process.env.NODE_ENV === "production" ||
+				req.headers["x-forwarded-proto"] === "https";
 			let token: JWT | null = null;
 			try {
 				token = await getToken({
 					req: req as Parameters<typeof getToken>[0]["req"],
 					secret: process.env.AUTH_SECRET ?? "",
+					secureCookie: isSecure,
 				});
 				console.log(
 					"[terminal] getToken result:",
@@ -76,7 +85,7 @@ export function attachTerminalUpgrade(
 
 			if (!token) {
 				console.warn(
-					"[terminal] rejected — no valid JWT (cookie name expected: authjs.session-token)",
+					`[terminal] rejected — no valid JWT (looked for cookie: ${isSecure ? "__Secure-authjs.session-token" : "authjs.session-token"})`,
 				);
 				rejectSocket(socket, 401, "Unauthorized");
 				return;
