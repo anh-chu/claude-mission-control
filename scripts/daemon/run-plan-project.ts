@@ -13,7 +13,6 @@
  *   5. If --auto-run is passed, triggers the mission immediately after
  */
 
-import { spawn } from "node:child_process";
 import path from "node:path";
 import { getWorkspaceDir } from "../../src/lib/paths";
 import { gitSnapshot, sanitizeGitRef } from "../../src/lib/workspace-git";
